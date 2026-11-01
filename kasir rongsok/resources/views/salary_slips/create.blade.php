@@ -1,0 +1,201 @@
+@extends('layouts.app', ['header' => 'Buat Slip Gaji Karyawan'])
+
+@section('content')
+<div x-data="salarySlipForm()" class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Top Navigation -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('salary-slips.index') }}" class="p-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">Form Penggajian Karyawan</h2>
+                <p class="text-xs text-slate-500">Buat slip gaji dengan format ekspor PDF ukuran HVS Landscape ÷ 2.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <form action="{{ route('salary-slips.store') }}" method="POST" class="space-y-6">
+        @csrf
+
+        <!-- Section 1: Employee & Meta -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center gap-2">
+                <i data-lucide="user-check" class="w-4 h-4 text-emerald-600"></i>
+                <span>1. Data Karyawan & Periode Gaji</span>
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih User / Operator Terdaftar (Opsional)</label>
+                    <select name="user_id" x-model="userId" @change="onUserSelect($event)"
+                            class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500">
+                        <option value="">-- Pilih User Sistem (Atau ketik manual di samping) --</option>
+                        @foreach($users as $u)
+                            <option value="{{ $u->id }}" data-name="{{ $u->name }}">
+                                {{ $u->name }} ({{ ucfirst($u->role) }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Karyawan <span class="text-red-500">*</span></label>
+                    <input type="text" name="employee_name" x-model="employeeName" required placeholder="Contoh: Budi Santoso / Operator Timbangan"
+                           class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Periode Bulan Gaji <span class="text-red-500">*</span></label>
+                    <input type="text" name="period_month" value="{{ $currentMonth }}" required placeholder="Contoh: November 2026"
+                           class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Pembayaran Gaji <span class="text-red-500">*</span></label>
+                    <input type="date" name="payment_date" value="{{ date('Y-m-d') }}" required
+                           class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Metode Pembayaran</label>
+                    <select name="payment_method_id" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500">
+                        @foreach($paymentMethods as $pm)
+                            <option value="{{ $pm->id }}">{{ $pm->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Earnings & Deductions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Earnings (Penerimaan) -->
+            <div class="bg-white p-5 rounded-xl border border-emerald-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between pb-2 border-b border-emerald-100">
+                    <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-600"></i>
+                        <span>A. Penghasilan / Penerimaan</span>
+                    </h3>
+                    <span class="text-xs font-mono font-bold text-emerald-700" x-text="formatRp(totalIncome())">Rp 0</span>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Gaji Pokok (Rp) <span class="text-red-500">*</span></label>
+                        <input type="number" name="basic_salary" x-model.number="basicSalary" step="1000" min="0" required placeholder="0"
+                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono font-bold">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Tunjangan (Transport, Makan, Kehadiran)</label>
+                        <input type="number" name="allowance_amount" x-model.number="allowanceAmount" step="1000" min="0" placeholder="0"
+                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Bonus Kinerja / Lembur / Target Tonase</label>
+                        <input type="number" name="bonus_amount" x-model.number="bonusAmount" step="1000" min="0" placeholder="0"
+                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deductions (Potongan) -->
+            <div class="bg-white p-5 rounded-xl border border-red-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between pb-2 border-b border-red-100">
+                    <h3 class="text-xs font-bold text-red-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="minus-circle" class="w-4 h-4 text-red-600"></i>
+                        <span>B. Potongan Gaji</span>
+                    </h3>
+                    <span class="text-xs font-mono font-bold text-red-700" x-text="formatRp(totalDeduction())">Rp 0</span>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Potongan Kasbon / Hutang Modal</label>
+                        <input type="number" name="debt_deduction" x-model.number="debtDeduction" step="1000" min="0" placeholder="0"
+                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-red-500 font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Potongan Lainnya (BPJS / Terlambat / Absen)</label>
+                        <input type="number" name="other_deduction" x-model.number="otherDeduction" step="1000" min="0" placeholder="0"
+                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-red-500 font-mono">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Section 3: Notes & Final Take Home Pay Summary -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan / Keterangan Slip</label>
+                <textarea name="notes" rows="2" placeholder="Contoh: Gaji dibayarkan tunai, bonus lembur sortir besi 10 jam..."
+                          class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500"></textarea>
+            </div>
+
+            <div class="p-4 bg-slate-900 text-white rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Gaji Bersih (Take Home Pay)</span>
+                    <h2 class="text-2xl sm:text-3xl font-black text-emerald-400 font-mono mt-0.5" x-text="formatRp(netSalary())">Rp 0</h2>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button type="submit" 
+                            class="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Simpan & Terbitkan Slip</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+</div>
+@endsection
+
+@push('scripts')
+<script>
+function salarySlipForm() {
+    return {
+        employeeName: '',
+        userId: '',
+        basicSalary: 0,
+        allowanceAmount: 0,
+        bonusAmount: 0,
+        debtDeduction: 0,
+        otherDeduction: 0,
+
+        onUserSelect(e) {
+            const opt = e.target.selectedOptions[0];
+            if (opt && opt.value) {
+                this.employeeName = opt.dataset.name || '';
+            }
+        },
+
+        totalIncome() {
+            return (parseFloat(this.basicSalary) || 0) + (parseFloat(this.allowanceAmount) || 0) + (parseFloat(this.bonusAmount) || 0);
+        },
+
+        totalDeduction() {
+            return (parseFloat(this.debtDeduction) || 0) + (parseFloat(this.otherDeduction) || 0);
+        },
+
+        netSalary() {
+            return Math.max(0, this.totalIncome() - this.totalDeduction());
+        },
+
+        formatRp(val) {
+            return 'Rp ' + (val || 0).toLocaleString('id-ID');
+        }
+    };
+}
+</script>
+@endpush
+

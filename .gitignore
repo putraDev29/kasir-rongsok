@@ -1,0 +1,42 @@
+# Archives & Zip
+*.zip
+kasir rongsok.zip
+*.tar.gz
+*.rar
+
+# Node dependencies
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# WhatsApp Gateway Tokens & Sessions
+wa_gateway/tokens/
+**/tokens/
+
+# Environment files
+.env
+.env.backup
+.env.production
+kasir rongsok/.env
+
+# Laravel vendor & caches
+kasir rongsok/vendor/
+kasir rongsok/.phpunit.cache/
+kasir rongsok/.phpunit.result.cache
+kasir rongsok/storage/*.key
+kasir rongsok/storage/logs/*.log
+kasir rongsok/storage/framework/cache/data/*
+!kasir rongsok/storage/framework/cache/data/.gitignore
+kasir rongsok/storage/framework/sessions/*
+!kasir rongsok/storage/framework/sessions/.gitignore
+kasir rongsok/storage/framework/views/*
+!kasir rongsok/storage/framework/views/.gitignore
+
+# System & OS
+.DS_Store
+Thumbs.db
+*.lnk
+.idea/
+.vscode/

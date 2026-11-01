@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan_Laba_Rugi_{{ $startDate ?? 'semua' }}_{{ $endDate ?? 'waktu' }}</title>
+    @vite(['resources/css/app.css'])
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #fff; margin: 0; padding: 0; font-size: 10px; }
+            .print-container { width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 flex flex-col items-center font-sans text-xs text-slate-900">
+
+    <div class="no-print w-full max-w-4xl mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-700">Laporan Laba Rugi Komprehensif (Print / PDF)</span>
+        <button onclick="window.print()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow text-xs flex items-center gap-1.5">
+            <span>Cetak Dokumen (Print / PDF)</span>
+        </button>
+    </div>
+
+    <!-- Print Container -->
+    <div class="print-container bg-white p-8 max-w-4xl w-full border border-slate-300 rounded-2xl shadow-lg space-y-6">
+        
+        <!-- Header -->
+        <div class="text-center pb-4 border-b-2 border-slate-900">
+            <h1 class="text-xl font-black uppercase tracking-tight">{{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}</h1>
+            <p class="text-slate-600 text-[11px]">{{ $settings['company_address'] ?? 'Jl. Industri Daur Ulang No. 88, Sentra Rongsok' }} | Telp: {{ $settings['company_phone'] ?? '0812-3456-7890' }}</p>
+            <h2 class="text-sm font-bold uppercase mt-2 tracking-wider text-slate-800">LAPORAN LABA / RUGI OPERASIONAL DEPO</h2>
+            <p class="text-[11px] text-slate-500">
+                @if($startDate && $endDate)
+                    Periode: <strong>{{ \Carbon\Carbon::parse($startDate)->format('d F Y') }}</strong> s/d <strong>{{ \Carbon\Carbon::parse($endDate)->format('d F Y') }}</strong>
+                @else
+                    Periode: <strong>Semua Waktu / Kumulatif</strong>
+                @endif
+            </p>
+        </div>
+
+        <!-- Catatan Akuntansi Kasir Rongsok -->
+        <div class="p-2.5 rounded border border-slate-300 bg-slate-50 text-[10px] text-slate-700 leading-relaxed">
+            <strong>Catatan Akuntansi Stok Depo:</strong> Pembelian rongsok masuk pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ number_format($totalPurchasesWeight, 1) }} kg) dicatat sebagai <strong>Penambahan Aset Persediaan Gudang</strong> (bukan pengurang laba/beban kerugian). Uang kas terkonversi menjadi fisik rongsok bernilai estimasi jual pabrik <strong>Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</strong> (Potensi Margin Stok: <strong>+Rp {{ number_format($totalPotentialInventoryProfit, 0, ',', '.') }}</strong>).
+        </div>
+
+        <!-- 1. IKHTISAR KEUANGAN LABA RUGI -->
+        <div class="space-y-3 font-mono text-xs">
+            <div class="font-bold text-slate-900 font-sans uppercase border-b border-slate-300 pb-1">
+                I. IKHTISAR LABA RUGI OPERASIONAL
+            </div>
+
+            <div class="flex justify-between border-b border-slate-200 pb-1">
+                <span>1. PENDAPATAN PENJUALAN RONGSOK ({{ number_format($totalSalesWeight, 1) }} kg)</span>
+                <span class="font-bold">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
+            </div>
+
+            <div class="flex justify-between border-b border-slate-200 pb-1 text-red-700">
+                <span>2. HARGA POKOK PENJUALAN (HPP TIMBANGAN TERJUAL)</span>
+                <span class="font-bold">(Rp {{ number_format($totalCogs, 0, ',', '.') }})</span>
+            </div>
+
+            <div class="p-2 bg-slate-100 rounded font-bold flex justify-between text-xs text-slate-900 font-sans">
+                <span>LABA KOTOR PENJUALAN (GROSS PROFIT):</span>
+                <span class="font-mono">Rp {{ number_format($grossProfit, 0, ',', '.') }}</span>
+            </div>
+
+            <div class="pt-1">
+                <div class="flex justify-between font-bold text-slate-900 mb-1">
+                    <span>3. TOTAL BEBAN OPERASIONAL USAHA:</span>
+                    <span class="text-red-700">(Rp {{ number_format($totalOperatingExpenses, 0, ',', '.') }})</span>
+                </div>
+                <div class="pl-4 space-y-1 text-[11px] text-slate-700">
+                    <div class="flex justify-between">
+                        <span>A. Beban Gaji Karyawan ({{ $salarySlips->count() }} Slip):</span>
+                        <span class="text-red-700 font-semibold">Rp {{ number_format($totalSalaries, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>B. Beban Pengeluaran Operasional Gudang:</span>
+                        <span class="text-red-700 font-semibold">Rp {{ number_format($totalExpenses, 0, ',', '.') }}</span>
+                    </div>
+                    @foreach($expensesByCategory as $exp)
+                        <div class="flex justify-between pl-3 text-slate-500 text-[10px]">
+                            <span>- {{ $exp->name }}:</span>
+                            <span>Rp {{ number_format($exp->total, 0, ',', '.') }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="p-3 border-2 border-slate-900 rounded font-black flex justify-between text-sm font-sans mt-3">
+                <span>ESTIMASI LABA BERSIH OPERASIONAL:</span>
+                <span class="font-mono {{ $netProfit >= 0 ? 'text-slate-900' : 'text-amber-700' }}">
+                    Rp {{ number_format($netProfit, 0, ',', '.') }}
+                </span>
+            </div>
+        </div>
+
+        <!-- 2. DATA BARANG MASUK & KELUAR -->
+        <div class="grid grid-cols-2 gap-4 pt-2">
+            <!-- Barang Masuk -->
+            <div class="border border-slate-300 rounded p-2.5">
+                <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
+                    <span>II.A. BARANG MASUK (ASET PERSEDIAAN)</span>
+                    <span class="font-mono">{{ number_format($totalPurchasesWeight, 1) }} kg</span>
+                </div>
+                <table class="w-full text-left text-[9px] mt-1.5 font-mono">
+                    <thead>
+                        <tr class="text-slate-500 border-b border-slate-200">
+                            <th class="pb-1">Jenis Barang</th>
+                            <th class="pb-1 text-right">Berat (kg)</th>
+                            <th class="pb-1 text-right">Modal Beli</th>
+                            <th class="pb-1 text-right">Est. Jual</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($incomingItems as $in)
+                            <tr>
+                                <td class="py-0.5 font-sans">{{ $in->item_name }}</td>
+                                <td class="py-0.5 text-right">{{ number_format($in->total_weight, 1) }}</td>
+                                <td class="py-0.5 text-right">Rp {{ number_format($in->total_amount, 0, ',', '.') }}</td>
+                                <td class="py-0.5 text-right text-blue-800">Rp {{ number_format($in->estimated_sales_value, 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="border-t border-slate-300 font-bold">
+                        <tr>
+                            <td class="pt-1">Total</td>
+                            <td class="pt-1 text-right">{{ number_format($totalPurchasesWeight, 1) }} kg</td>
+                            <td class="pt-1 text-right">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</td>
+                            <td class="pt-1 text-right text-blue-800">Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Barang Keluar -->
+            <div class="border border-slate-300 rounded p-2.5">
+                <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
+                    <span>II.B. BARANG KELUAR (PENJUALAN PABRIK)</span>
+                    <span class="font-mono">{{ number_format($totalSalesWeight, 1) }} kg</span>
+                </div>
+                <table class="w-full text-left text-[9px] mt-1.5 font-mono">
+                    <thead>
+                        <tr class="text-slate-500 border-b border-slate-200">
+                            <th class="pb-1">Jenis Barang</th>
+                            <th class="pb-1 text-right">Berat (kg)</th>
+                            <th class="pb-1 text-right">Omzet Jual</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($outgoingItems as $out)
+                            <tr>
+                                <td class="py-0.5 font-sans">{{ $out->item_name }}</td>
+                                <td class="py-0.5 text-right">{{ number_format($out->total_weight, 1) }}</td>
+                                <td class="py-0.5 text-right">Rp {{ number_format($out->total_amount, 0, ',', '.') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="py-2 text-center text-slate-400">Tidak ada penjualan grosir pada periode ini.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot class="border-t border-slate-300 font-bold">
+                        <tr>
+                            <td class="pt-1">Total</td>
+                            <td class="pt-1 text-right">{{ number_format($totalSalesWeight, 1) }} kg</td>
+                            <td class="pt-1 text-right">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. RINCIAN SLIP GAJI KARYAWAN -->
+        <div class="border border-slate-300 rounded p-2.5">
+            <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
+                <span>III. RINCIAN PENGGAJIAN KARYAWAN (SLIP GAJI)</span>
+                <span class="font-mono text-red-700">Rp {{ number_format($totalSalaries, 0, ',', '.') }}</span>
+            </div>
+            <table class="w-full text-left text-[9px] mt-1.5 font-mono">
+                <thead>
+                    <tr class="text-slate-500 border-b border-slate-200">
+                        <th class="pb-1">No. Slip</th>
+                        <th class="pb-1">Nama Karyawan</th>
+                        <th class="pb-1">Periode</th>
+                        <th class="pb-1 text-right">Gaji Pokok</th>
+                        <th class="pb-1 text-right">Tunjangan/Bonus</th>
+                        <th class="pb-1 text-right">Potongan</th>
+                        <th class="pb-1 text-right">Gaji Bersih (THP)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($salarySlips as $slip)
+                        <tr>
+                            <td class="py-0.5">{{ $slip->slip_number }}</td>
+                            <td class="py-0.5 font-sans font-semibold">{{ $slip->employee_name }}</td>
+                            <td class="py-0.5">{{ $slip->period_month }}</td>
+                            <td class="py-0.5 text-right">Rp {{ number_format($slip->basic_salary, 0, ',', '.') }}</td>
+                            <td class="py-0.5 text-right">Rp {{ number_format($slip->allowance_amount + $slip->bonus_amount, 0, ',', '.') }}</td>
+                            <td class="py-0.5 text-right text-red-600">-Rp {{ number_format($slip->total_deduction, 0, ',', '.') }}</td>
+                            <td class="py-0.5 text-right font-bold">Rp {{ number_format($slip->net_salary, 0, ',', '.') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="py-2 text-center text-slate-400">Tidak ada pengeluaran slip gaji pada periode ini.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tanda Tangan -->
+        <div class="grid grid-cols-2 gap-8 pt-6 text-center font-sans text-xs">
+            <div>
+                <p>Bagian Keuangan / Admin</p>
+                <div class="h-12"></div>
+                <p class="font-bold underline">( .......................................... )</p>
+            </div>
+            <div>
+                <p>Pimpinan / Owner Depo</p>
+                <div class="h-12"></div>
+                <p class="font-bold underline">({{ $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur' }})</p>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

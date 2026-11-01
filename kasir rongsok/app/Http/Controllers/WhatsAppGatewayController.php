@@ -1,0 +1,362 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\BusinessSetting;
+use App\Models\DebtPayment;
+use App\Models\PurchaseTransaction;
+use App\Models\SalesTransaction;
+use App\Services\WhatsAppGatewayService;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class WhatsAppGatewayController extends Controller
+{
+    protected WhatsAppGatewayService $gateway;
+
+    public function __construct(WhatsAppGatewayService $gateway)
+    {
+        $this->gateway = $gateway;
+    }
+
+    /**
+     * Get WPPConnect gateway status
+     */
+    public function status(): JsonResponse
+    {
+        $status = $this->gateway->getStatus();
+        return response()->json($status);
+    }
+
+    /**
+     * Get QR code for scanning
+     */
+    public function qr(): JsonResponse
+    {
+        $qr = $this->gateway->getQrCode();
+        return response()->json($qr);
+    }
+
+    /**
+     * Reconnect / restart gateway client
+     */
+    public function reconnect(): JsonResponse
+    {
+        $res = $this->gateway->reconnect();
+        return response()->json($res);
+    }
+
+    /**
+     * Logout and destroy current WhatsApp session
+     */
+    public function logout(): JsonResponse
+    {
+        $res = $this->gateway->logout();
+        return response()->json($res);
+    }
+
+    /**
+     * Clear / reset chat queue for specific phone
+     */
+    public function clearChat(Request $request): JsonResponse
+    {
+        $request->validate([
+            'phone' => 'required|string',
+        ]);
+
+        $res = $this->gateway->clearChat($request->input('phone'));
+        return response()->json($res);
+    }
+
+    /**
+     * Send test or arbitrary single WhatsApp message
+     */
+    public function send(Request $request): JsonResponse
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'message' => 'required|string',
+        ]);
+
+        $res = $this->gateway->sendMessage($request->input('phone'), $request->input('message'));
+        return response()->json($res);
+    }
+
+    /**
+     * Send WhatsApp file / PDF document
+     */
+    public function sendFile(Request $request): JsonResponse
+    {
+        $fileData = $request->input('file') ?? $request->input('fileBase64');
+        if (!$fileData) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Berkas PDF (file / fileBase64) wajib disertakan.',
+            ], 422);
+        }
+
+        $request->validate([
+            'phone' => 'required|string',
+            'filename' => 'nullable|string',
+            'caption' => 'nullable|string',
+        ]);
+
+        $res = $this->gateway->sendFile(
+            $request->input('phone'),
+            $fileData,
+            $request->input('filename', 'Nota.pdf'),
+            $request->input('caption', '')
+        );
+
+        return response()->json($res);
+    }
+
+    /**
+     * Preview formatted WhatsApp receipt text & structured data for PDF generation
+     */
+    public function previewPurchase(PurchaseTransaction $purchase): JsonResponse
+    {
+        $purchase->loadMissing(['items.scrapItem', 'user', 'paymentMethod', 'supplier']);
+
+        $phone = $purchase->supplier_phone;
+        if (empty($phone) && $purchase->supplier) {
+            $phone = $purchase->supplier->phone;
+        }
+
+        $message = $this->gateway->buildPurchaseReceiptMessage($purchase);
+
+        $companyName = BusinessSetting::get('company_name', 'UD. BERKAH RONGSOK MAKMUR');
+        $companyAddress = BusinessSetting::get('company_address', 'Sentra Daur Ulang Logam & Rongsok');
+        $companyPhone = BusinessSetting::get('company_phone', '0812-3456-7890');
+        $disclaimer = BusinessSetting::get('receipt_disclaimer', 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI');
+        $footerText = BusinessSetting::get('receipt_footer', 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali.');
+
+        $items = [];
+        foreach ($purchase->items as $it) {
+            $items[] = [
+                'name' => $it->item_name_snapshot,
+                'bruto' => number_format($it->gross_weight, 2, ',', '.'),
+                'tara' => number_format($it->tare_weight, 2, ',', '.'),
+                'netto' => number_format($it->net_weight, 2, ',', '.'),
+                'price' => number_format($it->price_per_kg, 0, ',', '.'),
+                'subtotal' => number_format($it->subtotal, 0, ',', '.'),
+                'subtotalFormatted' => 'Rp ' . number_format($it->subtotal, 0, ',', '.'),
+            ];
+        }
+
+        $receiptData = [
+            'type' => 'purchase',
+            'invoiceNumber' => $purchase->invoice_number,
+            'transactionDate' => Carbon::parse($purchase->transaction_date)->translatedFormat('d F Y, H:i') . ' WIB',
+            'cashierName' => $purchase->user?->name ?? 'Kasir Timbang',
+            'supplierName' => $purchase->supplier_name ?: 'Pemasok Umum / Tunai',
+            'supplierPhone' => $purchase->supplier_phone ?? '-',
+            'paymentMethod' => $purchase->paymentMethod?->name ?? 'Tunai',
+            'companyName' => $companyName,
+            'companyAddress' => $companyAddress,
+            'companyPhone' => $companyPhone,
+            'disclaimer' => $disclaimer,
+            'footerText' => $footerText,
+            'totalNetWeight' => number_format($purchase->total_net_weight, 2, ',', '.'),
+            'totalGrossWeight' => number_format($purchase->total_gross_weight, 2, ',', '.'),
+            'totalTareWeight' => number_format($purchase->total_tare_weight, 2, ',', '.'),
+            'subtotalAmount' => 'Rp ' . number_format($purchase->final_amount, 0, ',', '.'),
+            'debtDeductionAmount' => $purchase->debt_deduction_amount > 0 ? number_format($purchase->debt_deduction_amount, 0, ',', '.') : null,
+            'netCashPaid' => 'Rp ' . number_format($purchase->net_cash_paid, 0, ',', '.'),
+            'remainingDebtAfter' => $purchase->remaining_debt_after > 0 ? number_format($purchase->remaining_debt_after, 0, ',', '.') : null,
+            'items' => $items,
+        ];
+
+        return response()->json([
+            'phone' => $phone ?? '',
+            'formatted_phone' => $this->gateway->formatPhone($phone),
+            'message' => $message,
+            'invoice_number' => $purchase->invoice_number,
+            'receipt_data' => $receiptData,
+        ]);
+    }
+
+    /**
+     * Send Purchase Receipt (PDF or Text) via WhatsApp Gateway
+     */
+    public function sendPurchase(Request $request, PurchaseTransaction $purchase): JsonResponse
+    {
+        $targetPhone = $request->input('phone') ?: $purchase->supplier_phone;
+        if (empty($targetPhone) && $purchase->supplier) {
+            $targetPhone = $purchase->supplier->phone;
+        }
+
+        if (empty($targetPhone)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nomor WhatsApp tujuan wajib diisi.',
+            ], 422);
+        }
+
+        $fileData = $request->input('file') ?? $request->input('fileBase64');
+        $caption = $request->input('caption') ?? $request->input('message') ?? "Terlampir Nota Pembelian PDF resmi {$purchase->invoice_number}.";
+        $filename = $request->input('filename') ?: "Nota_{$purchase->invoice_number}.pdf";
+
+        if ($fileData) {
+            // Send as PDF Document
+            $res = $this->gateway->sendFile($targetPhone, $fileData, $filename, $caption);
+        } else {
+            // Send as Text Message
+            $customMessage = $request->input('message');
+            if (!empty($customMessage)) {
+                $res = $this->gateway->sendMessage($targetPhone, $customMessage);
+            } else {
+                $res = $this->gateway->sendPurchaseReceipt($purchase, $targetPhone);
+            }
+        }
+
+        return response()->json($res);
+    }
+
+    /**
+     * Preview formatted WhatsApp invoice text for wholesale sales
+     */
+    public function previewSale(SalesTransaction $sale): JsonResponse
+    {
+        $sale->loadMissing(['items.scrapItem', 'user', 'customer']);
+
+        $phone = $sale->customer_phone;
+        $message = $this->gateway->buildSalesInvoiceMessage($sale);
+
+        $companyName = BusinessSetting::get('company_name', 'UD. BERKAH RONGSOK MAKMUR');
+        $companyAddress = BusinessSetting::get('company_address', 'Sentra Daur Ulang Logam & Rongsok');
+        $companyPhone = BusinessSetting::get('company_phone', '0812-3456-7890');
+
+        $items = [];
+        foreach ($sale->items as $it) {
+            $items[] = [
+                'name' => $it->item_name_snapshot,
+                'weight' => number_format($it->weight, 2, ',', '.'),
+                'sellPrice' => number_format($it->sell_price_per_kg, 0, ',', '.'),
+                'subtotal' => number_format($it->subtotal, 0, ',', '.'),
+                'subtotalFormatted' => 'Rp ' . number_format($it->subtotal, 0, ',', '.'),
+            ];
+        }
+
+        $receiptData = [
+            'type' => 'sale',
+            'invoiceNumber' => $sale->invoice_number,
+            'transactionDate' => Carbon::parse($sale->transaction_date)->translatedFormat('d F Y, H:i') . ' WIB',
+            'customerName' => $sale->customer_name ?: 'Pabrik / Pembeli',
+            'customerPhone' => $sale->customer_phone ?? '-',
+            'companyName' => $companyName,
+            'companyAddress' => $companyAddress,
+            'companyPhone' => $companyPhone,
+            'totalWeight' => number_format($sale->total_weight, 2, ',', '.'),
+            'finalAmount' => 'Rp ' . number_format($sale->final_amount, 0, ',', '.'),
+            'items' => $items,
+        ];
+
+        return response()->json([
+            'phone' => $phone ?? '',
+            'formatted_phone' => $this->gateway->formatPhone($phone),
+            'message' => $message,
+            'invoice_number' => $sale->invoice_number,
+            'receipt_data' => $receiptData,
+        ]);
+    }
+
+    /**
+     * Send Sales Invoice (PDF or Text) via WhatsApp Gateway
+     */
+    public function sendSale(Request $request, SalesTransaction $sale): JsonResponse
+    {
+        $targetPhone = $request->input('phone') ?: $sale->customer_phone;
+        if (empty($targetPhone)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nomor WhatsApp pembeli wajib diisi.',
+            ], 422);
+        }
+
+        $fileData = $request->input('file') ?? $request->input('fileBase64');
+        $caption = $request->input('caption') ?? $request->input('message') ?? "Terlampir Faktur Penjualan Partai PDF {$sale->invoice_number}.";
+        $filename = $request->input('filename') ?: "Faktur_{$sale->invoice_number}.pdf";
+
+        if ($fileData) {
+            $res = $this->gateway->sendFile($targetPhone, $fileData, $filename, $caption);
+        } else {
+            $customMessage = $request->input('message');
+            if (!empty($customMessage)) {
+                $res = $this->gateway->sendMessage($targetPhone, $customMessage);
+            } else {
+                $res = $this->gateway->sendSalesInvoice($sale, $targetPhone);
+            }
+        }
+
+        return response()->json($res);
+    }
+
+    /**
+     * Preview formatted WhatsApp receipt text for debt payment
+     */
+    public function previewDebtPayment(DebtPayment $payment): JsonResponse
+    {
+        $payment->loadMissing(['debt.supplier', 'paymentMethod', 'user']);
+
+        $phone = $payment->debt?->supplier?->phone;
+        $message = $this->gateway->buildDebtPaymentMessage($payment);
+
+        $companyName = BusinessSetting::get('company_name', 'UD. BERKAH RONGSOK MAKMUR');
+        $companyPhone = BusinessSetting::get('company_phone', '0812-3456-7890');
+
+        $receiptData = [
+            'type' => 'debt_payment',
+            'paymentNumber' => $payment->payment_number,
+            'paymentDate' => Carbon::parse($payment->payment_date)->translatedFormat('d F Y, H:i') . ' WIB',
+            'supplierName' => $payment->debt?->supplier?->name ?? 'Pemasok',
+            'supplierPhone' => $phone ?? '-',
+            'paymentMethod' => $payment->paymentMethod?->name ?? 'Tunai',
+            'amount' => 'Rp ' . number_format($payment->amount, 0, ',', '.'),
+            'remainingBefore' => 'Rp ' . number_format($payment->remaining_before, 0, ',', '.'),
+            'remainingAfter' => 'Rp ' . number_format($payment->remaining_after, 0, ',', '.'),
+            'companyName' => $companyName,
+            'companyPhone' => $companyPhone,
+        ];
+
+        return response()->json([
+            'phone' => $phone ?? '',
+            'formatted_phone' => $this->gateway->formatPhone($phone),
+            'message' => $message,
+            'payment_number' => $payment->payment_number,
+            'receipt_data' => $receiptData,
+        ]);
+    }
+
+    /**
+     * Send Debt Payment Receipt (PDF or Text) via WhatsApp Gateway
+     */
+    public function sendDebtPayment(Request $request, DebtPayment $payment): JsonResponse
+    {
+        $targetPhone = $request->input('phone') ?: $payment->debt?->supplier?->phone;
+        if (empty($targetPhone)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nomor WhatsApp pemasok wajib diisi.',
+            ], 422);
+        }
+
+        $fileData = $request->input('file') ?? $request->input('fileBase64');
+        $caption = $request->input('caption') ?? $request->input('message') ?? "Terlampir Bukti Bayar Kasbon PDF {$payment->payment_number}.";
+        $filename = $request->input('filename') ?: "BuktiBayar_{$payment->payment_number}.pdf";
+
+        if ($fileData) {
+            $res = $this->gateway->sendFile($targetPhone, $fileData, $filename, $caption);
+        } else {
+            $customMessage = $request->input('message');
+            if (!empty($customMessage)) {
+                $res = $this->gateway->sendMessage($targetPhone, $customMessage);
+            } else {
+                $res = $this->gateway->sendDebtPaymentReceipt($payment, $targetPhone);
+            }
+        }
+
+        return response()->json($res);
+    }
+}
