@@ -93,12 +93,15 @@ class SettingController extends Controller
 
                 // Generate Windows ICO & update Desktop/Project shortcuts
                 $uploadedFullPath = $destinationPath . DIRECTORY_SEPARATOR . $filename;
-                $rootIcoPath = realpath(base_path('..')) ? realpath(base_path('..')) . DIRECTORY_SEPARATOR . 'app_icon.ico' : base_path('../app_icon.ico');
+                $projectRoot = realpath(base_path('..')) ?: base_path('..');
+                $activeLogoIcoPath = $projectRoot . DIRECTORY_SEPARATOR . 'app_logo_active.ico';
+                $legacyIcoPath = $projectRoot . DIRECTORY_SEPARATOR . 'app_icon.ico';
                 $publicIcoPath = public_path('favicon.ico');
 
-                if (IconGeneratorService::generateIcoFromImage($uploadedFullPath, $rootIcoPath)) {
-                    @copy($rootIcoPath, $publicIcoPath);
-                    IconGeneratorService::syncWindowsDesktopShortcut($rootIcoPath);
+                if (IconGeneratorService::generateIcoFromImage($uploadedFullPath, $activeLogoIcoPath)) {
+                    @copy($activeLogoIcoPath, $legacyIcoPath);
+                    @copy($activeLogoIcoPath, $publicIcoPath);
+                    IconGeneratorService::syncWindowsDesktopShortcut($activeLogoIcoPath);
                 }
             } elseif ($request->boolean('remove_logo')) {
                 $oldLogo = BusinessSetting::get('app_logo');
@@ -116,11 +119,18 @@ class SettingController extends Controller
                 BusinessSetting::set('app_logo', null, 'branding');
 
                 // Reset Windows ICO to default icon & update shortcuts
-                $rootIcoPath = realpath(base_path('..')) ? realpath(base_path('..')) . DIRECTORY_SEPARATOR . 'app_icon.ico' : base_path('../app_icon.ico');
+                $projectRoot = realpath(base_path('..')) ?: base_path('..');
+                $activeLogoIcoPath = $projectRoot . DIRECTORY_SEPARATOR . 'app_logo_active.ico';
+                $legacyIcoPath = $projectRoot . DIRECTORY_SEPARATOR . 'app_icon.ico';
                 $publicIcoPath = public_path('favicon.ico');
-                if (IconGeneratorService::generateDefaultIco($rootIcoPath)) {
-                    @copy($rootIcoPath, $publicIcoPath);
-                    IconGeneratorService::syncWindowsDesktopShortcut($rootIcoPath);
+
+                if (file_exists($activeLogoIcoPath)) {
+                    @unlink($activeLogoIcoPath);
+                }
+
+                if (IconGeneratorService::generateDefaultIco($legacyIcoPath)) {
+                    @copy($legacyIcoPath, $publicIcoPath);
+                    IconGeneratorService::syncWindowsDesktopShortcut($legacyIcoPath);
                 }
             }
         } catch (Throwable $e) {

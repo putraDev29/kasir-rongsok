@@ -93,20 +93,25 @@ Function GetChromePath()
     Next
 End Function
 
-' 0. Pastikan shortcut di Desktop selalu sinkron dengan folder saat ini dan icon logo
-Dim desktopLnkPath, autoDeskLnk, iconPath
-iconPath = currentDir & "\app_icon.ico"
+' 0. Pastikan shortcut di Desktop dibuat jika belum ada (tanpa menimpa shortcut yang sudah aktif agar icon tidak flicker/revert)
+Dim desktopLnkPath, autoDeskLnk, activeIconPath
 desktopLnkPath = WshShell.SpecialFolders("Desktop") & "\Kasir Rongsok.lnk"
-Set autoDeskLnk = WshShell.CreateShortcut(desktopLnkPath)
-autoDeskLnk.TargetPath = "wscript.exe"
-autoDeskLnk.Arguments = """" & currentDir & "\START_KASIR_RONGSOK.vbs"""
-autoDeskLnk.WorkingDirectory = currentDir
-autoDeskLnk.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
-If fso.FileExists(iconPath) Then
-    autoDeskLnk.IconLocation = iconPath & ",0"
+If Not fso.FileExists(desktopLnkPath) Then
+    activeIconPath = currentDir & "\app_logo_active.ico"
+    If Not fso.FileExists(activeIconPath) Then
+        activeIconPath = currentDir & "\app_icon.ico"
+    End If
+    Set autoDeskLnk = WshShell.CreateShortcut(desktopLnkPath)
+    autoDeskLnk.TargetPath = "wscript.exe"
+    autoDeskLnk.Arguments = """" & currentDir & "\START_KASIR_RONGSOK.vbs"""
+    autoDeskLnk.WorkingDirectory = currentDir
+    autoDeskLnk.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
+    If fso.FileExists(activeIconPath) Then
+        autoDeskLnk.IconLocation = activeIconPath & ",0"
+    End If
+    autoDeskLnk.Save
+    Set autoDeskLnk = Nothing
 End If
-autoDeskLnk.Save
-Set autoDeskLnk = Nothing
 
 ' 1. Pastikan MySQL XAMPP berjalan sebelum membuka aplikasi
 If Not IsProcessRunning("mysqld.exe") Then
