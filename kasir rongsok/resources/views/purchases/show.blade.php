@@ -275,6 +275,16 @@
         </div>
     </div>
 
+    @if(session('auto_print'))
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const defaultFormat = "{{ \App\Models\BusinessSetting::get('default_printer_type', 'thermal_58') }}";
+                const printUrl = "{{ route('purchases.print', ['purchase' => $purchase]) }}?format=" + defaultFormat + "&autoprint=1";
+                window.open(printUrl, '_blank');
+            });
+        </script>
+    @endif
+
 </div>
 @endsection
 

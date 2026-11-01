@@ -7,8 +7,51 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @media print {
-            .no-print { display: none !important; }
-            body { margin: 0; padding: 0; background: #fff; }
+            @page {
+                size: auto;
+                margin: 0mm;
+            }
+            .no-print {
+                display: none !important;
+            }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+                color: #000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .receipt-container {
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 1.5mm 1mm !important;
+                background: #fff !important;
+            }
+            .receipt-58mm {
+                width: 48mm !important;
+                max-width: 48mm !important;
+                font-size: 9px !important;
+                line-height: 1.25 !important;
+            }
+            .receipt-80mm {
+                width: 72mm !important;
+                max-width: 72mm !important;
+                font-size: 11px !important;
+                line-height: 1.35 !important;
+            }
+            .receipt-a4 {
+                width: 100% !important;
+                max-width: 210mm !important;
+                padding: 10mm !important;
+            }
+            /* Pastikan warna teks thermal murni hitam pekat agar hasil bakar thermal tajam */
+            .receipt-container * {
+                color: #000 !important;
+                border-color: #000 !important;
+                box-shadow: none !important;
+            }
         }
     </style>
 </head>
@@ -44,8 +87,8 @@
     </div>
 
     <!-- RECEIPT CONTAINER -->
-    <div class="bg-white text-slate-900 shadow-md border border-slate-200 
-         {{ $format === 'thermal_58' ? 'receipt-58mm w-[58mm] text-[10px] p-2' : ($format === 'thermal_80' ? 'receipt-80mm w-[80mm] text-xs p-3' : 'receipt-a4 max-w-3xl w-full p-8 rounded-xl') }}">
+    <div class="receipt-container bg-white text-slate-900 shadow-md border border-slate-200 
+         {{ $format === 'thermal_58' ? 'receipt-58mm w-[58mm] max-w-[58mm] text-[10px] p-2' : ($format === 'thermal_80' ? 'receipt-80mm w-[80mm] max-w-[80mm] text-xs p-3' : 'receipt-a4 max-w-3xl w-full p-8 rounded-xl') }}">
         
         <!-- Header -->
         <div class="text-center pb-2 border-b border-dashed border-slate-400">
@@ -96,35 +139,57 @@
         </div>
 
         <!-- Items Breakdown -->
-        <div class="py-2">
-            <table class="w-full text-left font-mono">
-                <thead>
-                    <tr class="border-b border-slate-300 text-[9px] uppercase">
-                        <th class="py-1">Barang</th>
-                        <th class="py-1 text-right">Kotor-Tara</th>
-                        <th class="py-1 text-right">Bersih</th>
-                        <th class="py-1 text-right">Harga</th>
-                        <th class="py-1 text-right">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-dotted divide-slate-200 text-[10px]">
-                    @foreach($purchase->items as $item)
-                        <tr>
-                            <td class="py-1 pr-1 font-semibold" colspan="5">
-                                {{ $item->item_name_snapshot }}
-                            </td>
+        @if($format === 'thermal_58')
+            <!-- Layout Khusus Kertas 58mm (Pas 32 karakter, rapi tanpa terpotong untuk Eppos/Iware) -->
+            <div class="py-1 border-b border-dashed border-slate-400 font-mono text-[9px]">
+                @foreach($purchase->items as $item)
+                    <div class="py-1 {{ !$loop->last ? 'border-b border-dotted border-slate-300' : '' }}">
+                        <div class="font-bold text-[10px] uppercase text-slate-900 leading-tight">
+                            {{ $item->item_name_snapshot }}
+                        </div>
+                        <div class="flex justify-between text-[9px] text-slate-600">
+                            <span>{{ number_format($item->gross_weight, 1) }} - {{ number_format($item->tare_weight, 1) }} kg</span>
+                            <span class="font-bold text-slate-900">{{ number_format($item->net_weight, 2) }} kg</span>
+                        </div>
+                        <div class="flex justify-between text-[9px] pt-0.5">
+                            <span class="text-slate-600">@ Rp {{ number_format($item->price_per_kg, 0, ',', '.') }}</span>
+                            <span class="font-black text-slate-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <!-- Layout Tabel Lebar (80mm & A4) -->
+            <div class="py-2">
+                <table class="w-full text-left font-mono">
+                    <thead>
+                        <tr class="border-b border-slate-300 text-[9px] uppercase">
+                            <th class="py-1">Barang</th>
+                            <th class="py-1 text-right">Kotor-Tara</th>
+                            <th class="py-1 text-right">Bersih</th>
+                            <th class="py-1 text-right">Harga</th>
+                            <th class="py-1 text-right">Subtotal</th>
                         </tr>
-                        <tr class="text-slate-600 text-[9px]">
-                            <td class="pb-1 pl-2 text-slate-400">↳</td>
-                            <td class="pb-1 text-right">{{ number_format($item->gross_weight, 1) }}-{{ number_format($item->tare_weight, 1) }}</td>
-                            <td class="pb-1 text-right font-bold text-slate-900">{{ number_format($item->net_weight, 2) }}kg</td>
-                            <td class="pb-1 text-right">@ {{ number_format($item->price_per_kg, 0, ',', '.') }}</td>
-                            <td class="pb-1 text-right font-bold text-slate-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody class="divide-y divide-dotted divide-slate-200 text-[10px]">
+                        @foreach($purchase->items as $item)
+                            <tr>
+                                <td class="py-1 pr-1 font-semibold" colspan="5">
+                                    {{ $item->item_name_snapshot }}
+                                </td>
+                            </tr>
+                            <tr class="text-slate-600 text-[9px]">
+                                <td class="pb-1 pl-2 text-slate-400">↳</td>
+                                <td class="pb-1 text-right">{{ number_format($item->gross_weight, 1) }}-{{ number_format($item->tare_weight, 1) }}</td>
+                                <td class="pb-1 text-right font-bold text-slate-900">{{ number_format($item->net_weight, 2) }}kg</td>
+                                <td class="pb-1 text-right">@ {{ number_format($item->price_per_kg, 0, ',', '.') }}</td>
+                                <td class="pb-1 text-right font-bold text-slate-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
 
         <!-- Total Calculation -->
         <div class="pt-2 border-t border-dashed border-slate-400 font-mono text-[10px] space-y-1">
