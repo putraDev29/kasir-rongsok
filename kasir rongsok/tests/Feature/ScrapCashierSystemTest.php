@@ -189,16 +189,73 @@ class ScrapCashierSystemTest extends TestCase
 
     public function test_role_based_access_control(): void
     {
-        // Kasir attempts to open User Management or Settings
-        $response = $this->actingAs($this->kasir)->get('/users');
-        $response->assertStatus(403);
+        // 1. Kasir & Admin can access Dashboard, Timbang Kasir, and Riwayat Pembelian
+        $this->actingAs($this->kasir)->get('/dashboard')->assertStatus(200);
+        $this->actingAs($this->admin)->get('/dashboard')->assertStatus(200);
 
-        $response = $this->actingAs($this->kasir)->get('/settings');
-        $response->assertStatus(403);
+        $this->actingAs($this->kasir)->get('/purchases/create')->assertStatus(200);
+        $this->actingAs($this->admin)->get('/purchases/create')->assertStatus(200);
 
-        // Super Admin can access Settings
-        $response = $this->actingAs($this->superAdmin)->get('/settings');
-        $response->assertStatus(200);
+        $this->actingAs($this->kasir)->get('/purchases')->assertStatus(200);
+        $this->actingAs($this->admin)->get('/purchases')->assertStatus(200);
+
+        // 2. Kasir and Admin are forbidden (403) from accessing Owner-only modules
+        $restrictedUrls = [
+            '/scrap-items',
+            '/suppliers',
+            '/debts',
+            '/sales',
+            '/delivery-orders',
+            '/stock',
+            '/expenses',
+            '/salary-slips',
+            '/reports',
+            '/users',
+            '/settings',
+        ];
+
+        foreach ($restrictedUrls as $url) {
+            $this->actingAs($this->kasir)->get($url)->assertStatus(403);
+            $this->actingAs($this->admin)->get($url)->assertStatus(403);
+            $this->actingAs($this->superAdmin)->get($url)->assertStatus(200);
+        }
+    }
+
+    public function test_purchase_cannot_exceed_master_buy_price(): void
+    {
+        $masterPrice = (float) $this->besiItem->buy_price_per_kg;
+
+        // Attempt 1: Price higher than master price -> MUST FAIL validation
+        $responseFail = $this->actingAs($this->kasir)->post('/purchases', [
+            'supplier_name' => 'Penjual Test Melebihi Harga',
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 50,
+                    'tare_weight' => 0,
+                    'price_per_kg' => $masterPrice + 2000, // MELEBIHI HARGA MASTER
+                ]
+            ]
+        ]);
+
+        $responseFail->assertSessionHasErrors(['items.0.price_per_kg']);
+
+        // Attempt 2: Price below or equal to master price -> MUST SUCCEED
+        $responseSuccess = $this->actingAs($this->kasir)->post('/purchases', [
+            'supplier_name' => 'Penjual Test Harga Wajar',
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 50,
+                    'tare_weight' => 0,
+                    'price_per_kg' => max(100, $masterPrice - 500), // DIBAWAH HARGA MASTER
+                ]
+            ]
+        ]);
+
+        $responseSuccess->assertSessionHas('success');
     }
 
     public function test_debt_deduction_in_purchase_cashier(): void
@@ -260,7 +317,7 @@ class ScrapCashierSystemTest extends TestCase
 
     public function test_salary_slip_creation_and_calculation(): void
     {
-        $response = $this->actingAs($this->admin)->post('/salary-slips', [
+        $response = $this->actingAs($this->superAdmin)->post('/salary-slips', [
             'employee_name' => 'Karyawan Test Gudang',
             'period_month' => 'November 2026',
             'payment_date' => now()->toDateString(),
@@ -283,7 +340,7 @@ class ScrapCashierSystemTest extends TestCase
 
     public function test_delivery_order_creation(): void
     {
-        $response = $this->actingAs($this->admin)->post('/delivery-orders', [
+        $response = $this->actingAs($this->superAdmin)->post('/delivery-orders', [
             'delivery_date' => now()->toDateString(),
             'recipient_name' => 'PT. Daur Ulang Mandiri',
             'driver_name' => 'Sopir Joko',
@@ -316,11 +373,11 @@ class ScrapCashierSystemTest extends TestCase
 
     public function test_create_pages_render_without_source_code_leak(): void
     {
-        $response = $this->actingAs($this->admin)->get('/delivery-orders/create');
+        $response = $this->actingAs($this->superAdmin)->get('/delivery-orders/create');
         $response->assertStatus(200);
         $response->assertSee('x-data="deliveryOrderForm()"', false);
 
-        $responseSalary = $this->actingAs($this->admin)->get('/salary-slips/create');
+        $responseSalary = $this->actingAs($this->superAdmin)->get('/salary-slips/create');
         $responseSalary->assertStatus(200);
         $responseSalary->assertSee('x-data="salarySlipForm()"', false);
     }
@@ -328,7 +385,7 @@ class ScrapCashierSystemTest extends TestCase
     public function test_expense_can_be_stored_with_manual_category_name(): void
     {
         $uniqueCatName = 'Kategori Manual ' . uniqid();
-        $response = $this->actingAs($this->admin)->post('/expenses', [
+        $response = $this->actingAs($this->superAdmin)->post('/expenses', [
             'new_category_name' => $uniqueCatName,
             'expense_date' => now()->toDateString(),
             'amount' => 125000,
@@ -348,7 +405,7 @@ class ScrapCashierSystemTest extends TestCase
 
     public function test_profit_loss_report_includes_incoming_outgoing_salaries_and_expenses(): void
     {
-        $response = $this->actingAs($this->admin)->get('/reports/profit-loss');
+        $response = $this->actingAs($this->superAdmin)->get('/reports/profit-loss');
         $response->assertStatus(200);
         $response->assertSee('Rincian Barang Masuk (Pembelian)');
         $response->assertSee('Rincian Barang Keluar (Penjualan)');
@@ -410,13 +467,13 @@ class ScrapCashierSystemTest extends TestCase
     public function test_purchases_report_has_price_list_pdf_export_and_price_list_renders_cleanly(): void
     {
         // 1. Check Purchases Report page has the "Daftar Harga Beli (PDF)" button
-        $response = $this->actingAs($this->admin)->get('/reports/purchases');
+        $response = $this->actingAs($this->superAdmin)->get('/reports/purchases');
         $response->assertStatus(200);
         $response->assertSee('Daftar Harga Beli (PDF)');
         $response->assertSee(route('scrap-items.print-price-list'));
 
         // 2. Check Price List Print/PDF view renders item names and prices for sellers
-        $priceListResponse = $this->actingAs($this->admin)->get('/scrap-items/print-price-list');
+        $priceListResponse = $this->actingAs($this->superAdmin)->get('/scrap-items/print-price-list');
         $priceListResponse->assertStatus(200);
         $priceListResponse->assertSee('DAFTAR HARGA BELI RONGSOK');
         $priceListResponse->assertSee('Nama Jenis Barang Rongsok');

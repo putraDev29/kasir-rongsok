@@ -72,61 +72,63 @@
 
             <!-- Navigation Links -->
             <nav class="flex-1 px-3 py-3 overflow-y-auto space-y-1 text-sm font-medium">
-                @if(Auth::user()->isAdmin())
-                    <a href="{{ route('dashboard') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('dashboard') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400"></i>
-                        <span>Dashboard</span>
-                    </a>
-                @endif
+                {{-- Dashboard: Dapat diakses oleh Owner, Admin, dan Kasir --}}
+                <a href="{{ route('dashboard') }}" 
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('dashboard') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400"></i>
+                    <span>Dashboard</span>
+                </a>
 
                 <div class="pt-2 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Transaksi Kasir</div>
 
+                {{-- Timbang Kasir (Penerimaan Barang) --}}
                 <a href="{{ route('purchases.create') }}" 
                    class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('purchases.create') ? 'bg-slate-800 text-emerald-400 font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
                     <i data-lucide="badge-dollar-sign" class="w-4 h-4 text-emerald-500"></i>
                     <span>Penerimaan Barang</span>
                 </a>
 
+                {{-- Riwayat Pembelian --}}
                 <a href="{{ route('purchases.index') }}" 
                    class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('purchases.index') || request()->routeIs('purchases.show') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
                     <i data-lucide="receipt" class="w-4 h-4 text-slate-400"></i>
                     <span>Riwayat Pembelian</span>
                 </a>
 
-                <a href="{{ route('debts.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('debts.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <i data-lucide="handshake" class="w-4 h-4 text-slate-400"></i>
-                    <span>Hutang Piutang (Modal)</span>
-                </a>
+                {{-- SELAIN ITU HANYA OWNER YANG BISA AKSES & UPDATE --}}
+                @if(Auth::user()->isSuperAdmin())
+                    <a href="{{ route('debts.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('debts.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <i data-lucide="handshake" class="w-4 h-4 text-slate-400"></i>
+                        <span>Hutang Piutang (Modal)</span>
+                    </a>
 
-                <a href="{{ route('sales.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('sales.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <i data-lucide="truck" class="w-4 h-4 text-slate-400"></i>
-                    <span>Penjualan Partai (Grosir)</span>
-                </a>
+                    <a href="{{ route('sales.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('sales.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <i data-lucide="truck" class="w-4 h-4 text-slate-400"></i>
+                        <span>Penjualan Partai (Grosir)</span>
+                    </a>
 
-                <a href="{{ route('delivery-orders.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('delivery-orders.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <i data-lucide="clipboard-list" class="w-4 h-4 text-slate-400"></i>
-                    <span>Surat Jalan Pengiriman</span>
-                </a>
+                    <a href="{{ route('delivery-orders.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('delivery-orders.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <i data-lucide="clipboard-list" class="w-4 h-4 text-slate-400"></i>
+                        <span>Surat Jalan Pengiriman</span>
+                    </a>
 
-                <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Gudang & Inventori</div>
+                    <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Gudang & Inventori</div>
 
-                <a href="{{ route('stock.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('stock.index') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <i data-lucide="boxes" class="w-4 h-4 text-slate-400"></i>
-                    <span>Stok & Nilai Barang</span>
-                </a>
+                    <a href="{{ route('stock.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('stock.index') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <i data-lucide="boxes" class="w-4 h-4 text-slate-400"></i>
+                        <span>Stok & Nilai Barang</span>
+                    </a>
 
-                <a href="{{ route('stock.movements') }}" 
-                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('stock.movements') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <i data-lucide="history" class="w-4 h-4 text-slate-400"></i>
-                    <span>Mutasi Stok (Ledger)</span>
-                </a>
+                    <a href="{{ route('stock.movements') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('stock.movements') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <i data-lucide="history" class="w-4 h-4 text-slate-400"></i>
+                        <span>Mutasi Stok (Ledger)</span>
+                    </a>
 
-                @if(Auth::user()->isAdmin())
                     <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Master Data</div>
 
                     <a href="{{ route('scrap-items.index') }}" 
@@ -172,9 +174,7 @@
                         <i data-lucide="pie-chart" class="w-4 h-4 text-slate-400"></i>
                         <span>Laba / Rugi Usaha</span>
                     </a>
-                @endif
 
-                @if(Auth::user()->isSuperAdmin())
                     <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Sistem</div>
 
                     <a href="{{ route('users.index') }}" 

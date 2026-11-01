@@ -43,6 +43,11 @@ class User extends Authenticatable
         return $this->role === self::ROLE_SUPER_ADMIN;
     }
 
+    public function isOwner(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
     public function isAdmin(): bool
     {
         return in_array($this->role, [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN], true);
@@ -65,22 +70,22 @@ class User extends Authenticatable
 
     public function canManagePrices(): bool
     {
-        return $this->isAdmin();
+        return $this->isSuperAdmin();
     }
 
     public function canAdjustStock(): bool
     {
-        return $this->isAdmin();
+        return $this->isSuperAdmin();
     }
 
     public function canCancelTransactions(): bool
     {
-        return $this->isAdmin();
+        return $this->isSuperAdmin();
     }
 
     public function canViewReports(): bool
     {
-        return $this->isAdmin();
+        return $this->isSuperAdmin();
     }
 
     public function purchaseTransactions(): HasMany

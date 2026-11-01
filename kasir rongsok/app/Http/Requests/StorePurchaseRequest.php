@@ -45,5 +45,41 @@ class StorePurchaseRequest extends FormRequest
             'items.*.gross_weight.gt' => 'Berat kotor timbangan harus lebih dari 0 kg.',
         ];
     }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $items = $this->input('items', []);
+            if (!is_array($items) || empty($items)) {
+                return;
+            }
+
+            $scrapItemIds = array_filter(array_column($items, 'scrap_item_id'));
+            if (empty($scrapItemIds)) {
+                return;
+            }
+
+            $scrapItems = \App\Models\ScrapItem::whereIn('id', $scrapItemIds)->get()->keyBy('id');
+
+            foreach ($items as $index => $item) {
+                $scrapItemId = $item['scrap_item_id'] ?? null;
+                $pricePerKg = isset($item['price_per_kg']) && is_numeric($item['price_per_kg'])
+                    ? (float) $item['price_per_kg']
+                    : null;
+
+                if ($scrapItemId && $pricePerKg !== null && isset($scrapItems[$scrapItemId])) {
+                    $masterItem = $scrapItems[$scrapItemId];
+                    $masterBuyPrice = (float) $masterItem->buy_price_per_kg;
+
+                    if ($masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
+                        $validator->errors()->add(
+                            "items.{$index}.price_per_kg",
+                            "Harga beli untuk {$masterItem->name} (Rp " . number_format($pricePerKg, 0, ',', '.') . ") melebihi harga master (Rp " . number_format($masterBuyPrice, 0, ',', '.') . "). Anda hanya dapat menginput harga sama atau di bawahnya."
+                        );
+                    }
+                }
+            }
+        });
+    }
 }
 

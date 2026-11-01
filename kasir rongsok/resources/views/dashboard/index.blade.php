@@ -212,9 +212,11 @@
             <div>
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="text-sm font-bold text-slate-900">Stok Terbanyak di Gudang</h3>
-                    <a href="{{ route('stock.index') }}" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold">
-                        Lihat Semua
-                    </a>
+                    @if(Auth::user()->isSuperAdmin())
+                        <a href="{{ route('stock.index') }}" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold">
+                            Lihat Semua
+                        </a>
+                    @endif
                 </div>
 
                 <div class="divide-y divide-slate-100">

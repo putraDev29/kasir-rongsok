@@ -86,6 +86,12 @@ class PurchaseTransactionService
                     ? (float) $row['price_per_kg']
                     : (float) $scrapItem->buy_price_per_kg;
 
+                // Validate that buying price does not exceed master price
+                $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
+                if ($masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
+                    throw new Exception("Harga beli untuk '{$scrapItem->name}' (Rp " . number_format($pricePerKg, 0, ',', '.') . ") melebihi harga master (Rp " . number_format($masterBuyPrice, 0, ',', '.') . "). Harga beli tidak boleh diubah di atas harga master.");
+                }
+
                 $itemSubtotal = round($net * $pricePerKg, 2);
 
                 $totalGrossWeight += $gross;

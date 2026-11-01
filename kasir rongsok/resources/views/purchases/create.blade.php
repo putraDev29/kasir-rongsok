@@ -168,10 +168,27 @@
 
                                         <!-- Price per Kg -->
                                         <td class="py-2 px-3">
-                                            <input type="number" step="100" min="0" 
-                                                   :name="'items[' + index + '][price_per_kg]'" 
-                                                   x-model.number="row.price_per_kg" 
-                                                   class="w-full py-1.5 px-2 text-xs text-right rounded border border-slate-300 focus:ring-1 focus:ring-emerald-500 font-mono">
+                                            <div class="space-y-0.5 min-w-[110px]">
+                                                <input type="number" step="100" min="0" 
+                                                       :max="getMasterPrice(row) > 0 ? getMasterPrice(row) : null"
+                                                       :name="'items[' + index + '][price_per_kg]'" 
+                                                       x-model.number="row.price_per_kg" 
+                                                       @input="validatePrice(row)"
+                                                       @change="validatePrice(row)"
+                                                       required
+                                                       class="w-full py-1.5 px-2 text-xs text-right rounded border font-mono transition-colors"
+                                                       :class="getMasterPrice(row) > 0 && row.price_per_kg > getMasterPrice(row) 
+                                                           ? 'border-red-500 bg-red-50 text-red-700 focus:ring-red-500' 
+                                                           : 'border-slate-300 focus:ring-1 focus:ring-emerald-500'">
+                                                
+                                                <template x-if="getMasterPrice(row) > 0">
+                                                    <div class="flex items-center justify-between text-[9px] px-0.5 leading-none"
+                                                         :class="row.price_per_kg > getMasterPrice(row) ? 'text-red-600 font-bold' : 'text-slate-400'">
+                                                        <span>Maks:</span>
+                                                        <span class="font-mono font-medium" x-text="formatRp(getMasterPrice(row))"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
                                         </td>
 
                                         <!-- Subtotal (Calculated) -->
@@ -559,12 +576,42 @@ function cashierPos() {
             return Math.max(0, sub - disc + round);
         },
 
+        getMasterPrice(row) {
+            if (!row || !row.scrap_item_id) return 0;
+            const found = this.masterItems.find(i => i.id == row.scrap_item_id);
+            return found ? parseFloat(found.buy_price_per_kg) || 0 : 0;
+        },
+
+        validatePrice(row) {
+            const max = this.getMasterPrice(row);
+            if (max > 0 && parseFloat(row.price_per_kg) > max) {
+                alert('Harga beli tidak boleh melebihi harga master (' + this.formatRp(max) + ')! Harga otomatis disesuaikan ke batas maksimum.');
+                row.price_per_kg = max;
+            }
+        },
+
         handleSubmit(e) {
             if (this.totalNetWeight() <= 0) {
                 e.preventDefault();
                 alert('Silakan masukkan berat timbangan yang valid (berat bersih > 0).');
                 return;
             }
+
+            for (let i = 0; i < this.rows.length; i++) {
+                const row = this.rows[i];
+                const max = this.getMasterPrice(row);
+                const currentPrice = parseFloat(row.price_per_kg) || 0;
+                if (max > 0 && currentPrice > max) {
+                    e.preventDefault();
+                    const found = this.masterItems.find(it => it.id == row.scrap_item_id);
+                    const itemName = found ? found.name : 'Baris ' + (i + 1);
+                    alert('Harga beli untuk "' + itemName + '" (Rp ' + currentPrice.toLocaleString('id-ID') + ') tidak boleh melebihi harga master (' + this.formatRp(max) + ').\nSilakan input harga sama atau di bawahnya.');
+                    row.price_per_kg = max;
+                    this.isSubmitting = false;
+                    return;
+                }
+            }
+
             this.isSubmitting = true;
         },
 
