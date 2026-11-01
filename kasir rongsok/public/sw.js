@@ -10,7 +10,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Pass-through to network for real-time POS data
+    // Only intercept GET requests for POS safety
+    if (event.request.method !== 'GET') {
+        return;
+    }
+
     event.respondWith(
         fetch(event.request).catch(() => {
             return new Response(

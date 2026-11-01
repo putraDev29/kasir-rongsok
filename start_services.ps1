@@ -56,21 +56,18 @@ for ($i = 0; $i -lt 15; $i++) {
     }
 }
 
-# Ambil IP LAN dan Hostname PC untuk akses Tablet
+# Ambil IP LAN PC untuk akses Tablet
 $lanIp = (ipconfig | Select-String "IPv4" | ForEach-Object { ($_ -split ":")[1].Trim() } | Select-Object -First 1)
-$pcName = $env:COMPUTERNAME
 
 Write-Host ""
 Write-Host "================================================================" -ForegroundColor Green
-Write-Host "  SEMUA LAYANAN BERHASIL AKTIF!" -ForegroundColor Green
-Write-Host "  - Akses PC Ini         : http://127.0.0.1:8000" -ForegroundColor Cyan
+Write-Host "  SEMUA LAYANAN KASIR RONGSOK BERHASIL AKTIF!" -ForegroundColor Green
+Write-Host "  - Akses PC Ini              : http://127.0.0.1:8000" -ForegroundColor Cyan
 if ($lanIp) {
-    Write-Host "  - Akses Tablet (IP)    : http://${lanIp}:8000" -ForegroundColor Yellow
+    Write-Host "  - Akses Tablet (Wajib Pakai): http://${lanIp}:8000" -ForegroundColor Yellow
+    Write-Host "    (Gunakan Google Chrome di Tablet dengan Wi-Fi yang sama)" -ForegroundColor DarkGray
 }
-if ($pcName) {
-    Write-Host "  - Akses Tablet (Host)  : http://$($pcName.ToLower()).local:8000" -ForegroundColor Yellow
-}
-Write-Host "  - WA Gateway REST API  : http://127.0.0.1:21465" -ForegroundColor Cyan
+Write-Host "  - WA Gateway REST API       : http://127.0.0.1:21465" -ForegroundColor Cyan
 Write-Host "================================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Membuka browser ke $targetUrl ..." -ForegroundColor Yellow

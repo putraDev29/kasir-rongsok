@@ -84,10 +84,78 @@ class IconGeneratorService
             $icoData = self::packIcoBinary($images);
             @file_put_contents($targetIcoPath, $icoData);
 
+            // Generate companion PWA icons (192px & 512px) if source image is in uploads folder
+            $sourceDir = dirname($sourceImagePath);
+            self::generatePwaIcons($sourceImagePath, $sourceDir);
+
             return true;
         } catch (Throwable $e) {
             Log::warning('Gagal menghasilkan icon ICO: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Generate standard 192px and 512px PNG icons for Android/iOS PWA manifests.
+     */
+    public static function generatePwaIcons(string $sourceImagePath, string $targetDir): void
+    {
+        try {
+            if (!file_exists($sourceImagePath) || !is_dir($targetDir)) {
+                return;
+            }
+
+            $imgData = @file_get_contents($sourceImagePath);
+            if (!$imgData) return;
+
+            $sourceImg = @imagecreatefromstring($imgData);
+            if (!$sourceImg) return;
+
+            $srcW = imagesx($sourceImg);
+            $srcH = imagesy($sourceImg);
+            $aspect = $srcW / max(1, $srcH);
+
+            $pwaConfigs = [
+                ['size' => 192, 'file' => 'pwa_icon_192.png', 'pad' => 0.05],
+                ['size' => 512, 'file' => 'pwa_icon_512.png', 'pad' => 0.05],
+                ['size' => 512, 'file' => 'pwa_icon_maskable.png', 'pad' => 0.15],
+            ];
+
+            foreach ($pwaConfigs as $cfg) {
+                $size = $cfg['size'];
+                $canvas = imagecreatetruecolor($size, $size);
+                imagealphablending($canvas, false);
+                imagesavealpha($canvas, true);
+                $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+                imagefilledrectangle($canvas, 0, 0, $size, $size, $transparent);
+                imagealphablending($canvas, true);
+
+                $padding = (int) round($size * $cfg['pad']);
+                $avail = $size - ($padding * 2);
+
+                if ($aspect >= 1) {
+                    $dstW = $avail;
+                    $dstH = (int) round($dstW / $aspect);
+                    $dstX = $padding;
+                    $dstY = (int) round(($size - $dstH) / 2);
+                } else {
+                    $dstH = $avail;
+                    $dstW = (int) round($dstH * $aspect);
+                    $dstY = $padding;
+                    $dstX = (int) round(($size - $dstW) / 2);
+                }
+
+                imagecopyresampled($canvas, $sourceImg, $dstX, $dstY, 0, 0, $dstW, $dstH, $srcW, $srcH);
+
+                imagealphablending($canvas, false);
+                imagesavealpha($canvas, true);
+                imagepng($canvas, $targetDir . DIRECTORY_SEPARATOR . $cfg['file'], 9);
+                imagedestroy($canvas);
+            }
+
+            imagedestroy($sourceImg);
+        } catch (Throwable $e) {
+            Log::warning('Gagal generate PWA icons: ' . $e->getMessage());
         }
     }
 

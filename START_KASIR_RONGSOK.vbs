@@ -93,7 +93,11 @@ Function GetChromePath()
     Next
 End Function
 
-' 0. Pastikan shortcut di Desktop dibuat jika belum ada (tanpa menimpa shortcut yang sudah aktif agar icon tidak flicker/revert)
+' 0. Pastikan Windows Firewall selalu mengizinkan akses Tablet/HP (Port 8000 & 21465)
+WshShell.Run "cmd /c netsh advfirewall firewall add rule name=""Kasir Rongsok Port 8000"" dir=in action=allow protocol=TCP localport=8000 profile=any >nul 2>&1", 0, False
+WshShell.Run "cmd /c netsh advfirewall firewall add rule name=""Kasir Rongsok WA Gateway"" dir=in action=allow protocol=TCP localport=21465 profile=any >nul 2>&1", 0, False
+
+' Pastikan shortcut di Desktop dibuat jika belum ada (tanpa menimpa shortcut yang sudah aktif agar icon tidak flicker/revert)
 Dim desktopLnkPath, autoDeskLnk, activeIconPath
 desktopLnkPath = WshShell.SpecialFolders("Desktop") & "\Kasir Rongsok.lnk"
 If Not fso.FileExists(desktopLnkPath) Then

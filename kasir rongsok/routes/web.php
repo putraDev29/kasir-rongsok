@@ -23,9 +23,55 @@ Route::get('/manifest.json', function () {
     $appName = \App\Models\BusinessSetting::get('app_name', 'Kasir Rongsok');
     $companyName = \App\Models\BusinessSetting::get('company_name', 'UD. Berkah Rongsok Makmur');
     $subtitle = \App\Models\BusinessSetting::get('app_subtitle', 'Sistem Depo & POS Timbang');
-    $logoUrl = \App\Models\BusinessSetting::logoUrl() ?: asset('icon-default.svg');
+    $logo = \App\Models\BusinessSetting::get('app_logo');
+
+    $icons = [];
+    $hasPwa192 = file_exists(public_path('uploads/logo/pwa_icon_192.png'));
+    $hasPwa512 = file_exists(public_path('uploads/logo/pwa_icon_512.png'));
+    $hasPwaMaskable = file_exists(public_path('uploads/logo/pwa_icon_maskable.png'));
+
+    if ($hasPwa192 && $hasPwa512) {
+        $icons[] = [
+            'src' => '/uploads/logo/pwa_icon_192.png',
+            'sizes' => '192x192',
+            'type' => 'image/png',
+            'purpose' => 'any',
+        ];
+        $icons[] = [
+            'src' => '/uploads/logo/pwa_icon_512.png',
+            'sizes' => '512x512',
+            'type' => 'image/png',
+            'purpose' => 'any',
+        ];
+        if ($hasPwaMaskable) {
+            $icons[] = [
+                'src' => '/uploads/logo/pwa_icon_maskable.png',
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'maskable',
+            ];
+        }
+    } else {
+        $mainLogo = ($logo && file_exists(public_path($logo))) ? '/' . ltrim($logo, '/') : '/icon-default.svg';
+        $isSvg = str_ends_with(strtolower($mainLogo), '.svg');
+        $icons = [
+            [
+                'src' => $mainLogo,
+                'sizes' => $isSvg ? 'any' : '192x192',
+                'type' => $isSvg ? 'image/svg+xml' : 'image/png',
+                'purpose' => 'any',
+            ],
+            [
+                'src' => $mainLogo,
+                'sizes' => $isSvg ? 'any' : '512x512',
+                'type' => $isSvg ? 'image/svg+xml' : 'image/png',
+                'purpose' => 'any maskable',
+            ],
+        ];
+    }
 
     return response()->json([
+        'id' => '/?source=pwa',
         'name' => $companyName ? "{$appName} - {$companyName}" : $appName,
         'short_name' => $appName,
         'description' => $subtitle,
@@ -35,14 +81,7 @@ Route::get('/manifest.json', function () {
         'background_color' => '#0f172a',
         'theme_color' => '#059669',
         'orientation' => 'any',
-        'icons' => [
-            [
-                'src' => $logoUrl,
-                'sizes' => '192x192 512x512 any',
-                'type' => str_ends_with(strtolower($logoUrl), '.svg') ? 'image/svg+xml' : 'image/png',
-                'purpose' => 'any maskable',
-            ],
-        ],
+        'icons' => $icons,
     ], 200, [
         'Content-Type' => 'application/manifest+json; charset=UTF-8',
         'Cache-Control' => 'no-cache, private',
