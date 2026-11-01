@@ -93,14 +93,18 @@ Function GetChromePath()
     Next
 End Function
 
-' 0. Pastikan shortcut di Desktop selalu sinkron dengan folder saat ini
-Dim desktopLnkPath, autoDeskLnk
+' 0. Pastikan shortcut di Desktop selalu sinkron dengan folder saat ini dan icon logo
+Dim desktopLnkPath, autoDeskLnk, iconPath
+iconPath = currentDir & "\app_icon.ico"
 desktopLnkPath = WshShell.SpecialFolders("Desktop") & "\Kasir Rongsok.lnk"
 Set autoDeskLnk = WshShell.CreateShortcut(desktopLnkPath)
 autoDeskLnk.TargetPath = "wscript.exe"
 autoDeskLnk.Arguments = """" & currentDir & "\START_KASIR_RONGSOK.vbs"""
 autoDeskLnk.WorkingDirectory = currentDir
 autoDeskLnk.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
+If fso.FileExists(iconPath) Then
+    autoDeskLnk.IconLocation = iconPath & ",0"
+End If
 autoDeskLnk.Save
 Set autoDeskLnk = Nothing
 

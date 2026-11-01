@@ -18,6 +18,37 @@ use App\Http\Controllers\WhatsAppGatewayController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+// Dynamic PWA Web Manifest (uses custom uploaded logo & business profile)
+Route::get('/manifest.json', function () {
+    $appName = \App\Models\BusinessSetting::get('app_name', 'Kasir Rongsok');
+    $companyName = \App\Models\BusinessSetting::get('company_name', 'UD. Berkah Rongsok Makmur');
+    $subtitle = \App\Models\BusinessSetting::get('app_subtitle', 'Sistem Depo & POS Timbang');
+    $logoUrl = \App\Models\BusinessSetting::logoUrl() ?: asset('icon-default.svg');
+
+    return response()->json([
+        'name' => $companyName ? "{$appName} - {$companyName}" : $appName,
+        'short_name' => $appName,
+        'description' => $subtitle,
+        'start_url' => '/',
+        'scope' => '/',
+        'display' => 'standalone',
+        'background_color' => '#0f172a',
+        'theme_color' => '#059669',
+        'orientation' => 'any',
+        'icons' => [
+            [
+                'src' => $logoUrl,
+                'sizes' => '192x192 512x512 any',
+                'type' => str_ends_with(strtolower($logoUrl), '.svg') ? 'image/svg+xml' : 'image/png',
+                'purpose' => 'any maskable',
+            ],
+        ],
+    ], 200, [
+        'Content-Type' => 'application/manifest+json; charset=UTF-8',
+        'Cache-Control' => 'no-cache, private',
+    ]);
+})->name('manifest.json');
+
 // Guest Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

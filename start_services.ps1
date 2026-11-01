@@ -25,11 +25,11 @@ if (-not $mysqlPort) {
     Write-Host "[OK] Database MySQL aktif di port 3306." -ForegroundColor Green
 }
 
-# 2. Jalankan Backend Kasir Rongsok (Port 8000)
+# 2. Jalankan Backend Kasir Rongsok (Port 8000 - Bind 0.0.0.0 agar bisa diakses Tablet/HP)
 $bePort = Get-NetTCPConnection -State Listen -LocalPort 8000 -ErrorAction SilentlyContinue
 if (-not $bePort) {
-    Write-Host "[2/3] Menjalankan Aplikasi Kasir Rongsok di port 8000..." -ForegroundColor White
-    Start-Process -FilePath "cmd.exe" -ArgumentList "/c php artisan serve --host=127.0.0.1 --port=8000" -WorkingDirectory $appDir -WindowStyle Minimized
+    Write-Host "[2/3] Menjalankan Aplikasi Kasir Rongsok di port 8000 (LAN/Tablet Ready)..." -ForegroundColor White
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c php artisan serve --host=0.0.0.0 --port=8000" -WorkingDirectory $appDir -WindowStyle Minimized
 } else {
     Write-Host "[2/3] Aplikasi Kasir Rongsok sudah berjalan di port 8000." -ForegroundColor Green
 }
@@ -56,11 +56,21 @@ for ($i = 0; $i -lt 15; $i++) {
     }
 }
 
+# Ambil IP LAN dan Hostname PC untuk akses Tablet
+$lanIp = (ipconfig | Select-String "IPv4" | ForEach-Object { ($_ -split ":")[1].Trim() } | Select-Object -First 1)
+$pcName = $env:COMPUTERNAME
+
 Write-Host ""
 Write-Host "================================================================" -ForegroundColor Green
 Write-Host "  SEMUA LAYANAN BERHASIL AKTIF!" -ForegroundColor Green
-Write-Host "  - Aplikasi Kasir Rongsok : $targetUrl" -ForegroundColor Cyan
-Write-Host "  - WA Gateway REST API    : http://127.0.0.1:21465" -ForegroundColor Cyan
+Write-Host "  - Akses PC Ini         : http://127.0.0.1:8000" -ForegroundColor Cyan
+if ($lanIp) {
+    Write-Host "  - Akses Tablet (IP)    : http://${lanIp}:8000" -ForegroundColor Yellow
+}
+if ($pcName) {
+    Write-Host "  - Akses Tablet (Host)  : http://$($pcName.ToLower()).local:8000" -ForegroundColor Yellow
+}
+Write-Host "  - WA Gateway REST API  : http://127.0.0.1:21465" -ForegroundColor Cyan
 Write-Host "================================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Membuka browser ke $targetUrl ..." -ForegroundColor Yellow

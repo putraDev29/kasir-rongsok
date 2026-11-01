@@ -6,6 +6,7 @@ if (-not $workingDir) {
 
 $wsh = New-Object -ComObject WScript.Shell
 $vbsPath = Join-Path $workingDir "START_KASIR_RONGSOK.vbs"
+$icoPath = Join-Path $workingDir "app_icon.ico"
 
 # 1. Project Directory Shortcut
 $projLnkPath = Join-Path $workingDir "START_KASIR_RONGSOK.lnk"
@@ -17,6 +18,9 @@ $projLnk.TargetPath = "wscript.exe"
 $projLnk.Arguments = "`"$vbsPath`""
 $projLnk.WorkingDirectory = $workingDir
 $projLnk.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
+if (Test-Path $icoPath) {
+    $projLnk.IconLocation = "$icoPath,0"
+}
 $projLnk.Save()
 Write-Host "Pintasan Folder Proyek berhasil dibuat: $projLnkPath" -ForegroundColor Green
 
@@ -36,6 +40,9 @@ if ($desktopPath -and (Test-Path $desktopPath -ErrorAction SilentlyContinue)) {
     $deskLnk.Arguments = "`"$vbsPath`""
     $deskLnk.WorkingDirectory = $workingDir
     $deskLnk.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
+    if (Test-Path $icoPath) {
+        $deskLnk.IconLocation = "$icoPath,0"
+    }
     $deskLnk.Save()
     Write-Host "Pintasan Desktop 'Kasir Rongsok' berhasil dibuat di: $deskLnkPath" -ForegroundColor Green
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\BusinessSetting;
+use App\Services\IconGeneratorService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -89,6 +90,16 @@ class SettingController extends Controller
                 }
 
                 BusinessSetting::set('app_logo', 'uploads/logo/' . $filename, 'branding');
+
+                // Generate Windows ICO & update Desktop/Project shortcuts
+                $uploadedFullPath = $destinationPath . DIRECTORY_SEPARATOR . $filename;
+                $rootIcoPath = realpath(base_path('..')) ? realpath(base_path('..')) . DIRECTORY_SEPARATOR . 'app_icon.ico' : base_path('../app_icon.ico');
+                $publicIcoPath = public_path('favicon.ico');
+
+                if (IconGeneratorService::generateIcoFromImage($uploadedFullPath, $rootIcoPath)) {
+                    @copy($rootIcoPath, $publicIcoPath);
+                    IconGeneratorService::syncWindowsDesktopShortcut($rootIcoPath);
+                }
             } elseif ($request->boolean('remove_logo')) {
                 $oldLogo = BusinessSetting::get('app_logo');
                 if ($oldLogo) {
@@ -103,6 +114,14 @@ class SettingController extends Controller
                     }
                 }
                 BusinessSetting::set('app_logo', null, 'branding');
+
+                // Reset Windows ICO to default icon & update shortcuts
+                $rootIcoPath = realpath(base_path('..')) ? realpath(base_path('..')) . DIRECTORY_SEPARATOR . 'app_icon.ico' : base_path('../app_icon.ico');
+                $publicIcoPath = public_path('favicon.ico');
+                if (IconGeneratorService::generateDefaultIco($rootIcoPath)) {
+                    @copy($rootIcoPath, $publicIcoPath);
+                    IconGeneratorService::syncWindowsDesktopShortcut($rootIcoPath);
+                }
             }
         } catch (Throwable $e) {
             Log::error('Gagal mengunggah logo usaha: ' . $e->getMessage(), [
