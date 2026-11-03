@@ -86,10 +86,14 @@ class PurchaseTransactionService
                 $itemTypeName = !empty($row['item_type_name']) ? trim($row['item_type_name']) : null;
 
                 if (in_array($unitType, ['pcs', 'satuan', 'unit'])) {
-                    $quantity = max(1, (float) ($row['quantity'] ?? 1));
-                    $gross = 0;
-                    $tare = 0;
-                    $net = $quantity;
+                    $rawQty = max(1, (float) ($row['quantity'] ?? 1));
+                    $tare = max(0, (float) ($row['tare_weight'] ?? 0));
+                    $net = max(0, $rawQty - $tare);
+                    if ($net <= 0) {
+                        $net = $rawQty;
+                    }
+                    $quantity = $net;
+                    $gross = $rawQty;
                     $pricePerUnit = isset($row['price_per_kg']) && is_numeric($row['price_per_kg'])
                         ? (float) $row['price_per_kg']
                         : (float) $scrapItem->buy_price_per_kg;

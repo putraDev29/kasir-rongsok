@@ -60,6 +60,21 @@ class FormatHelper
     }
 
     /**
+     * Calculate tare percentage string, e.g. "5%" or "2,5%" if tare > 0 and gross > 0.
+     */
+    public static function tarePercent(mixed $gross, mixed $tare): ?string
+    {
+        $g = (float) $gross;
+        $t = (float) $tare;
+        if ($g <= 0 || $t <= 0) {
+            return null;
+        }
+        $pct = ($t / $g) * 100;
+        $formatted = self::number(round($pct, 2));
+        return $formatted . '%';
+    }
+
+    /**
      * Generate Purchase Invoice Number: PPJ-[bulan_romawi]-[tahun_2_digit]-[0001]
      * Format: PPJ-XI-26-0001
      * Nomor urut reset setiap tahun.

@@ -179,12 +179,26 @@
                         </div>
                         @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
                             <div class="flex justify-between text-[9px] text-slate-600">
-                                <span>Jumlah Satuan</span>
-                                <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} pcs</span>
+                                <span>
+                                    @if($item->tare_weight > 0)
+                                        {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }} - {{ \App\Services\FormatHelper::number($item->tare_weight) }} pcs
+                                        @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                                            ({{ $pct }})
+                                        @endif
+                                    @else
+                                        Jumlah Satuan
+                                    @endif
+                                </span>
+                                <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}</span>
                             </div>
                         @else
                             <div class="flex justify-between text-[9px] text-slate-600">
-                                <span>{{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg</span>
+                                <span>
+                                    {{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg
+                                    @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
+                                        ({{ $pct }})
+                                    @endif
+                                </span>
                                 <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</span>
                             </div>
                         @endif
@@ -222,9 +236,19 @@
                                 <td class="pb-1 pl-2 text-slate-400">↳</td>
                                 <td class="pb-1 text-right">
                                     @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
-                                        {{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} pcs
+                                        @if($item->tare_weight > 0)
+                                            {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }}-{{ \App\Services\FormatHelper::number($item->tare_weight) }}
+                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                                                <span class="text-[8px] text-slate-500">({{ $pct }})</span>
+                                            @endif
+                                        @else
+                                            {{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}
+                                        @endif
                                     @else
                                         {{ \App\Services\FormatHelper::weight($item->gross_weight) }}-{{ \App\Services\FormatHelper::weight($item->tare_weight) }}
+                                        @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
+                                            <span class="text-[8px] text-slate-500">({{ $pct }})</span>
+                                        @endif
                                     @endif
                                 </td>
                                 <td class="pb-1 text-right font-bold text-slate-900">

@@ -38,6 +38,8 @@ class StorePurchaseRequest extends FormRequest
             'items.*.quantity' => 'nullable|numeric|min:0.01',
             'items.*.gross_weight' => 'nullable|numeric|min:0',
             'items.*.tare_weight' => 'nullable|numeric|min:0',
+            'items.*.tare_percent' => 'nullable|numeric|min:0|max:100',
+            'items.*.tare_mode' => 'nullable|string|max:20',
             'items.*.price_per_kg' => 'nullable|numeric|gt:0',
             'items.*.notes' => 'nullable|string|max:255',
         ];

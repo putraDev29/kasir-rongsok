@@ -204,7 +204,7 @@
 
                                 <!-- BARIS 2: VALUE ANGKA & SATUAN (TETAP 1 BARIS PENUH) -->
                                 <div class="grid grid-cols-6 gap-2 pt-1.5 border-t border-slate-100 items-end"
-                                     style="display: grid; grid-template-columns: minmax(75px, 0.85fr) minmax(80px, 1fr) minmax(75px, 0.9fr) minmax(85px, 1fr) minmax(95px, 1.1fr) minmax(110px, 1.3fr); gap: 0.5rem; align-items: end;">
+                                     style="display: grid; grid-template-columns: minmax(70px, 0.8fr) minmax(80px, 1fr) minmax(105px, 1.25fr) minmax(85px, 1fr) minmax(95px, 1.1fr) minmax(110px, 1.25fr); gap: 0.5rem; align-items: end;">
                                     <!-- 1. Tipe Satuan -->
                                     <div>
                                         <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 whitespace-nowrap">Satuan</label>
@@ -221,16 +221,17 @@
                                     <!-- 2. Berat Kotor / Qty -->
                                     <div>
                                         <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 whitespace-nowrap"
-                                               x-text="isPcsUnit(row) ? 'Qty (Pcs) *' : 'Kotor (kg) *'"></label>
+                                               x-text="isPcsUnit(row) ? 'Qty (' + (row.unit_type || 'pcs') + ') *' : 'Kotor (kg) *'"></label>
                                         <template x-if="isPcsUnit(row)">
                                             <div>
                                                 <input type="number" step="1" min="1" 
                                                        :name="'items[' + index + '][quantity]'" 
                                                        x-model.number="row.quantity" 
+                                                       @input="onGrossOrQtyChanged(row)"
                                                        placeholder="1"
                                                        required
                                                        class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border border-amber-300 bg-amber-50/60 font-mono font-bold text-amber-950">
-                                                <input type="hidden" :name="'items[' + index + '][gross_weight]'" value="0">
+                                                <input type="hidden" :name="'items[' + index + '][gross_weight]'" :value="row.quantity || 1">
                                             </div>
                                         </template>
                                         <template x-if="!isPcsUnit(row)">
@@ -238,6 +239,7 @@
                                                 <input type="number" step="0.01" min="0.01" 
                                                        :name="'items[' + index + '][gross_weight]'" 
                                                        x-model.number="row.gross_weight" 
+                                                       @input="onGrossOrQtyChanged(row)"
                                                        placeholder="0.00"
                                                        required
                                                        class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
@@ -246,22 +248,61 @@
                                         </template>
                                     </div>
 
-                                    <!-- 3. Pot./Tara (kg) -->
+                                    <!-- 3. Pot./Tara (Bisa Persen % atau Sesuai Satuan) -->
                                     <div>
-                                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 whitespace-nowrap">Tara (kg)</label>
-                                        <template x-if="isPcsUnit(row)">
+                                        <div class="flex items-center justify-between mb-0.5">
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Tara</label>
+                                            <!-- Toggle Mode: Satuan (kg/pcs/satuan) vs Persen (%) -->
+                                            <div class="inline-flex items-center text-[9px] font-bold rounded bg-slate-200/90 p-0.5 leading-none shadow-2xs">
+                                                <button type="button" 
+                                                        @click="setTareMode(row, 'unit')"
+                                                        :class="row.tare_mode !== 'percent' ? 'bg-white text-emerald-800 shadow-2xs font-black' : 'text-slate-500 hover:text-slate-800 font-semibold'"
+                                                        class="px-1.5 py-0.5 rounded transition-all uppercase text-[9px]"
+                                                        x-text="row.unit_type || 'kg'"></button>
+                                                <button type="button" 
+                                                        @click="setTareMode(row, 'percent')"
+                                                        :class="row.tare_mode === 'percent' ? 'bg-emerald-600 text-white shadow-2xs font-black' : 'text-slate-500 hover:text-slate-800 font-semibold'"
+                                                        class="px-1.5 py-0.5 rounded transition-all text-[9px]">%</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Mode Persen (%) -->
+                                        <template x-if="row.tare_mode === 'percent'">
                                             <div>
-                                                <div class="py-1.5 px-1.5 text-xs text-center text-slate-300 font-mono bg-slate-100 rounded-lg border border-slate-200 font-bold">-</div>
-                                                <input type="hidden" :name="'items[' + index + '][tare_weight]'" value="0">
+                                                <div class="relative">
+                                                    <input type="number" step="0.1" min="0" max="100"
+                                                           x-model.number="row.tare_percent"
+                                                           @input="onTarePercentChanged(row)"
+                                                           placeholder="0"
+                                                           class="w-full py-1.5 pl-1.5 pr-4 text-xs text-right rounded-lg border border-emerald-400 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-emerald-950 bg-emerald-50/40">
+                                                    <span class="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-emerald-700 pointer-events-none select-none">%</span>
+                                                </div>
+                                                <div class="text-[9px] text-right font-mono text-emerald-800 font-bold mt-0.5 truncate"
+                                                     x-show="rowTareWeight(row) > 0"
+                                                     x-text="'= ' + formatNum(rowTareWeight(row)) + ' ' + (row.unit_type || 'kg')"></div>
                                             </div>
                                         </template>
-                                        <template x-if="!isPcsUnit(row)">
-                                            <input type="number" step="0.01" min="0" 
-                                                   :name="'items[' + index + '][tare_weight]'" 
-                                                   x-model.number="row.tare_weight" 
-                                                   placeholder="0.00"
-                                                   class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono text-slate-700 bg-white">
+
+                                        <!-- Mode Nominal Satuan (kg / pcs / satuan) -->
+                                        <template x-if="row.tare_mode !== 'percent'">
+                                            <div>
+                                                <div class="relative">
+                                                    <input type="number" :step="isPcsUnit(row) ? '1' : '0.01'" min="0" 
+                                                           x-model.number="row.tare_weight" 
+                                                           @input="onTareWeightChanged(row)"
+                                                           placeholder="0.00"
+                                                           class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono text-slate-700 bg-white">
+                                                </div>
+                                                <div class="text-[9px] text-right font-mono text-slate-400 mt-0.5 truncate"
+                                                     x-show="calcTarePercent(row) > 0"
+                                                     x-text="'(' + calcTarePercent(row) + '%)'"></div>
+                                            </div>
                                         </template>
+
+                                        <!-- Hidden inputs for backend submission -->
+                                        <input type="hidden" :name="'items[' + index + '][tare_weight]'" :value="rowTareWeight(row)">
+                                        <input type="hidden" :name="'items[' + index + '][tare_percent]'" :value="row.tare_mode === 'percent' ? (row.tare_percent || 0) : 0">
+                                        <input type="hidden" :name="'items[' + index + '][tare_mode]'" :value="row.tare_mode || 'kg'">
                                     </div>
 
                                     <!-- 4. Hasil Bersih -->
@@ -269,7 +310,7 @@
                                         <label class="block text-[10px] font-bold text-emerald-800 uppercase tracking-wider mb-0.5 whitespace-nowrap">Bersih</label>
                                         <div class="py-1.5 px-1.5 text-xs text-right font-mono font-black rounded-lg bg-emerald-100/90 text-emerald-950 border border-emerald-300 truncate whitespace-nowrap">
                                             <template x-if="isPcsUnit(row)">
-                                                <span x-text="formatInteger(row.quantity || 1) + ' ' + (row.unit_type || 'pcs')"></span>
+                                                <span x-text="formatInteger(rowNetWeight(row)) + ' ' + (row.unit_type || 'pcs')"></span>
                                             </template>
                                             <template x-if="!isPcsUnit(row)">
                                                 <span x-text="formatNum(rowNetWeight(row)) + ' kg'"></span>
@@ -316,8 +357,14 @@
 
                         <div class="text-xs text-slate-600 flex items-center gap-3 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
                             <span>Item: <strong class="text-slate-900 font-mono" x-text="rows.length"></strong></span>
+                            <template x-if="totalGrossWeight() > 0 && totalTareWeight() > 0">
+                                <span>Kotor: <strong class="text-slate-700 font-mono" x-text="formatNum(totalGrossWeight()) + ' kg'"></strong></span>
+                            </template>
+                            <template x-if="totalTareWeight() > 0">
+                                <span>Tara: <strong class="text-red-600 font-mono font-bold" x-text="'-' + formatNum(totalTareWeight()) + ' kg'"></strong></span>
+                            </template>
                             <template x-if="totalNetWeight() > 0">
-                                <span>Timbangan: <strong class="text-emerald-700 font-mono font-bold" x-text="formatNum(totalNetWeight()) + ' kg'"></strong></span>
+                                <span>Bersih: <strong class="text-emerald-700 font-mono font-bold" x-text="formatNum(totalNetWeight()) + ' kg'"></strong></span>
                             </template>
                             <template x-if="totalNetWeight() <= 0 && totalPcsQty() > 0">
                                 <span>Satuan: <strong class="text-amber-700 font-mono font-bold" x-text="formatInteger(totalPcsQty()) + ' pcs'"></strong></span>
@@ -850,7 +897,7 @@ function cashierPos() {
         isSubmitting: false,
 
         rows: [
-            { uid: 1, scrap_item_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', price_per_kg: 0 }
+            { uid: 1, scrap_item_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
         ],
 
         init() {
@@ -1026,6 +1073,9 @@ function cashierPos() {
             } else if (!row.unit_type) {
                 row.unit_type = 'kg';
             }
+            if (row.tare_mode !== 'percent') {
+                row.tare_mode = row.unit_type || 'kg';
+            }
             row.dropdown_open = false;
             this.$nextTick(() => {
                 if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -1052,6 +1102,8 @@ function cashierPos() {
                 quantity: 1,
                 gross_weight: '',
                 tare_weight: '',
+                tare_percent: '',
+                tare_mode: 'kg',
                 price_per_kg: 0
             });
             this.$nextTick(() => {
@@ -1069,6 +1121,7 @@ function cashierPos() {
                 lastRow.scrap_item_id = item.id;
                 lastRow.search_text = itemLabel;
                 lastRow.unit_type = itemUnit;
+                lastRow.tare_mode = itemUnit;
                 lastRow.price_per_kg = parseFloat(item.buy_price_per_kg) || 0;
             } else {
                 this.rows.push({
@@ -1081,6 +1134,8 @@ function cashierPos() {
                     quantity: 1,
                     gross_weight: '',
                     tare_weight: '',
+                    tare_percent: '',
+                    tare_mode: itemUnit,
                     price_per_kg: parseFloat(item.buy_price_per_kg) || 0
                 });
             }
@@ -1101,6 +1156,9 @@ function cashierPos() {
                     row.unit_type = found.unit_type;
                 } else if (!row.unit_type) {
                     row.unit_type = 'kg';
+                }
+                if (row.tare_mode !== 'percent') {
+                    row.tare_mode = row.unit_type || 'kg';
                 }
             } else {
                 row.price_per_kg = 0;
@@ -1187,32 +1245,95 @@ function cashierPos() {
                     row.quantity = 1;
                 }
             }
+            if (row.tare_mode !== 'percent') {
+                row.tare_mode = row.unit_type || 'kg';
+            }
+        },
+
+        rowGrossAmount(row) {
+            if (!row) return 0;
+            if (this.isPcsUnit(row)) {
+                return parseFloat(row.quantity) || 0;
+            }
+            return parseFloat(row.gross_weight) || 0;
+        },
+
+        setTareMode(row, mode) {
+            const gross = this.rowGrossAmount(row);
+            if (mode === 'percent') {
+                row.tare_mode = 'percent';
+                const tareNominal = parseFloat(row.tare_weight) || 0;
+                if (gross > 0 && tareNominal > 0 && (!row.tare_percent || row.tare_percent == 0)) {
+                    row.tare_percent = Math.round((tareNominal / gross) * 1000) / 10;
+                }
+            } else {
+                row.tare_mode = row.unit_type || 'kg';
+                const pct = parseFloat(row.tare_percent) || 0;
+                if (gross > 0 && pct > 0 && (!row.tare_weight || row.tare_weight == 0)) {
+                    row.tare_weight = Math.round(((gross * pct) / 100) * 100) / 100;
+                }
+            }
+        },
+
+        rowTareWeight(row) {
+            if (!row) return 0;
+            const gross = this.rowGrossAmount(row);
+            if (row.tare_mode === 'percent') {
+                const pct = parseFloat(row.tare_percent) || 0;
+                if (pct <= 0 || gross <= 0) return 0;
+                return Math.round(((gross * pct) / 100) * 100) / 100;
+            }
+            return Math.max(0, parseFloat(row.tare_weight) || 0);
+        },
+
+        calcTarePercent(row) {
+            const gross = this.rowGrossAmount(row);
+            if (gross <= 0) return 0;
+            const tare = parseFloat(row.tare_weight) || 0;
+            if (tare <= 0) return 0;
+            const pct = (tare / gross) * 100;
+            return Math.round(pct * 10) / 10;
+        },
+
+        onTarePercentChanged(row) {
+            if (parseFloat(row.tare_percent) > 100) row.tare_percent = 100;
+            if (parseFloat(row.tare_percent) < 0) row.tare_percent = 0;
+        },
+
+        onTareWeightChanged(row) {
+            if (parseFloat(row.tare_weight) < 0) row.tare_weight = 0;
+        },
+
+        onGrossOrQtyChanged(row) {
+            // Percent tare dynamically updates when gross changes
         },
 
         rowNetWeight(row) {
-            if (this.isPcsUnit(row)) return 0;
-            const gross = parseFloat(row.gross_weight) || 0;
-            const tare = parseFloat(row.tare_weight) || 0;
+            const gross = this.rowGrossAmount(row);
+            const tare = this.rowTareWeight(row);
             return Math.max(0, gross - tare);
         },
 
         rowSubtotal(row) {
-            if (this.isPcsUnit(row)) {
-                const qty = Math.max(1, parseFloat(row.quantity) || 1);
-                const price = parseFloat(row.price_per_kg) || 0;
-                return Math.round(qty * price);
-            }
             const net = this.rowNetWeight(row);
             const price = parseFloat(row.price_per_kg) || 0;
             return Math.round(net * price);
         },
 
+        totalGrossWeight() {
+            return this.rows.reduce((acc, row) => acc + (!this.isPcsUnit(row) ? (parseFloat(row.gross_weight) || 0) : 0), 0);
+        },
+
+        totalTareWeight() {
+            return this.rows.reduce((acc, row) => acc + (!this.isPcsUnit(row) ? this.rowTareWeight(row) : 0), 0);
+        },
+
         totalNetWeight() {
-            return this.rows.reduce((acc, row) => acc + this.rowNetWeight(row), 0);
+            return this.rows.reduce((acc, row) => acc + (!this.isPcsUnit(row) ? this.rowNetWeight(row) : 0), 0);
         },
 
         totalPcsQty() {
-            return this.rows.reduce((acc, row) => acc + (this.isPcsUnit(row) ? (parseFloat(row.quantity) || 1) : 0), 0);
+            return this.rows.reduce((acc, row) => acc + (this.isPcsUnit(row) ? this.rowNetWeight(row) : 0), 0);
         },
 
         subtotalAmount() {
@@ -1294,7 +1415,7 @@ function cashierPos() {
         resetForm() {
             if (confirm('Yakin ingin mengosongkan seluruh tabel timbangan kasir?')) {
                 this.rows = [
-                    { uid: Date.now(), scrap_item_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', price_per_kg: 0 }
+                    { uid: Date.now(), scrap_item_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
                 ];
                 this.selectedSupplierId = '';
                 this.supplierName = 'Umum / Tunai';

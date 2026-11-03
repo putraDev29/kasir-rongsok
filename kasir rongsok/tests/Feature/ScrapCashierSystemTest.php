@@ -104,6 +104,55 @@ class ScrapCashierSystemTest extends TestCase
         ]);
     }
 
+    public function test_purchase_with_tare_nominal_and_percentage(): void
+    {
+        $service = app(PurchaseTransactionService::class);
+
+        // 1. Nominal tara (e.g. Gross 200 kg, Tara 10 kg -> Net 190 kg)
+        $txNominal = $service->createPurchase([
+            'supplier_name' => 'Supplier Tara Nominal',
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'unit_type' => 'kg',
+                    'gross_weight' => 200.00,
+                    'tare_weight' => 10.00,
+                    'price_per_kg' => 5000.00,
+                ]
+            ]
+        ], $this->kasir);
+
+        $this->assertEquals(200.00, (float) $txNominal->total_gross_weight);
+        $this->assertEquals(10.00, (float) $txNominal->total_tare_weight);
+        $this->assertEquals(190.00, (float) $txNominal->total_net_weight);
+        $this->assertEquals(950000.00, (float) $txNominal->final_amount);
+
+        // FormatHelper percentage check
+        $this->assertEquals('5%', \App\Services\FormatHelper::tarePercent(200, 10));
+
+        // 2. Tara in Pcs/Satuan (e.g. Qty 50 pcs, Tara 2 pcs -> Net 48 pcs)
+        $txPcs = $service->createPurchase([
+            'supplier_name' => 'Supplier Tara Pcs',
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'unit_type' => 'pcs',
+                    'quantity' => 50,
+                    'tare_weight' => 2,
+                    'price_per_kg' => 5000.00,
+                ]
+            ]
+        ], $this->kasir);
+
+        $pcsItem = $txPcs->items->first();
+        $this->assertEquals('pcs', $pcsItem->unit_type);
+        $this->assertEquals(48, (float) $pcsItem->quantity);
+        $this->assertEquals(2, (float) $pcsItem->tare_weight);
+        $this->assertEquals(240000.00, (float) $txPcs->final_amount);
+    }
+
     public function test_sale_deducts_stock_and_prevents_negative_stock(): void
     {
         $salesService = app(SalesTransactionService::class);
@@ -168,8 +217,8 @@ class ScrapCashierSystemTest extends TestCase
         $this->besiItem->refresh();
         $this->assertEquals($stockBefore + 50, (float) $this->besiItem->stockBalance->current_stock);
 
-        // Cancel by Admin
-        $cancelled = $service->cancelPurchase($tx, $this->admin, 'Salah timbang');
+        // Cancel by Super Admin (Owner)
+        $cancelled = $service->cancelPurchase($tx, $this->superAdmin, 'Salah timbang');
         $this->assertTrue($cancelled);
 
         $tx->refresh();

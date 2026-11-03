@@ -73,7 +73,13 @@ Alpine.store('waGateway', {
     },
 
     init() {
-        // Disabled background interval polling on hosting
+        const isEnabled = document.querySelector('meta[name="wa-gateway-enabled"]')?.getAttribute('content') === '1';
+        if (isEnabled) {
+            this.fetchStatus();
+            setInterval(() => {
+                this.fetchStatus();
+            }, 5000);
+        }
     },
 
     async fetchStatus() {

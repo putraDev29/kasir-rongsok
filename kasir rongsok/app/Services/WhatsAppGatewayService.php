@@ -344,14 +344,37 @@ class WhatsAppGatewayService
         $i = 1;
         foreach ($items as $item) {
             $itemName = $item->item_name_snapshot;
-            $bruto = number_format($item->gross_weight, 2, ',', '.');
-            $tara = number_format($item->tare_weight, 2, ',', '.');
-            $netto = number_format($item->net_weight, 2, ',', '.');
+            $unit = $item->unit_type ?: 'kg';
             $price = number_format($item->price_per_kg, 0, ',', '.');
             $subtotal = number_format($item->subtotal, 0, ',', '.');
 
+            if ($unit === 'pcs' || $unit === 'satuan') {
+                $qty = number_format($item->quantity, 0, ',', '.');
+                if ($item->tare_weight > 0) {
+                    $grossQty = $item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight);
+                    $bruto = number_format($grossQty, 0, ',', '.');
+                    $tara = number_format($item->tare_weight, 0, ',', '.');
+                    $pct = FormatHelper::tarePercent($grossQty, $item->tare_weight);
+                    $pctStr = $pct ? " [{$pct}]" : "";
+                    $weightLine = "   📦 {$qty} {$unit} (Kotor: {$bruto} - Pot: {$tara}{$pctStr})";
+                } else {
+                    $weightLine = "   📦 {$qty} {$unit}";
+                }
+            } else {
+                $bruto = number_format($item->gross_weight, 2, ',', '.');
+                $tara = number_format($item->tare_weight, 2, ',', '.');
+                $netto = number_format($item->net_weight, 2, ',', '.');
+                if ($item->tare_weight > 0) {
+                    $pct = FormatHelper::tarePercent($item->gross_weight, $item->tare_weight);
+                    $pctStr = $pct ? " [{$pct}]" : "";
+                    $weightLine = "   ⚖️ {$netto} kg (Kotor: {$bruto} kg - Pot: {$tara} kg{$pctStr})";
+                } else {
+                    $weightLine = "   ⚖️ {$netto} kg";
+                }
+            }
+
             $line = "{$i}. *{$itemName}*\n"
-                  . "   ⚖️ {$netto} kg (Kotor: {$bruto} kg - Pot: {$tara} kg)\n"
+                  . "{$weightLine}\n"
                   . "   💵 @Rp {$price} = *Rp {$subtotal}*";
             $itemLines[] = $line;
             $i++;

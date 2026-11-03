@@ -123,10 +123,36 @@
                                 <td class="py-2.5 px-3 text-slate-400">{{ $idx + 1 }}</td>
                                 <td class="py-2.5 px-3 font-mono font-medium text-slate-600">{{ $item->item_code_snapshot }}</td>
                                 <td class="py-2.5 px-3 font-bold text-slate-800">{{ $item->item_name_snapshot }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono text-slate-600">{{ number_format($item->gross_weight, 2) }} kg</td>
-                                <td class="py-2.5 px-3 text-right font-mono text-slate-600">{{ number_format($item->tare_weight, 2) }} kg</td>
+                                <td class="py-2.5 px-3 text-right font-mono text-slate-600">
+                                    @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                        {{ number_format($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), 0, ',', '.') }} {{ $item->unit_type ?: 'pcs' }}
+                                    @else
+                                        {{ number_format($item->gross_weight, 2, ',', '.') }} kg
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono text-slate-600">
+                                    @if($item->tare_weight > 0)
+                                        @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                            {{ number_format($item->tare_weight, 0, ',', '.') }} {{ $item->unit_type ?: 'pcs' }}
+                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                                                <span class="text-[11px] text-slate-400 font-normal">({{ $pct }})</span>
+                                            @endif
+                                        @else
+                                            {{ number_format($item->tare_weight, 2, ',', '.') }} kg
+                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
+                                                <span class="text-[11px] text-slate-400 font-normal">({{ $pct }})</span>
+                                            @endif
+                                        @endif
+                                    @else
+                                        <span class="text-slate-300">-</span>
+                                    @endif
+                                </td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700 bg-emerald-50/30">
-                                    {{ number_format($item->net_weight, 2) }} kg
+                                    @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                        {{ number_format($item->quantity, 0, ',', '.') }} {{ $item->unit_type ?: 'pcs' }}
+                                    @else
+                                        {{ number_format($item->net_weight, 2, ',', '.') }} kg
+                                    @endif
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono text-slate-700">Rp {{ number_format($item->price_per_kg, 0, ',', '.') }}</td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>

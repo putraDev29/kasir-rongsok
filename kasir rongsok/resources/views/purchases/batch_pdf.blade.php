@@ -316,12 +316,26 @@
                                         <table class="item-grid">
                                             @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
                                                 <tr>
-                                                    <td>Satuan</td>
-                                                    <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} pcs</td>
+                                                    <td>
+                                                        @if($item->tare_weight > 0)
+                                                            {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }} - {{ \App\Services\FormatHelper::number($item->tare_weight) }} pcs
+                                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                                                                ({{ $pct }})
+                                                            @endif
+                                                        @else
+                                                            Satuan
+                                                        @endif
+                                                    </td>
+                                                    <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}</td>
                                                 </tr>
                                             @else
                                                 <tr>
-                                                    <td>{{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg</td>
+                                                    <td>
+                                                        {{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg
+                                                        @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
+                                                            ({{ $pct }})
+                                                        @endif
+                                                    </td>
                                                     <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</td>
                                                 </tr>
                                             @endif
