@@ -13,10 +13,17 @@ use Illuminate\Support\Facades\Log;
 class WhatsAppGatewayService
 {
     protected string $baseUrl;
+    protected bool $enabled;
 
     public function __construct()
     {
         $this->baseUrl = config('services.whatsapp_gateway.url', 'http://127.0.0.1:21465');
+        $this->enabled = (bool) config('services.whatsapp_gateway.enabled', false);
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
     }
 
     /**
@@ -24,6 +31,15 @@ class WhatsAppGatewayService
      */
     public function getStatus(): array
     {
+        if (!$this->enabled) {
+            return [
+                'status' => 'DISABLED',
+                'connected' => false,
+                'enabled' => false,
+                'message' => 'WhatsApp Gateway dinonaktifkan di server hosting (gunakan tombol wa.me untuk kirim pesan/nota).',
+            ];
+        }
+
         try {
             $response = Http::timeout(3)->get("{$this->baseUrl}/api/status");
             if ($response->successful()) {
@@ -48,6 +64,15 @@ class WhatsAppGatewayService
      */
     public function getQrCode(): array
     {
+        if (!$this->enabled) {
+            return [
+                'status' => 'DISABLED',
+                'connected' => false,
+                'qr' => null,
+                'message' => 'WhatsApp Gateway dinonaktifkan.',
+            ];
+        }
+
         try {
             $response = Http::timeout(4)->get("{$this->baseUrl}/api/qr");
             if ($response->successful()) {
@@ -72,6 +97,13 @@ class WhatsAppGatewayService
      */
     public function logout(): array
     {
+        if (!$this->enabled) {
+            return [
+                'success' => false,
+                'message' => 'WhatsApp Gateway dinonaktifkan.',
+            ];
+        }
+
         try {
             $response = Http::timeout(25)->post("{$this->baseUrl}/api/logout");
             if ($response->successful()) {
@@ -95,6 +127,13 @@ class WhatsAppGatewayService
      */
     public function reconnect(): array
     {
+        if (!$this->enabled) {
+            return [
+                'success' => false,
+                'message' => 'WhatsApp Gateway dinonaktifkan.',
+            ];
+        }
+
         try {
             $response = Http::timeout(25)->post("{$this->baseUrl}/api/reconnect");
             if ($response->successful()) {
@@ -118,6 +157,13 @@ class WhatsAppGatewayService
      */
     public function clearChat(string $phone): array
     {
+        if (!$this->enabled) {
+            return [
+                'success' => false,
+                'message' => 'WhatsApp Gateway dinonaktifkan.',
+            ];
+        }
+
         try {
             $response = Http::timeout(10)->post("{$this->baseUrl}/api/clear-chat", [
                 'phone' => $this->formatPhone($phone),
@@ -163,6 +209,13 @@ class WhatsAppGatewayService
      */
     public function sendMessage(string $phone, string $message): array
     {
+        if (!$this->enabled) {
+            return [
+                'success' => false,
+                'message' => 'WhatsApp Gateway sedang dinonaktifkan di server hosting. Silakan gunakan tombol Buka Chat (wa.me).',
+            ];
+        }
+
         $targetPhone = $this->formatPhone($phone);
         if (empty($targetPhone)) {
             return [
@@ -199,6 +252,13 @@ class WhatsAppGatewayService
      */
     public function sendFile(string $phone, string $fileBase64, string $filename = 'Dokumen.pdf', ?string $caption = null): array
     {
+        if (!$this->enabled) {
+            return [
+                'success' => false,
+                'message' => 'WhatsApp Gateway sedang dinonaktifkan di server hosting. Silakan gunakan tombol Buka Chat (wa.me) atau Unduh PDF.',
+            ];
+        }
+
         $targetPhone = $this->formatPhone($phone);
         if (empty($targetPhone)) {
             return [

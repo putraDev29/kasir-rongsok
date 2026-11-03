@@ -32,6 +32,7 @@ return [
     ],
 
     'whatsapp_gateway' => [
+        'enabled' => env('WHATSAPP_GATEWAY_ENABLED', false),
         'url' => env('WHATSAPP_GATEWAY_URL', 'http://127.0.0.1:21465'),
     ],
 

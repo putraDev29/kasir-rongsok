@@ -73,10 +73,7 @@ Alpine.store('waGateway', {
     },
 
     init() {
-        this.fetchStatus();
-        setInterval(() => {
-            this.fetchStatus();
-        }, 5000);
+        // Disabled background interval polling on hosting
     },
 
     async fetchStatus() {

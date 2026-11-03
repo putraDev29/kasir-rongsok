@@ -250,25 +250,29 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <!-- WhatsApp Gateway Quick Trigger (Like Dental Care) -->
-                    <button type="button"
-                            @click="$store.waGateway.isOpen = true"
-                            class="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all shadow-xs cursor-pointer"
-                            :class="{
-                                'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100': $store.waGateway.connected,
-                                'border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100 ring-2 ring-amber-300/60 animate-pulse': !$store.waGateway.connected && $store.waGateway.status === 'QR_READY',
-                                'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100': !$store.waGateway.connected && $store.waGateway.status !== 'QR_READY'
-                            }"
-                            :title="$store.waGateway.connected ? 'WhatsApp Gateway Online (' + ($store.waGateway.phone || 'Terhubung') + ')' : ($store.waGateway.status === 'QR_READY' ? 'Scan QR WhatsApp Gateway' : 'WhatsApp Gateway Offline')">
-                        <x-whatsapp-icon class="w-3.5 h-3.5 shrink-0" :class="$store.waGateway.connected ? 'text-emerald-600' : (!$store.waGateway.connected && $store.waGateway.status === 'QR_READY' ? 'text-amber-600' : 'text-slate-500')" />
-                        <span class="hidden sm:inline" x-text="$store.waGateway.connected ? 'WA Terhubung' : ($store.waGateway.status === 'QR_READY' ? 'Scan QR WA' : 'WA Gateway')"></span>
-                        <span class="h-2 w-2 rounded-full"
-                              :class="{
-                                  'bg-emerald-500': $store.waGateway.connected,
-                                  'bg-amber-500 animate-ping': !$store.waGateway.connected && $store.waGateway.status === 'QR_READY',
-                                  'bg-rose-400': !$store.waGateway.connected && $store.waGateway.status !== 'QR_READY'
-                              }"></span>
-                    </button>
+                    @if(config('services.whatsapp_gateway.enabled', false))
+                        <!-- WhatsApp Gateway Quick Trigger (Like Dental Care) -->
+                        <button type="button"
+                                @click="$store.waGateway.isOpen = true"
+                                class="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                                :class="{
+                                    'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100': $store.waGateway.connected,
+                                    'border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100 ring-2 ring-amber-300/60 animate-pulse': !$store.waGateway.connected && $store.waGateway.status === 'QR_READY',
+                                    'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100': !$store.waGateway.connected && $store.waGateway.status !== 'QR_READY'
+                                }"
+                                :title="$store.waGateway.connected ? 'WhatsApp Gateway Online (' + ($store.waGateway.phone || 'Terhubung') + ')' : ($store.waGateway.status === 'QR_READY' ? 'Scan QR WhatsApp Gateway' : 'WhatsApp Gateway Offline')">
+                            <span x-bind:class="$store.waGateway.connected ? 'text-emerald-600' : (!$store.waGateway.connected && $store.waGateway.status === 'QR_READY' ? 'text-amber-600' : 'text-slate-500')">
+                                <x-whatsapp-icon class="w-3.5 h-3.5 shrink-0" />
+                            </span>
+                            <span class="hidden sm:inline" x-text="$store.waGateway.connected ? 'WA Terhubung' : ($store.waGateway.status === 'QR_READY' ? 'Scan QR WA' : 'WA Gateway')"></span>
+                            <span class="h-2 w-2 rounded-full"
+                                  :class="{
+                                      'bg-emerald-500': $store.waGateway.connected,
+                                      'bg-amber-500 animate-ping': !$store.waGateway.connected && $store.waGateway.status === 'QR_READY',
+                                      'bg-rose-400': !$store.waGateway.connected && $store.waGateway.status !== 'QR_READY'
+                                  }"></span>
+                        </button>
+                    @endif
 
                     <div class="hidden md:flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
                         <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
@@ -324,7 +328,9 @@
     </div>
 
     <!-- WhatsApp Gateway & Receipt Modals -->
-    @include('components.whatsapp-gateway-modal')
+    @if(config('services.whatsapp_gateway.enabled', false))
+        @include('components.whatsapp-gateway-modal')
+    @endif
     @include('components.whatsapp-receipt-modal')
 
     @stack('scripts')

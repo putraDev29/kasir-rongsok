@@ -217,38 +217,57 @@
                         <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-950">5. Integrasi WhatsApp Gateway (WPPConnect Service)</h3>
                     </div>
 
-                    <button type="button" 
-                            @click="$store.waGateway.isOpen = true"
-                            class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5">
-                        <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
-                        <span>Buka Panel Gateway & Scan QR</span>
-                    </button>
+                    @if(config('services.whatsapp_gateway.enabled', false))
+                        <button type="button" 
+                                @click="$store.waGateway.isOpen = true"
+                                class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5">
+                            <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+                            <span>Buka Panel Gateway & Scan QR</span>
+                        </button>
+                    @else
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700 border border-slate-300">
+                            DINONAKTIFKAN DI HOSTING
+                        </span>
+                    @endif
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                    <div class="sm:col-span-2 space-y-1.5">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold text-slate-800">Status Server:</span>
-                            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold"
-                                  :class="{
-                                      'bg-emerald-100 text-emerald-800 border border-emerald-300': $store.waGateway.connected,
-                                      'bg-amber-100 text-amber-800 border border-amber-300': !$store.waGateway.connected && $store.waGateway.status === 'QR_READY',
-                                      'bg-rose-100 text-rose-800 border border-rose-300': !$store.waGateway.connected && $store.waGateway.status !== 'QR_READY'
-                                  }">
-                                <span x-text="$store.waGateway.connected ? '🟢 Terhubung (Online)' : ($store.waGateway.status === 'QR_READY' ? '🟡 Menunggu Scan QR' : '🔴 Offline / Belum Jalan')"></span>
-                            </span>
+                @if(config('services.whatsapp_gateway.enabled', false))
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                        <div class="sm:col-span-2 space-y-1.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-800">Status Server:</span>
+                                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold"
+                                      :class="{
+                                          'bg-emerald-100 text-emerald-800 border border-emerald-300': $store.waGateway.connected,
+                                          'bg-amber-100 text-amber-800 border border-amber-300': !$store.waGateway.connected && $store.waGateway.status === 'QR_READY',
+                                          'bg-rose-100 text-rose-800 border border-rose-300': !$store.waGateway.connected && $store.waGateway.status !== 'QR_READY'
+                                      }">
+                                    <span x-text="$store.waGateway.connected ? '🟢 Terhubung (Online)' : ($store.waGateway.status === 'QR_READY' ? '🟡 Menunggu Scan QR' : '🔴 Offline / Belum Jalan')"></span>
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Gateway WhatsApp berjalan di latar belakang (Port 21465). Sistem ini memungkinkan pengiriman nota timbangan pembelian, faktur penjualan partai, dan bukti bayar kasbon langsung ke nomor WhatsApp pemasok & pelanggan.
+                            </p>
                         </div>
-                        <p class="text-xs text-slate-600 leading-relaxed">
-                            Gateway WhatsApp berjalan di latar belakang (Port 21465). Sistem ini memungkinkan pengiriman nota timbangan pembelian, faktur penjualan partai, dan bukti bayar kasbon langsung ke nomor WhatsApp pemasok & pelanggan.
+
+                        <div class="p-3 bg-white rounded-xl border border-emerald-200 text-xs space-y-1.5">
+                            <div class="text-[11px] text-slate-500 font-medium">Nomor Terhubung:</div>
+                            <div class="font-bold text-slate-900 font-mono" x-text="$store.waGateway.phone || '(Belum Terhubung)'"></div>
+                            <div class="text-[10px] text-slate-400">Endpoint: http://127.0.0.1:21465</div>
+                        </div>
+                    </div>
+                @else
+                    <div class="p-4 bg-white rounded-xl border border-emerald-200 text-xs space-y-2">
+                        <div class="flex items-center gap-2 text-slate-800 font-bold">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                            <span>Layanan Gateway Latar Belakang Nonaktif (Standar Hosting)</span>
+                        </div>
+                        <p class="text-slate-600 leading-relaxed">
+                            Layanan background service WPPConnect dinonaktifkan di server hosting agar sistem berjalan ringan tanpa beban proses background node.js.
+                            Pengiriman pesan dan dokumen PDF nota ke WhatsApp tetap berjalan 100% normal dan lancar melalui integrasi tautan <strong>Buka Chat (wa.me)</strong> langsung dari browser.
                         </p>
                     </div>
-
-                    <div class="p-3 bg-white rounded-xl border border-emerald-200 text-xs space-y-1.5">
-                        <div class="text-[11px] text-slate-500 font-medium">Nomor Terhubung:</div>
-                        <div class="font-bold text-slate-900 font-mono" x-text="$store.waGateway.phone || '(Belum Terhubung)'"></div>
-                        <div class="text-[10px] text-slate-400">Endpoint: http://127.0.0.1:21465</div>
-                    </div>
-                </div>
+                @endif
             </div>
 
             <div class="pt-2 flex justify-end">
