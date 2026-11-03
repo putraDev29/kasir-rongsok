@@ -276,9 +276,9 @@ class ScrapItemController extends Controller
             if ($sendPdf) {
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('scrap_items.price_list_pdf', compact('categories', 'settings'))
                     ->setPaper('a4', 'portrait');
-                $pdfOutput = $pdf->output();
+                $fileBase64 = base64_encode($pdf->output());
                 $filename = $request->input('filename') ?: ('Daftar_Harga_Beli_Rongsok_' . date('Ymd') . '.pdf');
-                $res = $waService->sendFile($phone, $pdfOutput, $filename, $customCaption);
+                $res = $waService->sendFile($phone, $fileBase64, $filename, $customCaption);
             } else {
                 $res = $waService->sendMessage($phone, $customCaption);
             }

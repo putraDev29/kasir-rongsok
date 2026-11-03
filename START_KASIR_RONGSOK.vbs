@@ -101,16 +101,29 @@ WshShell.Run "cmd /c netsh advfirewall firewall add rule name=""Kasir Rongsok WA
 Dim desktopLnkPath, autoDeskLnk, activeIconPath
 desktopLnkPath = WshShell.SpecialFolders("Desktop") & "\Kasir Rongsok.lnk"
 If Not fso.FileExists(desktopLnkPath) Then
-    activeIconPath = currentDir & "\app_logo_active.ico"
-    If Not fso.FileExists(activeIconPath) Then
-        activeIconPath = currentDir & "\app_icon.ico"
+    activeIconPath = ""
+    If fso.FileExists(currentDir & "\app_logo_active.ico") Then
+        If fso.GetFile(currentDir & "\app_logo_active.ico").Size > 500 Then
+            activeIconPath = currentDir & "\app_logo_active.ico"
+        End If
     End If
+    If activeIconPath = "" And fso.FileExists(currentDir & "\app_icon.ico") Then
+        If fso.GetFile(currentDir & "\app_icon.ico").Size > 500 Then
+            activeIconPath = currentDir & "\app_icon.ico"
+        End If
+    End If
+    If activeIconPath = "" And fso.FileExists(currentDir & "\kasir rongsok\public\favicon.ico") Then
+        If fso.GetFile(currentDir & "\kasir rongsok\public\favicon.ico").Size > 500 Then
+            activeIconPath = currentDir & "\kasir rongsok\public\favicon.ico"
+        End If
+    End If
+
     Set autoDeskLnk = WshShell.CreateShortcut(desktopLnkPath)
     autoDeskLnk.TargetPath = "wscript.exe"
     autoDeskLnk.Arguments = """" & currentDir & "\START_KASIR_RONGSOK.vbs"""
     autoDeskLnk.WorkingDirectory = currentDir
     autoDeskLnk.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
-    If fso.FileExists(activeIconPath) Then
+    If activeIconPath <> "" Then
         autoDeskLnk.IconLocation = activeIconPath & ",0"
     End If
     autoDeskLnk.Save

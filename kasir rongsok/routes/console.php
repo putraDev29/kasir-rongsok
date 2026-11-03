@@ -76,3 +76,17 @@ Artisan::command('app:reset-transactions {--force : Paksa reset tanpa konfirmasi
     return 0;
 })->purpose('Hapus semua data transaksi dan reset stok ke 0, menyisakan akun user dan master barang');
 
+Artisan::command('app:generate-icon', function () {
+    $this->info('Menghasilkan file icon ICO Windows secara dinamis...');
+    $success = \App\Services\IconGeneratorService::generateCurrentOrFallbackIco();
+    if ($success) {
+        $path = \App\Services\IconGeneratorService::resolveActiveIconPath();
+        $this->info("[V] Icon berhasil diperbarui di: {$path} (Ukuran: " . filesize($path) . " bytes)");
+        return 0;
+    } else {
+        $this->error('[X] Gagal menghasilkan icon.');
+        return 1;
+    }
+})->purpose('Generate icon Windows ICO secara dinamis untuk pintasan desktop dan favicon');
+
+

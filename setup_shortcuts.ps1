@@ -7,11 +7,48 @@ if (-not $workingDir) {
 $wsh = New-Object -ComObject WScript.Shell
 $vbsPath = Join-Path $workingDir "START_KASIR_RONGSOK.vbs"
 
-# Pilih icon aktif: app_logo_active.ico (logo usaha custom) jika ada, atau app_icon.ico
-$icoPath = Join-Path $workingDir "app_logo_active.ico"
-if (-not (Test-Path $icoPath)) {
-    $icoPath = Join-Path $workingDir "app_icon.ico"
+# Deteksi dan pilih icon aktif secara dinamis (multi-fallback & auto-generate jika hilang)
+$candidateIcons = @(
+    (Join-Path $workingDir "app_logo_active.ico"),
+    (Join-Path $workingDir "app_icon.ico"),
+    (Join-Path $workingDir "kasir rongsok\public\favicon.ico")
+)
+
+$foundIcon = $null
+foreach ($cand in $candidateIcons) {
+    if (Test-Path $cand) {
+        $fi = Get-Item $cand
+        if ($fi.Length -gt 500) {
+            $foundIcon = $cand
+            break
+        }
+    }
 }
+
+if (-not $foundIcon) {
+    # Generate icon secara dinamis menggunakan PHP jika belum tersedia
+    $phpCmd = "php"
+    if (Test-Path "C:\xampp\php\php.exe") { $phpCmd = "C:\xampp\php\php.exe" }
+    elseif (Test-Path "D:\xampp\php\php.exe") { $phpCmd = "D:\xampp\php\php.exe" }
+    elseif (Test-Path "E:\xampp\php\php.exe") { $phpCmd = "E:\xampp\php\php.exe" }
+
+    $artisan = Join-Path $workingDir "kasir rongsok\artisan"
+    if (Test-Path $artisan) {
+        & $phpCmd $artisan app:generate-icon 2>$null
+    }
+
+    foreach ($cand in $candidateIcons) {
+        if (Test-Path $cand) {
+            $fi = Get-Item $cand
+            if ($fi.Length -gt 500) {
+                $foundIcon = $cand
+                break
+            }
+        }
+    }
+}
+
+$icoPath = if ($foundIcon) { $foundIcon } else { Join-Path $workingDir "app_icon.ico" }
 
 # 1. Project Directory Shortcut
 $projLnkPath = Join-Path $workingDir "START_KASIR_RONGSOK.lnk"

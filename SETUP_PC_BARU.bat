@@ -160,7 +160,10 @@ echo [OK] Port 8000 dan 21465 berhasil diizinkan di Firewall.
 
 :: 8. Buat Pintasan Desktop
 echo.
-echo [7/7] Membuat Pintasan Desktop Kasir Rongsok...
+echo [7/7] Menghasilkan Icon & Membuat Pintasan Desktop...
+cd "kasir rongsok"
+call php artisan app:generate-icon >nul 2>&1
+cd ..
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_shortcuts.ps1" >nul 2>&1
 echo [OK] Pintasan Desktop berhasil dibuat.
 

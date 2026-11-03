@@ -260,8 +260,8 @@ class DeliveryOrderController extends Controller
         if ($sendPdf) {
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('delivery_orders.pdf', compact('deliveryOrder', 'settings'))
                 ->setPaper('a5', 'landscape');
-            $pdfOutput = $pdf->output();
-            $res = $waService->sendFile($phone, $pdfOutput, $filename, $caption);
+            $fileBase64 = base64_encode($pdf->output());
+            $res = $waService->sendFile($phone, $fileBase64, $filename, $caption);
         } else {
             $res = $waService->sendMessage($phone, $caption);
         }

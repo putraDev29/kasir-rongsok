@@ -98,7 +98,7 @@ class SettingController extends Controller
 
                 // Generate Windows ICO & update Desktop/Project shortcuts
                 $uploadedFullPath = $destinationPath . DIRECTORY_SEPARATOR . $filename;
-                $projectRoot = realpath(base_path('..')) ?: base_path('..');
+                $projectRoot = IconGeneratorService::resolveProjectRoot();
                 $activeLogoIcoPath = $projectRoot . DIRECTORY_SEPARATOR . 'app_logo_active.ico';
                 $legacyIcoPath = $projectRoot . DIRECTORY_SEPARATOR . 'app_icon.ico';
                 $publicIcoPath = public_path('favicon.ico');
@@ -107,6 +107,8 @@ class SettingController extends Controller
                     @copy($activeLogoIcoPath, $legacyIcoPath);
                     @copy($activeLogoIcoPath, $publicIcoPath);
                     IconGeneratorService::syncWindowsDesktopShortcut($activeLogoIcoPath);
+                } elseif (IconGeneratorService::generateIcoFromImage($uploadedFullPath, $publicIcoPath)) {
+                    @copy($publicIcoPath, $legacyIcoPath);
                 }
             } elseif ($request->boolean('remove_logo')) {
                 $oldLogo = BusinessSetting::get('app_logo');
@@ -124,7 +126,7 @@ class SettingController extends Controller
                 BusinessSetting::set('app_logo', null, 'branding');
 
                 // Reset Windows ICO to default icon & update shortcuts
-                $projectRoot = realpath(base_path('..')) ?: base_path('..');
+                $projectRoot = IconGeneratorService::resolveProjectRoot();
                 $activeLogoIcoPath = $projectRoot . DIRECTORY_SEPARATOR . 'app_logo_active.ico';
                 $legacyIcoPath = $projectRoot . DIRECTORY_SEPARATOR . 'app_icon.ico';
                 $publicIcoPath = public_path('favicon.ico');
@@ -136,6 +138,8 @@ class SettingController extends Controller
                 if (IconGeneratorService::generateDefaultIco($legacyIcoPath)) {
                     @copy($legacyIcoPath, $publicIcoPath);
                     IconGeneratorService::syncWindowsDesktopShortcut($legacyIcoPath);
+                } else {
+                    IconGeneratorService::generateDefaultIco($publicIcoPath);
                 }
             }
         } catch (Throwable $e) {

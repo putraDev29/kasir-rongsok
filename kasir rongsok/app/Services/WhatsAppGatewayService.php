@@ -224,10 +224,12 @@ class WhatsAppGatewayService
             ];
         }
 
+        $cleanMessage = mb_convert_encoding($message, 'UTF-8', 'UTF-8');
+
         try {
             $response = Http::timeout(30)->post("{$this->baseUrl}/api/send-message", [
                 'phone' => $targetPhone,
-                'message' => $message,
+                'message' => $cleanMessage,
             ]);
 
             if ($response->successful()) {
@@ -242,7 +244,7 @@ class WhatsAppGatewayService
             Log::error('WhatsAppGateway sendMessage error: ' . $e->getMessage());
             return [
                 'success' => false,
-                'message' => 'Koneksi ke WhatsApp Gateway gagal: ' . $e->getMessage(),
+                'message' => 'Koneksi ke gateway gagal: ' . $e->getMessage(),
             ];
         }
     }
@@ -267,12 +269,22 @@ class WhatsAppGatewayService
             ];
         }
 
+        // 1. Ensure file is clean ASCII base64:
+        // If it starts with '%PDF' or is raw binary (contains non-ASCII characters), base64-encode it!
+        if (str_starts_with($fileBase64, '%PDF') || !mb_check_encoding($fileBase64, 'ASCII') || preg_match('/[^\x20-\x7E\r\n\t]/', $fileBase64)) {
+            $fileBase64 = base64_encode($fileBase64);
+        }
+
+        // 2. Clean caption & filename to prevent malformed UTF-8 characters
+        $cleanCaption = mb_convert_encoding($caption ?? '', 'UTF-8', 'UTF-8');
+        $cleanFilename = mb_convert_encoding($filename ?: 'Dokumen.pdf', 'UTF-8', 'UTF-8');
+
         try {
             $response = Http::timeout(45)->post("{$this->baseUrl}/api/send-file", [
                 'phone' => $targetPhone,
                 'fileBase64' => $fileBase64,
-                'filename' => $filename,
-                'caption' => $caption ?? '',
+                'filename' => $cleanFilename,
+                'caption' => $cleanCaption,
             ]);
 
             if ($response->successful()) {
