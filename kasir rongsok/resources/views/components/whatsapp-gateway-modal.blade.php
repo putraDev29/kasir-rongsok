@@ -27,7 +27,7 @@
             <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-slate-50">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-                        <i data-lucide="message-square" class="w-4 h-4"></i>
+                        <x-whatsapp-icon class="w-4 h-4 text-white" />
                     </div>
                     <div>
                         <h3 class="text-sm font-bold text-slate-900">WhatsApp Gateway (WPPConnect)</h3>

@@ -126,11 +126,20 @@
                             <td class="py-3 px-3 font-medium text-slate-800">{{ $tx->supplier_name }}</td>
                             <td class="py-3 px-3 font-bold text-slate-900">
                                 {{ $item->item_name_snapshot }}
+                                @if($item->item_type_name)
+                                    <span class="text-xs font-semibold text-emerald-700">({{ $item->item_type_name }})</span>
+                                @endif
                                 <span class="text-[10px] font-mono text-slate-400 font-normal">({{ $item->item_code_snapshot }})</span>
                             </td>
-                            <td class="py-3 px-3 text-right font-mono font-bold text-slate-800">{{ number_format($item->net_weight, 2) }} kg</td>
-                            <td class="py-3 px-3 text-right font-mono text-slate-600">Rp {{ number_format($item->price_per_kg, 0, ',', '.') }}</td>
-                            <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                            <td class="py-3 px-3 text-right font-mono font-bold text-slate-800">
+                                @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                    {{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} pcs
+                                @else
+                                    {{ \App\Services\FormatHelper::weight($item->net_weight) }} kg
+                                @endif
+                            </td>
+                            <td class="py-3 px-3 text-right font-mono text-slate-600">Rp {{ \App\Services\FormatHelper::number($item->price_per_kg) }}</td>
+                            <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">Rp {{ \App\Services\FormatHelper::number($item->subtotal) }}</td>
                             <td class="py-3 px-3 text-slate-600">{{ $tx->user?->name }}</td>
                         </tr>
                     @empty
@@ -139,6 +148,21 @@
                         </tr>
                     @endforelse
                 </tbody>
+                @if($items->count() > 0)
+                    <tfoot class="bg-slate-50 font-bold border-t-2 border-slate-300">
+                        <tr>
+                            <td colspan="4" class="py-3 px-3 uppercase text-slate-800 text-right">TOTAL KESELURUHAN PERIODE:</td>
+                            <td class="py-3 px-3 text-right font-mono font-black text-slate-900">
+                                {{ \App\Services\FormatHelper::weight($totalWeight) }} kg
+                            </td>
+                            <td></td>
+                            <td class="py-3 px-3 text-right font-mono font-black text-emerald-700">
+                                Rp {{ \App\Services\FormatHelper::number($totalAmount) }}
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                @endif
             </table>
         </div>
 

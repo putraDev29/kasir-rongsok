@@ -74,11 +74,48 @@
             @endif
         </form>
 
-        <a href="{{ route('salary-slips.create') }}" 
-           class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm shrink-0">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            <span>Buat Slip Gaji Baru</span>
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('salary-slips.batch-pdf', request()->query()) }}" target="_blank"
+               class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+               title="Unduh Berkas PDF Rekap Penggajian">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
+                <span>PDF Rekap</span>
+            </a>
+
+            <a href="{{ route('salary-slips.excel', request()->query()) }}" 
+               class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+               title="Export Data ke Excel">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                <span>Excel</span>
+            </a>
+
+            <button type="button"
+                    @click="openWaPdfModal({
+                        title: 'Kirim Rekapitulasi Gaji Karyawan PDF',
+                        subtitle: 'Kirim berkas dokumen PDF ringkasan penggajian karyawan ke WhatsApp',
+                        filename: 'Rekap_Penggajian_Karyawan_' + ('{{ $period ?: date("Ymd") }}') + '.pdf',
+                        fileDescription: 'Dokumen PDF Rekap Penggajian, Tunjangan & Kasbon Karyawan',
+                        pdfUrl: '{{ route('salary-slips.batch-pdf', request()->query()) }}',
+                        previewUrl: '{{ route('salary-slips.wa-global.preview', request()->query()) }}',
+                        sendUrl: '{{ route('salary-slips.send-wa-global') }}',
+                        sendPayload: {
+                            search: '{{ addslashes($search) }}',
+                            period_month: '{{ $period }}'
+                        },
+                        submitButtonText: 'Kirim Rekap Gaji PDF via WA'
+                    })"
+                    class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                    title="Kirim Rekap Penggajian PDF via WhatsApp">
+                <x-whatsapp-icon class="w-3.5 h-3.5" />
+                <span>Kirim WA Rekap (PDF)</span>
+            </button>
+
+            <a href="{{ route('salary-slips.create') }}" 
+               class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm shrink-0">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Buat Slip Baru</span>
+            </a>
+        </div>
     </div>
 
     <!-- Slips Table -->
@@ -123,36 +160,59 @@
                             </td>
 
                             <td class="py-3 px-4 text-right font-mono text-slate-700">
-                                Rp {{ number_format($slip->basic_salary, 0, ',', '.') }}
+                                {{ \App\Services\FormatHelper::rupiah($slip->basic_salary) }}
                             </td>
 
                             <td class="py-3 px-4 text-right font-mono text-emerald-600 font-semibold">
-                                + Rp {{ number_format($slip->allowance_amount + $slip->bonus_amount, 0, ',', '.') }}
+                                + {{ \App\Services\FormatHelper::rupiah($slip->allowance_amount + $slip->bonus_amount) }}
                             </td>
 
                             <td class="py-3 px-4 text-right font-mono text-red-600 font-semibold">
-                                - Rp {{ number_format($slip->total_deduction, 0, ',', '.') }}
+                                - {{ \App\Services\FormatHelper::rupiah($slip->total_deduction) }}
                                 @if($slip->debt_deduction > 0)
-                                    <div class="text-[10px] text-slate-400">Kasbon: Rp {{ number_format($slip->debt_deduction, 0, ',', '.') }}</div>
+                                    <div class="text-[10px] text-slate-400">Kasbon: {{ \App\Services\FormatHelper::rupiah($slip->debt_deduction) }}</div>
                                 @endif
                             </td>
 
                             <td class="py-3 px-4 text-right font-mono font-black text-slate-900 text-sm">
-                                Rp {{ number_format($slip->net_salary, 0, ',', '.') }}
+                                {{ \App\Services\FormatHelper::rupiah($slip->net_salary) }}
                             </td>
 
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
+                                    <a href="{{ route('salary-slips.pdf', $slip) }}"
+                                       class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] flex items-center gap-1 shadow-sm"
+                                       title="Download PDF Slip">
+                                        <i data-lucide="download" class="w-3 h-3"></i>
+                                        <span>PDF</span>
+                                    </a>
+
+                                    <button type="button"
+                                            @click="openWaPdfModal({
+                                                title: 'Kirim Slip Gaji Karyawan PDF',
+                                                subtitle: 'Kirim berkas dokumen PDF resmi slip gaji ke WhatsApp karyawan',
+                                                phone: '{{ $slip->employeeUser?->phone ?? $slip->employee_phone }}',
+                                                filename: 'Slip_Gaji_{{ $slip->slip_number }}.pdf',
+                                                fileDescription: 'Dokumen PDF Resmi Slip Gaji & Honor Karyawan',
+                                                pdfUrl: '{{ route('salary-slips.pdf', $slip) }}',
+                                                previewUrl: '{{ route('salary-slips.wa-preview', $slip) }}',
+                                                sendUrl: '{{ route('salary-slips.send-wa', $slip) }}',
+                                                submitButtonText: 'Kirim Slip PDF via WA'
+                                            })"
+                                            class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" 
+                                            title="Kirim Slip Gaji PDF ke Karyawan">
+                                        <x-whatsapp-icon class="w-4 h-4" />
+                                    </button>
+
                                     <a href="{{ route('salary-slips.print', $slip) }}" target="_blank"
-                                       class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] flex items-center gap-1"
-                                       title="Cetak PDF HVS Landscape Bagi 2">
+                                       class="p-1 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded"
+                                       title="Print Preview">
                                         <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                                        <span>PDF / Cetak</span>
                                     </a>
 
                                     <a href="{{ route('salary-slips.show', $slip) }}" 
                                        class="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded" title="Lihat Detail">
-                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                                     </a>
                                 </div>
                             </td>

@@ -86,11 +86,20 @@
                             <td class="py-2 px-1 text-slate-400">{{ $idx + 1 }}</td>
                             <td class="py-2 px-2 font-sans font-bold text-slate-900">
                                 {{ $item->item_name_snapshot }}
+                                @if($item->item_type_name)
+                                    <span class="text-xs font-semibold text-emerald-700">({{ $item->item_type_name }})</span>
+                                @endif
                                 <span class="text-slate-400 font-mono text-[10px] font-normal">({{ $item->item_code_snapshot }})</span>
                             </td>
-                            <td class="py-2 px-2 text-right font-bold text-slate-800">{{ number_format($item->weight, 2) }} kg</td>
-                            <td class="py-2 px-2 text-right">Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }}</td>
-                            <td class="py-2 px-2 text-right font-bold text-slate-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                            <td class="py-2 px-2 text-right font-bold text-slate-800">
+                                @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                    {{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} pcs
+                                @else
+                                    {{ \App\Services\FormatHelper::weight($item->weight) }} kg
+                                @endif
+                            </td>
+                            <td class="py-2 px-2 text-right">Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }}</td>
+                            <td class="py-2 px-2 text-right font-bold text-slate-900">Rp {{ \App\Services\FormatHelper::number($item->subtotal) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -102,24 +111,35 @@
             <div class="w-64 space-y-1">
                 <div class="flex justify-between text-slate-600">
                     <span>Total Berat:</span>
-                    <span class="font-bold text-slate-900">{{ number_format($sale->total_weight, 2) }} kg</span>
+                    <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg</span>
                 </div>
                 <div class="flex justify-between text-slate-600">
                     <span>Subtotal:</span>
-                    <span>Rp {{ number_format($sale->subtotal_amount, 0, ',', '.') }}</span>
+                    <span>Rp {{ \App\Services\FormatHelper::number($sale->subtotal_amount) }}</span>
                 </div>
                 @if($sale->discount_amount > 0)
                     <div class="flex justify-between text-slate-600">
                         <span>Diskon:</span>
-                        <span>- Rp {{ number_format($sale->discount_amount, 0, ',', '.') }}</span>
+                        <span>- Rp {{ \App\Services\FormatHelper::number($sale->discount_amount) }}</span>
                     </div>
                 @endif
                 <div class="pt-1.5 border-t-2 border-slate-900 flex justify-between font-bold text-sm text-slate-900 font-sans">
                     <span>TOTAL TAGIHAN:</span>
-                    <span class="font-mono text-base">Rp {{ number_format($sale->final_amount, 0, ',', '.') }}</span>
+                    <span class="font-mono text-base">Rp {{ \App\Services\FormatHelper::number($sale->final_amount) }}</span>
                 </div>
+                @if($sale->bank_info)
+                    <div class="text-[10px] text-slate-500 pt-1 text-right">
+                        Rekening: {{ $sale->bank_info }}
+                    </div>
+                @endif
             </div>
         </div>
+
+        @if(!empty($settings['delivery_order_notes']))
+            <div class="mt-4 pt-2 border-t border-dashed border-slate-300 text-center text-[10px] text-slate-500 italic">
+                {{ $settings['delivery_order_notes'] }}
+            </div>
+        @endif
 
         <!-- Signatures -->
         <div class="grid grid-cols-3 gap-6 pt-10 text-center font-sans text-xs text-slate-600">

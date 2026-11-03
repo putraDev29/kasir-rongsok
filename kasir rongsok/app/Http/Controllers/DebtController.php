@@ -8,7 +8,11 @@ use App\Models\DebtPayment;
 use App\Models\PaymentMethod;
 use App\Models\Supplier;
 use App\Services\DebtService;
+use App\Services\FormatHelper;
+use App\Services\WhatsAppGatewayService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,7 +55,12 @@ class DebtController extends Controller
         $totalPaid = (float) Debt::sum('paid_amount');
         $totalRemaining = (float) Debt::sum('remaining_amount');
 
-        return view('debts.index', compact('debts', 'suppliers', 'paymentMethods', 'status', 'type', 'search', 'totalInitial', 'totalPaid', 'totalRemaining'));
+        $justCreatedDebt = null;
+        if (session('just_created_debt_id')) {
+            $justCreatedDebt = Debt::with(['supplier', 'user'])->find(session('just_created_debt_id'));
+        }
+
+        return view('debts.index', compact('debts', 'suppliers', 'paymentMethods', 'status', 'type', 'search', 'totalInitial', 'totalPaid', 'totalRemaining', 'justCreatedDebt'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -64,12 +73,17 @@ class DebtController extends Controller
             'date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:date',
             'initial_amount' => 'required|numeric|gt:0',
+            'guarantee_info' => 'nullable|string|max:255',
+            'witness_name' => 'nullable|string|max:150',
+            'agreement_notes' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:500',
         ]);
 
         try {
             $debt = $this->debtService->createDebt($validated, Auth::user());
-            return back()->with('success', "Pinjaman modal {$debt->debt_number} untuk {$debt->borrower_name} berhasil dicatat.");
+            return redirect()->route('debts.index')
+                ->with('success', "Pinjaman modal {$debt->debt_number} untuk {$debt->borrower_name} berhasil dicatat.")
+                ->with('just_created_debt_id', $debt->id);
         } catch (Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -113,6 +127,329 @@ class DebtController extends Controller
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
         return view('debts.print_payment', compact('payment', 'format', 'settings'));
+    }
+
+    /**
+     * Printable view of Debt / Loan Agreement Letter (Surat Perjanjian Hutang Piutang / Modal - Task 17).
+     */
+    public function agreement(Debt $debt): View
+    {
+        $debt->load(['supplier', 'user']);
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $owner = \App\Models\User::where('role', \App\Models\User::ROLE_SUPER_ADMIN)->first();
+        $ownerName = $settings['owner_name'] ?? ($owner?->name ?? 'Bapak Hartono (Owner)');
+
+        return view('debts.agreement', compact('debt', 'settings', 'ownerName'));
+    }
+
+    /**
+     * Download PDF Surat Perjanjian Hutang Piutang (Task 17).
+     */
+    public function agreementPdf(Debt $debt)
+    {
+        $debt->load(['supplier', 'user']);
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $owner = \App\Models\User::where('role', \App\Models\User::ROLE_SUPER_ADMIN)->first();
+        $ownerName = $settings['owner_name'] ?? ($owner?->name ?? 'Bapak Hartono (Owner)');
+
+        $pdf = Pdf::loadView('debts.agreement_pdf', compact('debt', 'settings', 'ownerName'))
+            ->setPaper('a4', 'portrait');
+
+        $cleanNum = str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number);
+        $filename = "Surat_Perjanjian_{$cleanNum}.pdf";
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Preview Debt Agreement WhatsApp message and PDF metadata.
+     */
+    public function previewAgreementWa(Debt $debt): JsonResponse
+    {
+        $debt->load(['supplier', 'user']);
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $owner = \App\Models\User::where('role', \App\Models\User::ROLE_SUPER_ADMIN)->first();
+        $ownerName = $settings['owner_name'] ?? ($owner?->name ?? 'Bapak Hartono (Owner)');
+
+        $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
+        $phone = $debt->borrower_phone ?? '';
+
+        $msg = "*SURAT PERJANJIAN PINJAMAN MODAL / HUTANG*\n";
+        $msg .= "*{$companyName}*\n";
+        $msg .= "----------------------------------------\n";
+        $msg .= "🔖 No. Perjanjian: *" . ($debt->agreement_number ?: ('SPH-PPJ-' . $debt->debt_number)) . "*\n";
+        $msg .= "🔖 No. Referensi : {$debt->debt_number}\n";
+        $msg .= "🗓️ Tanggal       : " . $debt->date->format('d/m/Y') . "\n";
+        $msg .= "👤 Pihak Pertama : *{$ownerName}* (Owner)\n";
+        $msg .= "👤 Pihak Kedua   : *{$debt->borrower_name}* (Peminjam)\n";
+        if ($debt->borrower_phone) {
+            $msg .= "📞 HP Peminjam   : {$debt->borrower_phone}\n";
+        }
+        $msg .= "----------------------------------------\n";
+        $msg .= "💰 *NOMINAL PINJAMAN MODAL:*\n";
+        $msg .= "👉 *" . FormatHelper::rupiah($debt->initial_amount) . "*\n";
+        $msg .= "👉 _(" . FormatHelper::terbilang($debt->initial_amount) . " Rupiah)_\n";
+        if ($debt->due_date) {
+            $msg .= "⏳ Batas Waktu   : " . $debt->due_date->format('d/m/Y') . "\n";
+        }
+        if ($debt->guarantee_info) {
+            $msg .= "🔒 Jaminan/Agunan: {$debt->guarantee_info}\n";
+        }
+        $msg .= "----------------------------------------\n";
+        $msg .= "📄 *Terlampir berkas PDF resmi Surat Perjanjian Hutang Piutang (SPH)* lengkap tanda tangan Owner & Peminjam.\n";
+        $msg .= "Dokumen ini dicatat sah pada sistem kasir depo rongsok.";
+
+        $cleanNum = str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number);
+        $pdfFilename = "SPH_{$cleanNum}.pdf";
+        $pdfUrl = route('debts.agreement-pdf', $debt);
+
+        return response()->json([
+            'success' => true,
+            'phone' => $phone,
+            'message' => $msg,
+            'pdf_filename' => $pdfFilename,
+            'pdf_url' => $pdfUrl,
+            'file_description' => "Dokumen PDF Surat Perjanjian Hutang Modal ({$debt->debt_number})",
+        ]);
+    }
+
+    /**
+     * Send Debt Agreement summary to WhatsApp (with PDF attachment).
+     */
+    public function agreementWa(Request $request, Debt $debt)
+    {
+        $debt->load(['supplier', 'user']);
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $owner = \App\Models\User::where('role', \App\Models\User::ROLE_SUPER_ADMIN)->first();
+        $ownerName = $settings['owner_name'] ?? ($owner?->name ?? 'Bapak Hartono (Owner)');
+
+        $phone = $request->input('phone', $debt->borrower_phone);
+        $sendPdf = $request->boolean('send_pdf', true);
+        $caption = $request->input('caption') ?: $request->input('message');
+        $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
+
+        if (empty($phone)) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Nomor WhatsApp peminjam wajib diisi.'], 422);
+            }
+            return back()->with('error', 'Nomor WhatsApp peminjam wajib diisi.');
+        }
+
+        if (empty($caption)) {
+            $caption = "*SURAT PERJANJIAN PINJAMAN MODAL / HUTANG*\n";
+            $caption .= "*{$companyName}*\n";
+            $caption .= "----------------------------------------\n";
+            $caption .= "🔖 No. Perjanjian: *" . ($debt->agreement_number ?: ('SPH-PPJ-' . $debt->debt_number)) . "*\n";
+            $caption .= "👤 Owner Depo    : *{$ownerName}*\n";
+            $caption .= "👤 Peminjam      : *{$debt->borrower_name}*\n";
+            $caption .= "💰 Nominal Pinjam: *" . FormatHelper::rupiah($debt->initial_amount) . "*\n";
+            $caption .= "📄 Terlampir berkas resmi Surat Perjanjian Hutang Modal (SPH).";
+        }
+
+        $waService = app(WhatsAppGatewayService::class);
+        $cleanNum = str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number);
+        $filename = "SPH_{$cleanNum}.pdf";
+
+        if ($sendPdf) {
+            $pdf = Pdf::loadView('debts.agreement_pdf', compact('debt', 'settings', 'ownerName'))
+                ->setPaper('a4', 'portrait');
+            $fileBase64 = base64_encode($pdf->output());
+
+            $res = $waService->sendFile($phone, $fileBase64, $filename, $caption);
+        } else {
+            $res = $waService->sendMessage($phone, $caption);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json($res);
+        }
+
+        return back()->with($res['success'] ? 'success' : 'error', $res['message'] ?? 'Pesan terkirim');
+    }
+
+    /**
+     * Export Batch Debts Recap as PDF (A4 Portrait).
+     */
+    public function batchPdf(Request $request)
+    {
+        $status = $request->query('status');
+        $type = $request->query('borrower_type');
+        $search = $request->query('search');
+
+        $debts = Debt::with(['supplier', 'user', 'payments'])
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->when($type, fn($q) => $q->where('borrower_type', $type))
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('borrower_name', 'LIKE', "%{$search}%")
+                        ->orWhere('debt_number', 'LIKE', "%{$search}%")
+                        ->orWhere('agreement_number', 'LIKE', "%{$search}%");
+                });
+            })
+            ->latest('date')
+            ->get();
+
+        $totalAmount = (float) $debts->sum('amount');
+        $totalPaid = (float) $debts->sum(fn($d) => $d->amount - $d->remaining_amount);
+        $totalRemaining = (float) $debts->sum('remaining_amount');
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+
+        $pdf = Pdf::loadView('debts.batch_pdf', compact('debts', 'settings', 'status', 'type', 'totalAmount', 'totalPaid', 'totalRemaining'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('Rekap_Hutang_Modal_' . date('Ymd_His') . '.pdf');
+    }
+
+    /**
+     * Preview Global Debts WhatsApp message and batch PDF metadata.
+     */
+    public function previewWaGlobal(Request $request): JsonResponse
+    {
+        $status = $request->query('status');
+        $type = $request->query('borrower_type');
+        $search = $request->query('search');
+
+        $debts = Debt::with(['supplier'])
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->when($type, fn($q) => $q->where('borrower_type', $type))
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('borrower_name', 'LIKE', "%{$search}%")
+                        ->orWhere('debt_number', 'LIKE', "%{$search}%");
+                });
+            })
+            ->latest('date')
+            ->get();
+
+        $count = $debts->count();
+        $totalAmount = (float) $debts->sum('amount');
+        $totalPaid = (float) $debts->sum(fn($d) => $d->amount - $d->remaining_amount);
+        $totalRemaining = (float) $debts->sum('remaining_amount');
+        $companyName = BusinessSetting::get('company_name', 'UD. BERKAH RONGSOK MAKMUR');
+
+        $msg = "*REKAPITULASI BUKU KASBON & PINJAMAN MODAL*\n";
+        $msg .= "*{$companyName}*\n";
+        $msg .= "Status: " . ($status ? strtoupper($status) : 'SEMUA') . " | Tanggal: " . date('d/m/Y') . "\n\n";
+        $msg .= "🔖 Total Debitur     : *{$count} Pinjaman*\n";
+        $msg .= "💰 Total Pinjaman    : *" . FormatHelper::rupiah($totalAmount) . "*\n";
+        $msg .= "💵 Telah Diangsur    : *" . FormatHelper::rupiah($totalPaid) . "*\n";
+        $msg .= "⏳ Sisa Piutang Aktif: *" . FormatHelper::rupiah($totalRemaining) . "*\n\n";
+
+        if ($count > 0) {
+            $msg .= "📋 *Debitur Kasbon:* \n";
+            $previewList = $debts->take(6);
+            foreach ($previewList as $idx => $d) {
+                $num = $idx + 1;
+                $rem = FormatHelper::rupiah($d->remaining_amount);
+                $msg .= "{$num}. {$d->borrower_name} ({$d->debt_number}) - Sisa: {$rem}\n";
+            }
+            if ($count > 6) {
+                $r = $count - 6;
+                $msg .= "... dan {$r} pinjaman lainnya tercantum lengkap dalam berkas PDF.\n";
+            }
+            $msg .= "\n";
+        }
+
+        $msg .= "📄 *Terlampir berkas PDF dokumen Buku Kasbon & Rekap Pinjaman Modal*.\n";
+        $msg .= "Diterbitkan resmi oleh Sistem Kasir Rongsok.";
+
+        $pdfFilename = "Rekap_Hutang_Modal_" . date('Ymd_His') . ".pdf";
+        $pdfUrl = route('debts.batch-pdf', $request->query());
+
+        return response()->json([
+            'success' => true,
+            'count' => $count,
+            'total_amount' => $totalRemaining,
+            'message' => $msg,
+            'pdf_filename' => $pdfFilename,
+            'pdf_url' => $pdfUrl,
+            'file_description' => "Dokumen PDF Rekapitulasi Kasbon & Pinjaman ({$count} Data)",
+        ]);
+    }
+
+    /**
+     * Send Global Debts Recap via WhatsApp (with PDF attachment).
+     */
+    public function sendWaGlobal(Request $request)
+    {
+        $status = $request->input('status');
+        $type = $request->input('borrower_type');
+        $search = $request->input('search');
+        $phone = $request->input('phone');
+        $sendPdf = $request->boolean('send_pdf', true);
+        $caption = $request->input('caption') ?: $request->input('message');
+
+        if (empty($phone)) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Nomor WhatsApp tujuan wajib diisi.'], 422);
+            }
+            return back()->with('error', 'Nomor WhatsApp tujuan wajib diisi.');
+        }
+
+        $debts = Debt::with(['supplier', 'user', 'payments'])
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->when($type, fn($q) => $q->where('borrower_type', $type))
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('borrower_name', 'LIKE', "%{$search}%")
+                        ->orWhere('debt_number', 'LIKE', "%{$search}%");
+                });
+            })
+            ->latest('date')
+            ->get();
+
+        $totalAmount = (float) $debts->sum('amount');
+        $totalPaid = (float) $debts->sum(fn($d) => $d->amount - $d->remaining_amount);
+        $totalRemaining = (float) $debts->sum('remaining_amount');
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $companyName = $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR';
+
+        if (empty($caption)) {
+            $caption = "*REKAPITULASI BUKU KASBON & PINJAMAN MODAL*\n";
+            $caption .= "*{$companyName}*\n";
+            $caption .= "🔖 Total: {$debts->count()} Pinjaman | Sisa Piutang: " . FormatHelper::rupiah($totalRemaining) . "\n";
+            $caption .= "📄 Terlampir berkas PDF dokumen Buku Kasbon & Rekap Pinjaman Modal.";
+        }
+
+        $waService = app(WhatsAppGatewayService::class);
+        $filename = "Rekap_Hutang_Modal_" . date('Ymd_His') . ".pdf";
+
+        if ($sendPdf) {
+            $pdf = Pdf::loadView('debts.batch_pdf', compact('debts', 'settings', 'status', 'type', 'totalAmount', 'totalPaid', 'totalRemaining'))
+                ->setPaper('a4', 'portrait');
+            $fileBase64 = base64_encode($pdf->output());
+
+            $res = $waService->sendFile($phone, $fileBase64, $filename, $caption);
+        } else {
+            $res = $waService->sendMessage($phone, $caption);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json($res);
+        }
+
+        return back()->with($res['success'] ? 'success' : 'error', $res['message'] ?? 'Status terkirim.');
+    }
+
+    /**
+     * Export Debts to Excel (Task 18).
+     */
+    public function exportExcel(Request $request)
+    {
+        $status = $request->query('status');
+        $type = $request->query('borrower_type');
+
+        $debts = Debt::with(['supplier', 'user', 'payments'])
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->when($type, fn($q) => $q->where('borrower_type', $type))
+            ->latest('date')
+            ->get();
+
+        $filename = 'Rekap_Hutang_Piutang_' . date('Ymd_His') . '.xls';
+
+        return response()->view('debts.excel', compact('debts'))
+            ->header('Content-Type', 'application/vnd.ms-excel; charset=utf-8')
+            ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
     }
 }
 

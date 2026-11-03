@@ -11,6 +11,7 @@ use App\Models\StockBalance;
 use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Services\FormatHelper;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -26,10 +27,13 @@ class PurchaseTransactionService
     {
         return DB::transaction(function () use ($data, $user) {
             $date = isset($data['transaction_date']) ? Carbon::parse($data['transaction_date']) : Carbon::now();
-            $invoiceNumber = $this->generateInvoiceNumber($date);
+            $invoiceNumber = FormatHelper::generatePurchaseInvoiceNumber($date);
 
-            // Supplier resolution
+            // Supplier resolution (Task 22: auto-save if not existing)
             $supplierId = $data['supplier_id'] ?? null;
+            if ($supplierId === '__new__' || $supplierId === '__cash__' || empty($supplierId)) {
+                $supplierId = null;
+            }
             $supplierName = $data['supplier_name'] ?? null;
             $supplierPhone = $data['supplier_phone'] ?? null;
             $supplierAddress = $data['supplier_address'] ?? null;
@@ -41,19 +45,21 @@ class PurchaseTransactionService
                     $supplierPhone = $supplier->phone ?? $supplierPhone;
                     $supplierAddress = $supplier->address ?? $supplierAddress;
                 }
-            } elseif (!empty($supplierName)) {
-                // Auto create supplier if indicated
-                if (!empty($data['save_as_supplier'])) {
-                    $newSupp = Supplier::create([
+            } elseif (!empty($supplierName) && !in_array(trim(strtolower($supplierName)), ['umum', 'umum / tunai', 'tunai', ''])) {
+                $trimmedName = trim($supplierName);
+                $supplier = Supplier::where('name', $trimmedName)->first();
+                if (!$supplier) {
+                    $supplier = Supplier::create([
                         'code' => 'SUP-' . strtoupper(substr(uniqid(), -5)),
-                        'name' => $supplierName,
+                        'name' => $trimmedName,
                         'phone' => $supplierPhone,
                         'address' => $supplierAddress,
                     ]);
-                    $supplierId = $newSupp->id;
                 }
+                $supplierId = $supplier->id;
+                $supplierName = $supplier->name;
             } else {
-                $supplierName = 'Umum / Tunai';
+                $supplierName = $supplierName ?: 'Umum / Tunai';
             }
 
             // Calculate items & totals safely on backend
@@ -73,34 +79,60 @@ class PurchaseTransactionService
                 $scrapItemId = $row['scrap_item_id'];
                 $scrapItem = ScrapItem::lockForUpdate()->findOrFail($scrapItemId);
 
-                $gross = max(0, (float) ($row['gross_weight'] ?? 0));
-                $tare = max(0, (float) ($row['tare_weight'] ?? 0));
-                $net = max(0, $gross - $tare);
-
-                if ($net <= 0) {
-                    throw new Exception("Berat bersih untuk item '{$scrapItem->name}' harus lebih dari 0 kg.");
+                $unitType = strtolower($row['unit_type'] ?? ($scrapItem->unit_type ?? 'kg'));
+                if (!in_array($unitType, ['kg', 'pcs', 'satuan', 'unit'])) {
+                    $unitType = 'kg';
                 }
+                $itemTypeName = !empty($row['item_type_name']) ? trim($row['item_type_name']) : null;
 
-                // If user override price is allowed or use master buy price
-                $pricePerKg = isset($row['price_per_kg']) && is_numeric($row['price_per_kg'])
-                    ? (float) $row['price_per_kg']
-                    : (float) $scrapItem->buy_price_per_kg;
+                if (in_array($unitType, ['pcs', 'satuan', 'unit'])) {
+                    $quantity = max(1, (float) ($row['quantity'] ?? 1));
+                    $gross = 0;
+                    $tare = 0;
+                    $net = $quantity;
+                    $pricePerUnit = isset($row['price_per_kg']) && is_numeric($row['price_per_kg'])
+                        ? (float) $row['price_per_kg']
+                        : (float) $scrapItem->buy_price_per_kg;
 
-                // Validate that buying price does not exceed master price
-                $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                if ($masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
-                    throw new Exception("Harga beli untuk '{$scrapItem->name}' (Rp " . number_format($pricePerKg, 0, ',', '.') . ") melebihi harga master (Rp " . number_format($masterBuyPrice, 0, ',', '.') . "). Harga beli tidak boleh diubah di atas harga master.");
+                    $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
+                    if ($masterBuyPrice > 0 && $pricePerUnit > $masterBuyPrice) {
+                        throw new Exception("Harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerUnit) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . ").");
+                    }
+
+                    $itemSubtotal = round($quantity * $pricePerUnit, 2);
+                    $pricePerKg = $pricePerUnit;
+                } else {
+                    $gross = max(0, (float) ($row['gross_weight'] ?? 0));
+                    $tare = max(0, (float) ($row['tare_weight'] ?? 0));
+                    $net = max(0, $gross - $tare);
+                    $quantity = 1;
+
+                    if ($net <= 0) {
+                        throw new Exception("Berat bersih untuk item '{$scrapItem->name}' harus lebih dari 0 kg.");
+                    }
+
+                    $pricePerKg = isset($row['price_per_kg']) && is_numeric($row['price_per_kg'])
+                        ? (float) $row['price_per_kg']
+                        : (float) $scrapItem->buy_price_per_kg;
+
+                    $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
+                    if ($masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
+                        throw new Exception("Harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerKg) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . ").");
+                    }
+
+                    $itemSubtotal = round($net * $pricePerKg, 2);
                 }
-
-                $itemSubtotal = round($net * $pricePerKg, 2);
 
                 $totalGrossWeight += $gross;
                 $totalTareWeight += $tare;
-                $totalNetWeight += $net;
+                $totalNetWeight += ($unitType === 'kg' ? $net : 0);
                 $subtotalAmount += $itemSubtotal;
 
                 $processedItems[] = [
                     'scrap_item' => $scrapItem,
+                    'unit_type' => $unitType,
+                    'item_type_name' => $itemTypeName,
+                    'quantity' => $quantity,
                     'gross_weight' => $gross,
                     'tare_weight' => $tare,
                     'net_weight' => $net,
@@ -121,6 +153,43 @@ class PurchaseTransactionService
             }
             $netCashPaid = max(0, $finalAmount - $debtDeductionAmount);
 
+            // Bank / Transfer information formatting (Task 11 & Update: Nama Pemilik & No. Rekening)
+            $bankInfo = $data['bank_info'] ?? null;
+            $customBank = trim($data['custom_bank'] ?? '');
+            $customAccountName = trim($data['custom_account_name'] ?? '');
+            $customAccountNo = trim($data['custom_account_no'] ?? '');
+
+            if (!empty($customAccountNo) || !empty($customAccountName) || !empty($customBank)) {
+                $parts = [];
+                if (!empty($customBank)) {
+                    $parts[] = $customBank;
+                }
+                if (!empty($customAccountNo)) {
+                    $parts[] = "Rek: {$customAccountNo}";
+                }
+                if (!empty($customAccountName)) {
+                    $parts[] = "a/n {$customAccountName}";
+                }
+                $bankInfo = implode(' - ', $parts);
+            }
+
+            // Payment method resolution (Auto-save new payment method to master table)
+            $paymentMethodId = $data['payment_method_id'] ?? null;
+            $newPaymentMethodName = trim($data['new_payment_method_name'] ?? '');
+
+            if ($paymentMethodId === '__new__' || !empty($newPaymentMethodName)) {
+                $targetName = !empty($newPaymentMethodName) ? $newPaymentMethodName : 'Metode Pembayaran Baru';
+                $pm = PaymentMethod::firstOrCreate(
+                    ['name' => $targetName],
+                    ['code' => strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $targetName), 0, 6)) ?: 'PM', 'is_active' => true]
+                );
+                $paymentMethodId = $pm->id;
+            } elseif (is_numeric($paymentMethodId)) {
+                $paymentMethodId = (int) $paymentMethodId;
+            } else {
+                $paymentMethodId = PaymentMethod::first()?->id ?? null;
+            }
+
             // Create Transaction record
             $transaction = PurchaseTransaction::create([
                 'invoice_number' => $invoiceNumber,
@@ -129,7 +198,9 @@ class PurchaseTransactionService
                 'supplier_phone' => $supplierPhone,
                 'supplier_address' => $supplierAddress,
                 'user_id' => $user->id,
-                'payment_method_id' => $data['payment_method_id'] ?? null,
+                'payment_method_id' => $paymentMethodId,
+                'bank_info' => $bankInfo,
+                'payment_notes' => $data['payment_notes'] ?? null,
                 'transaction_date' => $date,
                 'total_gross_weight' => $totalGrossWeight,
                 'total_tare_weight' => $totalTareWeight,
@@ -169,6 +240,9 @@ class PurchaseTransactionService
                     'scrap_item_id' => $scrapItem->id,
                     'item_name_snapshot' => $scrapItem->name,
                     'item_code_snapshot' => $scrapItem->code,
+                    'unit_type' => $item['unit_type'] ?? 'kg',
+                    'item_type_name' => $item['item_type_name'] ?? null,
+                    'quantity' => $item['quantity'] ?? 1,
                     'gross_weight' => $item['gross_weight'],
                     'tare_weight' => $item['tare_weight'],
                     'net_weight' => $item['net_weight'],

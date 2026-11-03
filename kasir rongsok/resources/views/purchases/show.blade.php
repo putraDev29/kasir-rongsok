@@ -32,7 +32,7 @@
             <button type="button" 
                     @click="$store.waGateway.openReceipt('purchase', {{ $purchase->id }}, '{{ $purchase->supplier_phone }}')"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors">
-                <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                <x-whatsapp-icon class="w-3.5 h-3.5" />
                 <span>Kirim Nota WA</span>
             </button>
 

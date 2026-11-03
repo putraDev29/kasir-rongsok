@@ -26,13 +26,20 @@
             </h2>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
             <button type="button" 
-                    @click="$store.waGateway.openReceipt('sale', {{ $sale->id }}, '{{ $sale->customer_phone }}')"
+                    @click="$store.waGateway.openReceipt('sale', {{ $sale->id }}, '{{ $sale->buyer_phone }}')"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors">
-                <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                <x-whatsapp-icon class="w-3.5 h-3.5" />
                 <span>Kirim Faktur WA</span>
             </button>
+
+            <a href="{{ route('sales.pdf', $sale) }}" target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm"
+               title="Unduh Berkas PDF Faktur Penjualan">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-400"></i>
+                <span>Unduh Faktur PDF</span>
+            </a>
 
             <a href="{{ route('sales.print', $sale) }}" target="_blank"
                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm">

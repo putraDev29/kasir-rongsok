@@ -135,7 +135,7 @@
 
                             <td class="py-3 px-4 text-right">
                                 <div class="font-mono font-black text-slate-900 text-sm">
-                                    {{ number_format($order->total_weight, 2) }} kg
+                                    {{ \App\Services\FormatHelper::weight($order->total_weight) }} kg
                                 </div>
                                 @if($order->total_packages > 0)
                                     <div class="text-[10px] text-slate-400 font-mono">{{ $order->total_packages }} Koli / Karung</div>
@@ -156,11 +156,45 @@
 
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
+                                    <button type="button" 
+                                            @click="openWaPdfModal({
+                                                title: 'Kirim Surat Jalan Pengiriman PDF via WhatsApp',
+                                                subtitle: 'Kirim berkas dokumen PDF resmi surat jalan lengkap ke nomor WhatsApp',
+                                                phone: '{{ $order->recipient_phone ?: $order->driver_phone }}',
+                                                filename: 'Surat_Jalan_{{ $order->delivery_number }}.pdf',
+                                                fileDescription: 'Dokumen PDF Resmi Surat Jalan (Lengkap Supir, Armada & Muatan)',
+                                                pdfUrl: '{{ route('delivery-orders.pdf', $order) }}',
+                                                previewUrl: '{{ route('delivery-orders.wa-preview', $order) }}',
+                                                sendUrl: '{{ route('delivery-orders.send-wa', $order) }}',
+                                                submitButtonText: 'Kirim Surat Jalan via WA'
+                                            })"
+                                            class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" 
+                                            title="Kirim Surat Jalan PDF via WhatsApp">
+                                        <x-whatsapp-icon class="w-4 h-4" />
+                                    </button>
+
+                                    <a href="{{ route('delivery-orders.pdf', $order) }}" target="_blank"
+                                       class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50" title="Unduh PDF Surat Jalan (Resmi)">
+                                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                                    </a>
+
+                                    @if($order->salesTransaction)
+                                        <a href="{{ route('sales.show', $order->salesTransaction) }}" 
+                                           class="px-2 py-1 rounded bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200" title="Sudah Masuk Faktur Penjualan">
+                                            ✓ Terfaktur
+                                        </a>
+                                    @else
+                                        <a href="{{ route('sales.create', ['delivery_order_id' => $order->id]) }}" 
+                                           class="px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] border border-blue-200" title="Sinkron Buat Faktur Penjualan">
+                                            + Faktur
+                                        </a>
+                                    @endif
+
                                     <a href="{{ route('delivery-orders.print', $order) }}" target="_blank"
                                        class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] flex items-center gap-1"
                                        title="Cetak PDF HVS Landscape Bagi 2">
                                         <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                                        <span>PDF / Cetak</span>
+                                        <span>PDF</span>
                                     </a>
 
                                     <a href="{{ route('delivery-orders.show', $order) }}" 

@@ -30,13 +30,45 @@
             </div>
         </div>
 
-        @if($debt->remaining_amount > 0)
-            <button type="button" @click="showPayModal = true" 
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm shrink-0">
-                <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i>
-                <span>Bayar / Angsur Hutang</span>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('debts.agreement', $debt) }}" target="_blank"
+               class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors">
+                <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i>
+                <span>Surat Perjanjian</span>
+            </a>
+
+            <a href="{{ route('debts.agreement-pdf', $debt) }}"
+               class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Unduh PDF</span>
+            </a>
+
+            <button type="button"
+                    @click="openWaPdfModal({
+                        title: 'Kirim Surat Perjanjian Pinjaman PDF',
+                        subtitle: 'Kirim berkas dokumen PDF Surat Perjanjian Hutang Modal (SPH) ke WhatsApp peminjam',
+                        phone: '{{ $debt->borrower_phone }}',
+                        filename: 'SPH_' + ('{{ str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number) }}') + '.pdf',
+                        fileDescription: 'Dokumen PDF Resmi Surat Perjanjian Hutang Piutang Modal',
+                        pdfUrl: '{{ route('debts.agreement-pdf', $debt) }}',
+                        previewUrl: '{{ route('debts.agreement-wa-preview', $debt) }}',
+                        sendUrl: '{{ route('debts.agreement-wa', $debt) }}',
+                        submitButtonText: 'Kirim SPH PDF via WA'
+                    })"
+                    class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+                    title="Kirim Surat Perjanjian PDF ke WhatsApp">
+                <x-whatsapp-icon class="w-3.5 h-3.5" />
+                <span>Kirim WA (PDF)</span>
             </button>
-        @endif
+
+            @if($debt->remaining_amount > 0)
+                <button type="button" @click="showPayModal = true" 
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm shrink-0">
+                    <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i>
+                    <span>Bayar / Angsur</span>
+                </button>
+            @endif
+        </div>
     </div>
 
     <!-- Overview Financial Cards -->
@@ -191,7 +223,7 @@
                                                 @click="$store.waGateway.openReceipt('debt_payment', {{ $payment->id }}, '{{ $debt->borrower_phone }}')"
                                                 class="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold inline-flex items-center gap-1"
                                                 title="Kirim Bukti Pembayaran via WhatsApp">
-                                            <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                                            <x-whatsapp-icon class="w-3.5 h-3.5" />
                                             <span>WA</span>
                                         </button>
                                     </div>

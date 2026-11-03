@@ -197,7 +197,7 @@
 
         <!-- Footer note -->
         <div class="mt-2 text-center text-[7.5px] text-slate-400 italic">
-            Surat Jalan ini merupakan dokumen bukti penyerahan barang rongsok yang sah. Mohon diperiksa kembali sebelum ditandatangani.
+            {{ $settings['delivery_order_notes'] ?? 'Surat Jalan ini merupakan dokumen bukti penyerahan barang rongsok yang sah. Mohon diperiksa kembali sebelum ditandatangani.' }}
         </div>
 
     </div>

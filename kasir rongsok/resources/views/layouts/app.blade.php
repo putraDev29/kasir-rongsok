@@ -89,8 +89,8 @@
             <nav class="flex-1 px-3 py-3 overflow-y-auto space-y-1 text-sm font-medium">
                 {{-- Dashboard: Dapat diakses oleh Owner, Admin, dan Kasir --}}
                 <a href="{{ route('dashboard') }}" 
-                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('dashboard') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400"></i>
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('dashboard') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 {{ request()->routeIs('dashboard') ? 'text-white' : 'text-slate-400' }}"></i>
                     <span>Dashboard</span>
                 </a>
 
@@ -98,109 +98,109 @@
 
                 {{-- Timbang Kasir (Penerimaan Barang) --}}
                 <a href="{{ route('purchases.create') }}" 
-                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('purchases.create') ? 'bg-slate-800 text-emerald-400 font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <i data-lucide="badge-dollar-sign" class="w-4 h-4 text-emerald-500"></i>
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('purchases.create') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                    <i data-lucide="badge-dollar-sign" class="w-4 h-4 {{ request()->routeIs('purchases.create') ? 'text-white' : 'text-emerald-500' }}"></i>
                     <span>Penerimaan Barang</span>
                 </a>
 
                 {{-- Riwayat Pembelian --}}
                 <a href="{{ route('purchases.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('purchases.index') || request()->routeIs('purchases.show') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <i data-lucide="receipt" class="w-4 h-4 text-slate-400"></i>
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('purchases.index') || request()->routeIs('purchases.show') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                    <i data-lucide="receipt" class="w-4 h-4 {{ request()->routeIs('purchases.index') || request()->routeIs('purchases.show') ? 'text-white' : 'text-slate-400' }}"></i>
                     <span>Riwayat Pembelian</span>
                 </a>
 
                 {{-- SELAIN ITU HANYA OWNER YANG BISA AKSES & UPDATE --}}
                 @if(Auth::user()->isSuperAdmin())
                     <a href="{{ route('debts.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('debts.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="handshake" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('debts.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="handshake" class="w-4 h-4 {{ request()->routeIs('debts.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Hutang Piutang (Modal)</span>
                     </a>
 
                     <a href="{{ route('sales.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('sales.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="truck" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('sales.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="truck" class="w-4 h-4 {{ request()->routeIs('sales.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Penjualan Partai (Grosir)</span>
                     </a>
 
                     <a href="{{ route('delivery-orders.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('delivery-orders.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="clipboard-list" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('delivery-orders.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="clipboard-list" class="w-4 h-4 {{ request()->routeIs('delivery-orders.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Surat Jalan Pengiriman</span>
                     </a>
 
                     <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Gudang & Inventori</div>
 
                     <a href="{{ route('stock.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('stock.index') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="boxes" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('stock.index') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="boxes" class="w-4 h-4 {{ request()->routeIs('stock.index') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Stok & Nilai Barang</span>
                     </a>
 
                     <a href="{{ route('stock.movements') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('stock.movements') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="history" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('stock.movements') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="history" class="w-4 h-4 {{ request()->routeIs('stock.movements') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Mutasi Stok (Ledger)</span>
                     </a>
 
                     <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Master Data</div>
 
                     <a href="{{ route('scrap-items.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('scrap-items.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="tag" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('scrap-items.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="tag" class="w-4 h-4 {{ request()->routeIs('scrap-items.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Jenis Barang & Harga</span>
                     </a>
 
                     <a href="{{ route('suppliers.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('suppliers.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('suppliers.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="users" class="w-4 h-4 {{ request()->routeIs('suppliers.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Data Pemasok / Pengepul</span>
                     </a>
 
                     <a href="{{ route('expenses.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('expenses.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="wallet" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('expenses.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="wallet" class="w-4 h-4 {{ request()->routeIs('expenses.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Biaya Operasional</span>
                     </a>
 
                     <a href="{{ route('salary-slips.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('salary-slips.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="banknote" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('salary-slips.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="banknote" class="w-4 h-4 {{ request()->routeIs('salary-slips.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Slip Gaji Karyawan</span>
                     </a>
 
                     <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Laporan & Analitik</div>
 
                     <a href="{{ route('reports.purchases') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('reports.purchases') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="file-spreadsheet" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('reports.purchases') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4 {{ request()->routeIs('reports.purchases') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Laporan Pembelian</span>
                     </a>
 
                     <a href="{{ route('reports.sales') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('reports.sales') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="trending-up" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('reports.sales') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="trending-up" class="w-4 h-4 {{ request()->routeIs('reports.sales') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Laporan Penjualan</span>
                     </a>
 
                     <a href="{{ route('reports.profit-loss') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('reports.profit-loss') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="pie-chart" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('reports.profit-loss') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="pie-chart" class="w-4 h-4 {{ request()->routeIs('reports.profit-loss') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Laba / Rugi Usaha</span>
                     </a>
 
                     <div class="pt-3 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Sistem</div>
 
                     <a href="{{ route('users.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('users.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="user-cog" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('users.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="user-cog" class="w-4 h-4 {{ request()->routeIs('users.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Kelola Pengguna</span>
                     </a>
 
                     <a href="{{ route('settings.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {{ request()->routeIs('settings.*') ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <i data-lucide="sliders" class="w-4 h-4 text-slate-400"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('settings.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="sliders" class="w-4 h-4 {{ request()->routeIs('settings.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Pengaturan Usaha</span>
                     </a>
                 @endif
@@ -260,7 +260,7 @@
                                 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100': !$store.waGateway.connected && $store.waGateway.status !== 'QR_READY'
                             }"
                             :title="$store.waGateway.connected ? 'WhatsApp Gateway Online (' + ($store.waGateway.phone || 'Terhubung') + ')' : ($store.waGateway.status === 'QR_READY' ? 'Scan QR WhatsApp Gateway' : 'WhatsApp Gateway Offline')">
-                        <i data-lucide="message-square" class="w-3.5 h-3.5 shrink-0" :class="$store.waGateway.connected ? 'text-emerald-600' : (!$store.waGateway.connected && $store.waGateway.status === 'QR_READY' ? 'text-amber-600' : 'text-slate-500')"></i>
+                        <x-whatsapp-icon class="w-3.5 h-3.5 shrink-0" :class="$store.waGateway.connected ? 'text-emerald-600' : (!$store.waGateway.connected && $store.waGateway.status === 'QR_READY' ? 'text-amber-600' : 'text-slate-500')" />
                         <span class="hidden sm:inline" x-text="$store.waGateway.connected ? 'WA Terhubung' : ($store.waGateway.status === 'QR_READY' ? 'Scan QR WA' : 'WA Gateway')"></span>
                         <span class="h-2 w-2 rounded-full"
                               :class="{

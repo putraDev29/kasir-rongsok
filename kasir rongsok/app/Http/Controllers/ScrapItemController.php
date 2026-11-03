@@ -169,5 +169,151 @@ class ScrapItemController extends Controller
 
         return view('scrap_items.print_price_list', compact('categories', 'settings'));
     }
+
+    /**
+     * Download / Stream PDF of Buying Price List.
+     */
+    public function pdfPriceList(Request $request)
+    {
+        $categories = ItemCategory::with(['scrapItems' => function ($q) {
+            $q->where('is_active', true)->orderBy('name');
+        }])->where('is_active', true)->orderBy('name')->get();
+
+        $settings = \App\Models\BusinessSetting::pluck('value', 'key')->all();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('scrap_items.price_list_pdf', compact('categories', 'settings'))
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'Daftar_Harga_Beli_Rongsok_' . date('Ymd') . '.pdf';
+        return $pdf->stream($filename);
+    }
+
+    /**
+     * Preview WhatsApp message for price list.
+     */
+    public function previewWaPriceList(Request $request)
+    {
+        $settings = \App\Models\BusinessSetting::pluck('value', 'key')->all();
+        $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
+        $companyPhone = $settings['company_phone'] ?? '';
+        $pickupText = $settings['pickup_service_text'] ?? 'Melayani armada jemput barang rongsok skala besar langsung ke lokasi gudang/pabrik Anda.';
+
+        $categories = ItemCategory::with(['scrapItems' => function ($q) {
+            $q->where('is_active', true)->orderBy('name');
+        }])->where('is_active', true)->orderBy('name')->get();
+
+        $msg = "*DAFTAR HARGA BELI RONGSOK TERBARU*\n";
+        $msg .= "*{$companyName}*\n";
+        $msg .= "🗓️ Update: " . date('d/m/Y') . "\n";
+        $msg .= "----------------------------------------\n";
+
+        foreach ($categories as $cat) {
+            if ($cat->scrapItems->count() === 0) continue;
+            $msg .= "\n📂 *" . strtoupper($cat->name) . "*\n";
+            foreach ($cat->scrapItems as $item) {
+                $priceStr = \App\Services\FormatHelper::rupiah($item->buy_price_per_kg);
+                $msg .= "• {$item->name}: *{$priceStr}/kg*\n";
+            }
+        }
+
+        $msg .= "\n----------------------------------------\n";
+        $msg .= "🚛 {$pickupText}\n";
+        if ($companyPhone) {
+            $msg .= "📞 Hubungi: {$companyPhone}\n";
+        }
+        $msg .= "_*Harga dapat berubah sewaktu-waktu mengikuti tren pasar daur ulang._";
+
+        $filename = 'Daftar_Harga_Beli_Rongsok_' . date('Ymd') . '.pdf';
+
+        return response()->json([
+            'message' => $msg,
+            'pdf_url' => route('scrap-items.pdf-price-list'),
+            'pdf_filename' => $filename,
+        ]);
+    }
+
+    /**
+     * Send Buying Price List via WhatsApp (Task 10).
+     */
+    public function sendWaPriceList(Request $request)
+    {
+        $phone = $request->input('phone');
+        $sendPdf = $request->boolean('send_pdf', true);
+        $settings = \App\Models\BusinessSetting::pluck('value', 'key')->all();
+        $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
+        $companyPhone = $settings['company_phone'] ?? '';
+        $pickupText = $settings['pickup_service_text'] ?? 'Melayani armada jemput barang rongsok skala besar langsung ke lokasi gudang/pabrik Anda.';
+
+        $categories = ItemCategory::with(['scrapItems' => function ($q) {
+            $q->where('is_active', true)->orderBy('name');
+        }])->where('is_active', true)->orderBy('name')->get();
+
+        $msg = "*DAFTAR HARGA BELI RONGSOK TERBARU*\n";
+        $msg .= "*{$companyName}*\n";
+        $msg .= "🗓️ Update: " . date('d/m/Y') . "\n";
+        $msg .= "----------------------------------------\n";
+
+        foreach ($categories as $cat) {
+            if ($cat->scrapItems->count() === 0) continue;
+            $msg .= "\n📂 *" . strtoupper($cat->name) . "*\n";
+            foreach ($cat->scrapItems as $item) {
+                $priceStr = \App\Services\FormatHelper::rupiah($item->buy_price_per_kg);
+                $msg .= "• {$item->name}: *{$priceStr}/kg*\n";
+            }
+        }
+
+        $msg .= "\n----------------------------------------\n";
+        $msg .= "🚛 {$pickupText}\n";
+        if ($companyPhone) {
+            $msg .= "📞 Hubungi: {$companyPhone}\n";
+        }
+        $msg .= "_*Harga dapat berubah sewaktu-waktu mengikuti tren pasar daur ulang._";
+
+        $customCaption = $request->input('message') ?: $request->input('caption') ?: $msg;
+
+        if (!empty($phone)) {
+            $waService = app(\App\Services\WhatsAppGatewayService::class);
+            if ($sendPdf) {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('scrap_items.price_list_pdf', compact('categories', 'settings'))
+                    ->setPaper('a4', 'portrait');
+                $pdfOutput = $pdf->output();
+                $filename = $request->input('filename') ?: ('Daftar_Harga_Beli_Rongsok_' . date('Ymd') . '.pdf');
+                $res = $waService->sendFile($phone, $pdfOutput, $filename, $customCaption);
+            } else {
+                $res = $waService->sendMessage($phone, $customCaption);
+            }
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json($res);
+            }
+
+            return back()->with($res['success'] ? 'success' : 'error', $res['message'] ?? 'Daftar harga terkirim ke WhatsApp.');
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nomor WhatsApp tujuan wajib diisi.'
+            ], 422);
+        }
+
+        return redirect('https://wa.me/?text=' . urlencode($msg));
+    }
+
+    /**
+     * Export price list & items to Excel (Task 18).
+     */
+    public function exportExcel()
+    {
+        $categories = ItemCategory::with(['scrapItems' => function ($q) {
+            $q->orderBy('name');
+        }])->where('is_active', true)->orderBy('name')->get();
+
+        $filename = 'Daftar_Harga_Barang_' . date('Ymd_His') . '.xls';
+
+        return response()->view('scrap_items.excel', compact('categories'))
+            ->header('Content-Type', 'application/vnd.ms-excel; charset=utf-8')
+            ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
 }
 

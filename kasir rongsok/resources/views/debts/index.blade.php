@@ -4,6 +4,7 @@
 <div x-data="{ 
     showCreateModal: false, 
     showPayModal: false,
+    showSuccessModal: {{ !empty($justCreatedDebt) ? 'true' : 'false' }},
     payDebtId: null,
     payDebtNumber: '',
     payBorrowerName: '',
@@ -113,12 +114,50 @@
             @endif
         </form>
 
-        <!-- New Loan / Debt Button -->
-        <button type="button" @click="showCreateModal = true" 
-                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm shrink-0">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            <span>Catat Pinjaman Modal Baru</span>
-        </button>
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <a href="{{ route('debts.batch-pdf', request()->all()) }}" target="_blank"
+               class="px-2.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+               title="Unduh Rekap PDF Hutang Modal">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
+                <span class="hidden sm:inline">PDF</span>
+            </a>
+
+            <a href="{{ route('debts.export-excel', request()->all()) }}" 
+               class="px-2.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+               title="Export Excel">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                <span class="hidden sm:inline">Excel</span>
+            </a>
+
+            <button type="button" 
+                    @click="openWaPdfModal({
+                        title: 'Kirim Rekapitulasi Hutang Piutang Modal PDF',
+                        subtitle: 'Kirim berkas dokumen PDF rekapitulasi buku hutang piutang modal ke nomor WhatsApp',
+                        filename: 'Rekap_Hutang_Modal_' + ('{{ date("Ymd") }}') + '.pdf',
+                        fileDescription: 'Dokumen PDF Rekap Buku Hutang Piutang & Pinjaman Modal',
+                        pdfUrl: '{{ route('debts.batch-pdf', request()->all()) }}',
+                        previewUrl: '{{ route('debts.wa-global.preview', request()->all()) }}',
+                        sendUrl: '{{ route('debts.send-wa-global') }}',
+                        sendPayload: {
+                            search: '{{ addslashes($search) }}',
+                            status: '{{ $status }}',
+                            borrower_type: '{{ $type }}'
+                        },
+                        submitButtonText: 'Kirim Rekap Hutang PDF via WA'
+                    })"
+                    class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+                    title="Kirim Rekap Hutang Piutang PDF via WhatsApp">
+                <x-whatsapp-icon class="w-3.5 h-3.5" />
+                <span>Kirim WA Rekap (PDF)</span>
+            </button>
+
+            <button type="button" @click="showCreateModal = true" 
+                    class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Pinjaman Modal Baru</span>
+            </button>
+        </div>
     </div>
 
     <!-- Debts Table -->
@@ -218,6 +257,29 @@
                                         </button>
                                     @endif
 
+                                    <a href="{{ route('debts.agreement', $debt) }}" 
+                                       target="_blank"
+                                       class="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded" title="Cetak Surat Perjanjian">
+                                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                                    </a>
+
+                                    <button type="button"
+                                            @click="openWaPdfModal({
+                                                title: 'Kirim Surat Perjanjian Pinjaman PDF',
+                                                subtitle: 'Kirim berkas dokumen PDF Surat Perjanjian Hutang Modal (SPH) ke WhatsApp peminjam',
+                                                phone: '{{ $debt->borrower_phone }}',
+                                                filename: 'SPH_' + ('{{ str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number) }}') + '.pdf',
+                                                fileDescription: 'Dokumen PDF Resmi Surat Perjanjian Hutang Piutang Modal',
+                                                pdfUrl: '{{ route('debts.agreement-pdf', $debt) }}',
+                                                previewUrl: '{{ route('debts.agreement-wa-preview', $debt) }}',
+                                                sendUrl: '{{ route('debts.agreement-wa', $debt) }}',
+                                                submitButtonText: 'Kirim SPH PDF via WA'
+                                            })"
+                                            class="p-1 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded" 
+                                            title="Kirim Surat Perjanjian PDF ke WhatsApp">
+                                        <x-whatsapp-icon class="w-4 h-4" />
+                                    </button>
+
                                     <a href="{{ route('debts.show', $debt) }}" 
                                        class="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded" title="Lihat Detail & Riwayat Cicilan">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
@@ -297,7 +359,7 @@
                         <option value="">-- Pilih Pemasok / Atau ketik manual di bawah --</option>
                         @foreach($suppliers as $sup)
                             <option value="{{ $sup->id }}" data-name="{{ $sup->name }}" data-phone="{{ $sup->phone }}">
-                                {{ $sup->name }} ({{ $sup->code }})
+                                {{ $sup->name }} [{{ $sup->member_number }}]
                             </option>
                         @endforeach
                     </select>
@@ -341,6 +403,20 @@
                     </div>
                 </div>
 
+                <!-- Jaminan / Agunan & Saksi (Opsional untuk Surat Perjanjian) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Jaminan / Agunan (Opsional)</label>
+                        <input type="text" name="guarantee_info" placeholder="Contoh: BPKB Motor, KTP Asli, dll"
+                               class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Saksi (Opsional)</label>
+                        <input type="text" name="witness_name" placeholder="Nama saksi kesepakatan"
+                               class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-emerald-500">
+                    </div>
+                </div>
+
                 <!-- Catatan -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Keterangan / Keperluan Pinjaman</label>
@@ -352,13 +428,114 @@
                     <button type="button" @click="showCreateModal = false" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200">
                         Batal
                     </button>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm">
-                        Simpan Pinjaman Modal
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Simpan & Terbitkan SPH</span>
                     </button>
                 </div>
             </form>
         </div>
     </div>
+
+    @if(!empty($justCreatedDebt))
+    <!-- MODAL SUKSES INPUT DATA PINJAMAN MODAL (CETAK PDF & SHARE WA) -->
+    <div x-show="showSuccessModal" 
+         class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+         style="display: none;">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4" @click.away="showSuccessModal = false">
+            <div class="flex items-start justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 shadow-xs">
+                        <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm font-bold text-slate-900">Pinjaman Modal Berhasil Dicatat!</h3>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                SPH RESMI
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500">Surat Perjanjian Hutang Piutang (SPH) telah dibuat lengkap tanda tangan Owner & Peminjam.</p>
+                    </div>
+                </div>
+                <button type="button" @click="showSuccessModal = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Detail Ringkasan Pinjaman Modal -->
+            <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2 text-xs">
+                <div class="flex justify-between items-center pb-1.5 border-b border-slate-200">
+                    <span class="text-slate-500">Nomor Referensi:</span>
+                    <span class="font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200">{{ $justCreatedDebt->debt_number }}</span>
+                </div>
+                <div class="flex justify-between items-center pb-1.5 border-b border-slate-200">
+                    <span class="text-slate-500">No. Surat Perjanjian (SPH):</span>
+                    <span class="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{{ $justCreatedDebt->agreement_number }}</span>
+                </div>
+                <div class="flex justify-between items-center pb-1.5 border-b border-slate-200">
+                    <span class="text-slate-500">Nama Peminjam:</span>
+                    <span class="font-bold text-slate-900">{{ $justCreatedDebt->borrower_name }} @if($justCreatedDebt->borrower_phone) <span class="font-mono font-normal text-slate-500">({{ $justCreatedDebt->borrower_phone }})</span> @endif</span>
+                </div>
+                <div class="flex justify-between items-center pt-0.5">
+                    <span class="text-slate-500">Nominal Pinjaman Modal:</span>
+                    <span class="font-mono font-black text-sm text-emerald-700">
+                        Rp {{ number_format($justCreatedDebt->initial_amount, 0, ',', '.') }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tombol Aksi: Cetak PDF & Kirim via WhatsApp -->
+            <div class="space-y-2">
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Aksi Surat Perjanjian Hutang Modal:</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <a href="{{ route('debts.agreement-pdf', $justCreatedDebt) }}"
+                       class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-colors text-center"
+                       title="Unduh Berkas PDF Surat Perjanjian">
+                        <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Unduh PDF SPH</span>
+                    </a>
+
+                    <a href="{{ route('debts.agreement', $justCreatedDebt) }}" target="_blank"
+                       class="px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors text-center"
+                       title="Cetak Print Lembar Surat Perjanjian">
+                        <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
+                        <span>Cetak Lembar</span>
+                    </a>
+                </div>
+
+                <button type="button"
+                        @click="showSuccessModal = false; openWaPdfModal({
+                            title: 'Kirim Surat Perjanjian Pinjaman PDF',
+                            subtitle: 'Kirim berkas dokumen PDF Surat Perjanjian Hutang Modal (SPH) ke WhatsApp peminjam',
+                            phone: '{{ $justCreatedDebt->borrower_phone }}',
+                            filename: 'SPH_' + ('{{ str_replace(['/', ' '], '_', $justCreatedDebt->agreement_number ?: $justCreatedDebt->debt_number) }}') + '.pdf',
+                            fileDescription: 'Dokumen PDF Resmi Surat Perjanjian Hutang Piutang Modal',
+                            pdfUrl: '{{ route('debts.agreement-pdf', $justCreatedDebt) }}',
+                            previewUrl: '{{ route('debts.agreement-wa-preview', $justCreatedDebt) }}',
+                            sendUrl: '{{ route('debts.agreement-wa', $justCreatedDebt) }}',
+                            submitButtonText: 'Kirim SPH PDF via WA'
+                        })"
+                        class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-colors"
+                        title="Kirim Surat Perjanjian via WhatsApp">
+                    <x-whatsapp-icon class="w-4 h-4" />
+                    <span>Share Surat Perjanjian via WhatsApp</span>
+                </button>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                <a href="{{ route('debts.show', $justCreatedDebt) }}" class="text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline flex items-center gap-1">
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    <span>Buka Rincian Pinjaman</span>
+                </a>
+                <button type="button" @click="showSuccessModal = false" class="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- MODAL 2: Pembayaran / Angsuran Langsung -->
     <div x-show="showPayModal" 

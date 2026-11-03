@@ -28,7 +28,7 @@
                         class="text-xs py-1 px-2 rounded border border-blue-300 bg-white font-medium">
                     <option value="">-- Pilih Transaksi Penjualan --</option>
                     @foreach($recentSales as $rs)
-                        <option value="{{ $rs->id }}">{{ $rs->invoice_number }} - {{ $rs->buyer_name }} ({{ number_format($rs->total_weight, 1) }}kg)</option>
+                        <option value="{{ $rs->id }}">{{ $rs->invoice_number }} - {{ $rs->buyer_name }} ({{ \App\Services\FormatHelper::weight($rs->total_weight) }} kg)</option>
                     @endforeach
                 </select>
             </div>
@@ -119,89 +119,197 @@
             </div>
         </div>
 
-        <!-- Card 2: Cargo / Items Table -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden space-y-4">
-            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <!-- Card 2: Cargo / Items Table (Tampilan sama seperti Form Barang di Penerimaan Barang) -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden space-y-0">
+            <!-- Header Card -->
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="package" class="w-4 h-4 text-emerald-600"></i>
-                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                        2. Rincian Muatan Barang Rongsok
-                    </h3>
+                    <span class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                        <i data-lucide="package" class="w-4 h-4"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                            2. Rincian Muatan Barang Rongsok
+                        </h3>
+                        <p class="text-[10px] text-slate-500">Daftar muatan barang rongsok yang dimuat ke armada ekspedisi</p>
+                    </div>
                 </div>
-                <div class="text-xs text-slate-600">
-                    Total Berat: <strong class="text-emerald-700 font-mono text-sm" x-text="(totalWeight() || 0).toLocaleString('id-ID') + ' kg'"></strong>
+
+                <div class="flex items-center gap-2">
+                    <button type="button" @click="addRow()" 
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-all">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Tambah Baris (+F2)</span>
+                    </button>
                 </div>
             </div>
 
-            <div class="p-4 overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                            <th class="pb-2 w-10">No</th>
-                            <th class="pb-2 w-48">Pilih Dari Master</th>
-                            <th class="pb-2">Nama Barang / Spesifikasi Muatan <span class="text-red-500">*</span></th>
-                            <th class="pb-2 w-32 text-right">Berat Bersih (kg) <span class="text-red-500">*</span></th>
-                            <th class="pb-2 w-28 text-right">Jml Koli / Ikat</th>
-                            <th class="pb-2 w-48">Keterangan / No. Segel</th>
-                            <th class="pb-2 w-10 text-center"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 text-xs">
-                        <template x-for="(row, idx) in rows" :key="idx">
-                            <tr>
-                                <td class="py-2.5 text-slate-400 font-mono" x-text="idx + 1"></td>
-                                
-                                <td class="py-2.5 pr-2">
-                                    <select :name="'items['+idx+'][scrap_item_id]'" x-model="row.scrap_item_id" @change="onItemSelect(row)"
-                                            class="w-full text-xs p-1.5 rounded border border-slate-300">
-                                        <option value="">-- Manual --</option>
-                                        <template x-for="item in masterItems" :key="item.id">
-                                            <option :value="item.id" x-text="item.name"></option>
-                                        </template>
-                                    </select>
-                                </td>
+            <!-- Scrollable Items Container (Scroll saat barang melebihi layar) -->
+            <div class="p-3 space-y-2.5 max-h-[480px] overflow-y-auto bg-slate-100/60" style="scrollbar-width: thin;">
+                <template x-for="(row, idx) in rows" :key="row.uid || idx">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-xs hover:border-emerald-400 transition-all p-3 space-y-2">
+                        
+                        <!-- BARIS 1: PILIH MASTER, NAMA BARANG & JENIS / VARIAN -->
+                        <div class="flex items-center gap-2">
+                            <!-- Nomor Urut -->
+                            <span class="w-6 h-6 rounded-md bg-slate-800 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-xs" x-text="idx + 1">1</span>
 
-                                <td class="py-2.5 pr-2">
-                                    <input type="text" :name="'items['+idx+'][item_name]'" x-model="row.item_name" required placeholder="Contoh: Besi Super / Kardus Press..."
-                                           class="w-full text-xs p-1.5 rounded border border-slate-300 font-medium">
-                                </td>
+                            <!-- Pilih Dari Master (Searchable Combobox) -->
+                            <div class="w-48 sm:w-60 shrink-0 relative" @click.outside="row.dropdown_open = false">
+                                <input type="hidden" :name="'items['+idx+'][scrap_item_id]'" :value="row.scrap_item_id">
 
-                                <td class="py-2.5 pr-2">
-                                    <input type="number" step="0.1" min="0.1" :name="'items['+idx+'][weight]'" x-model.number="row.weight" required placeholder="0.0"
-                                           class="w-full text-xs p-1.5 rounded border border-slate-300 text-right font-mono font-bold">
-                                </td>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                                    </span>
 
-                                <td class="py-2.5 pr-2">
-                                    <input type="number" min="0" :name="'items['+idx+'][package_qty]'" x-model.number="row.package_qty" placeholder="0"
-                                           class="w-full text-xs p-1.5 rounded border border-slate-300 text-right font-mono">
-                                </td>
+                                    <input type="text"
+                                           x-model="row.search_text"
+                                           @focus="row.dropdown_open = true"
+                                           @input="row.dropdown_open = true"
+                                           placeholder="Pilih dari Master..."
+                                           class="w-full pl-8 pr-12 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-900 bg-white shadow-2xs">
 
-                                <td class="py-2.5 pr-2">
-                                    <input type="text" :name="'items['+idx+'][notes]'" x-model="row.notes" placeholder="Segel / keterangan..."
-                                           class="w-full text-xs p-1.5 rounded border border-slate-300">
-                                </td>
+                                    <div class="absolute inset-y-0 right-0 pr-1.5 flex items-center gap-0.5">
+                                        <button type="button" 
+                                                x-show="row.search_text"
+                                                @click="clearRowItem(row)" 
+                                                class="text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                                                title="Reset pilihan">
+                                            <i data-lucide="x" class="w-3 h-3"></i>
+                                        </button>
+                                        <button type="button" 
+                                                @click="row.dropdown_open = !row.dropdown_open"
+                                                class="text-slate-400 hover:text-slate-600 p-0.5 rounded">
+                                            <i data-lucide="chevron-down" class="w-3 h-3 transition-transform" :class="{ 'rotate-180': row.dropdown_open }"></i>
+                                        </button>
+                                    </div>
+                                </div>
 
-                                <td class="py-2.5 text-center">
-                                    <button type="button" @click="removeRow(idx)" class="text-slate-400 hover:text-red-600">
-                                        <i data-lucide="trash" class="w-4 h-4"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
+                                <!-- Floating Filtered List -->
+                                <div x-show="row.dropdown_open"
+                                     x-transition:enter="transition ease-out duration-100"
+                                     x-transition:enter-start="opacity-0 scale-95"
+                                     x-transition:enter-end="opacity-100 scale-100"
+                                     x-transition:leave="transition ease-in duration-75"
+                                     x-transition:leave-start="opacity-100 scale-100"
+                                     x-transition:leave-end="opacity-0 scale-95"
+                                     class="absolute z-50 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl divide-y divide-slate-100"
+                                     style="display: none;">
+                                    
+                                    <template x-for="item in filteredMasterItems(row.search_text)" :key="item.id">
+                                        <button type="button" 
+                                                @click="selectRowItem(row, item)"
+                                                class="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 flex items-center justify-between transition-colors"
+                                                :class="{ 'bg-emerald-50/70': row.scrap_item_id == item.id }">
+                                            <div class="min-w-0 pr-2">
+                                                <div class="text-xs font-bold text-slate-900 truncate" x-text="item.name"></div>
+                                                <div class="text-[10px] text-slate-500 font-mono" x-text="item.code"></div>
+                                            </div>
+                                            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1 rounded uppercase" x-text="item.unit_type || 'kg'"></span>
+                                        </button>
+                                    </template>
 
-                <div class="pt-3 flex items-center justify-between">
-                    <button type="button" @click="addRow()" 
-                            class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 flex items-center gap-1.5">
-                        <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-600"></i>
-                        <span>Tambah Baris Muatan</span>
-                    </button>
+                                    <template x-if="filteredMasterItems(row.search_text).length === 0">
+                                        <div class="p-2.5 text-center text-xs text-slate-400">
+                                            Tidak ditemukan di master. Ketik manual di kolom nama barang.
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
 
-                    <div class="text-xs text-slate-600 space-x-4">
-                        <span>Total Koli: <strong class="font-mono text-slate-800" x-text="totalPackages()"></strong></span>
-                        <span>Total Muatan: <strong class="font-mono text-emerald-700 text-sm" x-text="(totalWeight() || 0).toLocaleString('id-ID') + ' kg'"></strong></span>
+                            <!-- Nama Barang / Muatan (Required) -->
+                            <div class="flex-1 min-w-0">
+                                <input type="text" 
+                                       :name="'items['+idx+'][item_name]'" 
+                                       x-model="row.item_name" 
+                                       required 
+                                       placeholder="Nama Barang / Muatan *"
+                                       class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900 bg-white">
+                            </div>
+
+                            <!-- Jenis / Varian -->
+                            <div class="w-36 sm:w-48 shrink-0">
+                                <input type="text" 
+                                       :name="'items['+idx+'][item_type_name]'" 
+                                       x-model="row.item_type_name" 
+                                       placeholder="Jenis/Varian (Press, Bening...)"
+                                       class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 bg-white">
+                            </div>
+
+                            <!-- Tombol Hapus -->
+                            <button type="button" @click="removeRow(idx)" 
+                                    :disabled="rows.length <= 1"
+                                    class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-20 shrink-0"
+                                    title="Hapus baris muatan">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+
+                        <!-- BARIS 2: VALUE ANGKA & SATUAN (TETAP 1 BARIS PENUH) -->
+                        <div class="grid grid-cols-4 gap-2 pt-1.5 border-t border-slate-100 items-end"
+                             style="display: grid; grid-template-columns: minmax(80px, 0.9fr) minmax(110px, 1.2fr) minmax(90px, 1fr) minmax(140px, 2fr); gap: 0.5rem; align-items: end;">
+                            
+                            <!-- 1. Tipe Satuan -->
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 whitespace-nowrap">Satuan</label>
+                                <select :name="'items['+idx+'][unit_type]'" 
+                                        x-model="row.unit_type"
+                                        class="w-full py-1.5 px-2 text-xs font-bold rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 uppercase bg-slate-50 text-slate-800 text-center cursor-pointer">
+                                    <option value="kg">⚖️ KG</option>
+                                    <option value="pcs">📦 Pcs / Satuan</option>
+                                </select>
+                            </div>
+
+                            <!-- 2. Berat / Qty -->
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 whitespace-nowrap"
+                                       x-text="row.unit_type === 'pcs' ? 'Qty Satuan *' : 'Berat Muatan (kg) *'"></label>
+                                <input type="number" step="0.01" min="0.01" 
+                                       :name="'items['+idx+'][weight]'" 
+                                       x-model.number="row.weight" 
+                                       required 
+                                       placeholder="0.00"
+                                       class="w-full py-1.5 px-2 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
+                            </div>
+
+                            <!-- 3. Koli / Ikat -->
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 whitespace-nowrap">Koli / Ikat</label>
+                                <input type="number" min="0" 
+                                       :name="'items['+idx+'][package_qty]'" 
+                                       x-model.number="row.package_qty" 
+                                       placeholder="0"
+                                       class="w-full py-1.5 px-2 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono text-slate-700 bg-white">
+                            </div>
+
+                            <!-- 4. Keterangan Muatan -->
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 whitespace-nowrap">Keterangan / Instruksi</label>
+                                <input type="text" 
+                                       :name="'items['+idx+'][notes]'" 
+                                       x-model="row.notes" 
+                                       placeholder="Misal: Segel kontainer, ikat terpal rapi..."
+                                       class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 text-slate-700 bg-white">
+                            </div>
+                        </div>
+
                     </div>
+                </template>
+            </div>
+
+            <!-- Bottom Bar: Tambah Baris & Rekap Total -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <button type="button" @click="addRow()" 
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Tambah Baris Muatan (+F2)</span>
+                </button>
+
+                <div class="text-xs text-slate-600 flex items-center gap-3 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                    <span>Total Baris: <strong class="text-slate-900 font-mono" x-text="rows.length"></strong></span>
+                    <span>Total Koli: <strong class="text-slate-900 font-mono font-bold" x-text="totalPackages()"></strong></span>
+                    <span>Total Berat: <strong class="text-emerald-700 font-mono font-black text-sm" x-text="(totalWeight() || 0).toLocaleString('id-ID') + ' kg'"></strong></span>
                 </div>
             </div>
         </div>
@@ -247,21 +355,67 @@ function deliveryOrderForm() {
             @if($salesTx && $salesTx->items->count() > 0)
                 @foreach($salesTx->items as $si)
                     {
+                        uid: {{ $loop->index + 1 }},
                         scrap_item_id: '{{ $si->scrap_item_id }}',
+                        search_text: '{{ addslashes($si->item_name_snapshot) }}',
+                        dropdown_open: false,
                         item_name: '{{ addslashes($si->item_name_snapshot) }}',
-                        weight: {{ (float) $si->weight }},
+                        item_type_name: '{{ addslashes($si->item_type_name ?? "") }}',
+                        unit_type: '{{ $si->unit_type ?? "kg" }}',
+                        weight: {{ (float) ($si->weight ?? $si->quantity ?? 0) }},
                         package_qty: 0,
                         notes: ''
                     },
                 @endforeach
             @else
-                { scrap_item_id: '', item_name: '', weight: '', package_qty: '', notes: '' }
+                { uid: 1, scrap_item_id: '', search_text: '', dropdown_open: false, item_name: '', item_type_name: '', unit_type: 'kg', weight: '', package_qty: '', notes: '' }
             @endif
         ],
 
+        filteredMasterItems(searchText) {
+            if (!searchText || !searchText.trim()) {
+                return this.masterItems;
+            }
+            const q = searchText.toLowerCase().trim();
+            return this.masterItems.filter(item => {
+                const nameMatch = (item.name || '').toLowerCase().includes(q);
+                const codeMatch = (item.code || '').toLowerCase().includes(q);
+                return nameMatch || codeMatch;
+            });
+        },
+
+        selectRowItem(row, item) {
+            row.scrap_item_id = item.id;
+            row.search_text = item.name + (item.code ? ' (' + item.code + ')' : '');
+            row.item_name = item.name;
+            if (item.unit_type) {
+                row.unit_type = item.unit_type;
+            }
+            row.dropdown_open = false;
+        },
+
+        clearRowItem(row) {
+            row.scrap_item_id = '';
+            row.search_text = '';
+            row.dropdown_open = true;
+        },
+
         addRow() {
-            this.rows.push({ scrap_item_id: '', item_name: '', weight: '', package_qty: '', notes: '' });
-            if (window.refreshIcons) window.refreshIcons();
+            this.rows.push({
+                uid: Date.now() + Math.random(),
+                scrap_item_id: '',
+                search_text: '',
+                dropdown_open: false,
+                item_name: '',
+                item_type_name: '',
+                unit_type: 'kg',
+                weight: '',
+                package_qty: '',
+                notes: ''
+            });
+            this.$nextTick(() => {
+                if (window.refreshIcons) window.refreshIcons();
+            });
         },
 
         removeRow(idx) {
@@ -283,6 +437,15 @@ function deliveryOrderForm() {
 
         totalPackages() {
             return this.rows.reduce((acc, r) => acc + (parseInt(r.package_qty) || 0), 0);
+        },
+
+        init() {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'F2') {
+                    e.preventDefault();
+                    this.addRow();
+                }
+            });
         }
     };
 }

@@ -22,16 +22,16 @@
             <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-slate-50">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        <x-whatsapp-icon class="w-4 h-4 text-white" />
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
                             <h3 class="text-sm font-bold text-slate-900" x-text="$store.waGateway.receipt.title || 'Kirim Nota PDF via WhatsApp'"></h3>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200" x-text="$store.waGateway.receipt.badgeText || 'FORMAT PDF'">
                                 FORMAT PDF
                             </span>
                         </div>
-                        <p class="text-[11px] text-slate-500">Kirim berkas dokumen PDF resmi langsung ke nomor WhatsApp pemasok</p>
+                        <p class="text-[11px] text-slate-500" x-text="$store.waGateway.receipt.subtitle || 'Kirim berkas dokumen PDF resmi langsung ke nomor WhatsApp'"></p>
                     </div>
                 </div>
                 <button type="button" @click="$store.waGateway.receiptModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-200/50 transition-colors">
@@ -91,9 +91,9 @@
                             </div>
                             <div class="truncate">
                                 <div class="text-xs font-bold text-slate-900 truncate">
-                                    <span x-text="($store.waGateway.receipt.receiptData?.invoiceNumber || $store.waGateway.receipt.receiptData?.paymentNumber || 'Dokumen') + '.pdf'"></span>
+                                    <span x-text="$store.waGateway.receipt.filename || (($store.waGateway.receipt.receiptData?.invoiceNumber || $store.waGateway.receipt.receiptData?.paymentNumber || 'Dokumen') + '.pdf')"></span>
                                 </div>
-                                <div class="text-[11px] text-slate-500">Dokumen PDF Resmi Kasir Rongsok (Format A5)</div>
+                                <div class="text-[11px] text-slate-500" x-text="$store.waGateway.receipt.fileDescription || 'Dokumen PDF Resmi Kasir Rongsok (Format A5)'"></div>
                             </div>
                         </div>
 
@@ -119,7 +119,7 @@
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                                <i data-lucide="message-square" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                <x-whatsapp-icon class="w-3.5 h-3.5 text-emerald-600" />
                                 <span>Keterangan Pesan WhatsApp (Caption):</span>
                             </label>
                             <button type="button" 
@@ -164,7 +164,7 @@
                             :disabled="!$store.waGateway.receipt.phone"
                             class="flex-1 sm:flex-none px-3.5 py-2 text-xs font-bold rounded-lg border border-teal-300 bg-teal-50 text-teal-800 hover:bg-teal-100 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                             title="Buka chat WhatsApp di tab baru dengan pesan nota">
-                        <i data-lucide="external-link" class="w-3.5 h-3.5 text-teal-600"></i>
+                        <x-whatsapp-icon class="w-3.5 h-3.5 text-teal-600" />
                         <span>Buka Chat (wa.me)</span>
                     </button>
 
@@ -175,7 +175,7 @@
                             class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                             title="Kirim berkas PDF nota otomatis melalui nomor WhatsApp resmi depo">
                         <i data-lucide="send" class="w-3.5 h-3.5" :class="{ 'animate-spin': $store.waGateway.receipt.isSending }"></i>
-                        <span x-text="$store.waGateway.receipt.isSending ? 'Mengirim PDF...' : ($store.waGateway.receipt.sendAsPdf ? 'Kirim Nota PDF via WA' : 'Kirim Pesan via WA')"></span>
+                        <span x-text="$store.waGateway.receipt.isSending ? 'Mengirim PDF...' : ($store.waGateway.receipt.sendAsPdf ? ($store.waGateway.receipt.submitButtonText || 'Kirim Nota PDF via WA') : 'Kirim Pesan via WA')"></span>
                     </button>
                 </div>
             </div>

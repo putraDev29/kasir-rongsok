@@ -75,5 +75,15 @@ class SalesTransaction extends Model
     {
         return $this->status === self::STATUS_CANCELLED;
     }
+
+    public function getCustomerNameAttribute(): ?string
+    {
+        return $this->buyer_name;
+    }
+
+    public function getCustomerPhoneAttribute(): ?string
+    {
+        return $this->buyer_phone;
+    }
 }
 

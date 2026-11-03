@@ -165,14 +165,56 @@
                 </div>
             </div>
 
-            <!-- BAGIAN 4: INTEGRASI WHATSAPP GATEWAY (WPPCONNECT) -->
+            <!-- BAGIAN 4: PENGATURAN TEKS DOKUMEN RESMI & PDF (TASK 9) -->
+            <div class="bg-indigo-50/50 p-5 rounded-xl border border-indigo-200 space-y-4">
+                <div class="flex items-center gap-2 border-b border-indigo-200 pb-2">
+                    <div class="w-6 h-6 rounded bg-indigo-600 text-white flex items-center justify-center">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-950">4. Teks Khusus PDF, Surat Jalan, Layanan Jemput & Perjanjian</h3>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Teks Layanan Jemput Barang (Untuk WA & PDF) *</label>
+                        <textarea name="pickup_service_text" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('pickup_service_text', $settings['pickup_service_text'] ?? 'Melayani armada jemput barang rongsok skala besar langsung ke lokasi gudang/pabrik Anda. Hubungi kantor kami.') }}</textarea>
+                        <span class="text-[10px] text-slate-500">Tampil otomatis saat broadcast daftar harga ke WA atau pada dokumen resmi.</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Ketentuan & Syarat Nota Transaksi (Receipt Terms)</label>
+                        <textarea name="receipt_terms" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('receipt_terms', $settings['receipt_terms'] ?? 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali. Nota ini sah sebagai bukti penerimaan/penjualan.') }}</textarea>
+                        <span class="text-[10px] text-slate-500">Dicetak di bagian syarat transaksi nota.</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Catatan Dokumen Surat Jalan Pengiriman</label>
+                        <textarea name="delivery_order_notes" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('delivery_order_notes', $settings['delivery_order_notes'] ?? 'Surat Jalan ini merupakan dokumen bukti penyerahan barang rongsok yang sah. Mohon diperiksa kembali sebelum ditandatangani.') }}</textarea>
+                        <span class="text-[10px] text-slate-500">Dicetak di bagian bawah lembar Surat Jalan pengiriman pabrik.</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Ketentuan Perjanjian Hutang Modal (Debt Agreement Terms)</label>
+                        <textarea name="debt_agreement_terms" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('debt_agreement_terms', $settings['debt_agreement_terms'] ?? 'Apabila PIHAK KEDUA tidak menyetorkan barang rongsok atau tidak mengangsur pinjaman sesuai kesepakatan, PIHAK PERTAMA berhak menagih sisa kewajiban atau mengambil tindakan penyelesaian sesuai hukum yang berlaku di Republik Indonesia.') }}</textarea>
+                        <span class="text-[10px] text-slate-500">Dicetak sebagai pasal penyelesaian pada Surat Perjanjian Hutang Modal.</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Catatan Kaki Slip Gaji Karyawan</label>
+                    <input type="text" name="salary_slip_notes" value="{{ old('salary_slip_notes', $settings['salary_slip_notes'] ?? 'Slip gaji ini merupakan bukti sah pembayaran honor/upah kerja yang diterbitkan secara resmi.') }}"
+                           class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">
+                </div>
+            </div>
+
+            <!-- BAGIAN 5: INTEGRASI WHATSAPP GATEWAY (WPPCONNECT) -->
             <div class="bg-emerald-50/50 p-5 rounded-xl border border-emerald-200 space-y-4">
                 <div class="flex items-center justify-between border-b border-emerald-200 pb-2">
                     <div class="flex items-center gap-2">
                         <div class="w-6 h-6 rounded bg-emerald-600 text-white flex items-center justify-center">
-                            <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                            <x-whatsapp-icon class="w-3.5 h-3.5" />
                         </div>
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-950">4. Integrasi WhatsApp Gateway (WPPConnect Service)</h3>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-950">5. Integrasi WhatsApp Gateway (WPPConnect Service)</h3>
                     </div>
 
                     <button type="button" 

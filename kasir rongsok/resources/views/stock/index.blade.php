@@ -12,7 +12,7 @@
             <div>
                 <div class="text-xs text-slate-500 font-medium">Total Akumulasi Stok Gudang</div>
                 <div class="text-xl font-bold text-slate-900">
-                    {{ number_format($totalStockKg, 2, ',', '.') }} <span class="text-xs font-semibold text-slate-500">kg</span>
+                    {{ \App\Services\FormatHelper::weight($totalStockKg) }} <span class="text-xs font-semibold text-slate-500">kg</span>
                 </div>
                 <div class="text-[11px] text-slate-400">Total berat fisik tersedia saat ini</div>
             </div>
@@ -122,23 +122,23 @@
                             <td class="py-3 px-3 font-mono font-bold text-slate-700">{{ $item->code }}</td>
                             <td class="py-3 px-3 font-bold text-slate-900">
                                 <div>{{ $item->name }}</div>
-                                <div class="text-[10px] text-slate-400 font-normal">Min. Alert: {{ number_format($item->min_stock_alert, 0) }} kg</div>
+                                <div class="text-[10px] text-slate-400 font-normal">Min. Alert: {{ \App\Services\FormatHelper::weight($item->min_stock_alert) }} kg</div>
                             </td>
                             <td class="py-3 px-3 text-slate-600">{{ $item->category?->name ?? '-' }}</td>
                             <td class="py-3 px-3 text-right font-mono text-emerald-700">
-                                +{{ number_format($bal?->total_in ?? 0, 1) }} kg
+                                +{{ \App\Services\FormatHelper::weight($bal?->total_in ?? 0) }} kg
                             </td>
                             <td class="py-3 px-3 text-right font-mono text-red-600">
-                                -{{ number_format($bal?->total_out ?? 0, 1) }} kg
+                                -{{ \App\Services\FormatHelper::weight($bal?->total_out ?? 0) }} kg
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-black text-sm {{ $item->isLowStock() ? 'text-amber-600' : 'text-slate-900' }}">
-                                {{ number_format($curStock, 2, ',', '.') }} kg
+                                {{ \App\Services\FormatHelper::weight($curStock) }} kg
                             </td>
                             <td class="py-3 px-3 text-right font-mono text-slate-700">
-                                Rp {{ number_format($avgBuy, 0, ',', '.') }}
+                                Rp {{ \App\Services\FormatHelper::number($avgBuy) }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">
-                                Rp {{ number_format($estVal, 0, ',', '.') }}
+                                Rp {{ \App\Services\FormatHelper::number($estVal) }}
                             </td>
                             <td class="py-3 px-3 text-center">
                                 @if($item->isLowStock())

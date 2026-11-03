@@ -13,6 +13,9 @@ class Supplier extends Model
 
     protected $fillable = [
         'code',
+        'member_number',
+        'join_date',
+        'tier_override',
         'name',
         'phone',
         'address',
@@ -24,6 +27,7 @@ class Supplier extends Model
     {
         return [
             'is_active' => 'boolean',
+            'join_date' => 'date',
         ];
     }
 
@@ -42,8 +46,117 @@ class Supplier extends Model
         return $this->hasMany(Debt::class)->where('remaining_amount', '>', 0);
     }
 
+    public function rewards(): HasMany
+    {
+        return $this->hasMany(SupplierReward::class)->latest();
+    }
+
     public function getTotalRemainingDebtAttribute(): float
     {
         return (float) $this->debts()->where('remaining_amount', '>', 0)->sum('remaining_amount');
+    }
+
+    public function getMemberNumberAttribute($value): string
+    {
+        if (!empty($value)) {
+            return $value;
+        }
+        $code = $this->code ?: ('SUP-' . str_pad($this->id, 4, '0', STR_PAD_LEFT));
+        return 'MBR-' . $code;
+    }
+
+    public function getTotalWeightAttribute(): float
+    {
+        return (float) $this->purchaseTransactions()->where('status', 'completed')->sum('total_net_weight');
+    }
+
+    public function getTotalAmountAttribute(): float
+    {
+        return (float) $this->purchaseTransactions()->where('status', 'completed')->sum('final_amount');
+    }
+
+    public function getTotalTransactionsCountAttribute(): int
+    {
+        return (int) $this->purchaseTransactions()->where('status', 'completed')->count();
+    }
+
+    /**
+     * Hitung Tier Loyalitas Pemasok berdasarkan tonase dan omzet penjualan
+     */
+    public function getTierAttribute(): string
+    {
+        if (!empty($this->tier_override)) {
+            return ucfirst($this->tier_override);
+        }
+
+        $amount = $this->total_amount;
+        $weight = $this->total_weight;
+
+        if ($amount >= 50000000 || $weight >= 5000) {
+            return 'Platinum';
+        } elseif ($amount >= 20000000 || $weight >= 2000) {
+            return 'Gold';
+        } elseif ($amount >= 5000000 || $weight >= 500) {
+            return 'Silver';
+        }
+
+        return 'Bronze';
+    }
+
+    /**
+     * Hitung Rating Bintang Pemasok (1 s/d 5 Bintang)
+     */
+    public function getRatingStarsAttribute(): int
+    {
+        return match($this->tier) {
+            'Platinum' => 5,
+            'Gold' => 4,
+            'Silver' => 3,
+            default => ($this->total_weight >= 100 || $this->total_amount >= 1000000) ? 2 : 1,
+        };
+    }
+
+    /**
+     * Poin Loyalitas (1 Poin per Rp 100.000 penjualan)
+     */
+    public function getPointsAttribute(): int
+    {
+        return (int) floor($this->total_amount / 100000);
+    }
+
+    /**
+     * Deskripsi Reward / Bonus yang berhak didapatkan dari Owner
+     */
+    public function getEligibleRewardAttribute(): string
+    {
+        return match($this->tier) {
+            'Platinum' => 'VIP Reward Owner: Bonus Tunai Rp 500.000 / Timbangan Digital / Harga Prioritas VIP +Rp 100/kg',
+            'Gold' => 'Bonus Cashback Rp 250.000 / Kaos Depo + Tambahan Harga Khusus +Rp 50/kg',
+            'Silver' => 'Bonus Sembako / Kaos Depo & Fasilitas Prioritas Jemput Barang',
+            default => 'Poin Pembelian & Kemudahan Akses Kasbon / Bon Modal Depo',
+        };
+    }
+
+    /**
+     * Ringkasan data member untuk integrasi realtime di form Kasir Alpine.js
+     */
+    public function toMemberSummaryArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'code' => $this->code,
+            'member_number' => $this->member_number,
+            'name' => $this->name,
+            'phone' => $this->phone,
+            'address' => $this->address,
+            'total_weight' => $this->total_weight,
+            'total_amount' => $this->total_amount,
+            'total_transactions' => $this->total_transactions_count,
+            'tier' => $this->tier,
+            'rating_stars' => $this->rating_stars,
+            'points' => $this->points,
+            'eligible_reward' => $this->eligible_reward,
+            'remaining_debt' => $this->total_remaining_debt,
+        ];
     }
 }

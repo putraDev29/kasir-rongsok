@@ -52,12 +52,64 @@
 
     <!-- Table Card -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Transaksi Masuk</span>
-            <a href="{{ route('purchases.create') }}" class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">
-                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
-                <span>Timbang Baru</span>
-            </a>
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Daftar Transaksi Masuk</span>
+                <span class="text-[11px] text-slate-500">Total ditampilkan: {{ $transactions->total() }} transaksi</span>
+            </div>
+
+            <!-- Global Action Bar (Point A, D, B, C) -->
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('purchases.batch-print', request()->query()) }}" target="_blank"
+                   class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                   title="Cetak Semua Nota Sekaligus (Format 58mm Kertas HVS A4)">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                    <span>Print Semua (HVS)</span>
+                </a>
+
+                <a href="{{ route('purchases.batch-pdf', request()->query()) }}" target="_blank"
+                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                   title="Unduh Berkas PDF Semua Nota (Format 58mm Kertas HVS A4)">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span>Download PDF HVS</span>
+                </a>
+
+                <a href="{{ route('purchases.export-excel', request()->query()) }}"
+                   class="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                   title="Unduh Data ke Excel (.xls)">
+                    <i data-lucide="sheet" class="w-3.5 h-3.5"></i>
+                    <span>Export Excel</span>
+                </a>
+
+                <button type="button" 
+                        @click="openWaPdfModal({
+                            title: 'Kirim Rekapitulasi Nota Pembelian PDF',
+                            subtitle: 'Kirim berkas dokumen PDF gabungan nota timbang ke nomor WhatsApp',
+                            filename: 'Semua_Nota_Pembelian_' + ('{{ ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd') }}') + '.pdf',
+                            fileDescription: 'Dokumen PDF Rekapitulasi Semua Nota Pembelian (Format 58mm Kertas HVS)',
+                            pdfUrl: '{{ route('purchases.batch-pdf', request()->query()) }}',
+                            previewUrl: '{{ route('purchases.preview-wa-global', request()->query()) }}',
+                            sendUrl: '{{ route('purchases.send-wa-global') }}',
+                            sendPayload: {
+                                search: '{{ addslashes($search) }}',
+                                start_date: '{{ $startDate }}',
+                                end_date: '{{ $endDate }}',
+                                status: '{{ $status }}',
+                                cashier_id: '{{ request('cashier_id') }}'
+                            },
+                            submitButtonText: 'Kirim Semua Nota PDF via WA'
+                        })"
+                        class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                        title="Kirim Rekapitulasi & Dokumen PDF via WhatsApp">
+                    <x-whatsapp-icon class="w-3.5 h-3.5" />
+                    <span>Kirim WA Global (PDF)</span>
+                </button>
+
+                <a href="{{ route('purchases.create') }}" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    <span>Timbang Baru</span>
+                </a>
+            </div>
         </div>
 
         <div class="overflow-x-auto">
@@ -93,10 +145,10 @@
                                 {{ $tx->items->count() }} item
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-medium text-slate-800">
-                                {{ number_format($tx->total_net_weight, 2, ',', '.') }} kg
+                                {{ \App\Services\FormatHelper::weight($tx->total_net_weight) }} kg
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">
-                                Rp {{ number_format($tx->final_amount, 0, ',', '.') }}
+                                {{ \App\Services\FormatHelper::rupiah($tx->final_amount) }}
                             </td>
                             <td class="py-3 px-3 text-slate-600">
                                 {{ $tx->user?->name }}
@@ -126,7 +178,7 @@
                                             @click="$store.waGateway.openReceipt('purchase', {{ $tx->id }}, '{{ $tx->supplier_phone }}')" 
                                             title="Kirim Nota via WhatsApp"
                                             class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50">
-                                        <i data-lucide="message-square" class="w-4 h-4"></i>
+                                        <x-whatsapp-icon class="w-4 h-4" />
                                     </button>
                                 </div>
                             </td>
@@ -150,5 +202,6 @@
     </div>
 
 </div>
+
 @endsection
 

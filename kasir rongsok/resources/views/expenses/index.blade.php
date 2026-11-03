@@ -1,7 +1,7 @@
 @extends('layouts.app', ['header' => 'Pengeluaran Operasional Usaha'])
 
 @section('content')
-<div class="space-y-4" x-data="{ expenseModal: false, isManualCategory: false, categoryId: '' }">
+<div class="space-y-4" x-data="{ expenseModal: false, categoryModal: false, isManualCategory: false, categoryId: '' }">
 
     <!-- Header Actions & KPI -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -15,11 +15,58 @@
             <p class="text-xs text-slate-500">Biaya armada, upah kuli timbang, konsumsi, dan operasional depo</p>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Manage Categories (Task 12) -->
+            <button type="button" @click="categoryModal = true"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300">
+                <i data-lucide="tag" class="w-3.5 h-3.5 text-slate-600"></i>
+                <span>Kelola Kategori</span>
+            </button>
+
+            <!-- Export PDF (Task 13) -->
+            <a href="{{ route('expenses.pdf', request()->query()) }}" target="_blank"
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>PDF Biaya</span>
+            </a>
+
+            <!-- Send WA (Task 13) -->
+            <button type="button" 
+                    @click="openWaPdfModal({
+                        title: 'Kirim Rekap Biaya Operasional PDF via WhatsApp',
+                        subtitle: 'Kirim berkas dokumen PDF rincian beban pengeluaran ke nomor WhatsApp',
+                        filename: 'Laporan_Biaya_Operasional_' + ('{{ $startDate && $endDate ? "{$startDate}_sd_{$endDate}" : date("Ymd") }}') + '.pdf',
+                        fileDescription: 'Dokumen PDF Resmi Laporan Biaya Operasional Depo',
+                        pdfUrl: '{{ route('expenses.pdf', request()->query()) }}',
+                        previewUrl: '{{ route('expenses.wa-preview', request()->query()) }}',
+                        sendUrl: '{{ route('expenses.send-wa') }}',
+                        sendPayload: {
+                            search: '{{ addslashes($search) }}',
+                            start_date: '{{ $startDate }}',
+                            end_date: '{{ $endDate }}',
+                            category_id: '{{ $categoryId }}',
+                            all_dates: '{{ $allDates ? 1 : 0 }}'
+                        },
+                        submitButtonText: 'Kirim PDF Biaya via WA'
+                    })"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm"
+                    title="Kirim Rekap Biaya Operasional PDF via WhatsApp">
+                <x-whatsapp-icon class="w-3.5 h-3.5" />
+                <span>Kirim WA (PDF)</span>
+            </button>
+
+            <!-- Export Excel -->
+            <a href="{{ route('expenses.excel', request()->query()) }}"
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-sm">
+                <i data-lucide="sheet" class="w-3.5 h-3.5"></i>
+                <span>Excel</span>
+            </a>
+
+            <!-- Add Expense -->
             <button type="button" @click="expenseModal = true"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm">
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                <span>Catat Pengeluaran Baru</span>
+                <span>Catat Pengeluaran</span>
             </button>
         </div>
     </div>
@@ -236,6 +283,68 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Kelola Kategori Pengeluaran (Task 12: Tambah & Hapus Kategori) -->
+    <div x-show="categoryModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4" @click.away="categoryModal = false">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="tag" class="w-5 h-5 text-emerald-600"></i>
+                    <h3 class="text-sm font-bold text-slate-900">Kelola Kategori Pengeluaran</h3>
+                </div>
+                <button type="button" @click="categoryModal = false" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Form Tambah Kategori -->
+            <form action="{{ route('expenses.categories.store') }}" method="POST" class="flex gap-2">
+                @csrf
+                <input type="text" name="name" required placeholder="Nama kategori baru..."
+                       class="flex-1 text-xs p-2 rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
+                <button type="submit" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm shrink-0 flex items-center gap-1">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    <span>Tambah</span>
+                </button>
+            </form>
+
+            <!-- List Kategori dengan Tombol Hapus -->
+            <div class="border border-slate-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                <table class="w-full text-left text-xs divide-y divide-slate-100">
+                    <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-500">
+                        <tr>
+                            <th class="p-2.5">Nama Kategori</th>
+                            <th class="p-2.5 text-center w-24">Jml Biaya</th>
+                            <th class="p-2.5 text-center w-16">Hapus</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($categories as $cat)
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2.5 font-semibold text-slate-800">{{ $cat->name }}</td>
+                                <td class="p-2.5 text-center text-slate-500">{{ $cat->expenses()->count() }} data</td>
+                                <td class="p-2.5 text-center">
+                                    <form action="{{ route('expenses.categories.destroy', $cat) }}" method="POST" onsubmit="return confirm('Hapus kategori {{ $cat->name }} dari daftar dropdown?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-50" title="Hapus Kategori">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button type="button" @click="categoryModal = false" class="px-3.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold">
+                    Tutup
+                </button>
+            </div>
         </div>
     </div>
 

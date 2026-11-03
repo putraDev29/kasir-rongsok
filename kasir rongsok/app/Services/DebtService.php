@@ -45,8 +45,11 @@ class DebtService
                 throw new Exception('Nama peminjam / orang yang berhutang modal wajib diisi.');
             }
 
+            $agreementNumber = FormatHelper::generateDebtAgreementNumber($date);
+
             $debt = Debt::create([
                 'debt_number' => $debtNumber,
+                'agreement_number' => $agreementNumber,
                 'supplier_id' => $supplierId,
                 'borrower_name' => $borrowerName,
                 'borrower_phone' => $borrowerPhone,
@@ -58,6 +61,9 @@ class DebtService
                 'paid_amount' => 0,
                 'remaining_amount' => $amount,
                 'status' => Debt::STATUS_UNPAID,
+                'guarantee_info' => $data['guarantee_info'] ?? null,
+                'witness_name' => $data['witness_name'] ?? null,
+                'agreement_notes' => $data['agreement_notes'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
 

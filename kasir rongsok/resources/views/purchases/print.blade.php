@@ -108,34 +108,61 @@
             </p>
         </div>
 
-        <!-- Meta Info -->
-        <div class="py-2 text-[10px] space-y-0.5 border-b border-dashed border-slate-400 font-mono">
-            <div class="flex justify-between">
-                <span>No. Nota:</span>
-                <span class="font-bold">{{ $purchase->invoice_number }}</span>
+        @php
+            $metaGrid = ($format === 'thermal_58') 
+                ? 'display: grid; grid-template-columns: 68px 6px 1fr; align-items: center;' 
+                : (($format === 'thermal_80') 
+                    ? 'display: grid; grid-template-columns: 95px 8px 1fr; align-items: center;' 
+                    : 'display: grid; grid-template-columns: 130px 12px 1fr; align-items: center;');
+
+            $calcGrid = ($format === 'thermal_58') 
+                ? 'display: grid; grid-template-columns: 74px 6px 1fr; align-items: center;' 
+                : (($format === 'thermal_80') 
+                    ? 'display: grid; grid-template-columns: 105px 8px 1fr; align-items: center;' 
+                    : 'display: grid; grid-template-columns: 140px 12px 1fr; align-items: center;');
+        @endphp
+
+        <!-- Meta Info (Colons vertically aligned right after longest label, values left-aligned strictly 1 line) -->
+        <div class="py-2 text-[10px] space-y-1 border-b border-dashed border-slate-400 font-mono">
+            <div style="{{ $metaGrid }}">
+                <span class="whitespace-nowrap">No. Nota</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->invoice_number }}</span>
             </div>
-            <div class="flex justify-between">
-                <span>Tanggal:</span>
-                <span>{{ $purchase->transaction_date->format('d/m/Y H:i') }}</span>
+            <div style="{{ $metaGrid }}">
+                <span class="whitespace-nowrap">Tanggal</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 whitespace-nowrap">{{ $purchase->transaction_date->format('d/m/Y H:i') }}</span>
             </div>
-            <div class="flex justify-between">
-                <span>Pemasok:</span>
-                <span class="font-semibold">{{ $purchase->supplier_name }}</span>
+            <div style="{{ $metaGrid }}">
+                <span class="whitespace-nowrap">Pemasok</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name }}</span>
             </div>
             @if($purchase->supplier_phone)
-                <div class="flex justify-between">
-                    <span>HP Pemasok:</span>
-                    <span>{{ $purchase->supplier_phone }}</span>
+                <div style="{{ $metaGrid }}">
+                    <span class="whitespace-nowrap">HP Pemasok</span>
+                    <span class="text-center">:</span>
+                    <span class="text-left pl-1.5 font-mono whitespace-nowrap">{{ $purchase->supplier_phone }}</span>
                 </div>
             @endif
-            <div class="flex justify-between">
-                <span>Kasir/Timbang:</span>
-                <span>{{ $purchase->user?->name }}</span>
+            <div style="{{ $metaGrid }}">
+                <span class="whitespace-nowrap">Kasir</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->user?->name }}</span>
             </div>
-            <div class="flex justify-between">
-                <span>Metode Bayar:</span>
-                <span>{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
+            <div style="{{ $metaGrid }}">
+                <span class="whitespace-nowrap">Metode Bayar</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
             </div>
+            @if($purchase->bank_info)
+                <div style="{{ $metaGrid }}">
+                    <span class="whitespace-nowrap">Data Bayar</span>
+                    <span class="text-center">:</span>
+                    <span class="text-left pl-1.5 font-mono text-[8.5px] whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
+                </div>
+            @endif
         </div>
 
         <!-- Items Breakdown -->
@@ -146,14 +173,24 @@
                     <div class="py-1 {{ !$loop->last ? 'border-b border-dotted border-slate-300' : '' }}">
                         <div class="font-bold text-[10px] uppercase text-slate-900 leading-tight">
                             {{ $item->item_name_snapshot }}
+                            @if($item->item_type_name)
+                                <span class="font-normal text-[9px] text-slate-700">({{ $item->item_type_name }})</span>
+                            @endif
                         </div>
-                        <div class="flex justify-between text-[9px] text-slate-600">
-                            <span>{{ number_format($item->gross_weight, 1) }} - {{ number_format($item->tare_weight, 1) }} kg</span>
-                            <span class="font-bold text-slate-900">{{ number_format($item->net_weight, 2) }} kg</span>
-                        </div>
+                        @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                            <div class="flex justify-between text-[9px] text-slate-600">
+                                <span>Jumlah Satuan</span>
+                                <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} pcs</span>
+                            </div>
+                        @else
+                            <div class="flex justify-between text-[9px] text-slate-600">
+                                <span>{{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg</span>
+                                <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</span>
+                            </div>
+                        @endif
                         <div class="flex justify-between text-[9px] pt-0.5">
-                            <span class="text-slate-600">@ Rp {{ number_format($item->price_per_kg, 0, ',', '.') }}</span>
-                            <span class="font-black text-slate-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                            <span class="text-slate-600">@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</span>
+                            <span class="font-black text-slate-900">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</span>
                         </div>
                     </div>
                 @endforeach
@@ -165,7 +202,7 @@
                     <thead>
                         <tr class="border-b border-slate-300 text-[9px] uppercase">
                             <th class="py-1">Barang</th>
-                            <th class="py-1 text-right">Kotor-Tara</th>
+                            <th class="py-1 text-right">Kotor-Tara / Qty</th>
                             <th class="py-1 text-right">Bersih</th>
                             <th class="py-1 text-right">Harga</th>
                             <th class="py-1 text-right">Subtotal</th>
@@ -176,14 +213,29 @@
                             <tr>
                                 <td class="py-1 pr-1 font-semibold" colspan="5">
                                     {{ $item->item_name_snapshot }}
+                                    @if($item->item_type_name)
+                                        <span class="font-normal text-[9px] text-slate-600">- {{ $item->item_type_name }}</span>
+                                    @endif
                                 </td>
                             </tr>
                             <tr class="text-slate-600 text-[9px]">
                                 <td class="pb-1 pl-2 text-slate-400">↳</td>
-                                <td class="pb-1 text-right">{{ number_format($item->gross_weight, 1) }}-{{ number_format($item->tare_weight, 1) }}</td>
-                                <td class="pb-1 text-right font-bold text-slate-900">{{ number_format($item->net_weight, 2) }}kg</td>
-                                <td class="pb-1 text-right">@ {{ number_format($item->price_per_kg, 0, ',', '.') }}</td>
-                                <td class="pb-1 text-right font-bold text-slate-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                                <td class="pb-1 text-right">
+                                    @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                        {{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} pcs
+                                    @else
+                                        {{ \App\Services\FormatHelper::weight($item->gross_weight) }}-{{ \App\Services\FormatHelper::weight($item->tare_weight) }}
+                                    @endif
+                                </td>
+                                <td class="pb-1 text-right font-bold text-slate-900">
+                                    @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                        {{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} pcs
+                                    @else
+                                        {{ \App\Services\FormatHelper::weight($item->net_weight) }} kg
+                                    @endif
+                                </td>
+                                <td class="pb-1 text-right">@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</td>
+                                <td class="pb-1 text-right font-bold text-slate-900">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -191,41 +243,48 @@
             </div>
         @endif
 
-        <!-- Total Calculation -->
+        <!-- Total Calculation (Colons aligned right after longest label, values right-aligned strictly 1 line) -->
         <div class="pt-2 border-t border-dashed border-slate-400 font-mono text-[10px] space-y-1">
-            <div class="flex justify-between">
-                <span>Total Berat Kotor:</span>
-                <span>{{ number_format($purchase->total_gross_weight, 2) }} kg</span>
+            <div style="{{ $calcGrid }}">
+                <span class="whitespace-nowrap">Berat Kotor</span>
+                <span class="text-center">:</span>
+                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_gross_weight) }} kg</span>
             </div>
-            <div class="flex justify-between">
-                <span>Total Potongan/Tara:</span>
-                <span>{{ number_format($purchase->total_tare_weight, 2) }} kg</span>
+            <div style="{{ $calcGrid }}">
+                <span class="whitespace-nowrap">Pot./Tara</span>
+                <span class="text-center">:</span>
+                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_tare_weight) }} kg</span>
             </div>
-            <div class="flex justify-between font-bold text-slate-900">
-                <span>TOTAL BERAT BERSIH:</span>
-                <span>{{ number_format($purchase->total_net_weight, 2) }} kg</span>
+            <div style="{{ $calcGrid }}" class="font-bold text-slate-900">
+                <span class="whitespace-nowrap">BERAT BERSIH</span>
+                <span class="text-center">:</span>
+                <span class="text-right font-black whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_net_weight) }} kg</span>
             </div>
             
-            <div class="pt-1 border-t border-dotted border-slate-300 flex justify-between">
-                <span>Subtotal Pembelian:</span>
-                <span>Rp {{ number_format($purchase->subtotal_amount, 0, ',', '.') }}</span>
+            <div class="pt-1 border-t border-dotted border-slate-300" style="{{ $calcGrid }}">
+                <span class="whitespace-nowrap">Subtotal</span>
+                <span class="text-center">:</span>
+                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->subtotal_amount) }}</span>
             </div>
             @if($purchase->discount_amount > 0)
-                <div class="flex justify-between text-slate-600">
-                    <span>Potongan Khusus:</span>
-                    <span>- Rp {{ number_format($purchase->discount_amount, 0, ',', '.') }}</span>
+                <div class="text-slate-600" style="{{ $calcGrid }}">
+                    <span class="whitespace-nowrap">Potongan</span>
+                    <span class="text-center">:</span>
+                    <span class="text-right whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($purchase->discount_amount) }}</span>
                 </div>
             @endif
             @if($purchase->rounding_amount != 0)
-                <div class="flex justify-between text-slate-600">
-                    <span>Pembulatan:</span>
-                    <span>Rp {{ number_format($purchase->rounding_amount, 0, ',', '.') }}</span>
+                <div class="text-slate-600" style="{{ $calcGrid }}">
+                    <span class="whitespace-nowrap">Pembulatan</span>
+                    <span class="text-center">:</span>
+                    <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->rounding_amount) }}</span>
                 </div>
             @endif
 
-            <div class="pt-1.5 border-t border-slate-900 flex justify-between text-xs font-black">
-                <span>TOTAL HARGA BARANG:</span>
-                <span class="text-xs">Rp {{ number_format($purchase->final_amount, 0, ',', '.') }}</span>
+            <div class="pt-1.5 border-t border-slate-900 text-xs font-black" style="{{ $calcGrid }}">
+                <span class="whitespace-nowrap">TOTAL HARGA</span>
+                <span class="text-center">:</span>
+                <span class="text-right text-xs whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->final_amount) }}</span>
             </div>
 
             @php
@@ -239,24 +298,28 @@
                     <div class="font-bold text-center text-[10px] uppercase tracking-wider text-slate-800 pb-0.5 border-b border-dotted border-slate-300">
                         -- RINCIAN HUTANG / BON MODAL --
                     </div>
-                    <div class="flex justify-between">
-                        <span>Hutang Sebelum Transaksi:</span>
-                        <span>Rp {{ number_format($debtBefore, 0, ',', '.') }}</span>
+                    <div style="{{ $calcGrid }}">
+                        <span class="whitespace-nowrap">Hutang Awal</span>
+                        <span class="text-center">:</span>
+                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($debtBefore) }}</span>
                     </div>
-                    <div class="flex justify-between text-slate-800 font-semibold">
-                        <span>Potong Hutang (Nota Ini):</span>
-                        <span class="text-emerald-700">- Rp {{ number_format($purchase->debt_deduction_amount ?? 0, 0, ',', '.') }}</span>
+                    <div class="text-slate-800 font-semibold" style="{{ $calcGrid }}">
+                        <span class="whitespace-nowrap">Potong Hutang</span>
+                        <span class="text-center">:</span>
+                        <span class="text-right text-emerald-700 whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($purchase->debt_deduction_amount ?? 0) }}</span>
                     </div>
-                    <div class="flex justify-between font-bold text-amber-800 pt-0.5 border-t border-dotted border-slate-300">
-                        <span>SISA HUTANG / BON:</span>
-                        <span>Rp {{ number_format($debtAfter, 0, ',', '.') }}</span>
+                    <div class="font-bold text-amber-800 pt-0.5 border-t border-dotted border-slate-300" style="{{ $calcGrid }}">
+                        <span class="whitespace-nowrap">SISA HUTANG</span>
+                        <span class="text-center">:</span>
+                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($debtAfter) }}</span>
                     </div>
                 </div>
             @endif
 
-            <div class="pt-2 border-t border-slate-900 flex justify-between text-xs font-black">
-                <span>UANG DITERIMA PENJUAL:</span>
-                <span class="text-sm">Rp {{ number_format($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0)), 0, ',', '.') }}</span>
+            <div class="pt-2 border-t border-slate-900 text-xs font-black" style="{{ $calcGrid }}">
+                <span class="whitespace-nowrap">UANG DITERIMA</span>
+                <span class="text-center">:</span>
+                <span class="text-right text-sm whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0))) }}</span>
             </div>
         </div>
 
@@ -286,6 +349,11 @@
                 <p class="text-[8px] text-slate-600 leading-tight">
                     Barang yang dijual wajib milik sah pribadi penjual. Depo tidak melayani barang curian / ilegal.
                 </p>
+                @if(!empty($settings['receipt_terms']))
+                    <p class="text-[8px] text-slate-500 leading-tight">
+                        {{ $settings['receipt_terms'] }}
+                    </p>
+                @endif
                 <p class="text-[8px] text-slate-400 italic leading-tight pt-0.5">
                     {{ $settings['receipt_footer'] ?? 'Barang yang sudah ditimbang & dibayar tidak dapat ditarik kembali.' }}
                 </p>

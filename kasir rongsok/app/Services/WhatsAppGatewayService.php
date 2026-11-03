@@ -383,7 +383,7 @@ class WhatsAppGatewayService
         $companyPhone = BusinessSetting::get('company_phone', '');
         $dateStr = Carbon::parse($sale->transaction_date)->translatedFormat('d F Y, H:i') . ' WIB';
 
-        $customerName = $sale->customer_name ?: 'Pabrik / Pembeli';
+        $customerName = $sale->buyer_name ?: $sale->customer_name ?: 'Pabrik / Pembeli';
         $sale->loadMissing('items');
 
         $lines = [];
@@ -424,7 +424,7 @@ class WhatsAppGatewayService
      */
     public function sendSalesInvoice(SalesTransaction $sale, ?string $targetPhone = null): array
     {
-        $phone = $targetPhone ?: $sale->customer_phone;
+        $phone = $targetPhone ?: $sale->buyer_phone ?: $sale->customer_phone;
         if (empty($phone)) {
             return [
                 'success' => false,

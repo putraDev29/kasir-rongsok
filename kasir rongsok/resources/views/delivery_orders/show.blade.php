@@ -22,12 +22,51 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-2.5">
-            <a href="{{ route('delivery-orders.print', $deliveryOrder) }}" target="_blank"
-               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm">
-                <i data-lucide="printer" class="w-4 h-4"></i>
-                <span>Cetak / Ekspor PDF (HVS Landscape ÷ 2)</span>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <button type="button" 
+                    @click="openWaPdfModal({
+                        title: 'Kirim Surat Jalan Pengiriman PDF via WhatsApp',
+                        subtitle: 'Kirim berkas dokumen PDF resmi surat jalan lengkap ke nomor WhatsApp',
+                        phone: '{{ $deliveryOrder->recipient_phone ?: $deliveryOrder->driver_phone }}',
+                        filename: 'Surat_Jalan_{{ $deliveryOrder->delivery_number }}.pdf',
+                        fileDescription: 'Dokumen PDF Resmi Surat Jalan (Lengkap Supir, Armada & Muatan)',
+                        pdfUrl: '{{ route('delivery-orders.pdf', $deliveryOrder) }}',
+                        previewUrl: '{{ route('delivery-orders.wa-preview', $deliveryOrder) }}',
+                        sendUrl: '{{ route('delivery-orders.send-wa', $deliveryOrder) }}',
+                        submitButtonText: 'Kirim Surat Jalan via WA'
+                    })"
+                    class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+                    title="Kirim Surat Jalan PDF via WhatsApp">
+                <x-whatsapp-icon class="w-4 h-4" />
+                <span>Kirim Surat Jalan WA</span>
+            </button>
+
+            <a href="{{ route('delivery-orders.pdf', $deliveryOrder) }}" target="_blank"
+               class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm"
+               title="Unduh Berkas PDF Resmi Surat Jalan">
+                <i data-lucide="download" class="w-4 h-4 text-rose-400"></i>
+                <span>Unduh PDF Resmi</span>
             </a>
+
+            <a href="{{ route('delivery-orders.print', $deliveryOrder) }}" target="_blank"
+               class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs">
+                <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
+                <span>Cetak Print</span>
+            </a>
+
+            @if(!$deliveryOrder->salesTransaction)
+                <a href="{{ route('sales.create', ['delivery_order_id' => $deliveryOrder->id]) }}"
+                   class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <i data-lucide="receipt" class="w-4 h-4"></i>
+                    <span>Buat Faktur Penjualan</span>
+                </a>
+            @else
+                <a href="{{ route('sales.show', $deliveryOrder->salesTransaction) }}"
+                   class="px-3.5 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-lg text-xs font-bold flex items-center gap-1.5">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    <span>Lihat Faktur Penjualan</span>
+                </a>
+            @endif
 
             <form action="{{ route('delivery-orders.destroy', $deliveryOrder) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus surat jalan ini?')">
                 @csrf

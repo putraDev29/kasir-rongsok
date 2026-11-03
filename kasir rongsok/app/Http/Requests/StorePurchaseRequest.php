@@ -14,12 +14,18 @@ class StorePurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'supplier_id' => 'nullable|exists:suppliers,id',
+            'supplier_id' => 'nullable',
             'supplier_name' => 'nullable|string|max:150',
             'supplier_phone' => 'nullable|string|max:30',
             'supplier_address' => 'nullable|string|max:255',
             'save_as_supplier' => 'nullable|boolean',
-            'payment_method_id' => 'nullable|exists:payment_methods,id',
+            'payment_method_id' => 'nullable',
+            'new_payment_method_name' => 'nullable|string|max:100',
+            'bank_info' => 'nullable|string|max:255',
+            'custom_bank' => 'nullable|string|max:100',
+            'custom_account_name' => 'nullable|string|max:150',
+            'custom_account_no' => 'nullable|string|max:100',
+            'payment_notes' => 'nullable|string|max:255',
             'transaction_date' => 'nullable|date',
             'discount_amount' => 'nullable|numeric|min:0',
             'rounding_amount' => 'nullable|numeric',
@@ -27,7 +33,10 @@ class StorePurchaseRequest extends FormRequest
             'notes' => 'nullable|string|max:500',
             'items' => 'required|array|min:1',
             'items.*.scrap_item_id' => 'required|exists:scrap_items,id',
-            'items.*.gross_weight' => 'required|numeric|gt:0',
+            'items.*.unit_type' => 'nullable|string|in:kg,pcs,satuan,unit',
+            'items.*.item_type_name' => 'nullable|string|max:150',
+            'items.*.quantity' => 'nullable|numeric|min:0.01',
+            'items.*.gross_weight' => 'nullable|numeric|min:0',
             'items.*.tare_weight' => 'nullable|numeric|min:0',
             'items.*.price_per_kg' => 'nullable|numeric|gt:0',
             'items.*.notes' => 'nullable|string|max:255',
@@ -41,8 +50,6 @@ class StorePurchaseRequest extends FormRequest
             'items.min' => 'Minimal harus menimbang 1 jenis barang rongsok.',
             'items.*.scrap_item_id.required' => 'Jenis barang rongsok wajib dipilih.',
             'items.*.scrap_item_id.exists' => 'Barang rongsok yang dipilih tidak valid.',
-            'items.*.gross_weight.required' => 'Berat kotor timbangan wajib diisi.',
-            'items.*.gross_weight.gt' => 'Berat kotor timbangan harus lebih dari 0 kg.',
         ];
     }
 
@@ -62,6 +69,19 @@ class StorePurchaseRequest extends FormRequest
             $scrapItems = \App\Models\ScrapItem::whereIn('id', $scrapItemIds)->get()->keyBy('id');
 
             foreach ($items as $index => $item) {
+                $unitType = strtolower($item['unit_type'] ?? 'kg');
+                if (in_array($unitType, ['pcs', 'satuan', 'unit'])) {
+                    $qty = (float) ($item['quantity'] ?? 0);
+                    if ($qty <= 0) {
+                        $validator->errors()->add("items.{$index}.quantity", "Jumlah barang (pcs/satuan) harus lebih dari 0.");
+                    }
+                } else {
+                    $gross = (float) ($item['gross_weight'] ?? 0);
+                    if ($gross <= 0) {
+                        $validator->errors()->add("items.{$index}.gross_weight", "Berat kotor timbangan harus lebih dari 0 kg.");
+                    }
+                }
+
                 $scrapItemId = $item['scrap_item_id'] ?? null;
                 $pricePerKg = isset($item['price_per_kg']) && is_numeric($item['price_per_kg'])
                     ? (float) $item['price_per_kg']

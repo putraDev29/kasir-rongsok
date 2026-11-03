@@ -63,31 +63,45 @@
             </div>
         </div>
 
-        <!-- Meta Info -->
-        <div class="py-2 text-[10px] space-y-0.5 border-b border-dashed border-slate-400 font-mono">
-            <div class="flex justify-between">
-                <span>No. Bukti:</span>
-                <span class="font-bold">{{ $payment->payment_number }}</span>
+        @php
+            $debtMetaGrid = ($format === 'thermal_58') 
+                ? 'display: grid; grid-template-columns: 78px 6px 1fr; align-items: center;' 
+                : (($format === 'thermal_80') 
+                    ? 'display: grid; grid-template-columns: 100px 8px 1fr; align-items: center;' 
+                    : 'display: grid; grid-template-columns: 130px 12px 1fr; align-items: center;');
+        @endphp
+
+        <!-- Meta Info (Colons aligned, values left-aligned strictly 1 line) -->
+        <div class="py-2 text-[10px] space-y-1 border-b border-dashed border-slate-400 font-mono">
+            <div style="{{ $debtMetaGrid }}">
+                <span class="whitespace-nowrap">No. Bukti</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->payment_number }}</span>
             </div>
-            <div class="flex justify-between">
-                <span>Tanggal:</span>
-                <span>{{ $payment->payment_date->format('d/m/Y H:i') }}</span>
+            <div style="{{ $debtMetaGrid }}">
+                <span class="whitespace-nowrap">Tanggal</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 whitespace-nowrap">{{ $payment->payment_date->format('d/m/Y H:i') }}</span>
             </div>
-            <div class="flex justify-between">
-                <span>Peminjam/Penyetor:</span>
-                <span class="font-semibold">{{ $payment->debt->borrower_name }}</span>
+            <div style="{{ $debtMetaGrid }}">
+                <span class="whitespace-nowrap">Peminjam</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->debt->borrower_name }}</span>
             </div>
-            <div class="flex justify-between">
-                <span>Ref. Pinjaman:</span>
-                <span>{{ $payment->debt->debt_number }}</span>
+            <div style="{{ $debtMetaGrid }}">
+                <span class="whitespace-nowrap">Ref. Pinjam</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->debt->debt_number }}</span>
             </div>
-            <div class="flex justify-between">
-                <span>Metode Bayar:</span>
-                <span>{{ $payment->paymentMethod?->name ?? 'Tunai' }}</span>
+            <div style="{{ $debtMetaGrid }}">
+                <span class="whitespace-nowrap">Metode Bayar</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->paymentMethod?->name ?? 'Tunai' }}</span>
             </div>
-            <div class="flex justify-between">
-                <span>Kasir/Penerima:</span>
-                <span>{{ $payment->user?->name ?? 'Kasir' }}</span>
+            <div style="{{ $debtMetaGrid }}">
+                <span class="whitespace-nowrap">Kasir</span>
+                <span class="text-center">:</span>
+                <span class="text-left pl-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->user?->name ?? 'Kasir' }}</span>
             </div>
         </div>
 

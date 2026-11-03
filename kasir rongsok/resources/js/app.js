@@ -54,8 +54,15 @@ Alpine.store('waGateway', {
         type: 'purchase',
         id: null,
         title: '',
+        subtitle: '',
         phone: '',
         formattedPhone: '',
+        filename: 'Nota.pdf',
+        fileDescription: 'Dokumen PDF Resmi Kasir Rongsok (Format A5)',
+        pdfUrl: null,
+        sendUrl: null,
+        sendPayload: null,
+        submitButtonText: 'Kirim Nota PDF via WA',
         message: '',
         receiptData: null,
         sendAsPdf: true,
@@ -231,18 +238,31 @@ Alpine.store('waGateway', {
         this.receipt.isSending = false;
         this.receipt.sendSuccess = false;
         this.receipt.sendError = null;
+        this.receipt.pdfUrl = null;
+        this.receipt.sendUrl = null;
+        this.receipt.sendPayload = null;
+        this.receipt.submitButtonText = 'Kirim Nota PDF via WA';
         this.receiptModalOpen = true;
 
         let previewUrl = '';
         if (type === 'purchase') {
             previewUrl = `/whatsapp/purchases/${id}/preview`;
             this.receipt.title = 'Kirim Nota Timbang PDF via WhatsApp';
+            this.receipt.subtitle = 'Kirim berkas dokumen PDF resmi langsung ke nomor WhatsApp pemasok';
+            this.receipt.fileDescription = 'Dokumen PDF Resmi Kasir Rongsok (Format A5)';
+            this.receipt.submitButtonText = 'Kirim Nota PDF via WA';
         } else if (type === 'sale') {
             previewUrl = `/whatsapp/sales/${id}/preview`;
             this.receipt.title = 'Kirim Faktur Penjualan Partai PDF';
+            this.receipt.subtitle = 'Kirim berkas dokumen PDF faktur penjualan langsung ke WhatsApp pembeli';
+            this.receipt.fileDescription = 'Dokumen PDF Resmi Faktur Penjualan Rongsok (A5)';
+            this.receipt.submitButtonText = 'Kirim Faktur PDF via WA';
         } else if (type === 'debt_payment') {
             previewUrl = `/whatsapp/debt-payments/${id}/preview`;
             this.receipt.title = 'Kirim Bukti Pembayaran Kasbon PDF';
+            this.receipt.subtitle = 'Kirim berkas kuitansi cicilan kasbon langsung ke nomor WhatsApp';
+            this.receipt.fileDescription = 'Dokumen PDF Kuitansi Pembayaran Kasbon Resmi';
+            this.receipt.submitButtonText = 'Kirim Bukti PDF via WA';
         }
 
         try {
@@ -257,6 +277,8 @@ Alpine.store('waGateway', {
                     this.receipt.phone = data.phone;
                 }
                 this.receipt.formattedPhone = data.formatted_phone || '';
+                if (data.filename) this.receipt.filename = data.filename;
+                if (data.pdf_url) this.receipt.pdfUrl = data.pdf_url;
             } else {
                 this.receipt.sendError = 'Gagal memuat data pratinjau nota.';
             }
@@ -265,6 +287,52 @@ Alpine.store('waGateway', {
         } finally {
             this.receipt.isLoading = false;
             if (window.refreshIcons) window.refreshIcons();
+        }
+    },
+
+    async openPdfModal(config) {
+        this.receipt.type = config.type || 'custom_pdf';
+        this.receipt.id = config.id || null;
+        this.receipt.title = config.title || 'Kirim Dokumen PDF via WhatsApp';
+        this.receipt.subtitle = config.subtitle || 'Kirim berkas dokumen PDF resmi langsung ke nomor WhatsApp';
+        this.receipt.phone = config.phone || '';
+        this.receipt.formattedPhone = '';
+        this.receipt.filename = config.filename || 'Dokumen.pdf';
+        this.receipt.fileDescription = config.fileDescription || 'Dokumen PDF Resmi Kasir Rongsok';
+        this.receipt.pdfUrl = config.pdfUrl || null;
+        this.receipt.sendUrl = config.sendUrl || null;
+        this.receipt.sendPayload = config.sendPayload || {};
+        this.receipt.submitButtonText = config.submitButtonText || 'Kirim PDF via WA';
+        this.receipt.message = config.message || '';
+        this.receipt.receiptData = null;
+        this.receipt.sendAsPdf = true;
+        this.receipt.isLoading = !!config.previewUrl;
+        this.receipt.isSending = false;
+        this.receipt.sendSuccess = false;
+        this.receipt.sendError = null;
+        this.receiptModalOpen = true;
+
+        if (config.previewUrl) {
+            try {
+                const res = await fetch(config.previewUrl, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.message) this.receipt.message = data.message;
+                    if (data.phone && !this.receipt.phone) this.receipt.phone = data.phone;
+                    if (data.pdf_filename) this.receipt.filename = data.pdf_filename;
+                    if (data.pdf_url) this.receipt.pdfUrl = data.pdf_url;
+                    if (data.file_description) this.receipt.fileDescription = data.file_description;
+                } else {
+                    this.receipt.sendError = 'Gagal memuat pratinjau pesan.';
+                }
+            } catch (e) {
+                this.receipt.sendError = 'Gagal memuat data: ' + e.message;
+            } finally {
+                this.receipt.isLoading = false;
+                if (window.refreshIcons) window.refreshIcons();
+            }
         }
     },
 
@@ -277,8 +345,47 @@ Alpine.store('waGateway', {
         this.receipt.sendSuccess = false;
         this.receipt.sendError = null;
 
+        // Custom sendUrl (used by Global Recaps, Expenses, Agreements, Slips, etc.)
+        if (this.receipt.sendUrl) {
+            try {
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const payload = {
+                    phone: this.receipt.phone,
+                    message: this.receipt.message,
+                    caption: this.receipt.message,
+                    send_pdf: this.receipt.sendAsPdf,
+                    filename: this.receipt.filename,
+                    ...(this.receipt.sendPayload || {})
+                };
+                const res = await fetch(this.receipt.sendUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': token
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    this.receipt.sendSuccess = true;
+                    setTimeout(() => {
+                        this.receiptModalOpen = false;
+                    }, 2200);
+                } else {
+                    this.receipt.sendError = data.message || 'Gagal mengirim berkas PDF melalui WhatsApp Gateway.';
+                }
+            } catch (e) {
+                this.receipt.sendError = 'Koneksi ke gateway gagal: ' + e.message;
+            } finally {
+                this.receipt.isSending = false;
+                if (window.refreshIcons) window.refreshIcons();
+            }
+            return;
+        }
+
         let pdfBase64 = null;
-        let filename = 'Nota.pdf';
+        let filename = this.receipt.filename || 'Nota.pdf';
 
         // 1. Generate crisp PDF document if sendAsPdf is active
         if (this.receipt.sendAsPdf && this.receipt.receiptData) {
@@ -352,13 +459,18 @@ Alpine.store('waGateway', {
     },
 
     downloadPdf() {
+        if (this.receipt.pdfUrl) {
+            window.open(this.receipt.pdfUrl, '_blank');
+            return;
+        }
+
         if (!this.receipt.receiptData) {
             alert('Data nota belum siap diunduh.');
             return;
         }
 
         let doc = null;
-        let filename = 'Nota.pdf';
+        let filename = this.receipt.filename || 'Nota.pdf';
 
         try {
             if (this.receipt.type === 'purchase') {
@@ -398,6 +510,10 @@ window.openWaGatewayModal = () => {
 
 window.openWaReceiptModal = (type, id, phone = '') => {
     Alpine.store('waGateway').openReceipt(type, id, phone);
+};
+
+window.openWaPdfModal = (config) => {
+    Alpine.store('waGateway').openPdfModal(config);
 };
 
 Alpine.start();

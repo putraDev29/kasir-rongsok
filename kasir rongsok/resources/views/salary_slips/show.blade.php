@@ -22,11 +22,35 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-2.5">
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('salary-slips.pdf', $salarySlip) }}"
+               class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Unduh PDF</span>
+            </a>
+
+            <button type="button"
+                    @click="openWaPdfModal({
+                        title: 'Kirim Slip Gaji Karyawan PDF',
+                        subtitle: 'Kirim berkas dokumen PDF resmi slip gaji ke WhatsApp karyawan',
+                        phone: '{{ $salarySlip->employeeUser?->phone ?? $salarySlip->employee_phone }}',
+                        filename: 'Slip_Gaji_{{ $salarySlip->slip_number }}.pdf',
+                        fileDescription: 'Dokumen PDF Resmi Slip Gaji & Honor Karyawan',
+                        pdfUrl: '{{ route('salary-slips.pdf', $salarySlip) }}',
+                        previewUrl: '{{ route('salary-slips.wa-preview', $salarySlip) }}',
+                        sendUrl: '{{ route('salary-slips.send-wa', $salarySlip) }}',
+                        submitButtonText: 'Kirim Slip PDF via WA'
+                    })"
+                    class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                    title="Kirim Slip Gaji PDF ke Karyawan">
+                <x-whatsapp-icon class="w-4 h-4" />
+                <span>Kirim WA (PDF)</span>
+            </button>
+
             <a href="{{ route('salary-slips.print', $salarySlip) }}" target="_blank"
-               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm">
+               class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-slate-300">
                 <i data-lucide="printer" class="w-4 h-4"></i>
-                <span>Cetak / Ekspor PDF (HVS Landscape ÷ 2)</span>
+                <span>Cetak Print</span>
             </a>
 
             <form action="{{ route('salary-slips.destroy', $salarySlip) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus slip gaji ini?')">

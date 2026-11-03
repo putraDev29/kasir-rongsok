@@ -31,6 +31,11 @@ class SettingController extends Controller
             'receipt_header' => 'nullable|string|max:300',
             'receipt_footer' => 'nullable|string|max:500',
             'receipt_disclaimer' => 'nullable|string|max:300',
+            'receipt_terms' => 'nullable|string|max:1000',
+            'pickup_service_text' => 'nullable|string|max:500',
+            'delivery_order_notes' => 'nullable|string|max:500',
+            'debt_agreement_terms' => 'nullable|string|max:1000',
+            'salary_slip_notes' => 'nullable|string|max:500',
             'default_printer_type' => 'required|in:thermal_58,thermal_80,a4',
             'app_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
             'remove_logo' => 'nullable|boolean',
@@ -154,6 +159,11 @@ class SettingController extends Controller
             'receipt_header',
             'receipt_footer',
             'receipt_disclaimer',
+            'receipt_terms',
+            'pickup_service_text',
+            'delivery_order_notes',
+            'debt_agreement_terms',
+            'salary_slip_notes',
             'default_printer_type',
         ];
 

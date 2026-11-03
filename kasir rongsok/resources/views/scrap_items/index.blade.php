@@ -10,17 +10,40 @@
             <p class="text-xs text-slate-500">Kelola harga beli & jual rongsok per kilogram</p>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <button type="button" 
+                    @click="openWaPdfModal({
+                        title: 'Kirim Daftar Harga Beli Rongsok PDF',
+                        subtitle: 'Kirim berkas dokumen PDF daftar harga beli rongsok ke nomor WhatsApp',
+                        filename: 'Daftar_Harga_Beli_Rongsok_' + ('{{ date("Ymd") }}') + '.pdf',
+                        fileDescription: 'Dokumen PDF Resmi Daftar Standar Harga Beli Rongsok Depo',
+                        pdfUrl: '{{ route('scrap-items.pdf-price-list') }}',
+                        previewUrl: '{{ route('scrap-items.preview-wa') }}',
+                        sendUrl: '{{ route('scrap-items.send-wa') }}',
+                        submitButtonText: 'Kirim Daftar Harga PDF via WA'
+                    })"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-colors"
+                    title="Kirim Daftar Harga PDF via WhatsApp">
+                <x-whatsapp-icon class="w-4 h-4" />
+                <span>Kirim Daftar Harga (PDF)</span>
+            </button>
+
+            <a href="{{ route('scrap-items.export-excel') }}"
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-emerald-700 border border-emerald-200 font-bold text-xs shadow-xs transition-colors">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                <span>Export Excel</span>
+            </a>
+
             <a href="{{ route('scrap-items.print-price-list') }}" target="_blank"
                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300 shadow-sm">
                 <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
-                <span>Cetak PDF Daftar Harga</span>
+                <span>Cetak PDF</span>
             </a>
 
             <a href="{{ route('scrap-items.create') }}" 
-               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm">
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm">
                 <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>Tambah Jenis Barang</span>
+                <span>Tambah Barang</span>
             </a>
         </div>
     </div>
@@ -97,7 +120,7 @@
                             </td>
                             <td class="py-3 px-3 text-right font-mono">
                                 <span class="font-bold {{ $item->isLowStock() ? 'text-amber-600' : 'text-slate-800' }}">
-                                    {{ number_format($item->current_stock, 1, ',', '.') }} kg
+                                    {{ \App\Services\FormatHelper::weight($item->current_stock) }} kg
                                 </span>
                             </td>
                             <td class="py-3 px-3 text-center">
@@ -119,6 +142,12 @@
                                             class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50">
                                         <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i>
                                     </button>
+                                    <a href="https://wa.me/?text={{ urlencode('*INFORMASI HARGA RONGSOK*' . "\n" . 'Barang: ' . $item->name . "\n" . 'Harga Beli: ' . \App\Services\FormatHelper::rupiah($item->buy_price_per_kg) . '/kg' . "\n" . 'Hubungi depo untuk informasi timbangan.') }}" 
+                                       target="_blank"
+                                       title="Bagikan Harga Barang via WhatsApp"
+                                       class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50">
+                                        <x-whatsapp-icon class="w-4 h-4" />
+                                    </a>
                                     <a href="{{ route('scrap-items.edit', $item) }}" title="Edit Detail & Riwayat Harga"
                                        class="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100">
                                         <i data-lucide="edit-3" class="w-4 h-4"></i>

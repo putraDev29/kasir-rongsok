@@ -12,7 +12,7 @@
             <div>
                 <div class="text-xs text-slate-500 font-medium">Total Omzet Penjualan</div>
                 <div class="text-lg font-bold text-slate-900">
-                    Rp {{ number_format($totalSales, 0, ',', '.') }}
+                    Rp {{ \App\Services\FormatHelper::number($totalSales) }}
                 </div>
             </div>
         </div>
@@ -24,21 +24,60 @@
             <div>
                 <div class="text-xs text-slate-500 font-medium">Estimasi Laba Kotor Penjualan</div>
                 <div class="text-lg font-bold text-emerald-700">
-                    Rp {{ number_format($totalProfit, 0, ',', '.') }}
+                    Rp {{ \App\Services\FormatHelper::number($totalProfit) }}
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-            <div>
-                <div class="text-xs text-slate-500 font-medium">Kirim ke Pabrik Peleburan</div>
-                <div class="text-sm font-bold text-slate-800">Penjualan Grosir</div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-500 font-medium">Aksi & Ekspor Data</span>
+                <span class="text-[11px] font-bold text-slate-800 uppercase">Partai / Pabrik</span>
             </div>
-            <a href="{{ route('sales.create') }}" 
-               class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
-                <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                <span>Catat Penjualan Baru</span>
-            </a>
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('sales.batch-pdf', request()->all()) }}" target="_blank"
+                   class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1 shadow-xs transition-colors"
+                   title="Unduh Berkas PDF Rekap Penjualan Partai">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-600"></i>
+                    <span>PDF</span>
+                </a>
+
+                <a href="{{ route('sales.excel', request()->all()) }}" 
+                   class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-xs flex items-center gap-1 shadow-xs transition-colors"
+                   title="Export Data ke Excel">
+                    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    <span>Excel</span>
+                </a>
+
+                <button type="button" 
+                        @click="openWaPdfModal({
+                            title: 'Kirim Rekapitulasi Penjualan Partai PDF',
+                            subtitle: 'Kirim berkas dokumen PDF laporan & rekap penjualan grosir ke nomor WhatsApp',
+                            filename: 'Rekap_Penjualan_Partai_' + ('{{ $startDate && $endDate ? "{$startDate}_sd_{$endDate}" : date("Ymd") }}') + '.pdf',
+                            fileDescription: 'Dokumen PDF Rekap Penjualan Partai (Omzet, Muatan & Laba)',
+                            pdfUrl: '{{ route('sales.batch-pdf', request()->all()) }}',
+                            previewUrl: '{{ route('sales.wa-global.preview', request()->all()) }}',
+                            sendUrl: '{{ route('sales.send-wa-global') }}',
+                            sendPayload: {
+                                search: '{{ addslashes($search) }}',
+                                start_date: '{{ $startDate }}',
+                                end_date: '{{ $endDate }}',
+                                status: '{{ $status }}'
+                            },
+                            submitButtonText: 'Kirim Rekap PDF via WA'
+                        })"
+                        class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
+                        title="Kirim Rekap Penjualan PDF via WhatsApp">
+                    <x-whatsapp-icon class="w-3.5 h-3.5" />
+                    <span>Kirim Rekap WA (PDF)</span>
+                </button>
+
+                <a href="{{ route('sales.create') }}" 
+                   class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    <span>Baru</span>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -111,13 +150,13 @@
                                 {{ $sale->buyer_name }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-medium text-slate-800">
-                                {{ number_format($sale->total_weight, 2, ',', '.') }} kg
+                                {{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">
-                                Rp {{ number_format($sale->final_amount, 0, ',', '.') }}
+                                Rp {{ \App\Services\FormatHelper::number($sale->final_amount) }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">
-                                Rp {{ number_format($sale->estimated_profit, 0, ',', '.') }}
+                                Rp {{ \App\Services\FormatHelper::number($sale->estimated_profit) }}
                             </td>
                             <td class="py-3 px-3 text-slate-600">
                                 {{ $sale->user?->name }}
@@ -135,6 +174,16 @@
                             </td>
                             <td class="py-3 px-3 text-center">
                                 <div class="inline-flex items-center gap-1.5">
+                                    <button type="button" 
+                                            @click="openWaReceiptModal('sale', {{ $sale->id }}, '{{ $sale->buyer_phone }}')"
+                                            class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" 
+                                            title="Kirim Faktur PDF via WhatsApp">
+                                        <x-whatsapp-icon class="w-4 h-4" />
+                                    </button>
+                                    <a href="{{ route('sales.pdf', $sale) }}" target="_blank"
+                                       class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50" title="Unduh Faktur PDF">
+                                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                                    </a>
                                     <a href="{{ route('sales.show', $sale) }}" title="Rincian"
                                        class="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
@@ -152,6 +201,23 @@
                         </tr>
                     @endforelse
                 </tbody>
+                @if($transactions->count() > 0)
+                    <tfoot class="bg-slate-50 font-bold border-t-2 border-slate-300">
+                        <tr>
+                            <td colspan="3" class="py-3 px-3 uppercase text-slate-800 text-right">TOTAL HALAMAN INI:</td>
+                            <td class="py-3 px-3 text-right font-mono font-black text-slate-900">
+                                {{ \App\Services\FormatHelper::weight($transactions->sum('total_weight')) }} kg
+                            </td>
+                            <td class="py-3 px-3 text-right font-mono font-black text-slate-900">
+                                Rp {{ \App\Services\FormatHelper::number($transactions->sum('final_amount')) }}
+                            </td>
+                            <td class="py-3 px-3 text-right font-mono font-black text-emerald-700">
+                                Rp {{ \App\Services\FormatHelper::number($transactions->sum('estimated_profit')) }}
+                            </td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </tfoot>
+                @endif
             </table>
         </div>
 

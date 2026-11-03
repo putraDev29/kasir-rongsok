@@ -219,9 +219,9 @@ class WhatsAppGatewayController extends Controller
      */
     public function previewSale(SalesTransaction $sale): JsonResponse
     {
-        $sale->loadMissing(['items.scrapItem', 'user', 'customer']);
+        $sale->loadMissing(['items.scrapItem', 'user', 'paymentMethod']);
 
-        $phone = $sale->customer_phone;
+        $phone = $sale->buyer_phone ?: $sale->customer_phone;
         $message = $this->gateway->buildSalesInvoiceMessage($sale);
 
         $companyName = BusinessSetting::get('company_name', 'UD. BERKAH RONGSOK MAKMUR');
@@ -239,12 +239,16 @@ class WhatsAppGatewayController extends Controller
             ];
         }
 
+        $customerName = $sale->buyer_name ?: $sale->customer_name ?: 'Pabrik / Pembeli';
+        $customerPhone = $sale->buyer_phone ?: $sale->customer_phone ?: '-';
+        $filename = "Faktur_{$sale->invoice_number}.pdf";
+
         $receiptData = [
             'type' => 'sale',
             'invoiceNumber' => $sale->invoice_number,
             'transactionDate' => Carbon::parse($sale->transaction_date)->translatedFormat('d F Y, H:i') . ' WIB',
-            'customerName' => $sale->customer_name ?: 'Pabrik / Pembeli',
-            'customerPhone' => $sale->customer_phone ?? '-',
+            'customerName' => $customerName,
+            'customerPhone' => $customerPhone,
             'companyName' => $companyName,
             'companyAddress' => $companyAddress,
             'companyPhone' => $companyPhone,
@@ -258,6 +262,9 @@ class WhatsAppGatewayController extends Controller
             'formatted_phone' => $this->gateway->formatPhone($phone),
             'message' => $message,
             'invoice_number' => $sale->invoice_number,
+            'filename' => $filename,
+            'pdf_filename' => $filename,
+            'pdf_url' => route('sales.pdf', $sale),
             'receipt_data' => $receiptData,
         ]);
     }
@@ -267,7 +274,7 @@ class WhatsAppGatewayController extends Controller
      */
     public function sendSale(Request $request, SalesTransaction $sale): JsonResponse
     {
-        $targetPhone = $request->input('phone') ?: $sale->customer_phone;
+        $targetPhone = $request->input('phone') ?: $sale->buyer_phone ?: $sale->customer_phone;
         if (empty($targetPhone)) {
             return response()->json([
                 'success' => false,
