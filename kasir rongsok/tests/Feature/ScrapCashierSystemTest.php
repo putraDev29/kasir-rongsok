@@ -157,6 +157,10 @@ class ScrapCashierSystemTest extends TestCase
     {
         $salesService = app(SalesTransactionService::class);
         $this->besiItem->refresh();
+        if ((float) $this->besiItem->stockBalance->current_stock < 20) {
+            $this->besiItem->stockBalance->update(['current_stock' => 100.00]);
+            $this->besiItem->refresh();
+        }
         $currentStock = (float) $this->besiItem->stockBalance->current_stock;
 
         // Valid sale

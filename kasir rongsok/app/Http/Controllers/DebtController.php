@@ -177,7 +177,7 @@ class DebtController extends Controller
         $msg = "*SURAT PERJANJIAN PINJAMAN MODAL / HUTANG*\n";
         $msg .= "*{$companyName}*\n";
         $msg .= "----------------------------------------\n";
-        $msg .= "🔖 No. Perjanjian: *" . ($debt->agreement_number ?: ('SPH-PPJ-' . $debt->debt_number)) . "*\n";
+        $msg .= "🔖 No. Perjanjian: *" . ($debt->agreement_number ?: ('SPH-SBL-' . $debt->debt_number)) . "*\n";
         $msg .= "🔖 No. Referensi : {$debt->debt_number}\n";
         $msg .= "🗓️ Tanggal       : " . $debt->date->format('d/m/Y') . "\n";
         $msg .= "👤 Pihak Pertama : *{$ownerName}* (Owner)\n";
@@ -239,7 +239,7 @@ class DebtController extends Controller
             $caption = "*SURAT PERJANJIAN PINJAMAN MODAL / HUTANG*\n";
             $caption .= "*{$companyName}*\n";
             $caption .= "----------------------------------------\n";
-            $caption .= "🔖 No. Perjanjian: *" . ($debt->agreement_number ?: ('SPH-PPJ-' . $debt->debt_number)) . "*\n";
+            $caption .= "🔖 No. Perjanjian: *" . ($debt->agreement_number ?: ('SPH-SBL-' . $debt->debt_number)) . "*\n";
             $caption .= "👤 Owner Depo    : *{$ownerName}*\n";
             $caption .= "👤 Peminjam      : *{$debt->borrower_name}*\n";
             $caption .= "💰 Nominal Pinjam: *" . FormatHelper::rupiah($debt->initial_amount) . "*\n";

@@ -80,7 +80,7 @@
                 SURAT PERJANJIAN PINJAMAN MODAL USAHA &amp; HUTANG PIUTANG
             </h2>
             <p class="text-xs font-mono font-bold text-slate-800 mt-1">
-                Nomor Perjanjian: {{ $debt->agreement_number ?: ('SPH-PPJ-' . $debt->debt_number) }}
+                Nomor Perjanjian: {{ $debt->agreement_number ?: ('SPH-SBL-' . $debt->debt_number) }}
             </p>
         </div>
 

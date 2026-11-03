@@ -188,7 +188,7 @@
     <!-- Judul Dokumen & Nomor Perjanjian -->
     <div class="title-box">
         <div class="doc-title">SURAT PERJANJIAN PINJAMAN MODAL USAHA &amp; HUTANG PIUTANG</div>
-        <div class="doc-number">Nomor Perjanjian: {{ $debt->agreement_number ?: ('SPH-PPJ-' . $debt->debt_number) }}</div>
+        <div class="doc-number">Nomor Perjanjian: {{ $debt->agreement_number ?: ('SPH-SBL-' . $debt->debt_number) }}</div>
     </div>
 
     <!-- Kalimat Pembuka -->
