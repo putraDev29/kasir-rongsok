@@ -162,23 +162,40 @@ class DeliveryOrderController extends Controller
         return view('delivery_orders.show', compact('deliveryOrder', 'settings'));
     }
 
-    public function print(DeliveryOrder $deliveryOrder): View
+    public function print(Request $request, DeliveryOrder $deliveryOrder): View
     {
         $deliveryOrder->load(['user', 'salesTransaction', 'items']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
+        $copy = $request->query('copy', 'all');
+        $copies = match($copy) {
+            '1' => [1],
+            '2' => [2],
+            default => [1, 2],
+        };
 
-        return view('delivery_orders.print', compact('deliveryOrder', 'settings'));
+        return view('delivery_orders.print', compact('deliveryOrder', 'settings', 'copies', 'copy'));
     }
 
-    public function pdf(DeliveryOrder $deliveryOrder)
+    public function pdf(Request $request, DeliveryOrder $deliveryOrder)
     {
         $deliveryOrder->load(['user', 'salesTransaction', 'items.scrapItem']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
+        $copy = $request->query('copy', 'all');
+        $copies = match($copy) {
+            '1' => [1],
+            '2' => [2],
+            default => [1, 2],
+        };
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('delivery_orders.pdf', compact('deliveryOrder', 'settings'))
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('delivery_orders.pdf', compact('deliveryOrder', 'settings', 'copies', 'copy'))
             ->setPaper('a5', 'landscape');
 
-        $filename = "Surat_Jalan_{$deliveryOrder->delivery_number}.pdf";
+        $suffix = match($copy) {
+            '1' => '_Lembar1_Gudang',
+            '2' => '_Lembar2_Supir',
+            default => '_2Rangkap',
+        };
+        $filename = "Surat_Jalan_{$deliveryOrder->delivery_number}{$suffix}.pdf";
         return $pdf->stream($filename);
     }
 
@@ -220,12 +237,17 @@ class DeliveryOrderController extends Controller
         $msg .= "📦 *DAFTAR MUATAN BARANG:*\n{$itemsStr}\n\n";
         $msg .= "⚖️ *TOTAL MUATAN :* *{$totalKg} kg* ({$deliveryOrder->total_packages} Koli)\n";
         $msg .= "----------------------------------------\n";
+        $msg .= "📄 *KETERANGAN RANGKAP:*\n";
+        $msg .= "• Surat jalan ini dibuat *2 rangkap*:\n";
+        $msg .= "  - *Lembar 1* dipegang oleh Gudang\n";
+        $msg .= "  - *Lembar 2* dipegang oleh Supir\n";
+        $msg .= "----------------------------------------\n";
         if ($companyPhone) {
             $msg .= "📞 Hubungi Depo: {$companyPhone}\n";
         }
         $msg .= "Terima kasih atas kerja samanya! 🙏";
 
-        $filename = "Surat_Jalan_{$deliveryOrder->delivery_number}.pdf";
+        $filename = "Surat_Jalan_{$deliveryOrder->delivery_number}_2Rangkap.pdf";
         $targetPhone = $deliveryOrder->recipient_phone ?: $deliveryOrder->driver_phone ?: '';
 
         return response()->json([
@@ -235,7 +257,7 @@ class DeliveryOrderController extends Controller
             'filename' => $filename,
             'pdf_filename' => $filename,
             'pdf_url' => route('delivery-orders.pdf', $deliveryOrder),
-            'file_description' => 'Dokumen PDF Resmi Surat Jalan Pengiriman (Lengkap Supir, Armada & Muatan)',
+            'file_description' => 'Dokumen PDF Resmi Surat Jalan Pengiriman (2 Rangkap: Lembar 1 Gudang & Lembar 2 Supir)',
         ]);
     }
 
@@ -252,13 +274,15 @@ class DeliveryOrderController extends Controller
         $deliveryOrder->load(['user', 'salesTransaction', 'items.scrapItem']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
         $sendPdf = $request->boolean('send_pdf', true);
-        $caption = $request->input('message') ?: $request->input('caption') ?: "Terlampir Berkas Dokumen PDF Surat Jalan {$deliveryOrder->delivery_number}.";
-        $filename = $request->input('filename') ?: ("Surat_Jalan_{$deliveryOrder->delivery_number}.pdf");
+        $caption = $request->input('message') ?: $request->input('caption') ?: "Terlampir Berkas Dokumen PDF Surat Jalan {$deliveryOrder->delivery_number} (2 Rangkap: Gudang & Supir).";
+        $filename = $request->input('filename') ?: ("Surat_Jalan_{$deliveryOrder->delivery_number}_2Rangkap.pdf");
 
         $waService = app(\App\Services\WhatsAppGatewayService::class);
 
         if ($sendPdf) {
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('delivery_orders.pdf', compact('deliveryOrder', 'settings'))
+            $copies = [1, 2];
+            $copy = 'all';
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('delivery_orders.pdf', compact('deliveryOrder', 'settings', 'copies', 'copy'))
                 ->setPaper('a5', 'landscape');
             $fileBase64 = base64_encode($pdf->output());
             $res = $waService->sendFile($phone, $fileBase64, $filename, $caption);

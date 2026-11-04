@@ -422,6 +422,37 @@ class ScrapCashierSystemTest extends TestCase
             'total_weight' => 800,
             'total_packages' => 15,
         ]);
+
+        $deliveryOrder = \App\Models\DeliveryOrder::where('recipient_name', 'PT. Daur Ulang Mandiri')->first();
+        $this->assertNotNull($deliveryOrder);
+
+        // Verify show page displays 2 rangkap info
+        $showRes = $this->actingAs($this->superAdmin)->get("/delivery-orders/{$deliveryOrder->id}");
+        $showRes->assertStatus(200);
+        $showRes->assertSee('Lembar 1 : Dipegang oleh Gudang');
+        $showRes->assertSee('Lembar 2 : Dipegang oleh Supir');
+
+        // Verify print view has Lembar 1 and Lembar 2
+        $printRes = $this->actingAs($this->superAdmin)->get("/delivery-orders/{$deliveryOrder->id}/print");
+        $printRes->assertStatus(200);
+        $printRes->assertSee('LEMBAR 1 : GUDANG');
+        $printRes->assertSee('LEMBAR 2 : SUPIR');
+        $printRes->assertSee('Surat jalan ini dibuat <strong>2 (dua) rangkap</strong>', false);
+
+        // Verify WA preview contains 2 rangkap notice
+        $waRes = $this->actingAs($this->superAdmin)->get("/delivery-orders/{$deliveryOrder->id}/wa-preview");
+        $waRes->assertStatus(200);
+        $waRes->assertJsonFragment([
+            'delivery_number' => $deliveryOrder->delivery_number,
+        ]);
+        $waData = $waRes->json();
+        $this->assertStringContainsString('Lembar 1', $waData['message']);
+        $this->assertStringContainsString('Lembar 2', $waData['message']);
+
+        // Verify PDF stream returns PDF content type
+        $pdfRes = $this->actingAs($this->superAdmin)->get("/delivery-orders/{$deliveryOrder->id}/pdf");
+        $pdfRes->assertStatus(200);
+        $this->assertStringContainsString('application/pdf', $pdfRes->headers->get('content-type'));
     }
 
     public function test_create_pages_render_without_source_code_leak(): void

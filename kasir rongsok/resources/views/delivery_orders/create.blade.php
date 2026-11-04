@@ -11,9 +11,15 @@
             </a>
             <div>
                 <h2 class="text-xl font-bold text-slate-900">Form Surat Jalan Pengiriman Rongsok</h2>
-                <p class="text-xs text-slate-500">Format cetak/ekspor PDF resmi ukuran HVS Landscape ÷ 2.</p>
+                <p class="text-xs text-slate-500">Dibuat otomatis 2 rangkap (Lembar 1: Gudang & Lembar 2: Supir) ukuran HVS Landscape ÷ 2.</p>
             </div>
         </div>
+    </div>
+
+    <!-- 2 Rangkap Notice -->
+    <div class="p-3 bg-blue-50/90 rounded-xl border border-blue-200 text-xs flex items-center gap-2.5 text-blue-950">
+        <i data-lucide="info" class="w-4 h-4 text-blue-600 shrink-0"></i>
+        <span><strong>Ketentuan Dokumen:</strong> Surat jalan ini otomatis diterbitkan <strong>2 (dua) rangkap</strong>: <strong>Lembar 1</strong> dipegang oleh Gudang (arsip depo) dan <strong>Lembar 2</strong> dipegang oleh Supir (dibawa armada ke lokasi tujuan).</span>
     </div>
 
     @if($recentSales->count() > 0 && !$salesTx)

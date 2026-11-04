@@ -79,6 +79,7 @@ class DatabaseSeeder extends Seeder
             'receipt_footer' => 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali. Terima kasih atas kerja samanya.',
             'default_printer_type' => 'thermal_58', // thermal_58, thermal_80, a4
             'currency_symbol' => 'Rp',
+            'delivery_order_notes' => 'Surat jalan ini dibuat 2 (dua) rangkap: Lembar 1 dipegang oleh gudang dan Lembar 2 dipegang oleh supir. Dokumen sah penyerahan barang rongsok.',
         ];
 
         foreach ($settings as $key => $val) {

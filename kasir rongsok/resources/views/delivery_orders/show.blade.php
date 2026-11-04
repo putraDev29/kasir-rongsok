@@ -26,10 +26,10 @@
             <button type="button" 
                     @click="openWaPdfModal({
                         title: 'Kirim Surat Jalan Pengiriman PDF via WhatsApp',
-                        subtitle: 'Kirim berkas dokumen PDF resmi surat jalan lengkap ke nomor WhatsApp',
+                        subtitle: 'Kirim berkas dokumen PDF resmi surat jalan lengkap (2 Rangkap) ke nomor WhatsApp',
                         phone: '{{ $deliveryOrder->recipient_phone ?: $deliveryOrder->driver_phone }}',
-                        filename: 'Surat_Jalan_{{ $deliveryOrder->delivery_number }}.pdf',
-                        fileDescription: 'Dokumen PDF Resmi Surat Jalan (Lengkap Supir, Armada & Muatan)',
+                        filename: 'Surat_Jalan_{{ $deliveryOrder->delivery_number }}_2Rangkap.pdf',
+                        fileDescription: 'Dokumen PDF Resmi Surat Jalan (2 Rangkap: Lembar 1 Gudang & Lembar 2 Supir)',
                         pdfUrl: '{{ route('delivery-orders.pdf', $deliveryOrder) }}',
                         previewUrl: '{{ route('delivery-orders.wa-preview', $deliveryOrder) }}',
                         sendUrl: '{{ route('delivery-orders.send-wa', $deliveryOrder) }}',
@@ -43,13 +43,14 @@
 
             <a href="{{ route('delivery-orders.pdf', $deliveryOrder) }}" target="_blank"
                class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm"
-               title="Unduh Berkas PDF Resmi Surat Jalan">
+               title="Unduh Berkas PDF Resmi Surat Jalan (2 Rangkap)">
                 <i data-lucide="download" class="w-4 h-4 text-rose-400"></i>
-                <span>Unduh PDF Resmi</span>
+                <span>Unduh PDF (2 Rangkap)</span>
             </a>
 
             <a href="{{ route('delivery-orders.print', $deliveryOrder) }}" target="_blank"
-               class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs">
+               class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs"
+               title="Cetak Surat Jalan (Tersedia Pilihan Lembar 1 & Lembar 2)">
                 <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
                 <span>Cetak Print</span>
             </a>
@@ -75,6 +76,47 @@
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- 2 Rangkap Information Banner -->
+    <div class="bg-blue-50/90 border border-blue-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs text-blue-950">
+        <div class="flex items-start gap-3">
+            <div class="p-2 bg-blue-600 text-white rounded-lg shrink-0 mt-0.5">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-sm text-blue-950">Ketentuan 2 (Dua) Rangkap Surat Jalan</h4>
+                <p class="text-blue-800 mt-0.5 leading-relaxed">
+                    Surat jalan ini dibuat <strong>2 rangkap</strong>:
+                    <span class="inline-flex items-center px-2 py-0.5 rounded font-black bg-blue-100 text-blue-900 border border-blue-300 mx-1">
+                        Lembar 1 : Dipegang oleh Gudang
+                    </span>
+                    (arsip depo pengirim) dan
+                    <span class="inline-flex items-center px-2 py-0.5 rounded font-black bg-amber-100 text-amber-900 border border-amber-300 mx-1">
+                        Lembar 2 : Dipegang oleh Supir
+                    </span>
+                    (dibawa armada pengantar ke lokasi penerima).
+                </p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 self-start md:self-center shrink-0">
+            <a href="{{ route('delivery-orders.print', [$deliveryOrder, 'copy' => 'all']) }}" target="_blank"
+               class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <span>Cetak 2 Rangkap</span>
+            </a>
+            <a href="{{ route('delivery-orders.print', [$deliveryOrder, 'copy' => 1]) }}" target="_blank"
+               class="px-2.5 py-1.5 rounded-lg bg-white border border-blue-300 hover:bg-blue-50 text-blue-900 font-bold text-xs flex items-center gap-1 shadow-xs">
+                <i data-lucide="printer" class="w-3.5 h-3.5 text-blue-600"></i>
+                <span>Print Lembar 1 (Gudang)</span>
+            </a>
+            <a href="{{ route('delivery-orders.print', [$deliveryOrder, 'copy' => 2]) }}" target="_blank"
+               class="px-2.5 py-1.5 rounded-lg bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 font-bold text-xs flex items-center gap-1 shadow-xs">
+                <i data-lucide="printer" class="w-3.5 h-3.5 text-amber-600"></i>
+                <span>Print Lembar 2 (Supir)</span>
+            </a>
         </div>
     </div>
 
