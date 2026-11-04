@@ -184,7 +184,12 @@ class ScrapItemController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('scrap_items.price_list_pdf', compact('categories', 'settings'))
             ->setPaper('a4', 'portrait');
 
-        $filename = 'Daftar_Harga_Beli_Rongsok_' . date('Ymd') . '.pdf';
+        $filename = 'Daftar_Harga_Beli_Material_Scrap_' . date('Ymd') . '.pdf';
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
         return $pdf->stream($filename);
     }
 

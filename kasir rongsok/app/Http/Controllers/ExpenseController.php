@@ -180,7 +180,13 @@ class ExpenseController extends Controller
         $pdf = Pdf::loadView('expenses.pdf', compact('expenses', 'totalAmount', 'startDate', 'endDate', 'settings'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('Laporan_Biaya_Operasional_' . date('Ymd') . '.pdf');
+        $filename = 'Laporan_Biaya_Operasional_' . date('Ymd') . '.pdf';
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**

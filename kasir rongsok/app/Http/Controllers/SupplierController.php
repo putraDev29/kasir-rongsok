@@ -126,9 +126,9 @@ class SupplierController extends Controller
     }
 
     /**
-     * Download PDF Kartu Member Pemasok
+     * Tampilkan Preview / Download PDF Kartu Member Pemasok
      */
-    public function memberCardPdf(Supplier $supplier)
+    public function memberCardPdf(Request $request, Supplier $supplier)
     {
         $settings = BusinessSetting::pluck('value', 'key')->all();
         $rewards = collect();
@@ -143,7 +143,11 @@ class SupplierController extends Controller
 
         $filename = 'Kartu_Member_' . ($supplier->member_number ?: $supplier->code) . '.pdf';
 
-        return $pdf->download($filename);
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**

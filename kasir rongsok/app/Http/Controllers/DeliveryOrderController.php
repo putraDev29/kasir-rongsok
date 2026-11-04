@@ -196,6 +196,11 @@ class DeliveryOrderController extends Controller
             default => '_2Rangkap',
         };
         $filename = "Surat_Jalan_{$deliveryOrder->delivery_number}{$suffix}.pdf";
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
         return $pdf->stream($filename);
     }
 

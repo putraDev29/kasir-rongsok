@@ -18,6 +18,7 @@
     },
     "dependencies": {
         "alpinejs": "^3.17.5",
+        "jspdf": "^4.2.1",
         "lucide": "^1.66.0"
     }
 }

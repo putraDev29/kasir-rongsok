@@ -114,7 +114,7 @@ class SalesTransactionController extends Controller
         return view('sales.print', compact('sale', 'settings'));
     }
 
-    public function pdfInvoice(SalesTransaction $sale)
+    public function pdfInvoice(Request $request, SalesTransaction $sale)
     {
         $sale->load(['items.scrapItem', 'user', 'paymentMethod']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
@@ -123,6 +123,11 @@ class SalesTransactionController extends Controller
             ->setPaper('a5', 'portrait');
 
         $filename = "Faktur_{$sale->invoice_number}.pdf";
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
         return $pdf->stream($filename);
     }
 
@@ -263,7 +268,13 @@ class SalesTransactionController extends Controller
             ->setPaper('a4', 'portrait');
 
         $dateSuffix = ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd_His');
-        return $pdf->download("Rekap_Penjualan_Partai_{$dateSuffix}.pdf");
+        $filename = "Rekap_Penjualan_Partai_{$dateSuffix}.pdf";
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**

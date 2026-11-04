@@ -203,7 +203,11 @@ class PurchaseTransactionController extends Controller
         $dateSuffix = ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd_His');
         $filename = "Semua_Nota_Pembelian_{$dateSuffix}.pdf";
 
-        return $pdf->download($filename);
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**

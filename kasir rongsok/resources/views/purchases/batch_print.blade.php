@@ -87,9 +87,9 @@
 
             <a href="{{ route('purchases.batch-pdf', request()->query()) }}" target="_blank"
                class="px-3.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
-               title="Unduh Berkas PDF Resmi Kertas HVS">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span>Download PDF HVS</span>
+               title="Preview & Unduh Berkas PDF Resmi Kertas HVS">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Preview PDF HVS</span>
             </a>
 
             <a href="{{ route('purchases.index') }}" class="px-3 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold transition-colors">

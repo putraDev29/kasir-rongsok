@@ -36,9 +36,9 @@
 
             <a href="{{ route('sales.pdf', $sale) }}" target="_blank"
                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm"
-               title="Unduh Berkas PDF Faktur Penjualan">
+               title="Preview & Unduh Berkas PDF Faktur Penjualan">
                 <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-400"></i>
-                <span>Unduh Faktur PDF</span>
+                <span>Preview / Unduh PDF</span>
             </a>
 
             <a href="{{ route('sales.print', $sale) }}" target="_blank"

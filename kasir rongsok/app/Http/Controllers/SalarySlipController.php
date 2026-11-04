@@ -130,9 +130,9 @@ class SalarySlipController extends Controller
     }
 
     /**
-     * Download PDF Slip Gaji (Task 14).
+     * Tampilkan Preview / Download PDF Slip Gaji (Task 14).
      */
-    public function downloadPdf(SalarySlip $salarySlip)
+    public function downloadPdf(Request $request, SalarySlip $salarySlip)
     {
         $salarySlip->load(['employeeUser', 'creator', 'paymentMethod']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
@@ -140,7 +140,13 @@ class SalarySlipController extends Controller
         $pdf = Pdf::loadView('salary_slips.pdf', compact('salarySlip', 'settings'))
             ->setPaper('a5', 'landscape');
 
-        return $pdf->download("Slip_Gaji_{$salarySlip->slip_number}_{$salarySlip->employee_name}.pdf");
+        $filename = "Slip_Gaji_{$salarySlip->slip_number}_{$salarySlip->employee_name}.pdf";
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**
@@ -276,7 +282,13 @@ class SalarySlipController extends Controller
         $pdf = Pdf::loadView('salary_slips.batch_pdf', compact('slips', 'settings', 'period', 'totalNetSalary'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('Rekap_Penggajian_Karyawan_' . ($period ?: date('Y-m')) . '.pdf');
+        $filename = 'Rekap_Penggajian_Karyawan_' . ($period ?: date('Y-m')) . '.pdf';
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**

@@ -488,7 +488,9 @@ Alpine.store('waGateway', {
             }
 
             if (doc) {
-                doc.save(filename);
+                // Tampilkan preview PDF di tab browser terlebih dahulu
+                const blobUrl = doc.output('bloburl');
+                window.open(blobUrl, '_blank');
             }
         } catch (e) {
             alert('Gagal mengunduh berkas PDF: ' + e.message);

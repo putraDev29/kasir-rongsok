@@ -489,11 +489,11 @@
             <div class="space-y-2">
                 <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Aksi Surat Perjanjian Hutang Modal:</div>
                 <div class="grid grid-cols-2 gap-2">
-                    <a href="{{ route('debts.agreement-pdf', $justCreatedDebt) }}"
+                    <a href="{{ route('debts.agreement-pdf', $justCreatedDebt) }}" target="_blank"
                        class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-colors text-center"
-                       title="Unduh Berkas PDF Surat Perjanjian">
-                        <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
-                        <span>Unduh PDF SPH</span>
+                       title="Preview & Unduh Berkas PDF Surat Perjanjian">
+                        <i data-lucide="file-text" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Preview PDF SPH</span>
                     </a>
 
                     <a href="{{ route('debts.agreement', $justCreatedDebt) }}" target="_blank"

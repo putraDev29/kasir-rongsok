@@ -180,10 +180,10 @@
 
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
-                                    <a href="{{ route('salary-slips.pdf', $slip) }}"
+                                    <a href="{{ route('salary-slips.pdf', $slip) }}" target="_blank"
                                        class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] flex items-center gap-1 shadow-sm"
-                                       title="Download PDF Slip">
-                                        <i data-lucide="download" class="w-3 h-3"></i>
+                                       title="Preview / Unduh PDF Slip">
+                                        <i data-lucide="file-text" class="w-3 h-3 text-rose-400"></i>
                                         <span>PDF</span>
                                     </a>
 

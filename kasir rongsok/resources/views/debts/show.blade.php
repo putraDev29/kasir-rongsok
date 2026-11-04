@@ -37,10 +37,11 @@
                 <span>Surat Perjanjian</span>
             </a>
 
-            <a href="{{ route('debts.agreement-pdf', $debt) }}"
-               class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors">
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span>Unduh PDF</span>
+            <a href="{{ route('debts.agreement-pdf', $debt) }}" target="_blank"
+               class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+               title="Preview & Unduh Berkas PDF Surat Perjanjian">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
+                <span>Preview / Unduh PDF</span>
             </a>
 
             <button type="button"

@@ -43,9 +43,9 @@
 
             <a href="{{ route('delivery-orders.pdf', $deliveryOrder) }}" target="_blank"
                class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm"
-               title="Unduh Berkas PDF Resmi Surat Jalan (2 Rangkap)">
-                <i data-lucide="download" class="w-4 h-4 text-rose-400"></i>
-                <span>Unduh PDF (2 Rangkap)</span>
+               title="Preview & Unduh Berkas PDF Resmi Surat Jalan (2 Rangkap)">
+                <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
+                <span>Preview / Unduh PDF (2 Rangkap)</span>
             </a>
 
             <a href="{{ route('delivery-orders.print', $deliveryOrder) }}" target="_blank"

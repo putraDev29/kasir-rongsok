@@ -31,10 +31,11 @@
                 </button>
             </form>
 
-            <a href="{{ route('suppliers.member-card-pdf', $supplier) }}"
-               class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
-                <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                <span>Unduh PDF</span>
+            <a href="{{ route('suppliers.member-card-pdf', $supplier) }}" target="_blank"
+               class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
+               title="Preview & Unduh Berkas PDF Kartu Member">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-400"></i>
+                <span>Preview / Unduh PDF</span>
             </a>
 
             <button onclick="window.print()" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">

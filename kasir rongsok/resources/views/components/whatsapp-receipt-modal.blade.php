@@ -108,9 +108,9 @@
                             <button type="button" 
                                     @click="$store.waGateway.downloadPdf()"
                                     class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1 shadow-xs"
-                                    title="Unduh file PDF ini ke komputer">
-                                <i data-lucide="download" class="w-3.5 h-3.5 text-slate-500"></i>
-                                <span>Unduh PDF</span>
+                                    title="Tampilkan preview berkas PDF di tab baru sebelum unduh">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 text-slate-500"></i>
+                                <span>Preview PDF</span>
                             </button>
                         </div>
                     </div>

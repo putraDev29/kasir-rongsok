@@ -143,9 +143,9 @@ class DebtController extends Controller
     }
 
     /**
-     * Download PDF Surat Perjanjian Hutang Piutang (Task 17).
+     * Tampilkan Preview / Download PDF Surat Perjanjian Hutang Piutang (Task 17).
      */
-    public function agreementPdf(Debt $debt)
+    public function agreementPdf(Request $request, Debt $debt)
     {
         $debt->load(['supplier', 'user']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
@@ -158,7 +158,11 @@ class DebtController extends Controller
         $cleanNum = str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number);
         $filename = "Surat_Perjanjian_{$cleanNum}.pdf";
 
-        return $pdf->download($filename);
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**
@@ -297,7 +301,13 @@ class DebtController extends Controller
         $pdf = Pdf::loadView('debts.batch_pdf', compact('debts', 'settings', 'status', 'type', 'totalAmount', 'totalPaid', 'totalRemaining'))
             ->setPaper('a4', 'portrait');
 
-        return $pdf->download('Rekap_Hutang_Modal_' . date('Ymd_His') . '.pdf');
+        $filename = 'Rekap_Hutang_Modal_' . date('Ymd_His') . '.pdf';
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
     }
 
     /**
