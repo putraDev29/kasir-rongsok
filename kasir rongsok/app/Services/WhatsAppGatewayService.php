@@ -105,7 +105,7 @@ class WhatsAppGatewayService
         }
 
         try {
-            $response = Http::timeout(25)->post("{$this->baseUrl}/api/logout");
+            $response = $this->postJson('/api/logout', [], 25);
             if ($response->successful()) {
                 return $response->json();
             }
@@ -135,7 +135,7 @@ class WhatsAppGatewayService
         }
 
         try {
-            $response = Http::timeout(25)->post("{$this->baseUrl}/api/reconnect");
+            $response = $this->postJson('/api/reconnect', [], 25);
             if ($response->successful()) {
                 return $response->json();
             }
@@ -165,9 +165,9 @@ class WhatsAppGatewayService
         }
 
         try {
-            $response = Http::timeout(10)->post("{$this->baseUrl}/api/clear-chat", [
+            $response = $this->postJson('/api/clear-chat', [
                 'phone' => $this->formatPhone($phone),
-            ]);
+            ], 10);
 
             if ($response->successful()) {
                 return $response->json();
@@ -224,13 +224,11 @@ class WhatsAppGatewayService
             ];
         }
 
-        $cleanMessage = mb_convert_encoding($message, 'UTF-8', 'UTF-8');
-
         try {
-            $response = Http::timeout(30)->post("{$this->baseUrl}/api/send-message", [
+            $response = $this->postJson('/api/send-message', [
                 'phone' => $targetPhone,
-                'message' => $cleanMessage,
-            ]);
+                'message' => $message,
+            ], 30);
 
             if ($response->successful()) {
                 return $response->json();
@@ -270,22 +268,19 @@ class WhatsAppGatewayService
         }
 
         // 1. Ensure file is clean ASCII base64:
-        // If it starts with '%PDF' or is raw binary (contains non-ASCII characters), base64-encode it!
-        if (str_starts_with($fileBase64, '%PDF') || !mb_check_encoding($fileBase64, 'ASCII') || preg_match('/[^\x20-\x7E\r\n\t]/', $fileBase64)) {
+        if (preg_match('/^data:([^;]+);base64,(.+)$/s', $fileBase64, $matches)) {
+            $fileBase64 = $matches[2];
+        } elseif (str_starts_with($fileBase64, '%PDF') || !mb_check_encoding($fileBase64, 'ASCII') || preg_match('/[^\x20-\x7E\r\n\t]/', $fileBase64)) {
             $fileBase64 = base64_encode($fileBase64);
         }
 
-        // 2. Clean caption & filename to prevent malformed UTF-8 characters
-        $cleanCaption = mb_convert_encoding($caption ?? '', 'UTF-8', 'UTF-8');
-        $cleanFilename = mb_convert_encoding($filename ?: 'Dokumen.pdf', 'UTF-8', 'UTF-8');
-
         try {
-            $response = Http::timeout(45)->post("{$this->baseUrl}/api/send-file", [
+            $response = $this->postJson('/api/send-file', [
                 'phone' => $targetPhone,
                 'fileBase64' => $fileBase64,
-                'filename' => $cleanFilename,
-                'caption' => $cleanCaption,
-            ]);
+                'filename' => $filename ?: 'Dokumen.pdf',
+                'caption' => $caption ?? '',
+            ], 45);
 
             if ($response->successful()) {
                 return $response->json();
@@ -310,9 +305,9 @@ class WhatsAppGatewayService
     public function sendBulk(array $recipients): array
     {
         try {
-            $response = Http::timeout(60)->post("{$this->baseUrl}/api/send-bulk", [
+            $response = $this->postJson('/api/send-bulk', [
                 'recipients' => $recipients,
-            ]);
+            ], 60);
 
             if ($response->successful()) {
                 return $response->json();
@@ -329,6 +324,49 @@ class WhatsAppGatewayService
                 'message' => 'Koneksi ke gateway gagal: ' . $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Perform HTTP POST with guaranteed safe UTF-8 JSON encoding.
+     * Prevents "Malformed UTF-8 characters, possibly incorrectly encoded" exception across any environment.
+     */
+    protected function postJson(string $endpoint, array $data, int $timeout = 30): \Illuminate\Http\Client\Response
+    {
+        $cleaned = $this->cleanUtf8Recursive($data);
+        $json = json_encode($cleaned, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+
+        return Http::timeout($timeout)
+            ->withBody($json, 'application/json')
+            ->post("{$this->baseUrl}{$endpoint}");
+    }
+
+    /**
+     * Recursively clean and scrub all strings to be guaranteed valid UTF-8.
+     */
+    protected function cleanUtf8Recursive($data)
+    {
+        if (is_string($data)) {
+            if (!mb_check_encoding($data, 'UTF-8')) {
+                $data = mb_convert_encoding($data, 'UTF-8', 'Windows-1252, ISO-8859-1, ASCII');
+            }
+            if (function_exists('mb_scrub')) {
+                $data = mb_scrub($data, 'UTF-8');
+            } else {
+                $data = iconv('UTF-8', 'UTF-8//IGNORE', $data);
+            }
+            return $data;
+        }
+
+        if (is_array($data)) {
+            $result = [];
+            foreach ($data as $key => $val) {
+                $cleanKey = is_string($key) ? $this->cleanUtf8Recursive($key) : $key;
+                $result[$cleanKey] = $this->cleanUtf8Recursive($val);
+            }
+            return $result;
+        }
+
+        return $data;
     }
 
     /**
