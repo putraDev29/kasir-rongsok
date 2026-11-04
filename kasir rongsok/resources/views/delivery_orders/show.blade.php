@@ -196,7 +196,7 @@
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Rincian Muatan Barang Rongsok
+                Rincian Muatan Material Scrap & Daur Ulang
             </h3>
             <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold">
                 Total Berat: {{ number_format($deliveryOrder->total_weight, 2) }} kg

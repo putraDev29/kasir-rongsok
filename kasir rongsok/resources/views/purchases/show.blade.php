@@ -109,7 +109,7 @@
                         <tr>
                             <th class="py-2.5 px-3">#</th>
                             <th class="py-2.5 px-3">Kode</th>
-                            <th class="py-2.5 px-3">Nama Barang Rongsok</th>
+                            <th class="py-2.5 px-3">Nama Material Scrap & Daur Ulang</th>
                             <th class="py-2.5 px-3 text-right">Berat Kotor</th>
                             <th class="py-2.5 px-3 text-right">Pot./Tara</th>
                             <th class="py-2.5 px-3 text-right font-bold text-slate-900 bg-emerald-50/50">Berat Bersih</th>

@@ -13,7 +13,7 @@
     </style>
 </head>
 <body>
-    <h3>REKAP TRANSAKSI PEMBELIAN BARANG RONGSOK</h3>
+    <h3>REKAP TRANSAKSI PEMBELIAN MATERIAL SCRAP & DAUR ULANG</h3>
     <p>Periode: {{ $startDate ?: '-' }} s/d {{ $endDate ?: '-' }}</p>
     <table>
         <thead>

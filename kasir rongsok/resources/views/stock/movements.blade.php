@@ -6,7 +6,7 @@
     <!-- Header & Info -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div>
-            <h2 class="text-base font-bold text-slate-900">Buku Mutasi Pergerakan Barang Rongsok</h2>
+            <h2 class="text-base font-bold text-slate-900">Buku Mutasi Pergerakan Material Scrap & Daur Ulang</h2>
             <p class="text-xs text-slate-500">Mencatat setiap kilogram barang masuk dari pembelian, keluar ke pabrik, dan penyesuaian</p>
         </div>
         <a href="{{ route('stock.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">
@@ -19,7 +19,7 @@
     <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
         <form method="GET" action="{{ route('stock.movements') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
             <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Barang Rongsok</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Material Scrap & Daur Ulang</label>
                 <select name="scrap_item_id" class="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
                     <option value="">-- Semua Barang --</option>
                     @foreach($scrapItems as $item)
@@ -71,7 +71,7 @@
                 <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase text-[10px] font-sans">
                     <tr>
                         <th class="py-2.5 px-3">Waktu</th>
-                        <th class="py-2.5 px-3">Barang Rongsok</th>
+                        <th class="py-2.5 px-3">Material Scrap & Daur Ulang</th>
                         <th class="py-2.5 px-3 text-center">Tipe</th>
                         <th class="py-2.5 px-3 text-right">Perubahan (kg)</th>
                         <th class="py-2.5 px-3 text-right">Saldo Akhir (kg)</th>

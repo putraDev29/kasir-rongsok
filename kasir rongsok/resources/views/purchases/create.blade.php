@@ -1,4 +1,4 @@
-@extends('layouts.app', ['header' => 'Kasir Penerimaan Barang Rongsok'])
+@extends('layouts.app', ['header' => 'Kasir Penerimaan Material Scrap & Daur Ulang'])
 
 @section('content')
 <div x-data="cashierPos()" x-init="init()" class="space-y-4">
@@ -48,7 +48,7 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div class="flex items-center gap-2">
                             <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
-                            <span class="text-xs font-bold uppercase text-slate-800 tracking-wider">Pilih Cepat Barang Rongsok</span>
+                            <span class="text-xs font-bold uppercase text-slate-800 tracking-wider">Pilih Cepat Material Scrap & Daur Ulang</span>
                         </div>
                         <div class="w-full sm:w-64 relative">
                             <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -116,7 +116,7 @@
                                     <!-- Nomor Urut -->
                                     <span class="w-6 h-6 rounded-md bg-slate-800 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-xs" x-text="index + 1">1</span>
 
-                                    <!-- Pilihan Barang Rongsok (Searchable Combobox) -->
+                                    <!-- Pilihan Material Scrap & Daur Ulang (Searchable Combobox) -->
                                     <div class="flex-1 min-w-0 relative" @click.outside="row.dropdown_open = false">
                                         <input type="hidden" :name="'items[' + index + '][scrap_item_id]'" :value="row.scrap_item_id" required>
 
@@ -129,7 +129,7 @@
                                                    x-model="row.search_text"
                                                    @focus="row.dropdown_open = true"
                                                    @input="row.dropdown_open = true"
-                                                   placeholder="Cari / pilih barang rongsok..."
+                                                   placeholder="Cari / pilih material scrap & daur ulang..."
                                                    required
                                                    class="w-full pl-8 pr-14 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900 bg-white shadow-2xs">
 
@@ -1373,7 +1373,7 @@ function cashierPos() {
                 const row = this.rows[i];
                 if (!row.scrap_item_id) {
                     e.preventDefault();
-                    alert('Silakan pilih barang rongsok untuk baris ke-' + (i + 1) + '.');
+                    alert('Silakan pilih material scrap & daur ulang untuk baris ke-' + (i + 1) + '.');
                     this.isSubmitting = false;
                     return;
                 }

@@ -1,4 +1,4 @@
-@extends('layouts.app', ['header' => 'Tambah Jenis Barang Rongsok'])
+@extends('layouts.app', ['header' => 'Tambah Material Scrap & Daur Ulang'])
 
 @section('content')
 <div class="max-w-2xl mx-auto space-y-4">
@@ -12,7 +12,7 @@
 
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <div class="border-b border-slate-100 pb-3 mb-5">
-            <h2 class="text-base font-bold text-slate-900">Formulir Barang Rongsok Baru</h2>
+            <h2 class="text-base font-bold text-slate-900">Formulir Material Scrap & Daur Ulang Baru</h2>
             <p class="text-xs text-slate-500">Tambahkan jenis logam, kertas, atau plastik baru ke sistem kasir</p>
         </div>
 
@@ -21,7 +21,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Barang Rongsok *</label>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Material Scrap & Daur Ulang *</label>
                     <input type="text" name="name" value="{{ old('name') }}" required placeholder="Contoh: Tembaga Super Kupas"
                            class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
                 </div>

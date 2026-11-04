@@ -53,7 +53,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-bold text-slate-900 group-hover:text-purple-700">Laporan Stok & Valuasi Persediaan</h3>
-                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">Posisi timbangan fisik di gudang, rata-rata harga beli modal, total valuasi aset barang rongsok, dan barang dengan stok menipis.</p>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">Posisi timbangan fisik di gudang, rata-rata harga beli modal, total valuasi aset material scrap & daur ulang, dan barang dengan stok menipis.</p>
                 </div>
             </div>
             <div class="pt-4 border-t border-slate-100 mt-4 flex items-center justify-between text-xs font-semibold text-purple-700">

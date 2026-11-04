@@ -261,7 +261,7 @@
             <div class="p-4 border-b border-slate-200 flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-bold text-slate-900">Transaksi Penerimaan Terbaru</h3>
-                    <p class="text-xs text-slate-500">Nota timbangan barang rongsok masuk</p>
+                    <p class="text-xs text-slate-500">Nota timbangan material scrap & daur ulang masuk</p>
                 </div>
                 <a href="{{ route('purchases.index') }}" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold">
                     Semua Transaksi &rarr;

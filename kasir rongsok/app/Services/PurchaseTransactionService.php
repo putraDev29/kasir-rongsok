@@ -65,7 +65,7 @@ class PurchaseTransactionService
             // Calculate items & totals safely on backend
             $itemsData = $data['items'] ?? [];
             if (empty($itemsData)) {
-                throw new Exception('Transaksi harus memiliki minimal 1 barang rongsok.');
+                throw new Exception('Transaksi harus memiliki minimal 1 material scrap & daur ulang.');
             }
 
             $totalGrossWeight = 0;

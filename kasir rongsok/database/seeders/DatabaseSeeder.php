@@ -75,11 +75,11 @@ class DatabaseSeeder extends Seeder
             'company_tagline' => 'Pusat Pembelian & Pengelolaan Daur Ulang Terpercaya',
             'company_phone' => '0812-3456-7890 / (021) 555-8989',
             'company_address' => 'Jl. Industri Daur Ulang No. 88, Kel. Sukamaju, Kec. Cikarang',
-            'receipt_header' => 'Nota Resmi Pembelian Barang Rongsokan & Logam Bekas',
+            'receipt_header' => 'Nota Resmi Pembelian Material Scrap & Daur Ulang',
             'receipt_footer' => 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali. Terima kasih atas kerja samanya.',
             'default_printer_type' => 'thermal_58', // thermal_58, thermal_80, a4
             'currency_symbol' => 'Rp',
-            'delivery_order_notes' => 'Surat jalan ini dibuat 2 (dua) rangkap: Lembar 1 dipegang oleh gudang dan Lembar 2 dipegang oleh supir. Dokumen sah penyerahan barang rongsok.',
+            'delivery_order_notes' => 'Surat jalan ini dibuat 2 (dua) rangkap: Lembar 1 dipegang oleh gudang dan Lembar 2 dipegang oleh supir. Dokumen sah penyerahan material scrap & daur ulang.',
         ];
 
         foreach ($settings as $key => $val) {

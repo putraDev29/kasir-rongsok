@@ -74,7 +74,7 @@
                 <thead>
                     <tr class="border-b-2 border-slate-300 text-[10px] uppercase font-sans text-slate-600">
                         <th class="py-2 px-1">#</th>
-                        <th class="py-2 px-2">Nama Barang Rongsok</th>
+                        <th class="py-2 px-2">Nama Material Scrap & Daur Ulang</th>
                         <th class="py-2 px-2 text-right">Berat (kg)</th>
                         <th class="py-2 px-2 text-right">Harga Satuan/kg</th>
                         <th class="py-2 px-2 text-right font-bold">Total Nilai</th>

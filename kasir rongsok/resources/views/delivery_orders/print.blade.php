@@ -149,7 +149,7 @@
                     <thead>
                         <tr class="bg-slate-100 text-slate-800 font-bold uppercase text-[9px] border-b border-slate-400">
                             <th class="py-1 px-2 border-r border-slate-300 w-8 text-center">No</th>
-                            <th class="py-1 px-2 border-r border-slate-300">Jenis Barang & Spesifikasi Muatan</th>
+                            <th class="py-1 px-2 border-r border-slate-300">Jenis Material Scrap & Daur Ulang</th>
                             <th class="py-1 px-2 border-r border-slate-300 w-24 text-right">Kemasan / Koli</th>
                             <th class="py-1 px-2 border-r border-slate-300 w-28 text-right">Berat Bersih (kg)</th>
                             <th class="py-1 px-2">Keterangan / Segel</th>
@@ -236,7 +236,7 @@
 
             <!-- Footer note -->
             <div class="mt-1.5 text-center text-[7.5px] text-slate-400 italic">
-                {{ $settings['delivery_order_notes'] ?? 'Surat Jalan ini merupakan dokumen bukti penyerahan barang rongsok yang sah. Mohon diperiksa kembali sebelum ditandatangani.' }}
+                {{ $settings['delivery_order_notes'] ?? 'Surat jalan ini dibuat 2 (dua) rangkap: Lembar 1 dipegang oleh gudang dan Lembar 2 dipegang oleh supir. Dokumen sah penyerahan material scrap & daur ulang.' }}
             </div>
 
         </div>
@@ -320,7 +320,7 @@
                     <thead>
                         <tr class="bg-slate-100 text-slate-800 font-bold uppercase text-[9px] border-b border-slate-400">
                             <th class="py-1 px-2 border-r border-slate-300 w-8 text-center">No</th>
-                            <th class="py-1 px-2 border-r border-slate-300">Jenis Barang & Spesifikasi Muatan</th>
+                            <th class="py-1 px-2 border-r border-slate-300">Jenis Material Scrap & Daur Ulang</th>
                             <th class="py-1 px-2 border-r border-slate-300 w-24 text-right">Kemasan / Koli</th>
                             <th class="py-1 px-2 border-r border-slate-300 w-28 text-right">Berat Bersih (kg)</th>
                             <th class="py-1 px-2">Keterangan / Segel</th>
@@ -407,7 +407,7 @@
 
             <!-- Footer note -->
             <div class="mt-1.5 text-center text-[7.5px] text-slate-400 italic">
-                {{ $settings['delivery_order_notes'] ?? 'Surat Jalan ini merupakan dokumen bukti penyerahan barang rongsok yang sah. Mohon diperiksa kembali sebelum ditandatangani.' }}
+                {{ $settings['delivery_order_notes'] ?? 'Surat jalan ini dibuat 2 (dua) rangkap: Lembar 1 dipegang oleh gudang dan Lembar 2 dipegang oleh supir. Dokumen sah penyerahan material scrap & daur ulang.' }}
             </div>
 
         </div>

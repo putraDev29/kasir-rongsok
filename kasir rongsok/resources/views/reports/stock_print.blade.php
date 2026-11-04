@@ -41,7 +41,7 @@
         <thead class="bg-slate-100 border-b border-slate-300 text-[10px] uppercase font-sans">
             <tr>
                 <th class="p-1.5 border-r border-slate-300">Kode</th>
-                <th class="p-1.5 border-r border-slate-300">Nama Barang Rongsok</th>
+                <th class="p-1.5 border-r border-slate-300">Nama Material Scrap & Daur Ulang</th>
                 <th class="p-1.5 border-r border-slate-300">Kategori</th>
                 <th class="p-1.5 border-r border-slate-300 text-right">Stok Fisik</th>
                 <th class="p-1.5 border-r border-slate-300 text-right">Avg Beli/kg</th>

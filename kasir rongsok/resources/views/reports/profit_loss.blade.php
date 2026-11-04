@@ -159,7 +159,7 @@
                     <span class="font-mono text-sm">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between text-xs text-slate-600 pl-4">
-                    <span>Penjualan Barang Rongsokan Partai Grosir / Kirim ke Pabrik ({{ number_format($totalSalesWeight, 1) }} kg)</span>
+                    <span>Penjualan Material Scrap & Daur Ulang Partai Grosir / Kirim ke Pabrik ({{ number_format($totalSalesWeight, 1) }} kg)</span>
                     <span class="font-mono font-medium">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
                 </div>
                 @if($totalSales == 0)
@@ -176,7 +176,7 @@
                     <span class="font-mono text-sm text-red-600">(Rp {{ number_format($totalCogs, 0, ',', '.') }})</span>
                 </div>
                 <div class="flex justify-between text-xs text-slate-600 pl-4">
-                    <span>Biaya Perolehan Barang Rongsok yang Terjual</span>
+                    <span>Biaya Perolehan Material Scrap & Daur Ulang yang Terjual</span>
                     <span class="font-mono font-medium">Rp {{ number_format($totalCogs, 0, ',', '.') }}</span>
                 </div>
             </div>

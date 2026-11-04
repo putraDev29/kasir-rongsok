@@ -194,7 +194,7 @@
             <tr>
                 <th class="text-center" style="width: 20px;">No</th>
                 <th style="width: 60px;">Kode</th>
-                <th>Nama Barang Rongsok</th>
+                <th>Nama Material Scrap & Daur Ulang</th>
                 <th class="text-right" style="width: 65px;">Berat (kg)</th>
                 <th class="text-right" style="width: 70px;">Harga Jual/kg</th>
                 <th class="text-right" style="width: 85px;">Subtotal (Rp)</th>

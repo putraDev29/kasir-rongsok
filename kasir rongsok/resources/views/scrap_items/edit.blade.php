@@ -13,7 +13,7 @@
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <div class="border-b border-slate-100 pb-3 mb-5 flex items-center justify-between">
             <div>
-                <h2 class="text-base font-bold text-slate-900">Perbarui Informasi Barang Rongsok</h2>
+                <h2 class="text-base font-bold text-slate-900">Perbarui Informasi Material Scrap & Daur Ulang</h2>
                 <p class="text-xs text-slate-500">Perubahan harga beli / jual akan dicatat otomatis ke riwayat harga</p>
             </div>
             <div class="text-right">
@@ -28,7 +28,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Barang Rongsok *</label>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Material Scrap & Daur Ulang *</label>
                     <input type="text" name="name" value="{{ old('name', $scrapItem->name) }}" required
                            class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
                 </div>

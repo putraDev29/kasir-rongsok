@@ -559,8 +559,8 @@ class ScrapCashierSystemTest extends TestCase
         // 2. Check Price List Print/PDF view renders item names and prices for sellers
         $priceListResponse = $this->actingAs($this->superAdmin)->get('/scrap-items/print-price-list');
         $priceListResponse->assertStatus(200);
-        $priceListResponse->assertSee('DAFTAR HARGA BELI RONGSOK');
-        $priceListResponse->assertSee('Nama Jenis Barang Rongsok');
+        $priceListResponse->assertSee('DAFTAR HARGA BELI MATERIAL SCRAP & DAUR ULANG', false);
+        $priceListResponse->assertSee('Nama Material Scrap & Daur Ulang', false);
         $priceListResponse->assertSee('Harga Beli per Kg');
         $priceListResponse->assertSee('TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI');
     }

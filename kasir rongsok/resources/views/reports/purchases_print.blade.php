@@ -23,7 +23,7 @@
     <div class="text-center pb-4 border-b border-slate-300">
         <h1 class="text-lg font-black uppercase">{{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}</h1>
         <p class="text-slate-600 text-[11px]">{{ $settings['company_address'] ?? 'Jl. Industri Daur Ulang No. 88, Sentra Rongsok' }} | Telp: {{ $settings['company_phone'] ?? '0812-3456-7890' }}</p>
-        <h2 class="text-sm font-bold uppercase mt-2 text-slate-800">LAPORAN PEMBELIAN BARANG RONGSOK</h2>
+        <h2 class="text-sm font-bold uppercase mt-2 text-slate-800">LAPORAN PEMBELIAN MATERIAL SCRAP & DAUR ULANG</h2>
         <p class="text-[11px] text-slate-500">Periode: {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</p>
     </div>
 

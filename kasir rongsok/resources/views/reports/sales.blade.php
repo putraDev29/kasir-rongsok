@@ -1,4 +1,4 @@
-@extends('layouts.app', ['header' => 'Laporan Penjualan Barang Rongsok'])
+@extends('layouts.app', ['header' => 'Laporan Penjualan Material Scrap & Daur Ulang'])
 
 @section('content')
 <div class="space-y-4">
@@ -88,7 +88,7 @@
                         <th class="py-2.5 px-3">Waktu</th>
                         <th class="py-2.5 px-3">No. Nota</th>
                         <th class="py-2.5 px-3">Pembeli</th>
-                        <th class="py-2.5 px-3">Barang Rongsok</th>
+                        <th class="py-2.5 px-3">Material Scrap & Daur Ulang</th>
                         <th class="py-2.5 px-3 text-right">Berat Terjual</th>
                         <th class="py-2.5 px-3 text-right">Harga Jual</th>
                         <th class="py-2.5 px-3 text-right font-bold text-slate-600">Total Modal (HPP)</th>

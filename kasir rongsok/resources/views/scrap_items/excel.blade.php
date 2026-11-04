@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Daftar Harga Barang Rongsok</title>
+    <title>Daftar Harga Material Scrap & Daur Ulang</title>
     <style>
         table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 11px; }
         th, td { border: 1px solid #000; padding: 6px; }

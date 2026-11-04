@@ -235,9 +235,9 @@
     <div class="article">
         <div class="article-title">Pasal 2: Tujuan Modal &amp; Mekanisme Pengembalian (Potong Timbangan)</div>
         <div class="article-body">
-            1. Pinjaman modal ini dipergunakan oleh PIHAK KEDUA untuk keperluan: <strong>{{ $debt->notes ?: 'Modal perputaran operasional pembelian dan pengumpulan barang rongsok' }}</strong>.
+            1. Pinjaman modal ini dipergunakan oleh PIHAK KEDUA untuk keperluan: <strong>{{ $debt->notes ?: 'Modal perputaran operasional pembelian dan pengumpulan material scrap & daur ulang' }}</strong>.
             <br>
-            2. PIHAK KEDUA berkewajiban mengembalikan pinjaman tersebut melalui pemotongan nota timbangan hasil penyetoran barang rongsok ke depo PIHAK PERTAMA secara bertahap atau melalui pembayaran angsuran tunai/transfer hingga seluruh hutang dinyatakan lunas.
+            2. PIHAK KEDUA berkewajiban mengembalikan pinjaman tersebut melalui pemotongan nota timbangan hasil penyetoran material scrap & daur ulang ke depo PIHAK PERTAMA secara bertahap atau melalui pembayaran angsuran tunai/transfer hingga seluruh hutang dinyatakan lunas.
             <br>
             3. Target pelunasan pinjaman modal disepakati selambat-lambatnya tanggal: <strong>{{ $debt->due_date ? $debt->due_date->translatedFormat('d F Y') : 'Sesuai kesepakatan berjalan / setiap transaksi timbangan' }}</strong>.
         </div>
@@ -249,7 +249,7 @@
             @if($debt->guarantee_info)
                 Sebagai itikad baik dan jaminan kepastian pengembalian hutang, PIHAK KEDUA menyerahkan jaminan berupa: <strong>{{ $debt->guarantee_info }}</strong> kepada PIHAK PERTAMA sampai hutang piutang ini dinyatakan lunas sepenuhnya oleh PIHAK PERTAMA.
             @else
-                Pinjaman modal ini diberikan atas dasar rasa saling percaya dan komitmen kemitraan usaha, di mana PIHAK KEDUA bertanggung jawab penuh secara hukum dan pribadi untuk menyetorkan pasokan barang rongsok ke depo PIHAK PERTAMA sampai pinjaman lunas.
+                Pinjaman modal ini diberikan atas dasar rasa saling percaya dan komitmen kemitraan usaha, di mana PIHAK KEDUA bertanggung jawab penuh secara hukum dan pribadi untuk menyetorkan pasokan material scrap & daur ulang ke depo PIHAK PERTAMA sampai pinjaman lunas.
             @endif
         </div>
     </div>
@@ -257,7 +257,7 @@
     <div class="article">
         <div class="article-title">Pasal 4: Hak Tagih &amp; Penyelesaian Perselisihan</div>
         <div class="article-body">
-            {{ $debt->agreement_notes ?: ($settings['debt_agreement_terms'] ?? 'Apabila PIHAK KEDUA lalai, berhenti menyetorkan barang rongsok, atau tidak memenuhi kewajiban pembayaran angsuran sesuai kesepakatan, maka PIHAK PERTAMA berhak menagih sisa saldo piutang modal secara penuh atau mengambil langkah penyelesaian musyawarah maupun hukum yang berlaku di Republik Indonesia.') }}
+            {{ $debt->agreement_notes ?: ($settings['debt_agreement_terms'] ?? 'Apabila PIHAK KEDUA lalai, berhenti menyetorkan material scrap & daur ulang, atau tidak memenuhi kewajiban pembayaran angsuran sesuai kesepakatan, maka PIHAK PERTAMA berhak menagih sisa saldo piutang modal secara penuh atau mengambil langkah penyelesaian musyawarah maupun hukum yang berlaku di Republik Indonesia.') }}
         </div>
     </div>
 

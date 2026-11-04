@@ -1,4 +1,4 @@
-@extends('layouts.app', ['header' => 'Master Data Jenis Barang Rongsok'])
+@extends('layouts.app', ['header' => 'Master Data Material Scrap & Daur Ulang'])
 
 @section('content')
 <div class="space-y-4" x-data="{ quickPriceModal: false, activeItem: {} }">
@@ -165,7 +165,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="py-8 text-center text-slate-400">Belum ada barang rongsok yang terdaftar.</td>
+                            <td colspan="9" class="py-8 text-center text-slate-400">Belum ada material scrap & daur ulang yang terdaftar.</td>
                         </tr>
                     @endforelse
                 </tbody>

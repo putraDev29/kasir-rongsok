@@ -35,7 +35,7 @@ class SalesTransactionService
 
             $itemsData = $data['items'] ?? [];
             if (empty($itemsData)) {
-                throw new Exception('Penjualan harus memiliki minimal 1 barang rongsok.');
+                throw new Exception('Penjualan harus memiliki minimal 1 material scrap & daur ulang.');
             }
 
             $totalWeight = 0;

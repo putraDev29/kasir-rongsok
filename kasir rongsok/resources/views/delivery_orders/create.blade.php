@@ -135,9 +135,9 @@
                     </span>
                     <div>
                         <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                            2. Rincian Muatan Barang Rongsok
+                            2. Rincian Muatan Material Scrap & Daur Ulang
                         </h3>
-                        <p class="text-[10px] text-slate-500">Daftar muatan barang rongsok yang dimuat ke armada ekspedisi</p>
+                        <p class="text-[10px] text-slate-500">Daftar muatan material scrap & daur ulang yang dimuat ke armada ekspedisi</p>
                     </div>
                 </div>
 

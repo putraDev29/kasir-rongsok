@@ -275,13 +275,13 @@
             </tr>
         </table>
 
-        <!-- Cargo Table (Rincian Muatan Barang Rongsok) -->
+        <!-- Cargo Table (Rincian Muatan Material Scrap & Daur Ulang) -->
         <table class="cargo-table">
             <thead>
                 <tr>
                     <th class="text-center" style="width: 20px;">No</th>
                     <th style="width: 55px;">Kode</th>
-                    <th>Jenis Barang Rongsok & Spesifikasi Muatan</th>
+                    <th>Jenis Material Scrap & Daur Ulang</th>
                     <th class="text-right" style="width: 75px;">Kemasan / Koli</th>
                     <th class="text-right" style="width: 90px;">Berat Bersih (kg)</th>
                     <th style="width: 110px;">Keterangan / No. Segel</th>
@@ -397,7 +397,7 @@
         </table>
 
         <div class="footer-note">
-            {{ $settings['delivery_order_notes'] ?? 'Surat Jalan ini merupakan dokumen bukti penyerahan barang rongsok yang sah. Mohon diperiksa kembali sebelum ditandatangani.' }}
+            {{ $settings['delivery_order_notes'] ?? 'Surat jalan ini dibuat 2 (dua) rangkap: Lembar 1 dipegang oleh gudang dan Lembar 2 dipegang oleh supir. Dokumen sah penyerahan material scrap & daur ulang.' }}
         </div>
 
     </div>

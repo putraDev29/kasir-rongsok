@@ -22,7 +22,7 @@
 <body>
     <div class="header">
         <div class="company-name">{{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}</div>
-        <div class="title">DAFTAR RESMI HARGA BELI BARANG RONGSOK / DAUR ULANG</div>
+        <div class="title">DAFTAR RESMI HARGA BELI MATERIAL SCRAP & DAUR ULANG</div>
         <div class="period">Update Terakhir: {{ date('d/m/Y') }} | Timbangan Digital Presisi, Pembayaran Tunai & Transfer Langsung Cair</div>
     </div>
 
@@ -38,7 +38,7 @@
                     <tr>
                         <th class="text-center" style="width: 30px;">No</th>
                         <th style="width: 80px;">Kode</th>
-                        <th>Nama Barang Rongsok</th>
+                        <th>Nama Material Scrap & Daur Ulang</th>
                         <th style="width: 100px;">Satuan</th>
                         <th class="text-right" style="width: 130px;">Harga Beli Standar</th>
                     </tr>

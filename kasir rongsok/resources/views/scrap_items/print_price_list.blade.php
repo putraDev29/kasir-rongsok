@@ -80,7 +80,7 @@
 
             <div class="text-right shrink-0">
                 <div class="inline-block px-3 py-1 bg-slate-900 text-white font-black text-xs uppercase tracking-wider rounded">
-                    DAFTAR HARGA BELI RONGSOK
+                    DAFTAR HARGA BELI MATERIAL SCRAP & DAUR ULANG
                 </div>
                 <div class="text-[11px] text-slate-600 mt-1 font-medium">
                     Update Resmi: <strong class="text-slate-900">{{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</strong>
@@ -121,7 +121,7 @@
                             <thead>
                                 <tr class="bg-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-600 border-b border-slate-200">
                                     <th class="py-2 px-3 w-12 text-center">No</th>
-                                    <th class="py-2 px-4">Nama Jenis Barang Rongsok</th>
+                                    <th class="py-2 px-4">Nama Material Scrap & Daur Ulang</th>
                                     <th class="py-2 px-4 w-48 text-right">Harga Beli per Kg</th>
                                 </tr>
                             </thead>
@@ -159,7 +159,7 @@
                 <div>
                     <h4 class="font-bold text-slate-900 uppercase mb-1">Layanan Jemput Muatan Borongan:</h4>
                     <p>
-                        Melayani penjemputan barang rongsok partai borongan dari bengkel, gudang, kantor, atau pabrik.
+                        Melayani penjemputan material scrap & daur ulang partai borongan dari bengkel, gudang, kantor, atau pabrik.
                         Hubungi kantor kami via WhatsApp: <strong class="text-slate-900">{{ $settings['company_phone'] ?? '0812-3456-7890' }}</strong>.
                     </p>
                 </div>

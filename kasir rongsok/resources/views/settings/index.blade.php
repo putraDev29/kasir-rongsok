@@ -177,7 +177,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Teks Layanan Jemput Barang (Untuk WA & PDF) *</label>
-                        <textarea name="pickup_service_text" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('pickup_service_text', $settings['pickup_service_text'] ?? 'Melayani armada jemput barang rongsok skala besar langsung ke lokasi gudang/pabrik Anda. Hubungi kantor kami.') }}</textarea>
+                        <textarea name="pickup_service_text" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('pickup_service_text', $settings['pickup_service_text'] ?? 'Melayani armada jemput material scrap & daur ulang skala besar langsung ke lokasi gudang/pabrik Anda. Hubungi kantor kami.') }}</textarea>
                         <span class="text-[10px] text-slate-500">Tampil otomatis saat broadcast daftar harga ke WA atau pada dokumen resmi.</span>
                     </div>
 
@@ -189,13 +189,13 @@
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Catatan Dokumen Surat Jalan Pengiriman</label>
-                        <textarea name="delivery_order_notes" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('delivery_order_notes', $settings['delivery_order_notes'] ?? 'Surat Jalan ini merupakan dokumen bukti penyerahan barang rongsok yang sah. Mohon diperiksa kembali sebelum ditandatangani.') }}</textarea>
+                        <textarea name="delivery_order_notes" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('delivery_order_notes', $settings['delivery_order_notes'] ?? 'Surat jalan ini dibuat 2 (dua) rangkap: Lembar 1 dipegang oleh gudang dan Lembar 2 dipegang oleh supir. Dokumen sah penyerahan material scrap & daur ulang.') }}</textarea>
                         <span class="text-[10px] text-slate-500">Dicetak di bagian bawah lembar Surat Jalan pengiriman pabrik.</span>
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Ketentuan Perjanjian Hutang Modal (Debt Agreement Terms)</label>
-                        <textarea name="debt_agreement_terms" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('debt_agreement_terms', $settings['debt_agreement_terms'] ?? 'Apabila PIHAK KEDUA tidak menyetorkan barang rongsok atau tidak mengangsur pinjaman sesuai kesepakatan, PIHAK PERTAMA berhak menagih sisa kewajiban atau mengambil tindakan penyelesaian sesuai hukum yang berlaku di Republik Indonesia.') }}</textarea>
+                        <textarea name="debt_agreement_terms" rows="3" class="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-indigo-500 bg-white">{{ old('debt_agreement_terms', $settings['debt_agreement_terms'] ?? 'Apabila PIHAK KEDUA tidak menyetorkan material scrap & daur ulang atau tidak mengangsur pinjaman sesuai kesepakatan, PIHAK PERTAMA berhak menagih sisa kewajiban atau mengambil tindakan penyelesaian sesuai hukum yang berlaku di Republik Indonesia.') }}</textarea>
                         <span class="text-[10px] text-slate-500">Dicetak sebagai pasal penyelesaian pada Surat Perjanjian Hutang Modal.</span>
                     </div>
                 </div>
