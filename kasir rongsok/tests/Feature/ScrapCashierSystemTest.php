@@ -617,5 +617,51 @@ class ScrapCashierSystemTest extends TestCase
         $createdItem->purchaseItems()->delete();
         $createdItem->forceDelete();
     }
+
+    public function test_cashier_can_input_new_category_during_purchase_and_auto_saves_to_master(): void
+    {
+        $uniqueCatName = 'Kategori Test Khusus ' . uniqid();
+        $uniqueItemName = 'Material Khusus ' . uniqid();
+
+        $response = $this->actingAs($this->kasir)->post('/purchases', [
+            'supplier_name' => 'Pemasok Kategori Baru',
+            'payment_method_id' => $this->cashMethod->id,
+            'discount_amount' => 0,
+            'rounding_amount' => 0,
+            'items' => [
+                [
+                    'scrap_item_id' => '__new__',
+                    'new_item_name' => $uniqueItemName,
+                    'category_id' => '__new__',
+                    'new_category_name' => $uniqueCatName,
+                    'unit_type' => 'kg',
+                    'gross_weight' => 15.00,
+                    'tare_weight' => 1.00,
+                    'price_per_kg' => 75000.00,
+                ]
+            ]
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        // 1. Assert ItemCategory was automatically created
+        $createdCategory = \App\Models\ItemCategory::where('name', $uniqueCatName)->first();
+        $this->assertNotNull($createdCategory);
+        $this->assertTrue($createdCategory->is_active);
+
+        // 2. Assert ScrapItem was automatically created with this new category_id
+        $createdItem = ScrapItem::where('name', $uniqueItemName)->first();
+        $this->assertNotNull($createdItem);
+        $this->assertEquals($createdCategory->id, $createdItem->category_id);
+        $this->assertEquals(75000.00, (float) $createdItem->buy_price_per_kg);
+
+        // Clean up
+        $createdItem->stockMovements()->delete();
+        $createdItem->stockBalance()->delete();
+        $createdItem->purchaseItems()->delete();
+        $createdItem->forceDelete();
+        $createdCategory->delete();
+    }
 }
 

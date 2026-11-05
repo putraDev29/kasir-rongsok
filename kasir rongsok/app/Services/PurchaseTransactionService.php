@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ActivityLog;
 use App\Models\Debt;
+use App\Models\ItemCategory;
 use App\Models\PurchaseTransaction;
 use App\Models\PurchaseTransactionItem;
 use App\Models\ScrapItem;
@@ -101,9 +102,33 @@ class PurchaseTransactionService
                             $unitType = 'kg';
                         }
 
-                        $categoryId = !empty($row['category_id']) && is_numeric($row['category_id'])
-                            ? (int) $row['category_id']
-                            : null;
+                        $categoryId = null;
+                        $newCategoryName = trim($row['new_category_name'] ?? '');
+
+                        if (($row['category_id'] ?? null) === '__new__' || !empty($newCategoryName)) {
+                            $targetCatName = !empty($newCategoryName) ? $newCategoryName : 'Kategori Baru';
+                            $category = ItemCategory::where('name', $targetCatName)->first();
+                            if (!$category) {
+                                $slug = \Illuminate\Support\Str::slug($targetCatName);
+                                $baseSlug = $slug ?: 'kategori';
+                                $slug = $baseSlug;
+                                $counter = 1;
+                                while (ItemCategory::where('slug', $slug)->exists()) {
+                                    $slug = "{$baseSlug}-{$counter}";
+                                    $counter++;
+                                }
+
+                                $category = ItemCategory::create([
+                                    'name' => $targetCatName,
+                                    'slug' => $slug,
+                                    'description' => 'Kategori otomatis dibuat dari kasir timbang',
+                                    'is_active' => true,
+                                ]);
+                            }
+                            $categoryId = $category->id;
+                        } elseif (!empty($row['category_id']) && is_numeric($row['category_id'])) {
+                            $categoryId = (int) $row['category_id'];
+                        }
 
                         $code = 'BRG-' . strtoupper(substr(uniqid(), -5));
                         while (ScrapItem::where('code', $code)->exists()) {

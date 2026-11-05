@@ -6,6 +6,9 @@ import { generatePurchaseReceiptPdf, generateSalesInvoicePdf, generateDebtPaymen
 window.Alpine = Alpine;
 window.createIcons = createIcons;
 window.lucideIcons = icons;
+window.lucide = {
+    createIcons: (opt) => createIcons(opt || { icons })
+};
 
 // Initialize Lucide icons on page load and live DOM changes
 document.addEventListener('DOMContentLoaded', () => {

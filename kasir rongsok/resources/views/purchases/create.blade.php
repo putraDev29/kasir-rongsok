@@ -128,10 +128,22 @@
                                             Input Barang Baru (Auto Simpan ke Master)
                                         </span>
                                     </div>
-                                    <button type="button" @click="toggleRowItemMode(row)" 
-                                            class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline inline-flex items-center gap-1">
-                                        <span x-text="row.is_new ? '← Pilih dari Master Barang' : '+ Tambah Barang Baru'"></span>
-                                    </button>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" @click="toggleRowItemMode(row)" 
+                                                class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline inline-flex items-center gap-1">
+                                            <span x-text="row.is_new ? '← Pilih dari Master Barang' : '+ Tambah Barang Baru'"></span>
+                                        </button>
+                                        <!-- Quick delete shortcut in card header when rows > 1 -->
+                                        <button type="button" 
+                                                x-show="rows.length > 1"
+                                                @click="removeRow(index)" 
+                                                class="p-0.5 text-rose-500 hover:text-rose-700 rounded hover:bg-rose-50 transition-colors inline-flex items-center"
+                                                title="Hapus baris timbangan ini">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <!-- BARIS 1: NAMA BARANG / MODE SELEKSI & JENIS / VARIAN -->
@@ -237,15 +249,42 @@
                                                    class="w-full py-1.5 px-3 text-xs rounded-lg border border-emerald-500 focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900 bg-emerald-50/30">
                                         </div>
 
-                                        <div class="w-44 sm:w-48 shrink-0">
-                                            <select :name="'items[' + index + '][category_id]'" 
-                                                    x-model="row.category_id" 
-                                                    class="w-full py-1.5 px-2 text-xs rounded-lg border border-emerald-400 bg-white font-medium text-slate-800 focus:ring-1 focus:ring-emerald-500">
-                                                <option value="">-- Kategori (Opsional) --</option>
-                                                <template x-for="cat in categories" :key="cat.id">
-                                                    <option :value="cat.id" x-text="cat.name" :selected="row.category_id == cat.id"></option>
-                                                </template>
-                                            </select>
+                                        <div class="w-56 sm:w-64 shrink-0">
+                                            <!-- Mode Pilih Kategori dari Master -->
+                                            <div x-show="!row.is_new_category" class="flex items-center gap-1">
+                                                <select :name="'items[' + index + '][category_id]'" 
+                                                        x-model="row.category_id" 
+                                                        @change="if (row.category_id === '__new__') { row.is_new_category = true; row.new_category_name = ''; }"
+                                                        class="w-full py-1.5 px-2 text-xs rounded-lg border border-emerald-400 bg-white font-medium text-slate-800 focus:ring-1 focus:ring-emerald-500">
+                                                    <option value="">-- Kategori (Opsional) --</option>
+                                                    <template x-for="cat in categories" :key="cat.id">
+                                                        <option :value="cat.id" x-text="cat.name" :selected="row.category_id == cat.id"></option>
+                                                    </template>
+                                                    <option value="__new__">✨ + Kategori Baru...</option>
+                                                </select>
+                                                <button type="button" 
+                                                        @click="row.is_new_category = true; row.category_id = '__new__'; row.new_category_name = '';" 
+                                                        class="px-2 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-md whitespace-nowrap shrink-0 transition-colors" 
+                                                        title="Ketik nama kategori baru">
+                                                    + Baru
+                                                </button>
+                                            </div>
+
+                                            <!-- Mode Input Kategori Baru -->
+                                            <div x-show="row.is_new_category" style="display: none;" class="flex items-center gap-1">
+                                                <input type="hidden" :name="'items[' + index + '][category_id]'" value="__new__" :disabled="!row.is_new_category">
+                                                <input type="text" 
+                                                       :name="'items[' + index + '][new_category_name]'" 
+                                                       x-model="row.new_category_name" 
+                                                       placeholder="Ketik kategori baru..."
+                                                       class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-emerald-500 bg-emerald-50/50 font-bold text-slate-900 focus:ring-1 focus:ring-emerald-500">
+                                                <button type="button" 
+                                                        @click="row.is_new_category = false; row.category_id = ''; row.new_category_name = '';" 
+                                                        class="px-2 py-1.5 text-[10px] font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded border border-slate-300 shrink-0 transition-colors"
+                                                        title="Batal / Pilih dari daftar kategori">
+                                                    ✕ Batal
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -258,12 +297,15 @@
                                                class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-medium text-slate-800 bg-white">
                                     </div>
 
-                                    <!-- Tombol Hapus -->
+                                    <!-- Tombol Hapus: Sangat jelas dan muncul dengan SVG murni ketika baris > 1 -->
                                     <button type="button" @click="removeRow(index)" 
                                             :disabled="rows.length <= 1"
-                                            class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-20 shrink-0"
-                                            title="Hapus baris item">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            :class="rows.length > 1 ? 'text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white border-rose-300 shadow-2xs cursor-pointer' : 'text-slate-300 bg-slate-100 border-slate-200 cursor-not-allowed opacity-30'"
+                                            class="p-1.5 rounded-lg border transition-all shrink-0 flex items-center justify-center"
+                                            title="Hapus baris timbangan ini">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
                                     </button>
                                 </div>
 
@@ -957,7 +999,7 @@ function cashierPos() {
         isSubmitting: false,
 
         rows: [
-            { uid: 1, scrap_item_id: '', is_new: false, new_item_name: '', category_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
+            { uid: 1, scrap_item_id: '', is_new: false, new_item_name: '', category_id: '', is_new_category: false, new_category_name: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
         ],
 
         init() {
@@ -1130,11 +1172,23 @@ function cashierPos() {
             return this.masterItems.some(i => i.name.toLowerCase() === q);
         },
 
+        refreshIcons() {
+            this.$nextTick(() => {
+                if (typeof window.refreshIcons === 'function') {
+                    window.refreshIcons();
+                } else if (window.createIcons && window.lucideIcons) {
+                    window.createIcons({ icons: window.lucideIcons });
+                }
+            });
+        },
+
         toggleRowItemMode(row) {
             row.is_new = !row.is_new;
             if (row.is_new) {
                 row.scrap_item_id = '__new__';
                 row.new_item_name = row.search_text ? row.search_text.split(' (')[0].trim() : '';
+                row.is_new_category = false;
+                row.new_category_name = '';
                 if (!row.category_id && this.selectedCategory !== 'all') {
                     row.category_id = this.selectedCategory;
                 }
@@ -1144,13 +1198,11 @@ function cashierPos() {
                 row.new_item_name = '';
                 row.search_text = '';
                 row.category_id = '';
+                row.is_new_category = false;
+                row.new_category_name = '';
                 row.dropdown_open = true;
             }
-            this.$nextTick(() => {
-                if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                    window.lucide.createIcons();
-                }
-            });
+            this.refreshIcons();
         },
 
         addNewItemToRow(row, customName) {
@@ -1158,15 +1210,13 @@ function cashierPos() {
             row.scrap_item_id = '__new__';
             row.new_item_name = (customName || '').trim();
             row.search_text = row.new_item_name;
+            row.is_new_category = false;
+            row.new_category_name = '';
             if (!row.category_id && this.selectedCategory !== 'all') {
                 row.category_id = this.selectedCategory;
             }
             row.dropdown_open = false;
-            this.$nextTick(() => {
-                if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                    window.lucide.createIcons();
-                }
-            });
+            this.refreshIcons();
         },
 
         addNewItemRow() {
@@ -1180,6 +1230,8 @@ function cashierPos() {
                     is_new: true,
                     new_item_name: '',
                     category_id: this.selectedCategory !== 'all' ? this.selectedCategory : '',
+                    is_new_category: false,
+                    new_category_name: '',
                     search_text: '',
                     dropdown_open: false,
                     unit_type: 'kg',
@@ -1192,17 +1244,15 @@ function cashierPos() {
                     price_per_kg: 0
                 });
             }
-            this.$nextTick(() => {
-                if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                    window.lucide.createIcons();
-                }
-            });
+            this.refreshIcons();
         },
 
         selectRowItem(row, item, index) {
             row.is_new = false;
             row.new_item_name = '';
             row.category_id = item.category_id || '';
+            row.is_new_category = false;
+            row.new_category_name = '';
             row.scrap_item_id = item.id;
             row.search_text = item.name + ' (' + item.code + ')';
             row.price_per_kg = parseFloat(item.buy_price_per_kg) || 0;
@@ -1215,17 +1265,15 @@ function cashierPos() {
                 row.tare_mode = row.unit_type || 'kg';
             }
             row.dropdown_open = false;
-            this.$nextTick(() => {
-                if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                    window.lucide.createIcons();
-                }
-            });
+            this.refreshIcons();
         },
 
         clearRowItem(row, index) {
             row.is_new = false;
             row.new_item_name = '';
             row.category_id = '';
+            row.is_new_category = false;
+            row.new_category_name = '';
             row.scrap_item_id = '';
             row.search_text = '';
             row.price_per_kg = 0;
@@ -1239,6 +1287,8 @@ function cashierPos() {
                 is_new: false,
                 new_item_name: '',
                 category_id: '',
+                is_new_category: false,
+                new_category_name: '',
                 search_text: '',
                 dropdown_open: false,
                 unit_type: 'kg',
@@ -1250,11 +1300,7 @@ function cashierPos() {
                 tare_mode: 'kg',
                 price_per_kg: 0
             });
-            this.$nextTick(() => {
-                if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                    window.lucide.createIcons();
-                }
-            });
+            this.refreshIcons();
         },
 
         addItem(item) {
@@ -1266,6 +1312,8 @@ function cashierPos() {
                 lastRow.is_new = false;
                 lastRow.new_item_name = '';
                 lastRow.category_id = item.category_id || '';
+                lastRow.is_new_category = false;
+                lastRow.new_category_name = '';
                 lastRow.search_text = itemLabel;
                 lastRow.unit_type = itemUnit;
                 lastRow.tare_mode = itemUnit;
@@ -1277,6 +1325,8 @@ function cashierPos() {
                     is_new: false,
                     new_item_name: '',
                     category_id: item.category_id || '',
+                    is_new_category: false,
+                    new_category_name: '',
                     search_text: itemLabel,
                     dropdown_open: false,
                     unit_type: itemUnit,
@@ -1289,11 +1339,7 @@ function cashierPos() {
                     price_per_kg: parseFloat(item.buy_price_per_kg) || 0
                 });
             }
-            this.$nextTick(() => {
-                if (window.lucide && typeof window.lucide.createIcons === 'function') {
-                    window.lucide.createIcons();
-                }
-            });
+            this.refreshIcons();
         },
 
         onItemChanged(index) {
@@ -1318,6 +1364,7 @@ function cashierPos() {
         removeRow(index) {
             if (this.rows.length > 1) {
                 this.rows.splice(index, 1);
+                this.refreshIcons();
             }
         },
 
@@ -1600,7 +1647,7 @@ function cashierPos() {
         resetForm() {
             if (confirm('Yakin ingin mengosongkan seluruh tabel timbangan kasir?')) {
                 this.rows = [
-                    { uid: Date.now(), scrap_item_id: '', is_new: false, new_item_name: '', category_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
+                    { uid: Date.now(), scrap_item_id: '', is_new: false, new_item_name: '', category_id: '', is_new_category: false, new_category_name: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
                 ];
                 this.selectedSupplierId = '';
                 this.supplierName = '';
@@ -1617,6 +1664,7 @@ function cashierPos() {
                 this.roundingAmount = 0;
                 this.customAccountName = '';
                 this.customAccountNo = '';
+                this.refreshIcons();
             }
         },
 
