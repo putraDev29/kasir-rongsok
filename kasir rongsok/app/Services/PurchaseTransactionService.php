@@ -59,7 +59,7 @@ class PurchaseTransactionService
                 $supplierId = $supplier->id;
                 $supplierName = $supplier->name;
             } else {
-                $supplierName = $supplierName ?: 'Umum / Tunai';
+                $supplierName = !empty($supplierName) ? trim($supplierName) : null;
             }
 
             // Calculate items & totals safely on backend

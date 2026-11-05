@@ -137,7 +137,7 @@
             <div style="{{ $metaGrid }}">
                 <span class="whitespace-nowrap">Pemasok</span>
                 <span class="text-center">:</span>
-                <span class="text-left pl-1.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name }}</span>
+                <span class="text-left pl-1.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name ?: '-' }}</span>
             </div>
             @if($purchase->supplier_phone)
                 <div style="{{ $metaGrid }}">
@@ -353,7 +353,7 @@
                 <div>
                     <p>Penjual / Pemasok</p>
                     <div class="h-10"></div>
-                    <p class="font-bold">({{ $purchase->supplier_name }})</p>
+                    <p class="font-bold">({{ $purchase->supplier_name ?: '...................' }})</p>
                 </div>
                 <div>
                     <p>Operator Kasir</p>

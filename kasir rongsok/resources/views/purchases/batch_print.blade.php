@@ -157,7 +157,7 @@
                                     <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap text-slate-700">Pemasok</span>
                                         <span class="text-center">:</span>
-                                        <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name }}</span>
+                                        <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name ?: '-' }}</span>
                                     </div>
                                     @if($purchase->supplier_phone)
                                         <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">

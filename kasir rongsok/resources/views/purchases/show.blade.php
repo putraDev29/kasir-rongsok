@@ -85,7 +85,7 @@
             </div>
             <div>
                 <span class="text-slate-400 block font-medium uppercase text-[10px]">Pemasok / Penjual</span>
-                <span class="font-semibold text-slate-800 text-sm">{{ $purchase->supplier_name }}</span>
+                <span class="font-semibold text-slate-800 text-sm">{{ $purchase->supplier_name ?: '-' }}</span>
                 @if($purchase->supplier_phone)
                     <div class="text-[11px] text-slate-500">{{ $purchase->supplier_phone }}</div>
                 @endif

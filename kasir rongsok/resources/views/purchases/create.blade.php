@@ -433,7 +433,7 @@
                                 <!-- Quick Clear & Caret Icons -->
                                 <div class="absolute inset-y-0 right-0 pr-2 flex items-center gap-1">
                                     <button type="button" 
-                                            x-show="supplierSearchQuery && supplierSearchQuery !== 'Umum / Tunai'"
+                                            x-show="supplierSearchQuery"
                                             @click="clearSupplierSelection()" 
                                             class="text-slate-400 hover:text-slate-600 p-0.5 rounded"
                                             title="Reset Pencarian">
@@ -458,22 +458,15 @@
                                  class="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl divide-y divide-slate-100"
                                  style="display: none;">
                                 
-                                <!-- Option 1: Pemasok Harian / Umum -->
-                                <button type="button" 
-                                        @click="selectSupplier(null)"
-                                        class="w-full text-left px-3 py-2 hover:bg-emerald-50 flex items-center justify-between transition-colors"
-                                        :class="{ 'bg-emerald-50/70 font-bold': !selectedSupplierId }">
-                                    <div>
-                                        <div class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                                            <span>Umum / Tunai</span>
-                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-slate-100 text-slate-600">Pemasok Harian</span>
-                                        </div>
-                                        <div class="text-[10px] text-slate-500">Transaksi reguler non-member</div>
-                                    </div>
-                                    <template x-if="!selectedSupplierId">
-                                        <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i>
-                                    </template>
-                                </button>
+                                <!-- Opsi: Kosongkan Pilihan Pemasok -->
+                                <template x-if="selectedSupplierId || supplierName">
+                                    <button type="button" 
+                                            @click="clearSupplierSelection()"
+                                            class="w-full text-left px-3 py-2 hover:bg-rose-50 text-rose-600 text-xs font-semibold flex items-center gap-1.5 transition-colors border-b border-slate-100">
+                                        <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+                                        <span>Kosongkan Nama Pemasok</span>
+                                    </button>
+                                </template>
 
                                 <!-- Option List: Filtered Master Suppliers -->
                                 <template x-for="sup in filteredSuppliers()" :key="sup.id">
@@ -880,8 +873,8 @@ function cashierPos() {
 
         selectedSupplierId: '',
         isManualSupplier: false,
-        supplierName: 'Umum / Tunai',
-        supplierSearchQuery: 'Umum / Tunai',
+        supplierName: '',
+        supplierSearchQuery: '',
         supplierDropdownOpen: false,
         supplierPhone: '',
         supplierAddress: '',
@@ -976,7 +969,7 @@ function cashierPos() {
         },
 
         filteredSuppliers() {
-            if (!this.supplierSearchQuery || this.supplierSearchQuery.trim() === '' || this.supplierSearchQuery === 'Umum / Tunai') {
+            if (!this.supplierSearchQuery || this.supplierSearchQuery.trim() === '') {
                 return this.suppliersList;
             }
             const q = this.supplierSearchQuery.toLowerCase().trim();
@@ -992,8 +985,8 @@ function cashierPos() {
         selectSupplier(sup) {
             if (!sup) {
                 this.selectedSupplierId = '';
-                this.supplierName = 'Umum / Tunai';
-                this.supplierSearchQuery = 'Umum / Tunai';
+                this.supplierName = '';
+                this.supplierSearchQuery = '';
                 this.supplierPhone = '';
                 this.supplierAddress = '';
                 this.supplierDebt = 0;
@@ -1017,28 +1010,28 @@ function cashierPos() {
 
         clearSupplierSelection() {
             this.selectedSupplierId = '';
-            this.supplierName = 'Umum / Tunai';
+            this.supplierName = '';
             this.supplierSearchQuery = '';
             this.supplierPhone = '';
             this.supplierAddress = '';
             this.supplierDebt = 0;
             this.debtDeductionAmount = 0;
-            this.supplierDropdownOpen = true;
+            this.supplierDropdownOpen = false;
         },
 
         toggleSupplierMode() {
             this.isManualSupplier = !this.isManualSupplier;
             if (this.isManualSupplier) {
                 this.selectedSupplierId = '__new__';
-                this.supplierName = (this.supplierSearchQuery && this.supplierSearchQuery !== 'Umum / Tunai') ? this.supplierSearchQuery : '';
+                this.supplierName = this.supplierSearchQuery ? this.supplierSearchQuery : '';
                 this.supplierPhone = '';
                 this.supplierAddress = '';
                 this.supplierDebt = 0;
                 this.debtDeductionAmount = 0;
             } else {
                 this.selectedSupplierId = '';
-                this.supplierName = 'Umum / Tunai';
-                this.supplierSearchQuery = 'Umum / Tunai';
+                this.supplierName = '';
+                this.supplierSearchQuery = '';
                 this.supplierPhone = '';
                 this.supplierAddress = '';
                 this.supplierDebt = 0;
@@ -1170,7 +1163,7 @@ function cashierPos() {
         onSupplierInput() {
             const rawVal = (this.supplierName || '').trim();
             const inputVal = rawVal.toLowerCase();
-            if (inputVal === '' || inputVal === 'umum' || inputVal === 'umum / tunai') {
+            if (inputVal === '') {
                 this.selectedSupplierId = '';
                 this.supplierDebt = 0;
                 this.debtDeductionAmount = 0;
@@ -1414,8 +1407,8 @@ function cashierPos() {
                     { uid: Date.now(), scrap_item_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
                 ];
                 this.selectedSupplierId = '';
-                this.supplierName = 'Umum / Tunai';
-                this.supplierSearchQuery = 'Umum / Tunai';
+                this.supplierName = '';
+                this.supplierSearchQuery = '';
                 this.supplierDropdownOpen = false;
                 this.paymentMethodId = this.paymentMethodsList[0]?.id || 1;
                 this.paymentMethodSearchQuery = this.paymentMethodsList[0]?.name || 'Tunai';

@@ -275,7 +275,7 @@
                                 <tr>
                                     <td class="meta-label">Pemasok</td>
                                     <td class="meta-colon">:</td>
-                                    <td class="meta-value" style="font-weight: bold;">{{ $purchase->supplier_name }}</td>
+                                    <td class="meta-value" style="font-weight: bold;">{{ $purchase->supplier_name ?: '-' }}</td>
                                 </tr>
                                 @if($purchase->supplier_phone)
                                     <tr>

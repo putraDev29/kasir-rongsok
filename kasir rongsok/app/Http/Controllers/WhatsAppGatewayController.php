@@ -150,7 +150,7 @@ class WhatsAppGatewayController extends Controller
             'invoiceNumber' => $purchase->invoice_number,
             'transactionDate' => Carbon::parse($purchase->transaction_date)->translatedFormat('d F Y, H:i') . ' WIB',
             'cashierName' => $purchase->user?->name ?? 'Kasir Timbang',
-            'supplierName' => $purchase->supplier_name ?: 'Pemasok Umum / Tunai',
+            'supplierName' => $purchase->supplier_name ?: '-',
             'supplierPhone' => $purchase->supplier_phone ?? '-',
             'paymentMethod' => $purchase->paymentMethod?->name ?? 'Tunai',
             'companyName' => $companyName,

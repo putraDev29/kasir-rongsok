@@ -380,7 +380,7 @@ class WhatsAppGatewayService
         $disclaimer = BusinessSetting::get('receipt_disclaimer', 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI');
         $footerText = BusinessSetting::get('receipt_footer', 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali. Terima kasih atas kerja samanya.');
 
-        $supplierName = $purchase->supplier_name ?: 'Pemasok Umum / Tunai';
+        $supplierName = $purchase->supplier_name ?: '-';
         $kasirName = $purchase->user ? $purchase->user->name : 'Kasir Timbang';
         $dateStr = Carbon::parse($purchase->transaction_date)->translatedFormat('d F Y, H:i') . ' WIB';
 
