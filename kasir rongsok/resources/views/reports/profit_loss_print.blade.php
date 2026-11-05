@@ -213,14 +213,14 @@
         <div class="grid grid-cols-2 gap-8 pt-6 text-center font-sans text-xs">
             <div>
                 <p>Bagian Keuangan / Admin</p>
-                <div class="h-12"></div>
+                <div class="h-16" style="height: 65px;"></div>
                 <p class="font-bold underline">( .......................................... )</p>
             </div>
             <div>
                 <p>Pimpinan / Owner Depo</p>
-                <div class="h-12 flex items-center justify-center">
+                <div class="h-16 flex items-center justify-center" style="height: 65px;">
                     @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                        <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" class="max-h-12 w-auto object-contain mx-auto">
+                        <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" style="height: 55px; max-height: 60px; width: auto; max-width: 170px; object-fit: contain; margin: 0 auto; display: block;">
                     @endif
                 </div>
                 <p class="font-bold underline">({{ $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur' }})</p>

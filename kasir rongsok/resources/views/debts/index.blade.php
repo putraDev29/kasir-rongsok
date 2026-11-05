@@ -382,10 +382,10 @@
                              'bg-amber-50/70 border-amber-200 text-amber-800': loanCategory === 'hutang',
                              'bg-purple-50/70 border-purple-200 text-purple-800': loanCategory === 'komitmen'
                          }">
-                        <div class="font-bold flex items-center gap-1">
+                        <!-- <div class="font-bold flex items-center gap-1">
                             <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                             <span>Format Surat Perjanjian A4 (1 Lembar, Rangkap 2: Asli Owner & Salinan Peminjam):</span>
-                        </div>
+                        </div> -->
                         <div class="mt-0.5 text-[10px] text-slate-600">
                             <span x-show="loanCategory === 'modal'">Teks surat perjanjian mengatur penyerahan modal usaha perputaran scrap dengan klausul pengembalian melalui pemotongan bertahap nota timbangan atau setoran.</span>
                             <span x-show="loanCategory === 'hutang'">Teks surat perjanjian mengatur pinjaman hutang uang tunai dengan kewajiban pelunasan penuh sesuai tempo atau cicilan berkala.</span>

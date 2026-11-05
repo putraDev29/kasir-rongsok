@@ -291,9 +291,9 @@
                 <div>
                     <p class="font-bold uppercase tracking-wider text-slate-900">{{ $sheet['role_first'] }}</p>
                     <p class="text-[10px] text-slate-500 font-sans">Pemilik Usaha / Depo</p>
-                    <div class="h-16 flex items-center justify-center text-slate-400 italic text-[10px]">
+                    <div class="h-20 flex items-center justify-center text-slate-400 italic text-[10px]" style="height: 70px;">
                         @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" class="max-h-16 w-auto object-contain mx-auto">
+                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" style="height: 60px; max-height: 65px; width: auto; max-width: 180px; object-fit: contain; margin: 0 auto; display: block;">
                         @else
                             <span class="border border-dashed border-slate-300 px-3 py-1.5 rounded">Cap Stempel Depo &amp; TTD</span>
                         @endif
@@ -306,7 +306,7 @@
                 <div>
                     <p class="font-bold uppercase tracking-wider text-slate-900">{{ $sheet['role_second'] }}</p>
                     <p class="text-[10px] text-slate-500 font-sans">Penerima Dana / Mitra</p>
-                    <div class="h-16 flex items-center justify-center text-slate-400 italic text-[10px]">
+                    <div class="h-20 flex items-center justify-center text-slate-400 italic text-[10px]" style="height: 70px;">
                         <span class="border border-dashed border-slate-300 px-3 py-1.5 rounded">Materai Rp 10.000 &amp; TTD</span>
                     </div>
                     <p class="font-bold underline uppercase text-slate-900">({{ $debt->borrower_name }})</p>

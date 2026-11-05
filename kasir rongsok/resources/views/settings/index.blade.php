@@ -82,7 +82,7 @@
                         
                         @if(\App\Models\BusinessSetting::hasOwnerSignature())
                             <div class="p-3 bg-white rounded-xl border border-emerald-300 inline-block shadow-sm">
-                                <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="Tanda Tangan Owner" class="h-16 w-auto max-w-[160px] object-contain">
+                                <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="Tanda Tangan Owner" style="height: 60px; max-height: 65px; width: auto; max-width: 180px; object-fit: contain;">
                             </div>
                             <div class="mt-2">
                                 <label class="inline-flex items-center gap-1.5 text-xs text-red-600 font-semibold cursor-pointer">

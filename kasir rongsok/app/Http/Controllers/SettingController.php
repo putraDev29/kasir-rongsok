@@ -182,6 +182,9 @@ class SettingController extends Controller
 
                 $file->move($destinationPath, $filename);
 
+                // Normalisasi dimensi gambar tanda tangan agar pas dengan area tanda tangan dokumen (maks 600x300)
+                $this->normalizeSignatureImage($destinationPath . DIRECTORY_SEPARATOR . $filename);
+
                 // Mirror if parent uploads directory exists
                 if (file_exists(base_path('../uploads')) && is_dir(base_path('../uploads'))) {
                     $parentUploadPath = realpath(base_path('../uploads')) . DIRECTORY_SEPARATOR . 'signature';
@@ -247,5 +250,77 @@ class SettingController extends Controller
         );
 
         return back()->with('success', 'Pengaturan usaha, identitas header/sidebar, dan logo berhasil diperbarui.');
+    }
+
+    /**
+     * Normalisasi ukuran tanda tangan agar proporsional dan tidak meledak di dokumen cetak/PDF.
+     * Maksimal batas bounding box: 600px x 300px dengan mempertahankan transparansi PNG/WebP.
+     */
+    protected function normalizeSignatureImage(string $filePath): void
+    {
+        if (!extension_loaded('gd') || !file_exists($filePath)) {
+            return;
+        }
+
+        $imageInfo = @getimagesize($filePath);
+        if (!$imageInfo) {
+            return;
+        }
+
+        [$origW, $origH, $type] = $imageInfo;
+        $maxW = 600;
+        $maxH = 300;
+
+        if ($origW <= $maxW && $origH <= $maxH) {
+            return;
+        }
+
+        $ratio = min($maxW / $origW, $maxH / $origH);
+        $newW = (int) round($origW * $ratio);
+        $newH = (int) round($origH * $ratio);
+
+        $srcImg = null;
+        switch ($type) {
+            case IMAGETYPE_PNG:
+                $srcImg = @imagecreatefrompng($filePath);
+                break;
+            case IMAGETYPE_JPEG:
+                $srcImg = @imagecreatefromjpeg($filePath);
+                break;
+            case IMAGETYPE_WEBP:
+                if (function_exists('imagecreatefromwebp')) {
+                    $srcImg = @imagecreatefromwebp($filePath);
+                }
+                break;
+        }
+
+        if (!$srcImg) {
+            return;
+        }
+
+        $dstImg = imagecreatetruecolor($newW, $newH);
+        imagealphablending($dstImg, false);
+        imagesavealpha($dstImg, true);
+        $transparent = imagecolorallocatealpha($dstImg, 255, 255, 255, 127);
+        imagefilledrectangle($dstImg, 0, 0, $newW, $newH, $transparent);
+
+        imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+
+        switch ($type) {
+            case IMAGETYPE_PNG:
+                imagepng($dstImg, $filePath, 8);
+                break;
+            case IMAGETYPE_JPEG:
+                imagejpeg($dstImg, $filePath, 90);
+                break;
+            case IMAGETYPE_WEBP:
+                if (function_exists('imagewebp')) {
+                    imagewebp($dstImg, $filePath, 90);
+                }
+                break;
+        }
+
+        imagedestroy($srcImg);
+        imagedestroy($dstImg);
     }
 }

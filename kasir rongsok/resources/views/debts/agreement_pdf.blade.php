@@ -168,16 +168,16 @@
             margin-top: 1px;
         }
         .sig-space {
-            height: 40px;
+            height: 60px;
         }
         .sig-materai {
             display: inline-block;
             border: 1px dashed #94a3b8;
-            padding: 3px 8px;
-            font-size: 6.5pt;
+            padding: 4px 10px;
+            font-size: 7pt;
             color: #64748b;
             border-radius: 3px;
-            margin-top: 4px;
+            margin-top: 14px;
         }
         .sig-name {
             font-weight: bold;
@@ -434,7 +434,7 @@
                     <div class="sig-sub">Pemilik Usaha / Depo</div>
                     <div class="sig-space">
                         @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="max-height: 38px; max-width: 125px; margin: 0 auto; display: block;">
+                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 52px; max-height: 56px; width: auto; max-width: 160px; margin: 0 auto; display: block;">
                         @else
                             <span class="sig-materai">Cap Stempel Depo &amp; TTD</span>
                         @endif

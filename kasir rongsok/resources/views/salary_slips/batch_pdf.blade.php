@@ -81,9 +81,9 @@
     <div class="footer">
         <div class="signature-box">
             <p>Manajer Operasional / Owner,</p>
-            <div style="height: 45px; text-align: center;">
+            <div style="height: 55px; text-align: center;">
                 @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                    <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="max-height: 42px; max-width: 120px; margin: 0 auto; display: block;">
+                    <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 50px; max-height: 54px; width: auto; max-width: 150px; margin: 0 auto; display: block;">
                 @endif
             </div>
             <p><strong>( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }} )</strong></p>
