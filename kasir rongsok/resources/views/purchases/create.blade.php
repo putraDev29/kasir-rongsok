@@ -760,17 +760,22 @@
                         </div>
 
                         <!-- Mode 1: Searchable Dropdown Metode Pembayaran Tersimpan -->
-                        <div x-show="!isManualPaymentMethod" class="relative" @click.outside="paymentMethodDropdownOpen = false">
+                        <div x-show="!isManualPaymentMethod" class="relative" @click.outside="closePaymentMethodDropdown()">
                             <input type="hidden" name="payment_method_id" :value="paymentMethodId" :disabled="isManualPaymentMethod">
 
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
                                 </span>
 
                                 <input type="text"
+                                       x-ref="paymentMethodInput"
                                        x-model="paymentMethodSearchQuery"
-                                       @focus="paymentMethodDropdownOpen = true"
+                                       @focus="paymentMethodDropdownOpen = true; $event.target.select()"
+                                       @click="paymentMethodDropdownOpen = true"
                                        @input="paymentMethodDropdownOpen = true"
                                        placeholder="Cari metode pembayaran (Tunai, BCA, BRI, Mandiri...)"
                                        class="w-full pl-8 pr-14 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-900 bg-white shadow-2xs">
@@ -778,15 +783,21 @@
                                 <div class="absolute inset-y-0 right-0 pr-2 flex items-center gap-1">
                                     <button type="button" 
                                             x-show="paymentMethodSearchQuery"
-                                            @click="paymentMethodSearchQuery = ''; paymentMethodDropdownOpen = true" 
-                                            class="text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                                            @click="paymentMethodSearchQuery = ''; paymentMethodDropdownOpen = true; $refs.paymentMethodInput?.focus()" 
+                                            class="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
                                             title="Reset Pencarian">
-                                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
                                     </button>
                                     <button type="button" 
                                             @click="paymentMethodDropdownOpen = !paymentMethodDropdownOpen"
-                                            class="text-slate-400 hover:text-slate-600 p-0.5 rounded">
-                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': paymentMethodDropdownOpen }"></i>
+                                            class="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                                            title="Buka / Tutup Daftar Metode">
+                                        <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="{ 'rotate-180': paymentMethodDropdownOpen }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
                                     </button>
                                 </div>
                             </div>
@@ -805,16 +816,18 @@
                                 <template x-for="pm in filteredPaymentMethods()" :key="pm.id">
                                     <button type="button" 
                                             @click="selectPaymentMethod(pm)"
-                                            class="w-full text-left px-3 py-2 hover:bg-emerald-50 flex items-center justify-between transition-colors"
-                                            :class="{ 'bg-emerald-50/70 font-bold': paymentMethodId == pm.id }">
+                                            class="w-full text-left px-3 py-2.5 hover:bg-emerald-50 flex items-center justify-between transition-colors cursor-pointer group"
+                                            :class="{ 'bg-emerald-50/80 font-bold text-emerald-950': paymentMethodId == pm.id }">
                                         <div class="flex items-center gap-2">
-                                            <span class="text-xs text-slate-900" x-text="pm.name"></span>
-                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase"
-                                                  :class="isTransferMethod(pm) ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'"
-                                                  x-text="isTransferMethod(pm) ? 'Transfer' : 'Tunai'"></span>
+                                            <span class="text-xs text-slate-900 group-hover:text-emerald-900" x-text="pm.name"></span>
+                                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border"
+                                                  :class="getMethodBadgeClass(pm)"
+                                                  x-text="getMethodBadge(pm)"></span>
                                         </div>
                                         <template x-if="paymentMethodId == pm.id">
-                                            <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
                                         </template>
                                     </button>
                                 </template>
@@ -824,8 +837,11 @@
                                         <p class="text-xs text-slate-500">Tidak ada metode pembayaran "<span class="font-bold text-slate-800" x-text="paymentMethodSearchQuery"></span>"</p>
                                         <button type="button" 
                                                 @click="isManualPaymentMethod = true; newPaymentMethodName = paymentMethodSearchQuery; paymentMethodDropdownOpen = false;"
-                                                class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs inline-flex items-center gap-1">
-                                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                                class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs inline-flex items-center gap-1 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            </svg>
                                             <span x-text="'+ Tambah &quot;' + paymentMethodSearchQuery + '&quot; sebagai Metode Baru'"></span>
                                         </button>
                                     </div>
@@ -1033,11 +1049,17 @@ function cashierPos() {
             if (!this.paymentMethodSearchQuery || this.paymentMethodSearchQuery.trim() === '') {
                 return this.paymentMethodsList;
             }
+            // If query matches the currently active/selected payment method name, show ALL existing options
+            const currentSelected = this.paymentMethodsList.find(pm => pm.id == this.paymentMethodId);
+            if (currentSelected && this.paymentMethodSearchQuery.trim().toLowerCase() === (currentSelected.name || '').trim().toLowerCase()) {
+                return this.paymentMethodsList;
+            }
             const q = this.paymentMethodSearchQuery.toLowerCase().trim();
             return this.paymentMethodsList.filter(pm => {
                 const name = (pm.name || '').toLowerCase();
-                const type = (pm.type || '').toLowerCase();
-                return name.includes(q) || type.includes(q);
+                const code = (pm.code || '').toLowerCase();
+                const bank = (pm.bank_name || '').toLowerCase();
+                return name.includes(q) || code.includes(q) || bank.includes(q);
             });
         },
 
@@ -1045,12 +1067,40 @@ function cashierPos() {
             this.paymentMethodId = pm.id;
             this.paymentMethodSearchQuery = pm.name;
             this.paymentMethodDropdownOpen = false;
+            this.refreshIcons();
+        },
+
+        closePaymentMethodDropdown() {
+            this.paymentMethodDropdownOpen = false;
+            if (!this.paymentMethodSearchQuery || this.paymentMethodSearchQuery.trim() === '') {
+                const current = this.paymentMethodsList.find(m => m.id == this.paymentMethodId);
+                if (current) {
+                    this.paymentMethodSearchQuery = current.name;
+                }
+            }
+        },
+
+        getMethodBadge(pm) {
+            if (!pm || !pm.name) return 'Tunai';
+            const name = pm.name.toLowerCase();
+            const code = (pm.code || '').toLowerCase();
+            if (name.includes('transfer') || code.includes('transfer') || name.includes('bank')) return 'Transfer';
+            if (name.includes('qris') || code.includes('qris')) return 'QRIS';
+            return 'Tunai';
+        },
+
+        getMethodBadgeClass(pm) {
+            const b = this.getMethodBadge(pm);
+            if (b === 'Transfer') return 'bg-blue-100 text-blue-800 border-blue-200';
+            if (b === 'QRIS') return 'bg-purple-100 text-purple-800 border-purple-200';
+            return 'bg-emerald-100 text-emerald-800 border-emerald-200';
         },
 
         isTransferMethod(pm) {
             if (!pm || !pm.name) return false;
             const name = pm.name.toLowerCase();
-            return name.includes('transfer') || name.includes('bank');
+            const code = (pm.code || '').toLowerCase();
+            return name.includes('transfer') || name.includes('bank') || code.includes('transfer');
         },
 
         isTransferPayment() {
@@ -1064,7 +1114,8 @@ function cashierPos() {
                 return query.includes('transfer') || query.includes('bank');
             }
             const name = (method.name || '').toLowerCase();
-            return name.includes('transfer') || name.includes('bank');
+            const code = (method.code || '').toLowerCase();
+            return name.includes('transfer') || name.includes('bank') || code.includes('transfer');
         },
 
         togglePaymentMethodMode() {

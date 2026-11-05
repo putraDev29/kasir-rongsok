@@ -91,6 +91,8 @@ class DatabaseSeeder extends Seeder
         $bca = PaymentMethod::create(['name' => 'Transfer Bank BCA', 'code' => 'transfer_bca', 'is_active' => true]);
         $bri = PaymentMethod::create(['name' => 'Transfer Bank BRI', 'code' => 'transfer_bri', 'is_active' => true]);
         $mandiri = PaymentMethod::create(['name' => 'Transfer Bank Mandiri', 'code' => 'transfer_mandiri', 'is_active' => true]);
+        $bni = PaymentMethod::create(['name' => 'Transfer Bank BNI', 'code' => 'transfer_bni', 'is_active' => true]);
+        $qris = PaymentMethod::create(['name' => 'QRIS / Digital', 'code' => 'qris', 'is_active' => true]);
 
         // 4. Expense Categories
         $expTransport = ExpenseCategory::create(['name' => 'Biaya Transportasi & Armada', 'description' => 'BBM truk, tol, sewa pick up']);
