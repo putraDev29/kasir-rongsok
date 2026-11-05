@@ -123,26 +123,36 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Badan Usaha / Depo Rongsok *</label>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Badan Usaha / Depo *</label>
                         <input type="text" name="company_name" value="{{ old('company_name', $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur') }}" required
                                class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-bold text-slate-900">
                         <span class="text-[10px] text-slate-400">Nama resmi yang dicetak di baris pertama nota transaksi & surat jalan.</span>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Slogan / Tagline Usaha</label>
-                        <input type="text" name="company_tagline" value="{{ old('company_tagline', $settings['company_tagline'] ?? 'Pusat Pembelian & Pengelolaan Daur Ulang Terpercaya') }}"
-                               class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-700">
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Istilah Komoditas / Teks "Barang Rongsok"</label>
+                        <input type="text" name="commodity_term" value="{{ old('commodity_term', $settings['commodity_term'] ?? 'Barang Rongsok') }}"
+                               placeholder="Contoh: Barang Rongsok, Material Scrap, Barang Bekas, Logam & Besi Tua"
+                               class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-bold text-slate-900">
+                        <span class="text-[10px] text-slate-400">Dapat diganti sesuai jenis usaha (misal: Barang Rongsok, Material Scrap, Barang Bekas). Digunakan di Surat Perjanjian, Nota, & Dokumen PDF.</span>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Slogan / Tagline Usaha</label>
+                        <input type="text" name="company_tagline" value="{{ old('company_tagline', $settings['company_tagline'] ?? 'Pusat Pembelian & Pengelolaan Daur Ulang Terpercaya') }}"
+                               class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-700">
+                    </div>
+
+                    <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nomor Telepon / WhatsApp *</label>
                         <input type="text" name="company_phone" value="{{ old('company_phone', $settings['company_phone'] ?? '0812-3456-7890') }}" required
                                class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono">
                     </div>
+                </div>
 
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Format Printer Nota Default *</label>
                         <select name="default_printer_type" required class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">

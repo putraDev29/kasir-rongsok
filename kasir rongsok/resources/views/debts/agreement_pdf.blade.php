@@ -211,6 +211,7 @@
 
 @php
     $category = $debt->loan_category ?? 'modal';
+    $commodityTerm = $settings['commodity_term'] ?? \App\Models\BusinessSetting::commodityTerm();
     $sheets = [
         [
             'copy_number' => 1,
@@ -262,7 +263,7 @@
                         {{ $sheet['badge_text'] }}
                     </div>
                     <div style="font-size: 7.5pt; color: #64748b; font-weight: bold; margin-top: 3px;">
-                        DOKUMEN RESMI DEPO RONGSOK
+                        DOKUMEN RESMI DEPO {{ strtoupper($commodityTerm) }}
                     </div>
                 </td>
             </tr>
@@ -311,15 +312,15 @@
                     1. PIHAK PERTAMA menyerahkan dana modal usaha kepada PIHAK KEDUA sebesar:
                     <span class="amount-highlight">{{ \App\Services\FormatHelper::rupiah($debt->initial_amount) }}</span>
                     <em>(Terbilang: <strong>{{ \App\Services\FormatHelper::terbilang($debt->initial_amount) }} Rupiah</strong>)</em>.<br>
-                    2. PIHAK KEDUA telah menerima uang modal kerja tersebut secara utuh dan sah untuk perputaran pembelian serta pengumpulan material scrap &amp; daur ulang. Surat Perjanjian ini sah sebagai tanda terima penerimaan modal.
+                    2. PIHAK KEDUA telah menerima uang modal kerja tersebut secara utuh dan sah untuk perputaran pembelian serta pengumpulan {{ strtolower($commodityTerm) }} &amp; daur ulang. Surat Perjanjian ini sah sebagai tanda terima penerimaan modal.
                 </div>
             </div>
 
             <div class="article">
                 <div class="article-title">Pasal 2: Pengembalian Modal &amp; Pemotongan Timbangan</div>
                 <div class="article-body">
-                    1. Keperluan modal: <strong>{{ $debt->notes ?: 'Modal perputaran operasional pembelian material scrap & daur ulang' }}</strong>.<br>
-                    2. PIHAK KEDUA berkewajiban mengembalikan pinjaman modal melalui pemotongan bertahap nota timbangan saat menyetorkan material scrap ke depo PIHAK PERTAMA atau setoran tunai/transfer hingga seluruh saldo lunas.<br>
+                    1. Keperluan modal: <strong>{{ $debt->notes ?: ('Modal perputaran operasional pembelian ' . strtolower($commodityTerm) . ' & daur ulang') }}</strong>.<br>
+                    2. PIHAK KEDUA berkewajiban mengembalikan pinjaman modal melalui pemotongan bertahap nota timbangan saat menyetorkan {{ strtolower($commodityTerm) }} ke depo PIHAK PERTAMA atau setoran tunai/transfer hingga seluruh saldo lunas.<br>
                     3. Target pelunasan disepakati selambat-lambatnya tanggal: <strong>{{ $debt->due_date ? $debt->due_date->translatedFormat('d F Y') : 'Sesuai kesepakatan berjalan / setiap transaksi timbangan' }}</strong>.
                 </div>
             </div>
@@ -330,7 +331,7 @@
                     @if($debt->guarantee_info)
                         Sebagai jaminan kepastian perputaran dan pengembalian modal, PIHAK KEDUA menyerahkan agunan berupa: <strong>{{ $debt->guarantee_info }}</strong> kepada PIHAK PERTAMA sampai modal dinyatakan lunas sepenuhnya.
                     @else
-                        Pinjaman modal ini didasari kepercayaan kemitraan usaha. PIHAK KEDUA bertanggung jawab penuh secara hukum dan pribadi untuk memutarkan dana pembelian dan menyetorkan pasokan scrap ke depo PIHAK PERTAMA hingga lunas.
+                        Pinjaman modal ini didasari kepercayaan kemitraan usaha. PIHAK KEDUA bertanggung jawab penuh secara hukum dan pribadi untuk memutarkan dana pembelian dan menyetorkan pasokan {{ strtolower($commodityTerm) }} ke depo PIHAK PERTAMA hingga lunas.
                     @endif
                 </div>
             </div>
@@ -338,7 +339,7 @@
             <div class="article">
                 <div class="article-title">Pasal 4: Hak Tagih &amp; Penyelesaian Perselisihan</div>
                 <div class="article-body">
-                    {{ $debt->agreement_notes ?: ($settings['debt_agreement_terms'] ?? 'Apabila PIHAK KEDUA lalai, berhenti menyetorkan material scrap, atau menyalahgunakan modal kerja, maka PIHAK PERTAMA berhak menagih dan menarik kembali seluruh sisa modal secara seketika melalui musyawarah maupun jalur hukum Republik Indonesia.') }}
+                    {{ $debt->agreement_notes ?: ($settings['debt_agreement_terms'] ?? ('Apabila PIHAK KEDUA lalai, berhenti menyetorkan ' . strtolower($commodityTerm) . ', atau menyalahgunakan modal kerja, maka PIHAK PERTAMA berhak menagih dan menarik kembali seluruh sisa modal secara seketika melalui musyawarah maupun jalur hukum Republik Indonesia.')) }}
                 </div>
             </div>
 
@@ -389,15 +390,15 @@
                     1. PIHAK PERTAMA menyerahkan dana komitmen ikatan pasokan barang kepada PIHAK KEDUA sebesar:
                     <span class="amount-highlight">{{ \App\Services\FormatHelper::rupiah($debt->initial_amount) }}</span>
                     <em>(Terbilang: <strong>{{ \App\Services\FormatHelper::terbilang($debt->initial_amount) }} Rupiah</strong>)</em>.<br>
-                    2. PIHAK KEDUA menerima dana tersebut sebagai uang muka komitmen kemitraan suplai barang rongsok dan bahan daur ulang ke depo PIHAK PERTAMA. Surat ini sah sebagai tanda terima dana komitmen.
+                    2. PIHAK KEDUA menerima dana tersebut sebagai uang muka komitmen kemitraan suplai {{ strtolower($commodityTerm) }} dan bahan daur ulang ke depo PIHAK PERTAMA. Surat ini sah sebagai tanda terima dana komitmen.
                 </div>
             </div>
 
             <div class="article">
                 <div class="article-title">Pasal 2: Kewajiban Pasokan &amp; Pemotongan Komitmen</div>
                 <div class="article-body">
-                    1. Target komitmen pasokan: <strong>{{ $debt->notes ?: 'Komitmen pasokan material besi, logam, kardus, dan plastik secara berkelanjutan' }}</strong>.<br>
-                    2. PIHAK KEDUA berkewajiban menyuplai dan menjual material scrap secara prioritas/eksklusif ke depo PIHAK PERTAMA hingga tanggal: <strong>{{ $debt->due_date ? $debt->due_date->translatedFormat('d F Y') : 'Target nilai komitmen impas' }}</strong>.<br>
+                    1. Target komitmen pasokan: <strong>{{ $debt->notes ?: ('Komitmen pasokan ' . strtolower($commodityTerm) . ' secara berkelanjutan') }}</strong>.<br>
+                    2. PIHAK KEDUA berkewajiban menyuplai dan menjual {{ strtolower($commodityTerm) }} secara prioritas/eksklusif ke depo PIHAK PERTAMA hingga tanggal: <strong>{{ $debt->due_date ? $debt->due_date->translatedFormat('d F Y') : 'Target nilai komitmen impas' }}</strong>.<br>
                     3. Nilai komitmen diperhitungkan dan dipotongkan bertahap dari setiap nota timbangan yang disetorkan hingga saldo komitmen tuntas.
                 </div>
             </div>
@@ -408,7 +409,7 @@
                     @if($debt->guarantee_info)
                         Sebagai jaminan kesungguhan pasokan, PIHAK KEDUA menyerahkan jaminan berupa: <strong>{{ $debt->guarantee_info }}</strong> yang disimpan PIHAK PERTAMA selama masa komitmen berlangsung.
                     @else
-                        Selama ikatan komitmen ini berjalan, PIHAK KEDUA dilarang mengalihkan, menyetorkan, atau menjual barang scrap komitmen ke lapak/pihak lain tanpa izin tertulis dari PIHAK PERTAMA.
+                        Selama ikatan komitmen ini berjalan, PIHAK KEDUA dilarang mengalihkan, menyetorkan, atau menjual {{ strtolower($commodityTerm) }} komitmen ke lapak/pihak lain tanpa izin tertulis dari PIHAK PERTAMA.
                     @endif
                 </div>
             </div>
@@ -416,7 +417,7 @@
             <div class="article">
                 <div class="article-title">Pasal 4: Sanksi Wanprestasi &amp; Pengembalian Dana</div>
                 <div class="article-body">
-                    {{ $debt->agreement_notes ?: ($settings['debt_agreement_terms'] ?? 'Apabila PIHAK KEDUA ingkar janji, berhenti menyuplai scrap, atau mengalihkan barang ke tempat lain, maka seluruh sisa dana komitmen wajib dikembalikan seketika secara utuh kepada PIHAK PERTAMA beserta biaya kompensasi yang disepakati.') }}
+                    {{ $debt->agreement_notes ?: ($settings['debt_agreement_terms'] ?? ('Apabila PIHAK KEDUA ingkar janji, berhenti menyuplai ' . strtolower($commodityTerm) . ', atau mengalihkan barang ke tempat lain, maka seluruh sisa dana komitmen wajib dikembalikan seketika secara utuh kepada PIHAK PERTAMA beserta biaya kompensasi yang disepakati.')) }}
                 </div>
             </div>
         @endif
@@ -470,7 +471,7 @@
         </div>
 
         <div class="footer-note">
-            {{ $sheet['badge_text'] }} &bull; Diterbitkan oleh Sistem Kasir Depo Rongsok &bull; No. Referensi: {{ $debt->debt_number }}
+            {{ $sheet['badge_text'] }} &bull; Diterbitkan oleh Sistem Kasir Depo {{ $commodityTerm }} &bull; No. Referensi: {{ $debt->debt_number }}
         </div>
     </div>
 @endforeach

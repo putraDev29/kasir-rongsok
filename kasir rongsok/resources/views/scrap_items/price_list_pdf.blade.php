@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Daftar Harga Beli Rongsok</title>
+    <title>Daftar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }}</title>
     <style>
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #1e293b; margin: 0; padding: 15px; }
         .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 15px; }
@@ -22,7 +22,7 @@
 <body>
     <div class="header">
         <div class="company-name">{{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}</div>
-        <div class="title">DAFTAR RESMI HARGA BELI MATERIAL SCRAP & DAUR ULANG</div>
+        <div class="title">DAFTAR RESMI HARGA BELI {{ strtoupper(\App\Models\BusinessSetting::commodityTerm()) }}</div>
         <div class="period">Update Terakhir: {{ date('d/m/Y') }} | Timbangan Digital Presisi, Pembayaran Tunai & Transfer Langsung Cair</div>
     </div>
 
@@ -38,7 +38,7 @@
                     <tr>
                         <th class="text-center" style="width: 30px;">No</th>
                         <th style="width: 80px;">Kode</th>
-                        <th>Nama Material Scrap & Daur Ulang</th>
+                        <th>Nama {{ \App\Models\BusinessSetting::commodityTerm() }}</th>
                         <th style="width: 100px;">Satuan</th>
                         <th class="text-right" style="width: 130px;">Harga Beli Standar</th>
                     </tr>

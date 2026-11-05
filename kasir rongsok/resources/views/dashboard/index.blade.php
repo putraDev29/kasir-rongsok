@@ -7,7 +7,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div>
             <div class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Ringkasan Operasional</div>
-            <h2 class="text-lg font-bold text-slate-900">Dashboard Bisnis Rongsok</h2>
+            <h2 class="text-lg font-bold text-slate-900">Dashboard Bisnis {{ \App\Models\BusinessSetting::commodityTerm() }}</h2>
         </div>
 
         <!-- Period Filter Pills -->
@@ -126,7 +126,7 @@
                 <div class="text-lg font-bold text-slate-900">
                     Rp {{ number_format($metrics['total_sales_amount'], 0, ',', '.') }}
                 </div>
-                <div class="text-[11px] text-slate-500">{{ number_format($metrics['total_sales_weight'], 1) }} kg rongsok terjual</div>
+                <div class="text-[11px] text-slate-500">{{ number_format($metrics['total_sales_weight'], 1) }} kg {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} terjual</div>
             </div>
         </div>
 
@@ -164,7 +164,7 @@
         <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-sm font-bold text-slate-900">Tren Pembelian Rongsok 7 Hari Terakhir</h3>
+                    <h3 class="text-sm font-bold text-slate-900">Tren Pembelian {{ \App\Models\BusinessSetting::commodityTerm() }} 7 Hari Terakhir</h3>
                     <p class="text-xs text-slate-500">Total pengeluaran timbangan harian</p>
                 </div>
                 <span class="text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-700 rounded-md">

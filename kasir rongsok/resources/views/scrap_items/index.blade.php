@@ -6,17 +6,17 @@
     <!-- Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div>
-            <h2 class="text-base font-bold text-slate-900">Daftar Jenis Barang & Standar Harga</h2>
-            <p class="text-xs text-slate-500">Kelola harga beli & jual rongsok per kilogram</p>
+            <h2 class="text-base font-bold text-slate-900">Daftar Jenis Barang &amp; Standar Harga</h2>
+            <p class="text-xs text-slate-500">Kelola harga beli &amp; jual {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} per kilogram</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
             <button type="button" 
                     @click="openWaPdfModal({
-                        title: 'Kirim Daftar Harga Beli Rongsok PDF',
-                        subtitle: 'Kirim berkas dokumen PDF daftar harga beli rongsok ke nomor WhatsApp',
-                        filename: 'Daftar_Harga_Beli_Rongsok_' + ('{{ date("Ymd") }}') + '.pdf',
-                        fileDescription: 'Dokumen PDF Resmi Daftar Standar Harga Beli Rongsok Depo',
+                        title: 'Kirim Daftar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }} PDF',
+                        subtitle: 'Kirim berkas dokumen PDF daftar harga beli {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} ke nomor WhatsApp',
+                        filename: 'Daftar_Harga_Beli_' + ('{{ date("Ymd") }}') + '.pdf',
+                        fileDescription: 'Dokumen PDF Resmi Daftar Standar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }} Depo',
                         pdfUrl: '{{ route('scrap-items.pdf-price-list') }}',
                         previewUrl: '{{ route('scrap-items.preview-wa') }}',
                         sendUrl: '{{ route('scrap-items.send-wa') }}',

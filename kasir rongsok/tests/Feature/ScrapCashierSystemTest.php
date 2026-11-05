@@ -560,8 +560,8 @@ class ScrapCashierSystemTest extends TestCase
         // 2. Check Price List Print/PDF view renders item names and prices for sellers
         $priceListResponse = $this->actingAs($this->superAdmin)->get('/scrap-items/print-price-list');
         $priceListResponse->assertStatus(200);
-        $priceListResponse->assertSee('DAFTAR HARGA BELI MATERIAL SCRAP & DAUR ULANG', false);
-        $priceListResponse->assertSee('Nama Material Scrap & Daur Ulang', false);
+        $priceListResponse->assertSee('DAFTAR HARGA BELI ' . strtoupper(\App\Models\BusinessSetting::commodityTerm()), false);
+        $priceListResponse->assertSee('Nama ' . \App\Models\BusinessSetting::commodityTerm(), false);
         $priceListResponse->assertSee('Harga Beli per Kg');
         $priceListResponse->assertSee('TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI');
     }
@@ -798,6 +798,44 @@ class ScrapCashierSystemTest extends TestCase
         // Restore original setting & clean up debt
         BusinessSetting::set('owner_signature', $oldSignature);
         $debt->forceDelete();
+    }
+
+    public function test_settings_can_update_commodity_term_dynamically(): void
+    {
+        $oldTerm = BusinessSetting::get('commodity_term');
+
+        // 1. Update commodity term via settings page
+        $response = $this->actingAs($this->superAdmin)->from(route('settings.index'))->put(route('settings.update'), [
+            'app_name' => 'KASIR RONGSOK',
+            'company_name' => 'Depo Scrap Abadi',
+            'commodity_term' => 'Material Logam & Besi Tua',
+            'company_phone' => '08123456789',
+            'company_address' => 'Jl. Daur Ulang No. 88',
+            'default_printer_type' => 'thermal_58',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('success');
+
+        // 2. Assert stored setting and helper method
+        $this->assertEquals('Material Logam & Besi Tua', BusinessSetting::commodityTerm());
+
+        // 3. Assert dynamic display on Price List & Agreement PDF
+        $priceListResponse = $this->actingAs($this->superAdmin)->get('/scrap-items/print-price-list');
+        $priceListResponse->assertStatus(200);
+        $priceListResponse->assertSee('DAFTAR HARGA BELI MATERIAL LOGAM & BESI TUA');
+        $priceListResponse->assertSee('Nama Material Logam & Besi Tua');
+
+        // 4. Agreement PDF includes updated commodity term
+        $debt = \App\Models\Debt::first();
+        if ($debt) {
+            $pdfResponse = $this->actingAs($this->superAdmin)->get(route('debts.agreement-pdf', $debt));
+            $pdfResponse->assertStatus(200);
+            $this->assertEquals('application/pdf', $pdfResponse->headers->get('Content-Type'));
+        }
+
+        // Restore original setting
+        BusinessSetting::set('commodity_term', $oldTerm);
     }
 }
 

@@ -80,7 +80,7 @@
 
             <div class="text-right shrink-0">
                 <div class="inline-block px-3 py-1 bg-slate-900 text-white font-black text-xs uppercase tracking-wider rounded">
-                    DAFTAR HARGA BELI MATERIAL SCRAP & DAUR ULANG
+                    DAFTAR HARGA BELI {{ strtoupper(\App\Models\BusinessSetting::commodityTerm()) }}
                 </div>
                 <div class="text-[11px] text-slate-600 mt-1 font-medium">
                     Update Resmi: <strong class="text-slate-900">{{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</strong>
@@ -121,7 +121,7 @@
                             <thead>
                                 <tr class="bg-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-600 border-b border-slate-200">
                                     <th class="py-2 px-3 w-12 text-center">No</th>
-                                    <th class="py-2 px-4">Nama Material Scrap & Daur Ulang</th>
+                                    <th class="py-2 px-4">Nama {{ \App\Models\BusinessSetting::commodityTerm() }}</th>
                                     <th class="py-2 px-4 w-48 text-right">Harga Beli per Kg</th>
                                 </tr>
                             </thead>

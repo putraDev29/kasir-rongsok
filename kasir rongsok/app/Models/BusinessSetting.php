@@ -124,4 +124,13 @@ class BusinessSetting extends Model
 
         return null;
     }
+
+    /**
+     * Get the configured commodity/goods term (e.g. "Barang Rongsok", "Material Scrap", "Barang Bekas").
+     */
+    public static function commodityTerm(string $default = 'Barang Rongsok'): string
+    {
+        $term = static::get('commodity_term');
+        return !empty(trim((string) $term)) ? trim((string) $term) : $default;
+    }
 }
