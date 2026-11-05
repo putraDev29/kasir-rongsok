@@ -137,9 +137,9 @@
                                         <button type="button" 
                                                 x-show="rows.length > 1"
                                                 @click="removeRow(index)" 
-                                                class="p-0.5 text-rose-500 hover:text-rose-700 rounded hover:bg-rose-50 transition-colors inline-flex items-center"
+                                                class="p-1 text-red-600 bg-red-50 hover:bg-red-200 hover:text-red-800 active:bg-red-300 active:text-red-950 border border-red-200 hover:border-red-400 active:border-red-500 rounded-md transition-colors inline-flex items-center cursor-pointer"
                                                 title="Hapus baris timbangan ini">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <svg class="w-3.5 h-3.5 transition-colors" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
                                         </button>
@@ -300,10 +300,12 @@
                                     <!-- Tombol Hapus: Sangat jelas dan muncul dengan SVG murni ketika baris > 1 -->
                                     <button type="button" @click="removeRow(index)" 
                                             :disabled="rows.length <= 1"
-                                            :class="rows.length > 1 ? 'text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white border-rose-300 shadow-2xs cursor-pointer' : 'text-slate-300 bg-slate-100 border-slate-200 cursor-not-allowed opacity-30'"
-                                            class="p-1.5 rounded-lg border transition-all shrink-0 flex items-center justify-center"
+                                            :class="rows.length > 1 
+                                                ? 'text-red-600 bg-red-50 hover:bg-red-200 hover:text-red-800 hover:border-red-400 active:bg-red-300 active:text-red-950 active:border-red-500 border-red-300 shadow-2xs cursor-pointer' 
+                                                : 'text-slate-300 bg-slate-100 border-slate-200 cursor-not-allowed opacity-30'"
+                                            class="p-1.5 rounded-lg border transition-all shrink-0 flex items-center justify-center focus:outline-hidden focus:ring-2 focus:ring-red-400"
                                             title="Hapus baris timbangan ini">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <svg class="w-4 h-4 transition-colors" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
                                     </button>
