@@ -78,8 +78,12 @@
     <div class="footer">
         <div class="signature-box">
             <p>Penanggung Jawab Penjualan,</p>
-            <div style="height: 45px;"></div>
-            <p><strong>( ____________________ )</strong></p>
+            <div style="height: 45px; text-align: center;">
+                @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                    <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="max-height: 42px; max-width: 120px; margin: 0 auto; display: block;">
+                @endif
+            </div>
+            <p><strong>( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }} )</strong></p>
             <p style="color: #64748b;">Administrasi / Owner Depo</p>
         </div>
         <div style="clear: both;"></div>

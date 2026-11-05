@@ -122,9 +122,13 @@
                 <p><strong>( {{ $salarySlip->employee_name }} )</strong></p>
             </div>
             <div class="sig" style="float: right;">
-                <p>Dibuat & Disetujui Oleh,</p>
-                <div style="height: 40px;"></div>
-                <p><strong>( {{ $salarySlip->creator?->name ?? 'Pimpinan Depo' }} )</strong></p>
+                <p>Dibuat &amp; Disetujui Oleh,</p>
+                <div style="height: 40px; text-align: center;">
+                    @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                        <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="max-height: 40px; max-width: 120px; margin: 0 auto; display: block;">
+                    @endif
+                </div>
+                <p><strong>( {{ $salarySlip->creator?->name ?? 'Pimpinan / Owner Depo' }} )</strong></p>
             </div>
             <div style="clear: both;"></div>
         </div>

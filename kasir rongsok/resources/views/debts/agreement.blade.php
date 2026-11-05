@@ -292,7 +292,11 @@
                     <p class="font-bold uppercase tracking-wider text-slate-900">{{ $sheet['role_first'] }}</p>
                     <p class="text-[10px] text-slate-500 font-sans">Pemilik Usaha / Depo</p>
                     <div class="h-16 flex items-center justify-center text-slate-400 italic text-[10px]">
-                        <span class="border border-dashed border-slate-300 px-3 py-1.5 rounded">Cap Stempel Depo &amp; TTD</span>
+                        @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" class="max-h-16 w-auto object-contain mx-auto">
+                        @else
+                            <span class="border border-dashed border-slate-300 px-3 py-1.5 rounded">Cap Stempel Depo &amp; TTD</span>
+                        @endif
                     </div>
                     <p class="font-bold underline uppercase text-slate-900">({{ $ownerName }})</p>
                     <p class="text-[10px] text-slate-600 font-sans">Owner / Pimpinan {{ $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur' }}</p>

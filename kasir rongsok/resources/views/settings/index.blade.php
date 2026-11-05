@@ -73,6 +73,43 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Signature Section (Tanda Tangan Owner untuk Dokumen PDF) -->
+                <div class="border-t border-slate-200 pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Tanda Tangan Owner</label>
+                        <p class="text-[11px] text-slate-500 mb-2">Disisipkan otomatis di semua berkas PDF pada kolom tanda tangan Owner / Pimpinan. Format: PNG transparan, JPG, WebP (Maks. 2MB).</p>
+                        
+                        @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                            <div class="p-3 bg-white rounded-xl border border-emerald-300 inline-block shadow-sm">
+                                <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="Tanda Tangan Owner" class="h-16 w-auto max-w-[160px] object-contain">
+                            </div>
+                            <div class="mt-2">
+                                <label class="inline-flex items-center gap-1.5 text-xs text-red-600 font-semibold cursor-pointer">
+                                    <input type="checkbox" name="remove_signature" value="1" class="rounded border-slate-300 text-red-600 focus:ring-red-500">
+                                    <span>Hapus Tanda Tangan</span>
+                                </label>
+                            </div>
+                        @else
+                            <div class="w-24 h-16 rounded-xl bg-slate-100 flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-300">
+                                <i data-lucide="pen-tool" class="w-5 h-5 text-slate-400 mb-0.5"></i>
+                                <span class="text-[9px] font-semibold text-slate-400">Belum Ada TTD</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-1">Kolom tanda tangan akan kosong untuk TTD basah manual</span>
+                        @endif
+                    </div>
+
+                    <div class="sm:col-span-2 space-y-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unggah / Ganti File Tanda Tangan Owner</label>
+                            <input type="file" name="owner_signature" accept="image/png,image/jpeg,image/webp"
+                                   class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-lg p-1 bg-white">
+                            <p class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                                💡 <strong>Tips:</strong> Disarankan menggunakan gambar tanda tangan dengan latar belakang transparan (format <code>.png</code>) agar menyatu dengan rapi di atas dokumen PDF dan cap stempel.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- BAGIAN 2: PROFIL USAHA & DEPO (UNTUK KOP NOTA & SURAT JALAN) -->

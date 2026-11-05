@@ -433,7 +433,11 @@
                     <div class="sig-header">{{ $sheet['role_first'] }}</div>
                     <div class="sig-sub">Pemilik Usaha / Depo</div>
                     <div class="sig-space">
-                        <span class="sig-materai">Cap Stempel Depo &amp; TTD</span>
+                        @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="max-height: 38px; max-width: 125px; margin: 0 auto; display: block;">
+                        @else
+                            <span class="sig-materai">Cap Stempel Depo &amp; TTD</span>
+                        @endif
                     </div>
                     <div class="sig-name">{{ $ownerName }}</div>
                     <div class="sig-role">Owner {{ $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur' }}</div>

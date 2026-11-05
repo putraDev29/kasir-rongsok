@@ -39,6 +39,8 @@ class SettingController extends Controller
             'default_printer_type' => 'required|in:thermal_58,thermal_80,a4',
             'app_logo' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
             'remove_logo' => 'nullable|boolean',
+            'owner_signature' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'remove_signature' => 'nullable|boolean',
         ]);
 
         // 1. Handle Logo Upload or Removal
@@ -152,7 +154,69 @@ class SettingController extends Controller
             return back()->withInput()->with('error', 'Gagal menyimpan file logo: ' . $e->getMessage() . '. Pastikan folder uploads/logo memiliki izin tulis (chmod 755 / 775).');
         }
 
-        // 2. Save text settings
+        // 2. Handle Owner Signature Upload or Removal
+        try {
+            if ($request->hasFile('owner_signature')) {
+                $file = $request->file('owner_signature');
+                $extension = $file->getClientOriginalExtension() ?: 'png';
+                $filename = 'signature_' . time() . '.' . $extension;
+
+                $destinationPath = public_path('uploads/signature');
+                if (!file_exists($destinationPath)) {
+                    @mkdir($destinationPath, 0775, true);
+                }
+
+                // Remove previous signature if exists
+                $oldSig = BusinessSetting::get('owner_signature');
+                if ($oldSig) {
+                    if (file_exists(public_path($oldSig))) {
+                        @unlink(public_path($oldSig));
+                    }
+                    if (file_exists(base_path('../' . $oldSig))) {
+                        @unlink(base_path('../' . $oldSig));
+                    }
+                    if (file_exists(base_path('public/' . $oldSig))) {
+                        @unlink(base_path('public/' . $oldSig));
+                    }
+                }
+
+                $file->move($destinationPath, $filename);
+
+                // Mirror if parent uploads directory exists
+                if (file_exists(base_path('../uploads')) && is_dir(base_path('../uploads'))) {
+                    $parentUploadPath = realpath(base_path('../uploads')) . DIRECTORY_SEPARATOR . 'signature';
+                    if (!file_exists($parentUploadPath)) {
+                        @mkdir($parentUploadPath, 0775, true);
+                    }
+                    @copy($destinationPath . DIRECTORY_SEPARATOR . $filename, $parentUploadPath . DIRECTORY_SEPARATOR . $filename);
+                }
+
+                BusinessSetting::set('owner_signature', 'uploads/signature/' . $filename, 'branding');
+            } elseif ($request->boolean('remove_signature')) {
+                $oldSig = BusinessSetting::get('owner_signature');
+                if ($oldSig) {
+                    if (file_exists(public_path($oldSig))) {
+                        @unlink(public_path($oldSig));
+                    }
+                    if (file_exists(base_path('../' . $oldSig))) {
+                        @unlink(base_path('../' . $oldSig));
+                    }
+                    if (file_exists(base_path('public/' . $oldSig))) {
+                        @unlink(base_path('public/' . $oldSig));
+                    }
+                }
+                BusinessSetting::set('owner_signature', null, 'branding');
+            }
+        } catch (Throwable $e) {
+            Log::error('Gagal mengunggah tanda tangan owner: ' . $e->getMessage(), [
+                'exception' => $e,
+                'public_path' => public_path(),
+            ]);
+
+            return back()->withInput()->with('error', 'Gagal menyimpan file tanda tangan: ' . $e->getMessage() . '. Pastikan folder uploads/signature memiliki izin tulis.');
+        }
+
+        // 3. Save text settings
         $fieldsToSave = [
             'app_name',
             'app_subtitle',

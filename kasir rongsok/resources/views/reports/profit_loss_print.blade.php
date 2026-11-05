@@ -218,7 +218,11 @@
             </div>
             <div>
                 <p>Pimpinan / Owner Depo</p>
-                <div class="h-12"></div>
+                <div class="h-12 flex items-center justify-center">
+                    @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                        <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" class="max-h-12 w-auto object-contain mx-auto">
+                    @endif
+                </div>
                 <p class="font-bold underline">({{ $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur' }})</p>
             </div>
         </div>

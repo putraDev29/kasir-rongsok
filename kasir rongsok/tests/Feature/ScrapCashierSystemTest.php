@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\BusinessSetting;
 use App\Models\PaymentMethod;
 use App\Models\PurchaseTransaction;
 use App\Models\ScrapItem;
@@ -730,6 +731,73 @@ class ScrapCashierSystemTest extends TestCase
         $debtModal->forceDelete();
         $debtHutang->forceDelete();
         $debtKomitmen->forceDelete();
+    }
+
+    public function test_owner_signature_upload_and_pdf_integration(): void
+    {
+        $oldSignature = BusinessSetting::get('owner_signature');
+
+        // 1. Upload signature via settings update
+        $fakeSignature = UploadedFile::fake()->image('ttd_owner.png', 300, 150);
+
+        $response = $this->actingAs($this->superAdmin)->from(route('settings.index'))->put(route('settings.update'), [
+            'app_name' => 'KASIR RONGSOK',
+            'company_name' => 'Depo Scrap Abadi',
+            'company_phone' => '08123456789',
+            'company_address' => 'Jl. Daur Ulang No. 88',
+            'default_printer_type' => 'thermal_58',
+            'owner_signature' => $fakeSignature,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('success');
+        $response->assertRedirect(route('settings.index'));
+
+        // 2. Verify setting was saved and helper methods work
+        $savedPath = BusinessSetting::get('owner_signature');
+        $this->assertNotNull($savedPath);
+        $this->assertTrue(BusinessSetting::hasOwnerSignature());
+        $base64 = BusinessSetting::ownerSignatureBase64();
+        $this->assertNotNull($base64);
+        $this->assertStringStartsWith('data:image/png;base64,', $base64);
+
+        // 3. Verify PDF agreement generates successfully with signature embedded
+        $debt = \App\Models\Debt::create([
+            'debt_number' => 'DBT-TTD-' . time(),
+            'borrower_name' => 'Mitra TTD Test',
+            'borrower_phone' => '081288887777',
+            'borrower_type' => 'supplier',
+            'loan_category' => 'modal',
+            'date' => date('Y-m-d'),
+            'initial_amount' => 5000000,
+            'remaining_amount' => 5000000,
+            'status' => 'active',
+            'user_id' => $this->superAdmin->id,
+        ]);
+
+        $pdfResponse = $this->actingAs($this->superAdmin)->get(route('debts.agreement-pdf', $debt));
+        $pdfResponse->assertStatus(200);
+        $this->assertEquals('application/pdf', $pdfResponse->headers->get('Content-Type'));
+
+        // 4. Test remove signature checkbox
+        $removeResponse = $this->actingAs($this->superAdmin)->from(route('settings.index'))->put(route('settings.update'), [
+            'app_name' => 'KASIR RONGSOK',
+            'company_name' => 'Depo Scrap Abadi',
+            'company_phone' => '08123456789',
+            'company_address' => 'Jl. Daur Ulang No. 88',
+            'default_printer_type' => 'thermal_58',
+            'remove_signature' => '1',
+        ]);
+
+        $removeResponse->assertSessionHasNoErrors();
+        $removeResponse->assertSessionHas('success');
+        $this->assertNull(BusinessSetting::get('owner_signature'));
+        $this->assertFalse(BusinessSetting::hasOwnerSignature());
+        $this->assertNull(BusinessSetting::ownerSignatureBase64());
+
+        // Restore original setting & clean up debt
+        BusinessSetting::set('owner_signature', $oldSignature);
+        $debt->forceDelete();
     }
 }
 
