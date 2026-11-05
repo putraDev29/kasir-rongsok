@@ -60,16 +60,16 @@
                     </div>
 
                     <!-- Category filter tags -->
-                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs" style="scrollbar-width: thin;">
                         <button type="button" @click="selectedCategory = 'all'"
-                                :class="selectedCategory === 'all' ? 'bg-emerald-600 text-white font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                                class="px-2.5 py-1 rounded-md shrink-0 transition-colors">
+                                :class="selectedCategory === 'all' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                class="px-2.5 py-1 rounded-md shrink-0 transition-colors whitespace-nowrap">
                             Semua
                         </button>
                         <template x-for="cat in categories" :key="cat.id">
                             <button type="button" @click="selectedCategory = cat.id"
-                                    :class="selectedCategory == cat.id ? 'bg-emerald-600 text-white font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                                    class="px-2.5 py-1 rounded-md shrink-0 transition-colors"
+                                    :class="selectedCategory == cat.id ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                    class="px-2.5 py-1 rounded-md shrink-0 transition-colors whitespace-nowrap"
                                     x-text="cat.name">
                             </button>
                         </template>
@@ -862,13 +862,9 @@ function cashierPos() {
         masterItems: @json($scrapItems),
         suppliersList: @json($suppliers),
         paymentMethodsList: @json($paymentMethods),
-        categories: [
-            { id: 1, name: 'Besi & Logam' },
-            { id: 2, name: 'Logam Non-Besi' },
-            { id: 3, name: 'Kertas & Kardus' },
-            { id: 4, name: 'Plastik & Botol' },
-            { id: 5, name: 'Aki Bekas' },
-        ],
+        categories: (@json($categories ?? []).length > 0)
+            ? @json($categories ?? [])
+            : [...new Map((@json($scrapItems) || []).map(i => [i.category?.id || i.category_id, { id: i.category?.id || i.category_id, name: i.category?.name || 'Kategori ' + (i.category_id || '') }])).values()].filter(c => c.id),
         selectedCategory: 'all',
         itemSearch: '',
         previewInvoice: 'PPJ-{{ \App\Services\FormatHelper::toRomanMonth(date("n")) }}{{ date("y") }}-XXXX',
@@ -924,7 +920,7 @@ function cashierPos() {
                 const s = this.itemSearch.toLowerCase();
                 list = list.filter(item => item.name.toLowerCase().includes(s) || item.code.toLowerCase().includes(s));
             }
-            return list.slice(0, 12);
+            return list.slice(0, 36);
         },
 
         filteredPaymentMethods() {

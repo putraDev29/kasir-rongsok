@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePurchaseRequest;
 use App\Models\BusinessSetting;
+use App\Models\ItemCategory;
 use App\Models\PaymentMethod;
 use App\Models\PurchaseTransaction;
 use App\Models\ScrapItem;
@@ -29,9 +30,18 @@ class PurchaseTransactionController extends Controller
      */
     public function create(): View
     {
-        $scrapItems = ScrapItem::with('category')
+        $scrapItems = ScrapItem::with(['category', 'stockBalance'])
             ->where('is_active', true)
             ->orderBy('name')
+            ->get()
+            ->map(function ($item) {
+                $arr = $item->toArray();
+                $arr['current_stock'] = (float) ($item->stockBalance?->current_stock ?? 0);
+                return $arr;
+            });
+
+        $categories = ItemCategory::where('is_active', true)
+            ->orderBy('id')
             ->get();
 
         $suppliers = Supplier::where('is_active', true)
@@ -53,7 +63,7 @@ class PurchaseTransactionController extends Controller
 
         $defaultPrinter = BusinessSetting::get('default_printer_type', 'thermal_58');
 
-        return view('purchases.create', compact('scrapItems', 'suppliers', 'paymentMethods', 'defaultPrinter'));
+        return view('purchases.create', compact('scrapItems', 'categories', 'suppliers', 'paymentMethods', 'defaultPrinter'));
     }
 
     /**
