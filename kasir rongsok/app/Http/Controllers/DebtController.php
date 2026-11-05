@@ -286,6 +286,156 @@ class DebtController extends Controller
     }
 
     /**
+     * Preview / Unduh PDF Riwayat & Saldo Hutang Piutang sesuai status saat ini.
+     */
+    public function pdf(Request $request, Debt $debt)
+    {
+        $debt->load(['supplier', 'user']);
+        $payments = $debt->payments()
+            ->with(['paymentMethod', 'user', 'purchaseTransaction'])
+            ->oldest('payment_date')
+            ->get();
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $owner = \App\Models\User::where('role', \App\Models\User::ROLE_SUPER_ADMIN)->first();
+        $ownerName = $settings['owner_name'] ?? ($owner?->name ?? 'Bapak Hartono (Owner)');
+
+        $pdf = Pdf::loadView('debts.history_pdf', compact('debt', 'payments', 'settings', 'ownerName'))
+            ->setPaper('a4', 'portrait');
+
+        $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
+        $filename = "Riwayat_Hutang_{$cleanNum}.pdf";
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
+    }
+
+    /**
+     * Preview Debt History & Balance WhatsApp message and PDF metadata.
+     */
+    public function previewWa(Debt $debt): JsonResponse
+    {
+        $debt->load(['supplier', 'user']);
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $owner = \App\Models\User::where('role', \App\Models\User::ROLE_SUPER_ADMIN)->first();
+        $ownerName = $settings['owner_name'] ?? ($owner?->name ?? 'Bapak Hartono (Owner)');
+
+        $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
+        $phone = $debt->borrower_phone ?? '';
+
+        $statusLabel = match ($debt->status) {
+            'paid' => 'LUNAS (LUNAS PENUH)',
+            'partial', 'partially_paid' => 'SEBAGIAN TERBAYAR (TERCICIL)',
+            default => 'BELUM LUNAS',
+        };
+
+        $categoryLabel = $debt->getCategoryLabel();
+        $paymentCount = $debt->payments()->count();
+
+        $msg = "*RIWAYAT & SALDO " . strtoupper($categoryLabel) . "*\n";
+        $msg .= "*{$companyName}*\n";
+        $msg .= "----------------------------------------\n";
+        $msg .= "🔖 No. Hutang/Pinjaman: *{$debt->debt_number}*\n";
+        $msg .= "🏷️ Kategori           : *{$categoryLabel}*\n";
+        $msg .= "🗓️ Tanggal Pinjam      : " . $debt->date->format('d/m/Y') . "\n";
+        $msg .= "👤 Peminjam / Debitur : *{$debt->borrower_name}*\n";
+        if ($debt->due_date) {
+            $msg .= "⏳ Jatuh Tempo         : " . $debt->due_date->format('d/m/Y') . "\n";
+        }
+        $msg .= "----------------------------------------\n";
+        $msg .= "💰 Pinjaman Awal      : *" . FormatHelper::rupiah($debt->initial_amount) . "*\n";
+        $msg .= "💵 Total Diangsur     : *" . FormatHelper::rupiah($debt->paid_amount) . "*\n";
+        $msg .= "⚠️ Sisa Saldo Hutang   : *" . FormatHelper::rupiah($debt->remaining_amount) . "*\n";
+        $msg .= "📌 Status Saat Ini    : *{$statusLabel}*\n";
+        $msg .= "----------------------------------------\n";
+        $msg .= "📋 Riwayat Cicilan    : {$paymentCount} kali pembayaran tercatat.\n";
+        $msg .= "📄 *Terlampir berkas PDF resmi Kartu Riwayat & Posisi Saldo Hutang Piutang*.\n";
+        $commodityTerm = BusinessSetting::commodityTerm();
+        $msg .= "Diterbitkan resmi oleh Sistem Kasir {$commodityTerm}.";
+
+        $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
+        $pdfFilename = "Riwayat_Hutang_{$cleanNum}.pdf";
+        $pdfUrl = route('debts.pdf', $debt);
+
+        return response()->json([
+            'success' => true,
+            'phone' => $phone,
+            'message' => $msg,
+            'pdf_filename' => $pdfFilename,
+            'pdf_url' => $pdfUrl,
+            'file_description' => "Dokumen PDF Riwayat & Saldo Hutang ({$debt->debt_number})",
+        ]);
+    }
+
+    /**
+     * Send Debt History & Balance PDF to WhatsApp.
+     */
+    public function sendWa(Request $request, Debt $debt)
+    {
+        $debt->load(['supplier', 'user']);
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $owner = \App\Models\User::where('role', \App\Models\User::ROLE_SUPER_ADMIN)->first();
+        $ownerName = $settings['owner_name'] ?? ($owner?->name ?? 'Bapak Hartono (Owner)');
+
+        $phone = $request->input('phone', $debt->borrower_phone);
+        $sendPdf = $request->boolean('send_pdf', true);
+        $caption = $request->input('caption') ?: $request->input('message');
+        $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
+
+        if (empty($phone)) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Nomor WhatsApp peminjam wajib diisi.'], 422);
+            }
+            return back()->with('error', 'Nomor WhatsApp peminjam wajib diisi.');
+        }
+
+        if (empty($caption)) {
+            $statusLabel = match ($debt->status) {
+                'paid' => 'LUNAS',
+                'partial', 'partially_paid' => 'SEBAGIAN TERBAYAR',
+                default => 'BELUM LUNAS',
+            };
+            $categoryLabel = $debt->getCategoryLabel();
+            $caption = "*RIWAYAT & SALDO " . strtoupper($categoryLabel) . "*\n";
+            $caption .= "*{$companyName}*\n";
+            $caption .= "----------------------------------------\n";
+            $caption .= "🔖 No. Hutang    : *{$debt->debt_number}*\n";
+            $caption .= "👤 Peminjam      : *{$debt->borrower_name}*\n";
+            $caption .= "💰 Pinjaman Awal : *" . FormatHelper::rupiah($debt->initial_amount) . "*\n";
+            $caption .= "💵 Total Diangsur: *" . FormatHelper::rupiah($debt->paid_amount) . "*\n";
+            $caption .= "⚠️ Sisa Saldo    : *" . FormatHelper::rupiah($debt->remaining_amount) . "*\n";
+            $caption .= "📌 Status        : *{$statusLabel}*\n";
+            $caption .= "📄 Terlampir berkas PDF resmi Kartu Riwayat & Saldo Hutang.";
+        }
+
+        $waService = app(WhatsAppGatewayService::class);
+        $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
+        $filename = "Riwayat_Hutang_{$cleanNum}.pdf";
+
+        if ($sendPdf) {
+            $payments = $debt->payments()
+                ->with(['paymentMethod', 'user', 'purchaseTransaction'])
+                ->oldest('payment_date')
+                ->get();
+            $pdf = Pdf::loadView('debts.history_pdf', compact('debt', 'payments', 'settings', 'ownerName'))
+                ->setPaper('a4', 'portrait');
+            $fileBase64 = base64_encode($pdf->output());
+
+            $res = $waService->sendFile($phone, $fileBase64, $filename, $caption);
+        } else {
+            $res = $waService->sendMessage($phone, $caption);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json($res);
+        }
+
+        return back()->with($res['success'] ? 'success' : 'error', $res['message'] ?? 'Status terkirim.');
+    }
+
+    /**
      * Export Batch Debts Recap as PDF (A4 Portrait).
      */
     public function batchPdf(Request $request)

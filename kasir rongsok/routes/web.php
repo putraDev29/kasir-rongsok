@@ -179,6 +179,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/debts/{debt}/agreement-pdf', [DebtController::class, 'agreementPdf'])->name('debts.agreement-pdf')->middleware('role:super_admin');
     Route::get('/debts/{debt}/agreement-wa-preview', [DebtController::class, 'previewAgreementWa'])->name('debts.agreement-wa-preview')->middleware('role:super_admin');
     Route::post('/debts/{debt}/agreement-wa', [DebtController::class, 'agreementWa'])->name('debts.agreement-wa')->middleware('role:super_admin');
+    Route::get('/debts/{debt}/pdf', [DebtController::class, 'pdf'])->name('debts.pdf')->middleware('role:super_admin');
+    Route::get('/debts/{debt}/wa-preview', [DebtController::class, 'previewWa'])->name('debts.wa-preview')->middleware('role:super_admin');
+    Route::post('/debts/{debt}/send-wa', [DebtController::class, 'sendWa'])->name('debts.send-wa')->middleware('role:super_admin');
     Route::resource('debts', DebtController::class)
         ->only(['index', 'store', 'show'])
         ->middleware('role:super_admin');

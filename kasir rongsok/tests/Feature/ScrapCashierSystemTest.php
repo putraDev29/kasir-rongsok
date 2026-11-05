@@ -1100,5 +1100,98 @@ class ScrapCashierSystemTest extends TestCase
         $deliverySale2->refresh();
         $this->assertEquals('completed', $deliverySale2->status);
     }
+
+    /**
+     * Test Debt Detail page (/debts/{id}):
+     * - PDF button points to debts.pdf (Debt History Statement reflecting current status, NOT agreement contract)
+     * - debts.pdf reflects real-time status and payments ledger
+     */
+    public function test_debt_detail_page_pdf_is_debt_history_statement_and_reflects_current_status(): void
+    {
+        $debtService = app(\App\Services\DebtService::class);
+        $debt = $debtService->createDebt([
+            'borrower_name' => 'Pak Haji Komar',
+            'borrower_phone' => '081233445566',
+            'borrower_type' => 'supplier',
+            'loan_category' => 'modal',
+            'initial_amount' => 2000000,
+            'date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'notes' => 'Pinjaman modal borongan besi bongkaran',
+        ], $this->superAdmin);
+
+        $this->assertEquals(2000000, (float) $debt->initial_amount);
+        $this->assertEquals(2000000, (float) $debt->remaining_amount);
+        $this->assertEquals('unpaid', $debt->status);
+
+        // 1. Visit /debts/{id} show page
+        $showRes = $this->actingAs($this->superAdmin)->get(route('debts.show', $debt));
+        $showRes->assertStatus(200);
+        // Verify it links to debts.pdf (Debt History PDF) and debts.agreement (Contract)
+        $showRes->assertSee(route('debts.pdf', $debt));
+        $showRes->assertSee(route('debts.agreement', $debt));
+        $showRes->assertSee(route('debts.wa-preview', $debt));
+        $showRes->assertSee('Surat Perjanjian');
+        $showRes->assertSee('Preview / Unduh PDF');
+
+        // 2. Initial Debt History PDF (Status: Unpaid)
+        $initialPdfRes = $this->actingAs($this->superAdmin)->get(route('debts.pdf', $debt));
+        $initialPdfRes->assertStatus(200);
+        $this->assertEquals('application/pdf', $initialPdfRes->headers->get('Content-Type'));
+        $this->assertStringContainsString('inline', $initialPdfRes->headers->get('Content-Disposition'));
+        $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
+        $this->assertStringContainsString("Riwayat_Hutang_{$cleanNum}.pdf", $initialPdfRes->headers->get('Content-Disposition'));
+
+        // 3. Make Partial Payment
+        $pay1 = $this->actingAs($this->superAdmin)->post(route('debts.pay', $debt), [
+            'amount' => 500000,
+            'payment_method_id' => $this->cashMethod->id,
+            'notes' => 'Cicilan 1 tunai',
+        ]);
+        $pay1->assertSessionHasNoErrors();
+
+        $debt->refresh();
+        $this->assertTrue(in_array($debt->status, ['partial', 'partially_paid']));
+        $this->assertEquals(500000, (float) $debt->paid_amount);
+        $this->assertEquals(1500000, (float) $debt->remaining_amount);
+
+        // 4. Debt History PDF reflects partial repayment
+        $partialPdfRes = $this->actingAs($this->superAdmin)->get(route('debts.pdf', $debt));
+        $partialPdfRes->assertStatus(200);
+        $this->assertEquals('application/pdf', $partialPdfRes->headers->get('Content-Type'));
+
+        // 5. Debt History WA Preview endpoint returns updated status summary
+        $waPreviewRes = $this->actingAs($this->superAdmin)->get(route('debts.wa-preview', $debt));
+        $waPreviewRes->assertStatus(200);
+        $waPreviewData = $waPreviewRes->json();
+        $this->assertTrue($waPreviewData['success']);
+        $this->assertStringContainsString($debt->debt_number, $waPreviewData['message']);
+        $this->assertStringContainsString('1.500.000', $waPreviewData['message']);
+        $this->assertStringContainsString('500.000', $waPreviewData['message']);
+        $this->assertStringContainsString('SEBAGIAN TERBAYAR', $waPreviewData['message']);
+
+        // 6. Final Payment to make it PAID
+        $pay2 = $this->actingAs($this->superAdmin)->post(route('debts.pay', $debt), [
+            'amount' => 1500000,
+            'payment_method_id' => $this->cashMethod->id,
+            'notes' => 'Pelunasan sisa hutang',
+        ]);
+        $pay2->assertSessionHasNoErrors();
+
+        $debt->refresh();
+        $this->assertEquals('paid', $debt->status);
+        $this->assertEquals(0, (float) $debt->remaining_amount);
+        $this->assertTrue($debt->isPaid());
+
+        // 7. Final Debt History PDF reflecting fully paid status
+        $finalPdfRes = $this->actingAs($this->superAdmin)->get(route('debts.pdf', $debt));
+        $finalPdfRes->assertStatus(200);
+        $this->assertEquals('application/pdf', $finalPdfRes->headers->get('Content-Type'));
+
+        // Verify WA Preview reflects LUNAS
+        $waPaidPreview = $this->actingAs($this->superAdmin)->get(route('debts.wa-preview', $debt));
+        $waPaidPreview->assertStatus(200);
+        $this->assertStringContainsString('LUNAS', $waPaidPreview->json('message'));
+    }
 }
 

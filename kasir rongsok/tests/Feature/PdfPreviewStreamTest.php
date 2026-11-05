@@ -40,7 +40,7 @@ class PdfPreviewStreamTest extends TestCase
 
         $pm = PaymentMethod::where('code', 'cash')->first() ?: PaymentMethod::first();
 
-        // 1. Debt Agreement PDF
+        // 1. Debt Agreement PDF & Debt History PDF
         $debt = Debt::first() ?: Debt::create([
             'debt_number' => 'DBT-TEST-001',
             'borrower_name' => 'Peminjam Test',
@@ -65,6 +65,21 @@ class PdfPreviewStreamTest extends TestCase
         $resDownload = $this->actingAs($this->superAdmin)->get(route('debts.agreement-pdf', [$debt, 'download' => 1]));
         $resDownload->assertStatus(200);
         $this->assertStringContainsString('attachment', $resDownload->headers->get('content-disposition'));
+
+        // 1b. Debt History PDF (sesuai status saat itu)
+        $resHistoryPdf = $this->actingAs($this->superAdmin)->get(route('debts.pdf', $debt));
+        $resHistoryPdf->assertStatus(200);
+        $this->assertStringContainsString('application/pdf', $resHistoryPdf->headers->get('content-type'));
+        $this->assertStringContainsString('inline', $resHistoryPdf->headers->get('content-disposition'));
+
+        $resHistoryPdfDownload = $this->actingAs($this->superAdmin)->get(route('debts.pdf', [$debt, 'download' => 1]));
+        $resHistoryPdfDownload->assertStatus(200);
+        $this->assertStringContainsString('attachment', $resHistoryPdfDownload->headers->get('content-disposition'));
+
+        // 1c. Debt History WA Preview
+        $resWaPreview = $this->actingAs($this->superAdmin)->get(route('debts.wa-preview', $debt));
+        $resWaPreview->assertStatus(200);
+        $resWaPreview->assertJson(['success' => true]);
 
         // 2. Debt Batch PDF
         $res = $this->actingAs($this->superAdmin)->get(route('debts.batch-pdf'));
