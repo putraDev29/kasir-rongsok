@@ -2,6 +2,7 @@
 
 use App\Models\ItemCategory;
 use App\Models\ScrapItem;
+use App\Models\ScrapItemPriceHistory;
 use App\Models\StockBalance;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
@@ -13,441 +14,492 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // 1. Categories
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+        // Nullify foreign keys on transaction items before clearing items
+        DB::table('purchase_transaction_items')->update(['scrap_item_id' => null]);
+        DB::table('sales_transaction_items')->update(['scrap_item_id' => null]);
+        DB::table('delivery_order_items')->update(['scrap_item_id' => null]);
+
+        // Wipe old stock movements, balances, price histories, scrap items, and categories
+        if (\Illuminate\Support\Facades\Schema::hasTable('stock_movements')) {
+            DB::table('stock_movements')->truncate();
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('stock_balances')) {
+            DB::table('stock_balances')->truncate();
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('scrap_item_price_histories')) {
+            DB::table('scrap_item_price_histories')->truncate();
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('scrap_items')) {
+            DB::table('scrap_items')->truncate();
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('item_categories')) {
+            DB::table('item_categories')->truncate();
+        }
+
+        // 1. Kategori Master Sesuai Pengelompokan Scrap & Daur Ulang
         $categories = [
-            'besi' => ItemCategory::firstOrCreate(
-                ['slug' => 'besi-ferrous'],
-                ['name' => 'Besi & Logam Ferrous', 'description' => 'Segala jenis besi tua, plat, siku, kawat, spandek, seng', 'is_active' => true]
-            ),
-            'tembaga' => ItemCategory::firstOrCreate(
-                ['slug' => 'logam-non-besi'],
-                ['name' => 'Tembaga & Logam Non-Besi', 'description' => 'Tembaga, kuningan, timah, stainless steel', 'is_active' => true]
-            ),
-            'alumunium' => ItemCategory::firstOrCreate(
-                ['slug' => 'alumunium'],
-                ['name' => 'Alumunium', 'description' => 'Aneka jenis rongsokan aluminium batangan, cor, plat, siku, kuali, dan perkakas', 'is_active' => true]
-            ),
-            'plastik' => ItemCategory::firstOrCreate(
-                ['slug' => 'plastik-botol'],
-                ['name' => 'Plastik & Botol', 'description' => 'Botol PET bening, aqua susun, galon, emberan warna, impek kerasan', 'is_active' => true]
-            ),
-            'kertas' => ItemCategory::firstOrCreate(
-                ['slug' => 'kertas-karton'],
-                ['name' => 'Kertas & Karton', 'description' => 'Kardus boks kering & lembap, kertas HVS/swl, buku cetak, buram, duplek kones', 'is_active' => true]
-            ),
-            'aki' => ItemCategory::firstOrCreate(
-                ['slug' => 'aki-baterai'],
-                ['name' => 'Aki & Baterai Bekas', 'description' => 'Aki bekas basah dan kering motor & mobil', 'is_active' => true]
-            ),
-            'gembel' => ItemCategory::firstOrCreate(
-                ['slug' => 'lain-lain'],
-                ['name' => 'Gembel / Karung / Lainnya', 'description' => 'Kain majun perca gembel kasar & alus, karung goni, rongsok lain', 'is_active' => true]
-            ),
+            'tembaga-kuningan' => ItemCategory::create([
+                'name' => 'Tembaga & Kuningan',
+                'slug' => 'tembaga-kuningan',
+                'description' => 'Tembaga murni, dangdang, kuningan bersih, kuningan radiator, dan gram bubut kuningan',
+                'is_active' => true,
+            ]),
+            'alumunium' => ItemCategory::create([
+                'name' => 'Alumunium',
+                'slug' => 'alumunium',
+                'description' => 'Aluminium siku/kawat, blok mesin, panci/plat, kuali, babet, prodo, eleman, AC, dan part aluminium lainnya',
+                'is_active' => true,
+            ]),
+            'besi' => ItemCategory::create([
+                'name' => 'Besi',
+                'slug' => 'besi',
+                'description' => 'Besi tua balok tebal (BTG), besi tipis behel (BTK), seng pasir, dan spandek tipis',
+                'is_active' => true,
+            ]),
+            'timah-aki-stanlis' => ItemCategory::create([
+                'name' => 'Timah, Aki & Stainless',
+                'slug' => 'timah-aki-stanlis',
+                'description' => 'Timah batangan/pancing, aki basah/kering motor & mobil bekas, dan stainless steel rongsok',
+                'is_active' => true,
+            ]),
+            'plastik' => ItemCategory::create([
+                'name' => 'Plastik',
+                'slug' => 'plastik',
+                'description' => 'Botol Aqua susun bening, galon bekas, emberan warna campur, dan plastik kerasan/impek',
+                'is_active' => true,
+            ]),
+            'kertas-karton' => ItemCategory::create([
+                'name' => 'Kertas & Karton',
+                'slug' => 'kertas-karton',
+                'description' => 'Kertas putih HVS/swl arsip, kardus boks kering & lembap, buku cetak, kertas buram, dan duplek kones',
+                'is_active' => true,
+            ]),
+            'kain-gembel' => ItemCategory::create([
+                'name' => 'Kain Majun & Gembel',
+                'slug' => 'kain-gembel',
+                'description' => 'Kain majun perca katun gembel kasar dan gembel alus',
+                'is_active' => true,
+            ]),
         ];
 
-        // 2. Master Scrap Items & Prices
+        // 2. Daftar 35 Master Barang dan Harga Sesuai Permintaan
         $items = [
-            // TEMBAGA & KUNINGAN
+            // ==========================================
+            // KELOMPOK 1: TEMBAGA & KUNINGAN (5 items)
+            // ==========================================
             [
+                'category_slug' => 'tembaga-kuningan',
                 'code' => 'TBG-01',
                 'name' => 'Tembaga',
-                'category_id' => $categories['tembaga']->id,
                 'unit' => 'kg',
                 'buy_price' => 195000,
                 'sell_price' => 215000,
-                'desc' => 'Tembaga murni / kabel tembaga kupas bersih',
-                'is_active' => true,
+                'stock' => 120.00,
+                'desc' => 'Tembaga murni / kabel tembaga kupas merah bersih',
             ],
             [
+                'category_slug' => 'tembaga-kuningan',
                 'code' => 'TBG-02',
                 'name' => 'Dangdang',
-                'category_id' => $categories['tembaga']->id,
                 'unit' => 'kg',
                 'buy_price' => 170000,
                 'sell_price' => 188000,
-                'desc' => 'Tembaga dandang / perkakas masak tembaga',
-                'is_active' => true,
+                'stock' => 50.00,
+                'desc' => 'Tembaga dandang / perkakas masak tembaga kuno',
             ],
             [
+                'category_slug' => 'tembaga-kuningan',
                 'code' => 'KNG-01',
                 'name' => 'KN bersih',
-                'category_id' => $categories['tembaga']->id,
                 'unit' => 'kg',
                 'buy_price' => 130000,
                 'sell_price' => 145000,
-                'desc' => 'Kuningan bersih tanpa besi/kotoran',
-                'is_active' => true,
+                'stock' => 80.00,
+                'desc' => 'Kuningan bersih tanpa besi/kotoran (kran, pipa kuningan)',
             ],
             [
+                'category_slug' => 'tembaga-kuningan',
                 'code' => 'KNG-02',
                 'name' => 'KN Radiator',
-                'category_id' => $categories['tembaga']->id,
                 'unit' => 'kg',
                 'buy_price' => 110000,
                 'sell_price' => 125000,
-                'desc' => 'Kuningan radiator mesin & kendaraan',
-                'is_active' => true,
+                'stock' => 60.00,
+                'desc' => 'Kuningan radiator mesin & kendaraan bermotor',
             ],
             [
+                'category_slug' => 'tembaga-kuningan',
                 'code' => 'KNG-03',
                 'name' => 'Gram kn',
-                'category_id' => $categories['tembaga']->id,
                 'unit' => 'kg',
                 'buy_price' => 92000,
                 'sell_price' => 105000,
-                'desc' => 'Gram / serbuk bubut kuningan',
-                'is_active' => true,
+                'stock' => 45.00,
+                'desc' => 'Gram / serbuk bubut kuningan kering',
             ],
 
-            // ALUMUNIUM
+            // ==========================================
+            // KELOMPOK 2: ALUMUNIUM (11 items)
+            // ==========================================
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-01',
                 'name' => 'AL-Siku/kawat',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 38000,
                 'sell_price' => 43000,
+                'stock' => 180.00,
                 'desc' => 'Aluminium profil siku kusen, kawat aluminium bersih',
-                'is_active' => true,
             ],
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-02',
                 'name' => 'AL-Blok',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 36500,
                 'sell_price' => 41500,
+                'stock' => 220.00,
                 'desc' => 'Aluminium blok mesin, pelek velg motor/mobil',
-                'is_active' => true,
             ],
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-03',
                 'name' => 'AL-Panci/plat',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 35500,
                 'sell_price' => 40500,
-                'desc' => 'Aluminium panci, perabot rumah tangga, plat lembaran',
-                'is_active' => true,
+                'stock' => 250.00,
+                'desc' => 'Aluminium panci, perabot dapur, plat lembaran',
             ],
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-04',
                 'name' => 'AL-Kere/Krai',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 31000,
                 'sell_price' => 35500,
+                'stock' => 85.00,
                 'desc' => 'Aluminium kere / krai tirai jendela',
-                'is_active' => true,
             ],
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-05',
                 'name' => 'AL-Kuali',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 31000,
                 'sell_price' => 35500,
+                'stock' => 95.00,
                 'desc' => 'Aluminium kuali / wajan cor tebal',
-                'is_active' => true,
             ],
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-06',
                 'name' => 'AL-Babet',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 26000,
                 'sell_price' => 30000,
-                'desc' => 'Aluminium babet / cor campuran',
-                'is_active' => true,
+                'stock' => 110.00,
+                'desc' => 'Aluminium babet / cor campuran zinc',
             ],
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-07',
                 'name' => 'AL-Prodo',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 21000,
                 'sell_price' => 24500,
-                'desc' => 'Aluminium prodo / part cetakan',
-                'is_active' => true,
+                'stock' => 70.00,
+                'desc' => 'Aluminium prodo / part cetakan industri',
             ],
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-08',
                 'name' => 'AL-Eleman',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 21000,
                 'sell_price' => 24500,
+                'stock' => 65.00,
                 'desc' => 'Aluminium elemen pemanas / part pendingin',
-                'is_active' => true,
             ],
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-09',
                 'name' => 'AL-ac/auning',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 17000,
                 'sell_price' => 20500,
-                'desc' => 'Aluminium pipa AC, auning kanopi',
-                'is_active' => true,
+                'stock' => 90.00,
+                'desc' => 'Aluminium pipa AC, kisi radiator AC, auning kanopi',
             ],
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-10',
                 'name' => 'AL-bakar',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 6000,
                 'sell_price' => 8000,
-                'desc' => 'Aluminium bekas bakaran / kerak leburan',
-                'is_active' => true,
+                'stock' => 50.00,
+                'desc' => 'Aluminium bekas bakaran / kerak leburan kotor',
             ],
             [
+                'category_slug' => 'alumunium',
                 'code' => 'ALM-11',
                 'name' => 'AL-kopling',
-                'category_id' => $categories['alumunium']->id,
                 'unit' => 'kg',
                 'buy_price' => 6000,
                 'sell_price' => 8000,
-                'desc' => 'Aluminium rumah kopling / part kotor',
-                'is_active' => true,
+                'stock' => 50.00,
+                'desc' => 'Aluminium rumah kopling / part motor kotor',
             ],
 
-            // TIMAH, AKI, STANLIS
+            // ==========================================
+            // KELOMPOK 3: TIMAH, AKI & STAINLESS (3 items)
+            // ==========================================
             [
+                'category_slug' => 'timah-aki-stanlis',
                 'code' => 'TMH-01',
                 'name' => 'Timah',
-                'category_id' => $categories['tembaga']->id,
                 'unit' => 'kg',
                 'buy_price' => 22000,
                 'sell_price' => 26000,
-                'desc' => 'Timah batangan, timah pancing, segel',
-                'is_active' => true,
+                'stock' => 60.00,
+                'desc' => 'Timah batangan, timah pancing, segel timah',
             ],
             [
+                'category_slug' => 'timah-aki-stanlis',
                 'code' => 'AKI-01',
                 'name' => 'Aki',
-                'category_id' => $categories['aki']->id,
                 'unit' => 'kg',
                 'buy_price' => 16000,
                 'sell_price' => 19500,
-                'desc' => 'Aki bekas basah dan kering motor/mobil',
-                'is_active' => true,
+                'stock' => 260.00,
+                'desc' => 'Aki bekas basah dan kering motor & mobil',
             ],
             [
+                'category_slug' => 'timah-aki-stanlis',
                 'code' => 'SS-01',
                 'name' => 'Stanlis',
-                'category_id' => $categories['tembaga']->id,
                 'unit' => 'kg',
                 'buy_price' => 7000,
                 'sell_price' => 9000,
-                'desc' => 'Stainless steel rongsok / pipa / plat',
-                'is_active' => true,
+                'stock' => 210.00,
+                'desc' => 'Stainless steel rongsok / pipa / plat stainless',
             ],
 
-            // BESI
+            // ==========================================
+            // KELOMPOK 4: BESI (4 items)
+            // ==========================================
             [
+                'category_slug' => 'besi',
                 'code' => 'BSI-01',
                 'name' => 'BTG',
-                'category_id' => $categories['besi']->id,
                 'unit' => 'kg',
                 'buy_price' => 5500,
                 'sell_price' => 6600,
-                'desc' => 'Besi Tua Tebal / Super / Balok / Rel Padat',
-                'is_active' => true,
+                'stock' => 2450.00,
+                'desc' => 'Besi Tua Balok / Tebal / Super / Rel Padat (BTG)',
             ],
             [
+                'category_slug' => 'besi',
                 'code' => 'BSI-02',
                 'name' => 'BTK',
-                'category_id' => $categories['besi']->id,
                 'unit' => 'kg',
                 'buy_price' => 3100,
                 'sell_price' => 3900,
-                'desc' => 'Besi Tipis / Campur / Potongan Pipa / Behel',
-                'is_active' => true,
+                'stock' => 1820.00,
+                'desc' => 'Besi Tua Tipis / Campur / Potongan Pipa / Behel (BTK)',
             ],
             [
+                'category_slug' => 'besi',
                 'code' => 'BSI-03',
                 'name' => 'BS-Seng/pasir',
-                'category_id' => $categories['besi']->id,
                 'unit' => 'kg',
                 'buy_price' => 1200,
                 'sell_price' => 1700,
-                'desc' => 'Besi seng, pasir besi, besi rongsok tipis berkarat',
-                'is_active' => true,
+                'stock' => 500.00,
+                'desc' => 'Besi seng berkarat, pasir besi, drum tipis',
             ],
             [
+                'category_slug' => 'besi',
                 'code' => 'BSI-04',
                 'name' => 'Bs-spandek tipis',
-                'category_id' => $categories['besi']->id,
                 'unit' => 'kg',
                 'buy_price' => 1200,
                 'sell_price' => 1700,
-                'desc' => 'Besi spandek / atap seng tipis',
-                'is_active' => true,
-            ],
-            [
-                'code' => 'BSI-05',
-                'name' => 'Springbet (Tidak Beli)',
-                'category_id' => $categories['besi']->id,
-                'unit' => 'kg',
-                'buy_price' => 0,
-                'sell_price' => 0,
-                'desc' => 'Per kasur springbed (Status: Tidak beli)',
-                'is_active' => false,
+                'stock' => 450.00,
+                'desc' => 'Besi spandek / atap seng tipis potongan',
             ],
 
-            // PLASTIK
+            // ==========================================
+            // KELOMPOK 5: PLASTIK (4 items)
+            // ==========================================
             [
+                'category_slug' => 'plastik',
                 'code' => 'PLS-01',
-                'name' => 'Gabruk/Emberan warna',
-                'category_id' => $categories['plastik']->id,
-                'unit' => 'kg',
-                'buy_price' => 2200,
-                'sell_price' => 3000,
-                'desc' => 'Plastik gabruk / emberan warna campur',
-                'is_active' => true,
-            ],
-            [
-                'code' => 'PLS-02',
                 'name' => 'Aqua susun',
-                'category_id' => $categories['plastik']->id,
                 'unit' => 'kg',
                 'buy_price' => 4500,
                 'sell_price' => 5800,
-                'desc' => 'Botol Aqua / PET bening susun rapi bersih',
-                'is_active' => true,
+                'stock' => 1100.00,
+                'desc' => 'Botol Aqua / PET bening susun rapi bersih tanpa tutup/label',
             ],
             [
-                'code' => 'PLS-03',
+                'category_slug' => 'plastik',
+                'code' => 'PLS-02',
                 'name' => 'Galon',
-                'category_id' => $categories['plastik']->id,
                 'unit' => 'kg',
                 'buy_price' => 4000,
                 'sell_price' => 5500,
-                'desc' => 'Galon air mineral bekas',
-                'is_active' => true,
+                'stock' => 350.00,
+                'desc' => 'Galon air mineral bekas (PC / PET)',
             ],
             [
+                'category_slug' => 'plastik',
+                'code' => 'PLS-03',
+                'name' => 'Gabruk/Emberan warna',
+                'unit' => 'kg',
+                'buy_price' => 2200,
+                'sell_price' => 3000,
+                'stock' => 450.00,
+                'desc' => 'Plastik gabruk / emberan warna campur (PP/PE)',
+            ],
+            [
+                'category_slug' => 'plastik',
                 'code' => 'PLS-04',
                 'name' => 'Impek/kerasan',
-                'category_id' => $categories['plastik']->id,
                 'unit' => 'kg',
                 'buy_price' => 600,
                 'sell_price' => 1000,
-                'desc' => 'Plastik impek / kerasan (ABS, PP hitam keras)',
-                'is_active' => true,
+                'stock' => 280.00,
+                'desc' => 'Plastik impek / kerasan (ABS, PP hitam keras, bodi TV/elektronik)',
             ],
 
-            // KERTAS
+            // ==========================================
+            // KELOMPOK 6: KERTAS & KARTON (6 items)
+            // ==========================================
             [
+                'category_slug' => 'kertas-karton',
                 'code' => 'KRT-01',
                 'name' => 'HVS/swl',
-                'category_id' => $categories['kertas']->id,
                 'unit' => 'kg',
                 'buy_price' => 2100,
                 'sell_price' => 2800,
-                'desc' => 'Kertas putih HVS / SWL arsip bersih',
-                'is_active' => true,
+                'stock' => 1250.00,
+                'desc' => 'Kertas putih HVS / SWL arsip kantor bersih tanpa cover',
             ],
             [
+                'category_slug' => 'kertas-karton',
                 'code' => 'KDS-01',
                 'name' => 'Kardus kering',
-                'category_id' => $categories['kertas']->id,
                 'unit' => 'kg',
                 'buy_price' => 1800,
                 'sell_price' => 2400,
+                'stock' => 4200.00,
                 'desc' => 'Kardus boks cokelat kering dan bersih',
-                'is_active' => true,
             ],
             [
+                'category_slug' => 'kertas-karton',
                 'code' => 'KDS-02',
                 'name' => 'kardus lembap',
-                'category_id' => $categories['kertas']->id,
                 'unit' => 'kg',
                 'buy_price' => 1600,
                 'sell_price' => 2100,
+                'stock' => 1500.00,
                 'desc' => 'Kardus boks kondisi basah / lembap',
-                'is_active' => true,
             ],
             [
+                'category_slug' => 'kertas-karton',
                 'code' => 'KRT-02',
                 'name' => 'Buku/cetak',
-                'category_id' => $categories['kertas']->id,
                 'unit' => 'kg',
                 'buy_price' => 1000,
                 'sell_price' => 1500,
-                'desc' => 'Buku pelajaran, majalah, kertas cetak',
-                'is_active' => true,
+                'stock' => 650.00,
+                'desc' => 'Buku pelajaran, majalah, kertas cetak warna',
             ],
             [
+                'category_slug' => 'kertas-karton',
                 'code' => 'KRT-03',
                 'name' => 'Burem kering',
-                'category_id' => $categories['kertas']->id,
                 'unit' => 'kg',
                 'buy_price' => 1000,
                 'sell_price' => 1500,
-                'desc' => 'Kertas buram / CD kering',
-                'is_active' => true,
+                'stock' => 400.00,
+                'desc' => 'Kertas buram / kertas koran / CD kering',
             ],
             [
+                'category_slug' => 'kertas-karton',
                 'code' => 'KRT-04',
                 'name' => 'Duplek/kones',
-                'category_id' => $categories['kertas']->id,
                 'unit' => 'kg',
                 'buy_price' => 500,
                 'sell_price' => 800,
+                'stock' => 800.00,
                 'desc' => 'Kertas duplek box makanan / kones benang pabrik',
-                'is_active' => true,
             ],
 
-            // GEMBEL
+            // ==========================================
+            // KELOMPOK 7: KAIN MAJUN & GEMBEL (2 items)
+            // ==========================================
             [
+                'category_slug' => 'kain-gembel',
                 'code' => 'GMB-01',
                 'name' => 'Gembel kasar',
-                'category_id' => $categories['gembel']->id,
                 'unit' => 'kg',
                 'buy_price' => 10000,
                 'sell_price' => 12500,
+                'stock' => 150.00,
                 'desc' => 'Kain perca / majun gembel kasar',
-                'is_active' => true,
             ],
             [
+                'category_slug' => 'kain-gembel',
                 'code' => 'GMB-02',
                 'name' => 'Gembel alus',
-                'category_id' => $categories['gembel']->id,
                 'unit' => 'kg',
                 'buy_price' => 7000,
                 'sell_price' => 9000,
+                'stock' => 120.00,
                 'desc' => 'Kain perca / majun katun gembel halus',
-                'is_active' => true,
             ],
         ];
 
         foreach ($items as $data) {
-            $item = ScrapItem::updateOrCreate(
-                ['code' => $data['code']],
-                [
-                    'category_id' => $data['category_id'],
-                    'name' => $data['name'],
-                    'unit' => $data['unit'],
-                    'unit_type' => $data['unit'],
+            $catId = $categories[$data['category_slug']]->id;
+
+            $item = ScrapItem::create([
+                'category_id' => $catId,
+                'code' => $data['code'],
+                'name' => $data['name'],
+                'unit' => $data['unit'],
+                'unit_type' => $data['unit'],
+                'buy_price_per_kg' => $data['buy_price'],
+                'sell_price_per_kg' => $data['sell_price'],
+                'min_stock_alert' => 50.00,
+                'description' => $data['desc'],
+                'is_active' => true,
+            ]);
+
+            StockBalance::create([
+                'scrap_item_id' => $item->id,
+                'current_stock' => $data['stock'],
+                'total_in' => $data['stock'],
+                'total_out' => 0.00,
+                'average_buy_price' => $data['buy_price'],
+            ]);
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('scrap_item_price_histories')) {
+                ScrapItemPriceHistory::create([
+                    'scrap_item_id' => $item->id,
                     'buy_price_per_kg' => $data['buy_price'],
                     'sell_price_per_kg' => $data['sell_price'],
-                    'min_stock_alert' => 50.00,
-                    'description' => $data['desc'],
-                    'is_active' => $data['is_active'],
-                ]
-            );
-
-            StockBalance::firstOrCreate(
-                ['scrap_item_id' => $item->id],
-                [
-                    'current_stock' => 0.00,
-                    'total_in' => 0.00,
-                    'total_out' => 0.00,
-                    'average_buy_price' => $data['buy_price'],
-                ]
-            );
+                    'notes' => 'Penyesuaian standar harga master barang',
+                ]);
+            }
         }
+
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
     }
 
     /**
@@ -455,7 +507,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Safe to leave data intact
+        // Data migration
     }
 };
-

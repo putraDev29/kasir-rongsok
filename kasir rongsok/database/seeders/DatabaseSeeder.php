@@ -100,19 +100,19 @@ class DatabaseSeeder extends Seeder
         $expUtility = ExpenseCategory::create(['name' => 'Listrik, Air & Operasional Kantor', 'description' => 'Token PLN gudang, PDAM, ATK kertas nota']);
 
         // 5. Item Categories
-        $catFerrous = ItemCategory::create(['name' => 'Besi & Logam Ferrous', 'slug' => 'besi-ferrous', 'description' => 'Segala jenis besi tua, plat, siku, kawat, spandek, seng']);
-        $catNonFerrous = ItemCategory::create(['name' => 'Tembaga & Logam Non-Besi', 'slug' => 'logam-non-besi', 'description' => 'Tembaga, kuningan, timah, stainless steel']);
-        $catAlumunium = ItemCategory::create(['name' => 'Alumunium', 'slug' => 'alumunium', 'description' => 'Aneka jenis rongsokan aluminium batangan, cor, plat, siku, kuali, dan perkakas']);
-        $catPaper = ItemCategory::create(['name' => 'Kertas & Karton', 'slug' => 'kertas-karton', 'description' => 'Kardus boks kering & lembap, kertas HVS/swl, buku cetak, buram, duplek kones']);
-        $catPlastic = ItemCategory::create(['name' => 'Plastik & Botol', 'slug' => 'plastik-botol', 'description' => 'Botol PET bening, aqua susun, galon, emberan warna, impek kerasan']);
-        $catBattery = ItemCategory::create(['name' => 'Aki & Baterai Bekas', 'slug' => 'aki-baterai', 'description' => 'Aki basah/kering motor dan mobil']);
-        $catOther = ItemCategory::create(['name' => 'Gembel / Karung / Lainnya', 'slug' => 'lain-lain', 'description' => 'Kain majun perca gembel kasar & alus, karung goni, rongsok lain']);
+        $catTembagaKuningan = ItemCategory::create(['name' => 'Tembaga & Kuningan', 'slug' => 'tembaga-kuningan', 'description' => 'Tembaga murni, dangdang, kuningan bersih, kuningan radiator, dan gram kuningan']);
+        $catAlumunium = ItemCategory::create(['name' => 'Alumunium', 'slug' => 'alumunium', 'description' => 'Aluminium siku/kawat, blok mesin, panci/plat, kuali, babet, prodo, eleman, AC, dan part aluminium']);
+        $catBesi = ItemCategory::create(['name' => 'Besi', 'slug' => 'besi', 'description' => 'Besi tua balok tebal (BTG), besi tipis behel (BTK), seng pasir, dan spandek tipis']);
+        $catTimahAkiStanlis = ItemCategory::create(['name' => 'Timah, Aki & Stainless', 'slug' => 'timah-aki-stanlis', 'description' => 'Timah batangan/pancing, aki basah/kering motor & mobil bekas, dan stainless steel']);
+        $catPlastic = ItemCategory::create(['name' => 'Plastik', 'slug' => 'plastik', 'description' => 'Botol Aqua susun bening, galon bekas, emberan warna campur, dan plastik kerasan/impek']);
+        $catPaper = ItemCategory::create(['name' => 'Kertas & Karton', 'slug' => 'kertas-karton', 'description' => 'Kertas putih HVS/swl arsip, kardus boks kering & lembap, buku cetak, kertas buram, dan duplek kones']);
+        $catGembel = ItemCategory::create(['name' => 'Kain Majun & Gembel', 'slug' => 'kain-gembel', 'description' => 'Kain majun perca katun gembel kasar dan gembel alus']);
 
-        // 6. Scrap Items with initial stock
+        // 6. Scrap Items with initial stock (35 Items Sesuai Standar Lapak / Depo)
         $itemsData = [
-            // TEMBAGA & KUNINGAN
+            // TEMBAGA & KUNINGAN (5 items)
             [
-                'category_id' => $catNonFerrous->id,
+                'category_id' => $catTembagaKuningan->id,
                 'code' => 'TBG-01',
                 'name' => 'Tembaga',
                 'unit' => 'kg',
@@ -120,59 +120,59 @@ class DatabaseSeeder extends Seeder
                 'sell_price' => 215000,
                 'min_stock' => 50,
                 'stock' => 120.00,
-                'desc' => 'Tembaga murni / kabel tembaga kupas bersih',
+                'desc' => 'Tembaga murni / kabel tembaga kupas merah bersih',
                 'is_active' => true,
             ],
             [
-                'category_id' => $catNonFerrous->id,
+                'category_id' => $catTembagaKuningan->id,
                 'code' => 'TBG-02',
                 'name' => 'Dangdang',
                 'unit' => 'kg',
                 'buy_price' => 170000,
                 'sell_price' => 188000,
                 'min_stock' => 30,
-                'stock' => 45.00,
-                'desc' => 'Tembaga dandang / perkakas masak tembaga',
+                'stock' => 50.00,
+                'desc' => 'Tembaga dandang / perkakas masak tembaga kuno',
                 'is_active' => true,
             ],
             [
-                'category_id' => $catNonFerrous->id,
+                'category_id' => $catTembagaKuningan->id,
                 'code' => 'KNG-01',
                 'name' => 'KN bersih',
                 'unit' => 'kg',
                 'buy_price' => 130000,
                 'sell_price' => 145000,
                 'min_stock' => 40,
-                'stock' => 60.00,
+                'stock' => 80.00,
                 'desc' => 'Kuningan bersih tanpa besi/kotoran',
                 'is_active' => true,
             ],
             [
-                'category_id' => $catNonFerrous->id,
+                'category_id' => $catTembagaKuningan->id,
                 'code' => 'KNG-02',
                 'name' => 'KN Radiator',
                 'unit' => 'kg',
                 'buy_price' => 110000,
                 'sell_price' => 125000,
                 'min_stock' => 40,
-                'stock' => 50.00,
+                'stock' => 60.00,
                 'desc' => 'Kuningan radiator mesin & kendaraan',
                 'is_active' => true,
             ],
             [
-                'category_id' => $catNonFerrous->id,
+                'category_id' => $catTembagaKuningan->id,
                 'code' => 'KNG-03',
                 'name' => 'Gram kn',
                 'unit' => 'kg',
                 'buy_price' => 92000,
                 'sell_price' => 105000,
                 'min_stock' => 30,
-                'stock' => 35.00,
-                'desc' => 'Gram / serbuk bubut kuningan',
+                'stock' => 45.00,
+                'desc' => 'Gram / serbuk bubut kuningan kering',
                 'is_active' => true,
             ],
 
-            // ALUMUNIUM
+            // ALUMUNIUM (11 items)
             [
                 'category_id' => $catAlumunium->id,
                 'code' => 'ALM-01',
@@ -217,7 +217,7 @@ class DatabaseSeeder extends Seeder
                 'buy_price' => 31000,
                 'sell_price' => 35500,
                 'min_stock' => 50,
-                'stock' => 80.00,
+                'stock' => 85.00,
                 'desc' => 'Aluminium kere / krai tirai jendela',
                 'is_active' => true,
             ],
@@ -254,7 +254,7 @@ class DatabaseSeeder extends Seeder
                 'sell_price' => 24500,
                 'min_stock' => 50,
                 'stock' => 70.00,
-                'desc' => 'Aluminium prodo / part cetakan',
+                'desc' => 'Aluminium prodo / part cetakan industri',
                 'is_active' => true,
             ],
             [
@@ -289,7 +289,7 @@ class DatabaseSeeder extends Seeder
                 'buy_price' => 6000,
                 'sell_price' => 8000,
                 'min_stock' => 50,
-                'stock' => 40.00,
+                'stock' => 50.00,
                 'desc' => 'Aluminium bekas bakaran / kerak leburan',
                 'is_active' => true,
             ],
@@ -301,14 +301,14 @@ class DatabaseSeeder extends Seeder
                 'buy_price' => 6000,
                 'sell_price' => 8000,
                 'min_stock' => 50,
-                'stock' => 45.00,
+                'stock' => 50.00,
                 'desc' => 'Aluminium rumah kopling / part kotor',
                 'is_active' => true,
             ],
 
-            // TIMAH, AKI, STANLIS
+            // TIMAH, AKI, STANLIS (3 items)
             [
-                'category_id' => $catNonFerrous->id,
+                'category_id' => $catTimahAkiStanlis->id,
                 'code' => 'TMH-01',
                 'name' => 'Timah',
                 'unit' => 'kg',
@@ -320,7 +320,7 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'category_id' => $catBattery->id,
+                'category_id' => $catTimahAkiStanlis->id,
                 'code' => 'AKI-01',
                 'name' => 'Aki',
                 'unit' => 'kg',
@@ -332,7 +332,7 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'category_id' => $catNonFerrous->id,
+                'category_id' => $catTimahAkiStanlis->id,
                 'code' => 'SS-01',
                 'name' => 'Stanlis',
                 'unit' => 'kg',
@@ -344,9 +344,9 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ],
 
-            // BESI
+            // BESI (4 items)
             [
-                'category_id' => $catFerrous->id,
+                'category_id' => $catBesi->id,
                 'code' => 'BSI-01',
                 'name' => 'BTG',
                 'unit' => 'kg',
@@ -354,11 +354,11 @@ class DatabaseSeeder extends Seeder
                 'sell_price' => 6600,
                 'min_stock' => 500,
                 'stock' => 2450.00,
-                'desc' => 'Besi Tua Tebal / Super / Balok / Rel Padat',
+                'desc' => 'Besi Tua Balok / Tebal / Super / Rel Padat (BTG)',
                 'is_active' => true,
             ],
             [
-                'category_id' => $catFerrous->id,
+                'category_id' => $catBesi->id,
                 'code' => 'BSI-02',
                 'name' => 'BTK',
                 'unit' => 'kg',
@@ -366,11 +366,11 @@ class DatabaseSeeder extends Seeder
                 'sell_price' => 3900,
                 'min_stock' => 500,
                 'stock' => 1820.00,
-                'desc' => 'Besi Tipis / Campur / Potongan Pipa / Behel',
+                'desc' => 'Besi Tua Tipis / Campur / Potongan Pipa / Behel (BTK)',
                 'is_active' => true,
             ],
             [
-                'category_id' => $catFerrous->id,
+                'category_id' => $catBesi->id,
                 'code' => 'BSI-03',
                 'name' => 'BS-Seng/pasir',
                 'unit' => 'kg',
@@ -378,11 +378,11 @@ class DatabaseSeeder extends Seeder
                 'sell_price' => 1700,
                 'min_stock' => 200,
                 'stock' => 500.00,
-                'desc' => 'Besi seng, pasir besi, besi rongsok tipis berkarat',
+                'desc' => 'Besi seng berkarat, pasir besi, drum tipis',
                 'is_active' => true,
             ],
             [
-                'category_id' => $catFerrous->id,
+                'category_id' => $catBesi->id,
                 'code' => 'BSI-04',
                 'name' => 'Bs-spandek tipis',
                 'unit' => 'kg',
@@ -390,38 +390,14 @@ class DatabaseSeeder extends Seeder
                 'sell_price' => 1700,
                 'min_stock' => 200,
                 'stock' => 450.00,
-                'desc' => 'Besi spandek / atap seng tipis',
+                'desc' => 'Besi spandek / atap seng tipis potongan',
                 'is_active' => true,
             ],
-            [
-                'category_id' => $catFerrous->id,
-                'code' => 'BSI-05',
-                'name' => 'Springbet (Tidak Beli)',
-                'unit' => 'kg',
-                'buy_price' => 0,
-                'sell_price' => 0,
-                'min_stock' => 0,
-                'stock' => 0.00,
-                'desc' => 'Per kasur springbed (Status: Tidak beli)',
-                'is_active' => false,
-            ],
 
-            // PLASTIK
+            // PLASTIK (4 items)
             [
                 'category_id' => $catPlastic->id,
                 'code' => 'PLS-01',
-                'name' => 'Gabruk/Emberan warna',
-                'unit' => 'kg',
-                'buy_price' => 2200,
-                'sell_price' => 3000,
-                'min_stock' => 200,
-                'stock' => 450.00,
-                'desc' => 'Plastik gabruk / emberan warna campur',
-                'is_active' => true,
-            ],
-            [
-                'category_id' => $catPlastic->id,
-                'code' => 'PLS-02',
                 'name' => 'Aqua susun',
                 'unit' => 'kg',
                 'buy_price' => 4500,
@@ -433,14 +409,26 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'category_id' => $catPlastic->id,
-                'code' => 'PLS-03',
+                'code' => 'PLS-02',
                 'name' => 'Galon',
                 'unit' => 'kg',
                 'buy_price' => 4000,
                 'sell_price' => 5500,
                 'min_stock' => 100,
                 'stock' => 350.00,
-                'desc' => 'Galon air mineral bekas',
+                'desc' => 'Galon air mineral bekas (PC / PET)',
+                'is_active' => true,
+            ],
+            [
+                'category_id' => $catPlastic->id,
+                'code' => 'PLS-03',
+                'name' => 'Gabruk/Emberan warna',
+                'unit' => 'kg',
+                'buy_price' => 2200,
+                'sell_price' => 3000,
+                'min_stock' => 200,
+                'stock' => 450.00,
+                'desc' => 'Plastik gabruk / emberan warna campur (PP/PE)',
                 'is_active' => true,
             ],
             [
@@ -456,7 +444,7 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ],
 
-            // KERTAS
+            // KERTAS & KARTON (6 items)
             [
                 'category_id' => $catPaper->id,
                 'code' => 'KRT-01',
@@ -466,7 +454,7 @@ class DatabaseSeeder extends Seeder
                 'sell_price' => 2800,
                 'min_stock' => 500,
                 'stock' => 1250.00,
-                'desc' => 'Kertas putih HVS / SWL arsip bersih',
+                'desc' => 'Kertas putih HVS / SWL arsip kantor bersih',
                 'is_active' => true,
             ],
             [
@@ -530,9 +518,9 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ],
 
-            // GEMBEL
+            // KAIN MAJUN & GEMBEL (2 items)
             [
-                'category_id' => $catOther->id,
+                'category_id' => $catGembel->id,
                 'code' => 'GMB-01',
                 'name' => 'Gembel kasar',
                 'unit' => 'kg',
@@ -544,7 +532,7 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'category_id' => $catOther->id,
+                'category_id' => $catGembel->id,
                 'code' => 'GMB-02',
                 'name' => 'Gembel alus',
                 'unit' => 'kg',
