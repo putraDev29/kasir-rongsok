@@ -42,6 +42,73 @@
 
             <input type="hidden" name="delivery_order_id" x-model="deliveryOrderId">
 
+            <!-- Pilihan Metode Penyerahan / Pengiriman Barang -->
+            <div class="p-4 rounded-xl border bg-slate-50/80 border-slate-200 space-y-3">
+                <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    Metode Penyerahan / Pengiriman Barang *
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Opsi 1: Diambil Sendiri oleh Pembeli -->
+                    <label class="relative flex items-start p-3.5 rounded-xl border-2 cursor-pointer transition-all"
+                           :class="deliveryType === 'pickup' ? 'border-emerald-600 bg-emerald-50/50 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'">
+                        <input type="radio" name="delivery_type" value="pickup" x-model="deliveryType" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                        <div class="ml-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-xs text-slate-900">Diambil Sendiri oleh Pembeli</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    Langsung Selesai
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1">
+                                Pelanggan datang ke depo. <strong>Tanpa surat jalan</strong>, hanya faktur penjualan (invoice) & status langsung SELESAI.
+                            </p>
+                        </div>
+                    </label>
+
+                    <!-- Opsi 2: Dengan Pengiriman Armada -->
+                    <label class="relative flex items-start p-3.5 rounded-xl border-2 cursor-pointer transition-all"
+                           :class="deliveryType === 'delivery' ? 'border-blue-600 bg-blue-50/50 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'">
+                        <input type="radio" name="delivery_type" value="delivery" x-model="deliveryType" class="mt-0.5 text-blue-600 focus:ring-blue-500">
+                        <div class="ml-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-xs text-slate-900">Dengan Pengiriman Armada Depo</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                    Perlu Surat Jalan
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1">
+                                Dikirim dengan kendaraan/sopir perusahaan. <strong>Status baru selesai setelah pengiriman tuntas.</strong>
+                            </p>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Input Armada & Pengemudi (Hanya tampil jika dengan pengiriman) -->
+                <div x-show="deliveryType === 'delivery'" x-transition class="pt-3 border-t border-slate-200 text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-blue-900 font-bold text-xs">
+                        <i data-lucide="truck" class="w-4 h-4 text-blue-600"></i>
+                        <span>Informasi Armada & Sopir Pengirim (Opsional - Bisa diisi untuk otomatis terbitkan Surat Jalan):</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Nama Sopir Armada</label>
+                            <input type="text" name="driver_name" x-model="driverName" placeholder="Contoh: Pak Joko"
+                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">No. Plat Polisi Kendaraan</label>
+                            <input type="text" name="vehicle_number" x-model="vehicleNumber" placeholder="B 1234 ABC"
+                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 font-mono uppercase bg-white focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Jenis Armada</label>
+                            <input type="text" name="vehicle_type" x-model="vehicleType" placeholder="Truk Engkel / Fuso / Pick Up"
+                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Transaction Date & Buyer Details -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -66,7 +133,10 @@
                 </div>
 
                 <div class="sm:col-span-2">
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Alamat Tujuan Pengiriman</label>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1"
+                           x-text="deliveryType === 'delivery' ? 'Alamat Tujuan Pengiriman (Pabrik / Gudang Bongkar) *' : 'Alamat Pembeli (Opsional)'">
+                        Alamat Pembeli
+                    </label>
                     <input type="text" name="buyer_address" x-model="buyerAddress" placeholder="Kawasan Industri / Alamat Pabrik"
                            class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-blue-500">
                 </div>
@@ -301,6 +371,10 @@ function salesPos() {
         
         selectedDoId: '{{ $selectedDeliveryOrder?->id ?? "" }}',
         deliveryOrderId: '{{ $selectedDeliveryOrder?->id ?? "" }}',
+        deliveryType: '{{ $selectedDeliveryOrder ? "delivery" : "pickup" }}',
+        driverName: '{{ $selectedDeliveryOrder?->driver_name ?? "" }}',
+        vehicleNumber: '{{ $selectedDeliveryOrder?->vehicle_number ?? "" }}',
+        vehicleType: '{{ $selectedDeliveryOrder?->vehicle_type ?? "Truk" }}',
         transactionDate: '',
         buyerName: '{{ $selectedDeliveryOrder?->recipient_name ?? "" }}',
         buyerPhone: '{{ $selectedDeliveryOrder?->recipient_phone ?? "" }}',

@@ -50,24 +50,43 @@
                 </div>
             </div>
             <div class="text-right">
-                <span class="text-sm font-bold text-blue-700 uppercase">SURAT JALAN & INVOICE</span>
+                <span class="text-sm font-bold {{ $sale->isPickup() ? 'text-emerald-700' : 'text-blue-700' }} uppercase">
+                    {{ $sale->isPickup() ? 'FAKTUR PENJUALAN (DIAMBIL SENDIRI)' : 'SURAT JALAN & INVOICE' }}
+                </span>
                 <div class="font-mono font-bold text-slate-800 text-sm mt-1">{{ $sale->invoice_number }}</div>
                 <div class="text-[11px] text-slate-500">{{ $sale->transaction_date->format('d/m/Y H:i') }}</div>
+                @if($sale->isPickup())
+                    <span class="inline-block mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Diambil Langsung Pembeli
+                    </span>
+                @else
+                    <span class="inline-block mt-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                        Pengiriman Armada Gudang
+                    </span>
+                @endif
             </div>
         </div>
 
         <!-- Buyer & Shipping Info -->
         <div class="grid grid-cols-2 gap-4 py-4 border-b border-slate-200">
             <div>
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tujuan Pengiriman (Pembeli):</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    {{ $sale->isPickup() ? 'Pembeli (Diambil Langsung):' : 'Tujuan Pengiriman (Pembeli):' }}
+                </span>
                 <div class="font-bold text-slate-900 text-sm">{{ $sale->buyer_name }}</div>
                 <div class="text-slate-600">{{ $sale->buyer_address ?? '-' }}</div>
                 <div class="text-slate-600 font-mono">Telp: {{ $sale->buyer_phone ?? '-' }}</div>
             </div>
             <div>
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Catatan Transportasi:</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    {{ $sale->isPickup() ? 'Metode Pengambilan:' : 'Catatan Transportasi:' }}
+                </span>
                 <div class="text-slate-700 bg-slate-50 p-2.5 rounded border border-slate-200 text-[11px]">
-                    {{ $sale->notes ?? 'Pengiriman armada darat' }}
+                    @if($sale->isPickup())
+                        {{ $sale->notes ?? 'Diambil langsung oleh pembeli di gudang/depo (Tanpa kendaraan perusahaan)' }}
+                    @else
+                        {{ $sale->notes ?? 'Pengiriman armada darat' }}
+                    @endif
                 </div>
             </div>
         </div>
@@ -177,23 +196,46 @@
         @endif
 
         <!-- Signatures -->
-        <div class="grid grid-cols-3 gap-6 pt-10 text-center font-sans text-xs text-slate-600">
-            <div>
-                <p>Pengirim (Gudang)</p>
-                <div class="h-16"></div>
-                <p class="font-bold border-t border-slate-300 pt-1">({{ $sale->user?->name }})</p>
+        @if($sale->isPickup())
+            <div class="grid grid-cols-2 gap-12 pt-10 text-center font-sans text-xs text-slate-600 max-w-lg mx-auto">
+                <div>
+                    <p class="font-medium text-slate-700">Hormat Kami (Gudang/Kasir)</p>
+                    <div class="h-16 flex items-center justify-center">
+                        @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" class="h-14 max-w-[140px] object-contain mx-auto">
+                        @endif
+                    </div>
+                    <p class="font-bold border-t border-slate-300 pt-1">({{ $sale->user?->name ?? 'Kasir / Pengelola' }})</p>
+                </div>
+                <div>
+                    <p class="font-medium text-slate-700">Penerima / Pembeli</p>
+                    <div class="h-16"></div>
+                    <p class="font-bold border-t border-slate-300 pt-1">({{ $sale->buyer_name }})</p>
+                </div>
             </div>
-            <div>
-                <p>Sopir / Ekspedisi</p>
-                <div class="h-16"></div>
-                <p class="font-bold border-t border-slate-300 pt-1">(....................................)</p>
+        @else
+            <div class="grid grid-cols-3 gap-6 pt-10 text-center font-sans text-xs text-slate-600">
+                <div>
+                    <p class="font-medium text-slate-700">Pengirim (Gudang)</p>
+                    <div class="h-16 flex items-center justify-center">
+                        @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" class="h-14 max-w-[140px] object-contain mx-auto">
+                        @endif
+                    </div>
+                    <p class="font-bold border-t border-slate-300 pt-1">({{ $sale->user?->name ?? 'Gudang' }})</p>
+                </div>
+                <div>
+                    <p class="font-medium text-slate-700">Sopir / Ekspedisi</p>
+                    <div class="h-16"></div>
+                    <p class="font-bold border-t border-slate-300 pt-1">(....................................)</p>
+                </div>
+                <div>
+                    <p class="font-medium text-slate-700">Penerima (Pabrik / Pembeli)</p>
+                    <div class="h-16"></div>
+                    <p class="font-bold border-t border-slate-300 pt-1">({{ $sale->buyer_name }})</p>
+                </div>
             </div>
-            <div>
-                <p>Penerima (Pabrik / Pembeli)</p>
-                <div class="h-16"></div>
-                <p class="font-bold border-t border-slate-300 pt-1">({{ $sale->buyer_name }})</p>
-            </div>
-        </div>
+        @endif
 
     </div>
 

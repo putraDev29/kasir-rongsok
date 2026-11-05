@@ -973,5 +973,132 @@ class ScrapCashierSystemTest extends TestCase
         $reportPrintRes->assertSee('Besi Super Tebal');
         $reportPrintRes->assertSee('Besi Campur Tipis');
     }
+
+    /**
+     * Test sales delivery type workflow:
+     * - Pickup: Customer picks up at depot -> status immediately completed, no delivery order.
+     * - Delivery: Company armada delivery -> status pending_delivery until delivery is completed.
+     */
+    public function test_sales_delivery_type_and_completion_workflow(): void
+    {
+        // 1. Pickup Sale: Immediate completion, no DO required
+        $pickupRes = $this->actingAs($this->superAdmin)->post(route('sales.store'), [
+            'delivery_type' => 'pickup',
+            'buyer_name' => 'Bpk. H. Syarif (Ambil Sendiri)',
+            'buyer_phone' => '08129999111',
+            'transaction_date' => now()->toDateString(),
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_type_name' => 'Besi Super Tebal',
+                    'weight' => 80,
+                    'sell_price_per_kg' => 5000,
+                ],
+            ],
+        ]);
+        $pickupRes->assertSessionHasNoErrors();
+
+        $pickupSale = \App\Models\SalesTransaction::where('buyer_name', 'Bpk. H. Syarif (Ambil Sendiri)')->first();
+        $this->assertNotNull($pickupSale);
+        $this->assertEquals('pickup', $pickupSale->delivery_type);
+        $this->assertEquals('completed', $pickupSale->status);
+        $this->assertNull($pickupSale->delivery_order_id);
+        $this->assertTrue($pickupSale->isPickup());
+        $this->assertTrue($pickupSale->isCompleted());
+
+        // Check show page for pickup sale
+        $pickupShow = $this->actingAs($this->superAdmin)->get(route('sales.show', $pickupSale));
+        $pickupShow->assertStatus(200);
+        $pickupShow->assertSee('SELESAI (DIAMBIL SENDIRI)');
+        $pickupShow->assertDontSee('+ Buat Surat Jalan');
+
+        // Check print page for pickup sale
+        $pickupPrint = $this->actingAs($this->superAdmin)->get(route('sales.print', $pickupSale));
+        $pickupPrint->assertStatus(200);
+        $pickupPrint->assertSee('FAKTUR PENJUALAN (DIAMBIL SENDIRI)');
+        $pickupPrint->assertSee('Diambil Langsung Pembeli');
+        $pickupPrint->assertDontSee('Sopir / Ekspedisi');
+
+        // Check DO create page does NOT include pickup sale in dropdown
+        $doCreate = $this->actingAs($this->superAdmin)->get(route('delivery-orders.create'));
+        $doCreate->assertStatus(200);
+        $doCreate->assertDontSee('Bpk. H. Syarif (Ambil Sendiri)');
+
+        // 2. Delivery Sale with driver and vehicle: Auto-creates DO, status pending_delivery
+        $deliveryRes = $this->actingAs($this->superAdmin)->post(route('sales.store'), [
+            'delivery_type' => 'delivery',
+            'buyer_name' => 'PT. Mega Steel Konstruksi',
+            'buyer_phone' => '08138888222',
+            'buyer_address' => 'Kawasan Industri Jababeka V',
+            'driver_name' => 'Pak Joko Widodo',
+            'driver_phone' => '0812345678',
+            'vehicle_number' => 'B 9123 KAS',
+            'vehicle_type' => 'Truk Fuso Engkel',
+            'transaction_date' => now()->toDateString(),
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_type_name' => 'Besi Super Tebal',
+                    'weight' => 200,
+                    'sell_price_per_kg' => 5200,
+                ],
+            ],
+        ]);
+        $deliveryRes->assertSessionHasNoErrors();
+
+        $deliverySale = \App\Models\SalesTransaction::where('buyer_name', 'PT. Mega Steel Konstruksi')->first();
+        $this->assertNotNull($deliverySale);
+        $this->assertEquals('delivery', $deliverySale->delivery_type);
+        $this->assertEquals('pending_delivery', $deliverySale->status);
+        $this->assertTrue($deliverySale->isDelivery());
+        $this->assertTrue($deliverySale->isPendingDelivery());
+        $this->assertNotNull($deliverySale->delivery_order_id);
+
+        $linkedDO = $deliverySale->deliveryOrder;
+        $this->assertNotNull($linkedDO);
+        $this->assertEquals('Pak Joko Widodo', $linkedDO->driver_name);
+        $this->assertEquals('B 9123 KAS', $linkedDO->vehicle_number);
+
+        // Check show page shows pending status and mark delivered action
+        $deliveryShow = $this->actingAs($this->superAdmin)->get(route('sales.show', $deliverySale));
+        $deliveryShow->assertStatus(200);
+        $deliveryShow->assertSee('MENUNGGU PENGIRIMAN');
+        $deliveryShow->assertSee('Konfirmasi Pengiriman Selesai');
+
+        // Confirm delivery from Delivery Order endpoint (bidirectional sync)
+        $markDeliveredRes = $this->actingAs($this->superAdmin)->post(route('delivery-orders.mark-delivered', $linkedDO));
+        $markDeliveredRes->assertSessionHasNoErrors();
+
+        $linkedDO->refresh();
+        $deliverySale->refresh();
+
+        $this->assertEquals('delivered', $linkedDO->status);
+        $this->assertEquals('completed', $deliverySale->status);
+        $this->assertTrue($deliverySale->isCompleted());
+
+        // 3. Standalone Delivery Sale marked completed directly from Sales endpoint
+        $deliverySale2 = app(\App\Services\SalesTransactionService::class)->createSale([
+            'delivery_type' => 'delivery',
+            'buyer_name' => 'Pabrik Peleburan Jaya',
+            'transaction_date' => now()->toDateString(),
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'weight' => 100,
+                    'sell_price_per_kg' => 5000,
+                ],
+            ],
+        ], $this->superAdmin);
+
+        $this->assertEquals('pending_delivery', $deliverySale2->status);
+
+        $saleMarkRes = $this->actingAs($this->superAdmin)->post(route('sales.mark-delivered', $deliverySale2));
+        $saleMarkRes->assertSessionHasNoErrors();
+        $deliverySale2->refresh();
+        $this->assertEquals('completed', $deliverySale2->status);
+    }
 }
 

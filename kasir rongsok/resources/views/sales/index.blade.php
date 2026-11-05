@@ -83,7 +83,7 @@
 
     <!-- Filter Bar -->
     <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-        <form method="GET" action="{{ route('sales.index') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+        <form method="GET" action="{{ route('sales.index') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Cari No. Nota / Pembeli</label>
                 <div class="relative">
@@ -93,6 +93,16 @@
                     <input type="text" name="search" value="{{ $search }}" placeholder="PJ-... atau PT..."
                            class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
                 </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Status Penjualan</label>
+                <select name="status" class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
+                    <option value="">-- Semua Status --</option>
+                    <option value="completed" {{ $status === 'completed' ? 'selected' : '' }}>Selesai (Completed)</option>
+                    <option value="pending_delivery" {{ $status === 'pending_delivery' ? 'selected' : '' }}>Menunggu Pengiriman</option>
+                    <option value="cancelled" {{ $status === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                </select>
             </div>
 
             <div>
@@ -109,9 +119,9 @@
 
             <div class="flex items-center gap-2">
                 <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs">
-                    Filter Penjualan
+                    Filter
                 </button>
-                <a href="{{ route('sales.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600">
+                <a href="{{ route('sales.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Reset Filter">
                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 </a>
             </div>
@@ -146,8 +156,24 @@
                             <td class="py-3 px-3 text-slate-500">
                                 {{ $sale->transaction_date->format('d/m/Y H:i') }}
                             </td>
-                            <td class="py-3 px-3 font-bold text-slate-900">
-                                {{ $sale->buyer_name }}
+                            <td class="py-3 px-3">
+                                <div class="font-bold text-slate-900">{{ $sale->buyer_name }}</div>
+                                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                    @if($sale->isPickup())
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                            Ambil Sendiri
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-blue-50 text-blue-800 border border-blue-200">
+                                            🚚 Dikirim
+                                        </span>
+                                        @if($sale->deliveryOrder)
+                                            <a href="{{ route('delivery-orders.show', $sale->deliveryOrder) }}" class="text-[10px] text-blue-600 font-mono hover:underline">
+                                                ({{ $sale->deliveryOrder->delivery_number }})
+                                            </a>
+                                        @endif
+                                    @endif
+                                </div>
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-medium text-slate-800">
                                 {{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg
@@ -166,6 +192,10 @@
                                     <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">
                                         Dibatalkan
                                     </span>
+                                @elseif($sale->isPendingDelivery())
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                        Menunggu Kirim
+                                    </span>
                                 @else
                                     <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
                                         Selesai
@@ -174,6 +204,14 @@
                             </td>
                             <td class="py-3 px-3 text-center">
                                 <div class="inline-flex items-center gap-1.5">
+                                    @if($sale->isPendingDelivery())
+                                        <form action="{{ route('sales.mark-delivered', $sale) }}" method="POST" class="inline" onsubmit="return confirm('Konfirmasi pengiriman penjualan ini telah selesai diterima pembeli?')">
+                                            @csrf
+                                            <button type="submit" class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" title="Konfirmasi Pengiriman Selesai">
+                                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                     <button type="button" 
                                             @click="openWaReceiptModal('sale', {{ $sale->id }}, '{{ $sale->buyer_phone }}')"
                                             class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" 

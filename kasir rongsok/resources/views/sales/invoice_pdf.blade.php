@@ -169,8 +169,11 @@
             </td>
             <td style="vertical-align: middle; text-align: right;">
                 <div class="doc-title">
-                    <div class="main">FAKTUR PENJUALAN PARTAI</div>
+                    <div class="main">{{ $sale->isPickup() ? 'FAKTUR PENJUALAN (DIAMBIL SENDIRI)' : 'FAKTUR PENJUALAN PARTAI' }}</div>
                     <div class="num">{{ $sale->invoice_number }}</div>
+                    <div style="font-size: 8px; color: {{ $sale->isPickup() ? '#047857' : '#1d4ed8' }}; font-weight: bold; margin-top: 2px;">
+                        {{ $sale->isPickup() ? 'DIAMBIL SENDIRI DI TEMPAT' : 'PENGIRIMAN ARMADA PERUSAHAAN' }}
+                    </div>
                 </div>
             </td>
         </tr>
@@ -199,9 +202,9 @@
                 <td class="meta-label">Metode Bayar</td>
                 <td>:</td>
                 <td class="meta-val">{{ $sale->paymentMethod?->name ?? 'Transfer Bank' }}</td>
-                <td class="meta-label">Alamat Kirim</td>
+                <td class="meta-label">{{ $sale->isPickup() ? 'Metode Serah' : 'Alamat Kirim' }}</td>
                 <td>:</td>
-                <td class="meta-val">{{ $sale->buyer_address ?: '-' }}</td>
+                <td class="meta-val">{{ $sale->isPickup() ? 'Diambil Sendiri di Depo/Gudang' : ($sale->buyer_address ?: '-') }}</td>
             </tr>
         </table>
     </div>
@@ -288,17 +291,21 @@
         <div class="sig-col">
             Diterima Oleh (Pembeli/Pabrik),<br>
             <div class="sig-space"></div>
-            <strong>( .................................................. )</strong>
+            <strong>( {{ $sale->buyer_name }} )</strong>
         </div>
         <div class="sig-col" style="float: right;">
-            Hormat Kami (Depo Pengirim),<br>
-            <div class="sig-space"></div>
+            Hormat Kami ({{ $sale->isPickup() ? 'Kasir / Pengelola' : 'Depo Pengirim' }}),<br>
+            <div class="sig-space" style="text-align: center;">
+                @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                    <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 42px; max-height: 44px; width: auto; max-width: 140px; margin: 0 auto; display: block;">
+                @endif
+            </div>
             <strong>( {{ $sale->user?->name ?? 'Admin / Kasir' }} )</strong>
         </div>
     </div>
 
     <div class="footer-note">
-        *Faktur ini merupakan bukti resmi pengiriman muatan rongsok partai besar. Dokumen sah terbitan sistem otomatis.
+        {{ $sale->isPickup() ? '*Faktur ini merupakan bukti resmi transaksi penjualan barang yang diambil langsung oleh pembeli di tempat/depo.' : '*Faktur ini merupakan bukti resmi pengiriman muatan rongsok partai besar. Dokumen sah terbitan sistem otomatis.' }}
     </div>
 
 </body>

@@ -228,10 +228,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/sales/{sale}/cancel', [SalesTransactionController::class, 'cancel'])
         ->name('sales.cancel')
         ->middleware('role:super_admin');
+    Route::post('/sales/{sale}/mark-delivered', [SalesTransactionController::class, 'markDelivered'])
+        ->name('sales.mark-delivered')
+        ->middleware('role:super_admin');
 
     // Surat Jalan / Delivery Orders (Pengiriman Armada Truk) - Hanya Owner
     Route::resource('delivery-orders', DeliveryOrderController::class)
         ->except(['edit', 'update'])
+        ->middleware('role:super_admin');
+    Route::post('/delivery-orders/{delivery_order}/mark-delivered', [DeliveryOrderController::class, 'markDelivered'])
+        ->name('delivery-orders.mark-delivered')
         ->middleware('role:super_admin');
     Route::get('/delivery-orders/{delivery_order}/print', [DeliveryOrderController::class, 'print'])
         ->name('delivery-orders.print')

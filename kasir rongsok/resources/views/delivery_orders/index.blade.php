@@ -156,6 +156,14 @@
 
                             <td class="py-3 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
+                                    @if($order->status !== 'delivered')
+                                        <form action="{{ route('delivery-orders.mark-delivered', $order) }}" method="POST" class="inline" onsubmit="return confirm('Konfirmasi bahwa surat jalan ini telah sampai di tujuan / selesai?')">
+                                            @csrf
+                                            <button type="submit" class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" title="Tandai Sampai di Tujuan (Selesai)">
+                                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                     <button type="button" 
                                             @click="openWaPdfModal({
                                                 title: 'Kirim Surat Jalan Pengiriman PDF via WhatsApp',

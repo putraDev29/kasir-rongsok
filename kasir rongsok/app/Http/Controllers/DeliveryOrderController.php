@@ -60,7 +60,12 @@ class DeliveryOrderController extends Controller
         }
 
         $scrapItems = ScrapItem::where('is_active', true)->orderBy('name')->get();
-        $recentSales = SalesTransaction::where('status', 'completed')->latest()->take(10)->get();
+        $recentSales = SalesTransaction::where('delivery_type', SalesTransaction::DELIVERY_TYPE_DELIVERY)
+            ->whereNull('delivery_order_id')
+            ->where('status', '!=', SalesTransaction::STATUS_CANCELLED)
+            ->latest()
+            ->take(15)
+            ->get();
 
         return view('delivery_orders.create', compact('scrapItems', 'recentSales', 'salesTx'));
     }
@@ -152,6 +157,16 @@ class DeliveryOrderController extends Controller
                     subject: $order,
                     description: "Membuat Surat Jalan {$order->delivery_number} tujuan {$order->recipient_name} dengan armada {$order->vehicle_number}"
                 );
+
+                if (!empty($validated['sales_transaction_id'])) {
+                    $saleTx = SalesTransaction::find($validated['sales_transaction_id']);
+                    if ($saleTx) {
+                        $saleTx->update([
+                            'delivery_order_id' => $order->id,
+                            'delivery_type' => SalesTransaction::DELIVERY_TYPE_DELIVERY,
+                        ]);
+                    }
+                }
 
                 return $order;
             });
@@ -308,6 +323,25 @@ class DeliveryOrderController extends Controller
         }
 
         return back()->with($res['success'] ? 'success' : 'error', $res['message'] ?? 'Surat Jalan berhasil dikirim via WhatsApp.');
+    }
+
+    public function markDelivered(Request $request, DeliveryOrder $deliveryOrder): RedirectResponse
+    {
+        $deliveryOrder->update(['status' => 'delivered']);
+
+        if ($deliveryOrder->salesTransaction) {
+            $deliveryOrder->salesTransaction->update([
+                'status' => SalesTransaction::STATUS_COMPLETED,
+            ]);
+        }
+
+        ActivityLog::record(
+            action: 'delivery_order_delivered',
+            subject: $deliveryOrder,
+            description: "Surat Jalan {$deliveryOrder->delivery_number} tujuan {$deliveryOrder->recipient_name} telah sampai dan selesai dibongkar."
+        );
+
+        return back()->with('success', "Surat Jalan {$deliveryOrder->delivery_number} berhasil dikonfirmasi sampai di tujuan / selesai! Status transaksi penjualan otomatis resmi SELESAI.");
     }
 
     public function destroy(DeliveryOrder $deliveryOrder): RedirectResponse

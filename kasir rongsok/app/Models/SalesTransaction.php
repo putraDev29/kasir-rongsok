@@ -13,15 +13,22 @@ class SalesTransaction extends Model
     use HasFactory, SoftDeletes;
 
     public const STATUS_COMPLETED = 'completed';
+    public const STATUS_PENDING_DELIVERY = 'pending_delivery';
     public const STATUS_CANCELLED = 'cancelled';
+
+    public const DELIVERY_TYPE_PICKUP = 'pickup';
+    public const DELIVERY_TYPE_DELIVERY = 'delivery';
 
     protected $fillable = [
         'invoice_number',
         'buyer_name',
         'buyer_phone',
         'buyer_address',
+        'delivery_type',
+        'delivery_order_id',
         'user_id',
         'payment_method_id',
+        'bank_info',
         'transaction_date',
         'total_weight',
         'subtotal_amount',
@@ -71,9 +78,34 @@ class SalesTransaction extends Model
         return $this->hasMany(SalesTransactionItem::class);
     }
 
+    public function deliveryOrder(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryOrder::class, 'delivery_order_id');
+    }
+
     public function isCancelled(): bool
     {
         return $this->status === self::STATUS_CANCELLED;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === self::STATUS_COMPLETED;
+    }
+
+    public function isPendingDelivery(): bool
+    {
+        return $this->status === self::STATUS_PENDING_DELIVERY;
+    }
+
+    public function isPickup(): bool
+    {
+        return ($this->delivery_type ?? self::DELIVERY_TYPE_PICKUP) === self::DELIVERY_TYPE_PICKUP;
+    }
+
+    public function isDelivery(): bool
+    {
+        return ($this->delivery_type ?? self::DELIVERY_TYPE_PICKUP) === self::DELIVERY_TYPE_DELIVERY;
     }
 
     public function getCustomerNameAttribute(): ?string

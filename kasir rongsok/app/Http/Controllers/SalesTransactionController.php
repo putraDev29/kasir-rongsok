@@ -148,6 +148,30 @@ class SalesTransactionController extends Controller
     }
 
     /**
+     * Mark sales delivery as completed.
+     */
+    public function markDelivered(Request $request, SalesTransaction $sale): RedirectResponse
+    {
+        if ($sale->isCancelled()) {
+            return back()->with('error', 'Transaksi yang dibatalkan tidak dapat diselesaikan pengirimannya.');
+        }
+
+        $sale->update(['status' => SalesTransaction::STATUS_COMPLETED]);
+
+        if ($sale->deliveryOrder) {
+            $sale->deliveryOrder->update(['status' => 'delivered']);
+        }
+
+        \App\Models\ActivityLog::record(
+            action: 'sale_delivery_completed',
+            subject: $sale,
+            description: "Pengiriman transaksi penjualan {$sale->invoice_number} ke {$sale->buyer_name} berhasil diselesaikan."
+        );
+
+        return back()->with('success', "Pengiriman penjualan {$sale->invoice_number} berhasil dikonfirmasi selesai! Status transaksi resmi SELESAI.");
+    }
+
+    /**
      * Export Sales to Excel (Task 18).
      */
     public function exportExcel(Request $request)

@@ -12,9 +12,15 @@
             <div>
                 <div class="flex items-center gap-2">
                     <h2 class="text-xl font-bold text-slate-900 font-mono">{{ $deliveryOrder->delivery_number }}</h2>
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 text-blue-800 uppercase">
-                        {{ $deliveryOrder->status }}
-                    </span>
+                    @if($deliveryOrder->status === 'delivered')
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            ✓ SAMPAI DI PABRIK (SELESAI)
+                        </span>
+                    @else
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 text-blue-800 border border-blue-300">
+                            🚚 DALAM PENGIRIMAN
+                        </span>
+                    @endif
                 </div>
                 <p class="text-xs text-slate-500 mt-0.5">
                     Tanggal Pengiriman: {{ $deliveryOrder->delivery_date->format('d/m/Y') }} | Dibuat oleh: <strong class="text-slate-700">{{ $deliveryOrder->user?->name ?? 'Admin' }}</strong>
@@ -23,6 +29,17 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5">
+            @if($deliveryOrder->status !== 'delivered')
+                <form action="{{ route('delivery-orders.mark-delivered', $deliveryOrder) }}" method="POST" onsubmit="return confirm('Konfirmasi bahwa surat jalan ini telah sampai di pabrik tujuan dan muatan selesai dibongkar? Status transaksi penjualan terkait otomatis menjadi SELESAI.')">
+                    @csrf
+                    <button type="submit" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+                            title="Konfirmasi Pengiriman Selesai / Sampai di Tujuan">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <span>Konfirmasi Sampai di Tujuan</span>
+                    </button>
+                </form>
+            @endif
+
             <button type="button" 
                     @click="openWaPdfModal({
                         title: 'Kirim Surat Jalan Pengiriman PDF via WhatsApp',

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ActivityLog;
 use App\Models\DeliveryOrder;
+use App\Models\DeliveryOrderItem;
 use App\Models\SalesTransaction;
 use App\Models\SalesTransactionItem;
 use App\Models\ScrapItem;
@@ -159,13 +160,32 @@ class SalesTransactionService
                 $bankInfo = implode(' - ', $parts);
             }
 
+            $deliveryType = $data['delivery_type'] ?? (isset($data['delivery_order_id']) ? SalesTransaction::DELIVERY_TYPE_DELIVERY : SalesTransaction::DELIVERY_TYPE_PICKUP);
             $deliveryOrderId = $data['delivery_order_id'] ?? null;
+
+            // Determine status:
+            // - Diambil Sendiri: status langsung selesai (completed). Tanpa surat jalan.
+            // - Perlu Pengiriman: status pending_delivery sampai pengiriman selesai.
+            if ($deliveryType === SalesTransaction::DELIVERY_TYPE_PICKUP) {
+                $status = SalesTransaction::STATUS_COMPLETED;
+                $deliveryOrderId = null;
+            } else {
+                if ($deliveryOrderId) {
+                    $existingDo = DeliveryOrder::find($deliveryOrderId);
+                    $status = ($existingDo && $existingDo->status === 'delivered')
+                        ? SalesTransaction::STATUS_COMPLETED
+                        : SalesTransaction::STATUS_PENDING_DELIVERY;
+                } else {
+                    $status = SalesTransaction::STATUS_PENDING_DELIVERY;
+                }
+            }
 
             $transaction = SalesTransaction::create([
                 'invoice_number' => $invoiceNumber,
                 'buyer_name' => $buyerName,
                 'buyer_phone' => $data['buyer_phone'] ?? null,
                 'buyer_address' => $data['buyer_address'] ?? null,
+                'delivery_type' => $deliveryType,
                 'delivery_order_id' => $deliveryOrderId,
                 'user_id' => $user->id,
                 'payment_method_id' => $data['payment_method_id'] ?? null,
@@ -178,17 +198,63 @@ class SalesTransactionService
                 'estimated_cogs' => $totalEstimatedCogs,
                 'estimated_profit' => $estimatedProfit,
                 'payment_status' => $data['payment_status'] ?? 'paid',
-                'status' => SalesTransaction::STATUS_COMPLETED,
+                'status' => $status,
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            // Sync with Delivery Order if linked (Task 8)
-            if ($deliveryOrderId) {
+            // Bila dengan pengiriman dan data armada / supir diisi langsung di form, otomatis buat Surat Jalan
+            if ($deliveryType === SalesTransaction::DELIVERY_TYPE_DELIVERY && !$deliveryOrderId && (!empty($data['driver_name']) || !empty($data['vehicle_number']))) {
+                $doDate = $date;
+                $deliveryNumber = FormatHelper::generateDeliveryOrderNumber($doDate);
+                $totalPackages = 0;
+                foreach ($data['items'] as $it) {
+                    $totalPackages += (int) ($it['package_qty'] ?? 0);
+                }
+
+                $createdDo = DeliveryOrder::create([
+                    'delivery_number' => $deliveryNumber,
+                    'sales_transaction_id' => $transaction->id,
+                    'delivery_date' => $doDate,
+                    'recipient_name' => $buyerName,
+                    'recipient_address' => $data['buyer_address'] ?? null,
+                    'recipient_phone' => $data['buyer_phone'] ?? null,
+                    'driver_name' => $data['driver_name'] ?: 'Sopir Pengirim',
+                    'driver_phone' => $data['driver_phone'] ?? null,
+                    'vehicle_number' => strtoupper($data['vehicle_number'] ?: 'KENDARAAN'),
+                    'vehicle_type' => $data['vehicle_type'] ?? 'Truk',
+                    'total_weight' => $totalWeight,
+                    'total_packages' => $totalPackages,
+                    'status' => 'sent',
+                    'notes' => $data['notes'] ?? null,
+                    'user_id' => $user->id,
+                ]);
+
+                foreach ($data['items'] as $it) {
+                    $scItem = ScrapItem::find($it['scrap_item_id']);
+                    $w = (float) ($it['weight'] ?? 0);
+                    $pr = (float) ($it['sell_price_per_kg'] ?? 0);
+                    DeliveryOrderItem::create([
+                        'delivery_order_id' => $createdDo->id,
+                        'scrap_item_id' => $it['scrap_item_id'],
+                        'item_name' => $scItem?->name ?? 'Barang Rongsok',
+                        'unit_type' => $it['unit_type'] ?? 'kg',
+                        'item_type_name' => $it['item_type_name'] ?? null,
+                        'quantity' => $it['quantity'] ?? 1,
+                        'weight' => $w,
+                        'package_qty' => (int) ($it['package_qty'] ?? 0),
+                        'price_per_kg' => $pr,
+                        'subtotal' => $pr * $w,
+                        'notes' => $it['notes'] ?? null,
+                    ]);
+                }
+
+                $transaction->update(['delivery_order_id' => $createdDo->id]);
+            } elseif ($deliveryOrderId) {
+                // Sync with existing Delivery Order if linked
                 $do = DeliveryOrder::find($deliveryOrderId);
                 if ($do) {
                     $do->update([
                         'sales_transaction_id' => $transaction->id,
-                        'status' => 'completed',
                     ]);
                 }
             }
