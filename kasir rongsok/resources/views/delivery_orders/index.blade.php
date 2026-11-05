@@ -174,7 +174,7 @@
                                     </button>
 
                                     <a href="{{ route('delivery-orders.pdf', $order) }}" target="_blank"
-                                       class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50" title="Unduh PDF Surat Jalan (Resmi)">
+                                       class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50" title="Preview & Unduh PDF Surat Jalan (2 Rangkap)">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
                                     </a>
 
@@ -192,9 +192,9 @@
 
                                     <a href="{{ route('delivery-orders.print', $order) }}" target="_blank"
                                        class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] flex items-center gap-1"
-                                       title="Cetak PDF HVS Landscape Bagi 2">
+                                       title="Preview & Cetak HVS Landscape Bagi 2 (2 Rangkap)">
                                         <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                                        <span>PDF</span>
+                                        <span>Print</span>
                                     </a>
 
                                     <a href="{{ route('delivery-orders.show', $order) }}" 

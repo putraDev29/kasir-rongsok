@@ -127,6 +127,25 @@
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
+        .master-row {
+            background-color: #f8fafc;
+        }
+        .variant-subrow td {
+            background-color: #ffffff;
+            font-size: 7.5px;
+            color: #334155;
+            padding: 2px 5px;
+            border-top: 1px dashed #cbd5e1;
+        }
+        .variant-pill {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border: 0.5px solid #bfdbfe;
+            padding: 0.5px 3px;
+            border-radius: 2px;
+            font-weight: bold;
+            font-size: 7px;
+        }
         .total-row {
             background-color: #f8fafc;
             font-weight: bold;
@@ -288,26 +307,65 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($deliveryOrder->items as $idx => $item)
-                    <tr style="{{ $idx % 2 === 1 ? 'background-color: #f8fafc;' : '' }}">
+                @foreach($deliveryOrder->grouped_master_items as $idx => $master)
+                    <!-- Baris Master Barang (Akumulasi Total) -->
+                    <tr class="{{ $master->has_variants ? 'master-row' : ($idx % 2 === 1 ? 'bg-alt' : '') }}">
                         <td class="text-center">{{ $idx + 1 }}</td>
-                        <td style="font-family: monospace;">{{ $item->scrapItem?->code ?? '-' }}</td>
+                        <td style="font-family: monospace;">{{ $master->item_code }}</td>
                         <td>
-                            <strong>{{ $item->item_name }}</strong>
-                            @if($item->item_type_name)
-                                <span style="color: #64748b; font-size: 7px;">({{ $item->item_type_name }})</span>
+                            <strong>{{ $master->item_name }}</strong>
+                            @if($master->has_variants)
+                                <span style="font-size: 7px; color: #2563eb; margin-left: 2px;">[Total Master: {{ $master->items->count() }} Varian]</span>
                             @endif
                         </td>
-                        <td class="text-right" style="font-family: monospace;">
-                            {{ $item->package_qty > 0 ? $item->package_qty . ' Koli' : ($item->quantity > 0 ? $item->quantity . ' ' . $item->unit_type : '-') }}
+                        <td class="text-right" style="font-family: monospace; font-weight: bold;">
+                            {{ $master->total_packages > 0 ? $master->total_packages . ' Koli' : '-' }}
                         </td>
                         <td class="text-right" style="font-weight: bold; font-family: monospace;">
-                            {{ number_format($item->weight, 2, ',', '.') }} kg
+                            {{ number_format($master->total_weight, 2, ',', '.') }} kg
                         </td>
                         <td style="font-size: 7.5px; color: #475569;">
-                            {{ $item->notes ?: '-' }}
+                            @if(!$master->has_variants && $master->items->first()->notes)
+                                {{ $master->items->first()->notes }}
+                            @else
+                                -
+                            @endif
                         </td>
                     </tr>
+
+                    <!-- Rincian Jenis Varian (Bila Ada Varian) -->
+                    @if($master->has_variants)
+                        @foreach($master->items as $vItem)
+                            <tr class="variant-subrow">
+                                <td class="text-center" style="color: #64748b;">↳</td>
+                                <td style="color: #94a3b8; font-size: 7px;">{{ $vItem->scrapItem?->code ?? '-' }}</td>
+                                <td style="padding-left: 12px;">
+                                    <span class="variant-pill">Varian: {{ $vItem->item_type_name ?: 'Standar' }}</span>
+                                    @if($vItem->effective_price > 0)
+                                        <span style="color: #047857; font-size: 7px; margin-left: 3px;">
+                                            (@ Rp {{ number_format($vItem->effective_price, 0, ',', '.') }}/kg)
+                                        </span>
+                                    @endif
+                                    @if($vItem->notes)
+                                        <span style="color: #64748b; font-size: 7px; font-style: italic; margin-left: 2px;">({{ $vItem->notes }})</span>
+                                    @endif
+                                </td>
+                                <td class="text-right" style="font-family: monospace; color: #334155;">
+                                    {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
+                                </td>
+                                <td class="text-right" style="font-family: monospace; color: #0f172a;">
+                                    {{ number_format($vItem->weight, 2, ',', '.') }} kg
+                                </td>
+                                <td style="font-size: 7px; color: #475569;">
+                                    @if($vItem->effective_price > 0)
+                                        Rp {{ number_format($vItem->effective_subtotal, 0, ',', '.') }}
+                                    @else
+                                        {{ $vItem->notes ?: '-' }}
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    @endif
                 @endforeach
             </tbody>
             <tfoot>

@@ -85,5 +85,40 @@ class SalesTransaction extends Model
     {
         return $this->buyer_phone;
     }
-}
 
+    /**
+     * Group sales transaction items by master item.
+     * Totals are aggregated on the master item, while variant details (jenis varian, jumlah, harga)
+     * are preserved in the items sub-collection.
+     */
+    public function getGroupedMasterItemsAttribute()
+    {
+        return $this->items->groupBy(function ($item) {
+            return $item->scrap_item_id ? 'id_' . $item->scrap_item_id : 'name_' . $item->item_name_snapshot;
+        })->map(function ($items) {
+            $first = $items->first();
+            $totalWeight = (float) $items->sum('weight');
+            $totalQuantity = (float) $items->sum('quantity');
+            $totalSubtotal = (float) $items->sum('subtotal');
+            $totalCogs = (float) $items->sum('cogs_subtotal');
+            $totalProfit = (float) $items->sum('profit_subtotal');
+
+            $hasVariants = $items->contains(fn($it) => !empty(trim($it->item_type_name ?? ''))) || $items->count() > 1;
+
+            return (object) [
+                'scrap_item_id' => $first->scrap_item_id,
+                'item_code' => $first->item_code_snapshot ?: ($first->scrapItem?->code ?? '-'),
+                'item_name' => $first->item_name_snapshot,
+                'unit_type' => $first->unit_type ?? 'kg',
+                'total_weight' => $totalWeight,
+                'total_quantity' => $totalQuantity,
+                'total_subtotal' => $totalSubtotal,
+                'total_cogs' => $totalCogs,
+                'total_profit' => $totalProfit,
+                'avg_sell_price' => $totalWeight > 0 ? ($totalSubtotal / $totalWeight) : ($totalQuantity > 0 ? ($totalSubtotal / $totalQuantity) : (float) $first->sell_price_per_kg),
+                'has_variants' => $hasVariants,
+                'items' => $items,
+            ];
+        })->values();
+    }
+}

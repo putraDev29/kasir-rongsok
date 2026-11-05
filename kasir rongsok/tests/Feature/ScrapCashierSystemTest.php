@@ -837,5 +837,141 @@ class ScrapCashierSystemTest extends TestCase
         // Restore original setting
         BusinessSetting::set('commodity_term', $oldTerm);
     }
+
+    public function test_sales_and_delivery_orders_show_variant_breakdown_with_master_total_aggregation_and_preview(): void
+    {
+        $salesService = app(SalesTransactionService::class);
+        $this->besiItem->refresh();
+        $this->besiItem->stockBalance->update(['current_stock' => 500.00]);
+        $this->besiItem->refresh();
+
+        // 1. Create Sale with 2 variants of same master item
+        $sale = $salesService->createSale([
+            'buyer_name' => 'PT. Pelat Baja Nusantara',
+            'payment_method_id' => $this->cashMethod->id,
+            'transaction_date' => now()->toDateString(),
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_type_name' => 'Besi Super Tebal',
+                    'weight' => 100,
+                    'sell_price_per_kg' => 5000,
+                ],
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_type_name' => 'Besi Campur Tipis',
+                    'weight' => 50,
+                    'sell_price_per_kg' => 4000,
+                ],
+            ],
+        ], $this->superAdmin);
+
+        $this->assertEquals(150, (float) $sale->total_weight);
+        $this->assertEquals(700000, (float) $sale->final_amount);
+
+        // Grouped master items check
+        $grouped = $sale->grouped_master_items;
+        $this->assertCount(1, $grouped);
+        $this->assertEquals(150, $grouped->first()->total_weight);
+        $this->assertEquals(700000, $grouped->first()->total_subtotal);
+        $this->assertTrue($grouped->first()->has_variants);
+        $this->assertCount(2, $grouped->first()->items);
+
+        // 2. Test Sales Show page has master item total and variant breakdown
+        $showRes = $this->actingAs($this->superAdmin)->get(route('sales.show', $sale));
+        $showRes->assertStatus(200);
+        $showRes->assertSee('150.00 kg');
+        $showRes->assertSee('700.000');
+        $showRes->assertSee('Besi Super Tebal');
+        $showRes->assertSee('100.00 kg');
+        $showRes->assertSee('5.000');
+        $showRes->assertSee('Besi Campur Tipis');
+        $showRes->assertSee('50.00 kg');
+        $showRes->assertSee('4.000');
+
+        // 3. Test Sales Print view has variant breakdown and preview toolbar
+        $printRes = $this->actingAs($this->superAdmin)->get(route('sales.print', $sale));
+        $printRes->assertStatus(200);
+        $printRes->assertSee('Besi Super Tebal');
+        $printRes->assertSee('Besi Campur Tipis');
+        $printRes->assertSee('Unduh PDF');
+        $printRes->assertSee('Cetak Dokumen');
+
+        // 4. Test Sales PDF preview (inline stream)
+        $pdfRes = $this->actingAs($this->superAdmin)->get(route('sales.pdf', $sale));
+        $pdfRes->assertStatus(200);
+        $this->assertEquals('application/pdf', $pdfRes->headers->get('Content-Type'));
+
+        // 5. Test Delivery Order with variants
+        $doRes = $this->actingAs($this->superAdmin)->post(route('delivery-orders.store'), [
+            'sales_transaction_id' => $sale->id,
+            'delivery_date' => now()->toDateString(),
+            'recipient_name' => 'PT. Pelat Baja Nusantara',
+            'driver_name' => 'Sopir Slamet',
+            'vehicle_number' => 'B 9999 XYZ',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_name' => $this->besiItem->name,
+                    'item_type_name' => 'Besi Super Tebal',
+                    'weight' => 100,
+                    'package_qty' => 5,
+                    'price_per_kg' => 5000,
+                ],
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_name' => $this->besiItem->name,
+                    'item_type_name' => 'Besi Campur Tipis',
+                    'weight' => 50,
+                    'package_qty' => 3,
+                    'price_per_kg' => 4000,
+                ],
+            ],
+        ]);
+        $doRes->assertSessionHasNoErrors();
+
+        $deliveryOrder = \App\Models\DeliveryOrder::where('recipient_name', 'PT. Pelat Baja Nusantara')->first();
+        $this->assertNotNull($deliveryOrder);
+        $this->assertEquals(150, (float) $deliveryOrder->total_weight);
+        $this->assertEquals(8, (int) $deliveryOrder->total_packages);
+
+        // DO Show
+        $doShowRes = $this->actingAs($this->superAdmin)->get(route('delivery-orders.show', $deliveryOrder));
+        $doShowRes->assertStatus(200);
+        $doShowRes->assertSee('Besi Super Tebal');
+        $doShowRes->assertSee('Besi Campur Tipis');
+        $doShowRes->assertSee('150.00 kg');
+
+        // DO Print
+        $doPrintRes = $this->actingAs($this->superAdmin)->get(route('delivery-orders.print', $deliveryOrder));
+        $doPrintRes->assertStatus(200);
+        $doPrintRes->assertSee('Besi Super Tebal');
+        $doPrintRes->assertSee('Besi Campur Tipis');
+        $doPrintRes->assertSee('Unduh PDF');
+
+        // DO PDF Preview
+        $doPdfRes = $this->actingAs($this->superAdmin)->get(route('delivery-orders.pdf', $deliveryOrder));
+        $doPdfRes->assertStatus(200);
+        $this->assertEquals('application/pdf', $doPdfRes->headers->get('Content-Type'));
+
+        // 6. Test Reports Sales displays variant details
+        $reportRes = $this->actingAs($this->superAdmin)->get(route('reports.sales', [
+            'start_date' => now()->startOfMonth()->toDateString(),
+            'end_date' => now()->toDateString(),
+        ]));
+        $reportRes->assertStatus(200);
+        $reportRes->assertSee('Besi Super Tebal');
+        $reportRes->assertSee('Besi Campur Tipis');
+
+        // 7. Test Reports Sales Print displays variant details
+        $reportPrintRes = $this->actingAs($this->superAdmin)->get(route('reports.sales', [
+            'start_date' => now()->startOfMonth()->toDateString(),
+            'end_date' => now()->toDateString(),
+            'format' => 'print',
+        ]));
+        $reportPrintRes->assertStatus(200);
+        $reportPrintRes->assertSee('Besi Super Tebal');
+        $reportPrintRes->assertSee('Besi Campur Tipis');
+    }
 }
 

@@ -91,6 +91,24 @@
         }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
+        .master-row {
+            background-color: #f1f5f9;
+        }
+        .variant-row td {
+            background-color: #f8fafc;
+            font-size: 8px;
+            color: #334155;
+            padding: 3px 6px;
+            border-top: 1px dashed #cbd5e1;
+        }
+        .variant-badge {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-weight: bold;
+            font-size: 7.5px;
+        }
         .total-box {
             margin-top: 10px;
             float: right;
@@ -201,15 +219,46 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($sale->items as $idx => $it)
-                <tr style="{{ $idx % 2 === 1 ? 'background-color: #f8fafc;' : '' }}">
+            @foreach($sale->grouped_master_items as $idx => $master)
+                <!-- Master Item (Total Akumulasi Master) -->
+                <tr class="{{ $master->has_variants ? 'master-row' : ($idx % 2 === 1 ? 'bg-alt' : '') }}">
                     <td class="text-center">{{ $idx + 1 }}</td>
-                    <td><code>{{ $it->item_code_snapshot ?: ($it->scrapItem?->code ?? '-') }}</code></td>
-                    <td><strong>{{ $it->item_name_snapshot }}</strong></td>
-                    <td class="text-right" style="font-weight: bold;">{{ number_format($it->weight, 2, ',', '.') }} kg</td>
-                    <td class="text-right">Rp {{ number_format($it->sell_price_per_kg, 0, ',', '.') }}</td>
-                    <td class="text-right" style="font-weight: bold;">Rp {{ number_format($it->subtotal, 0, ',', '.') }}</td>
+                    <td><code>{{ $master->item_code }}</code></td>
+                    <td>
+                        <strong>{{ $master->item_name }}</strong>
+                        @if($master->has_variants)
+                            <span style="font-size: 7.5px; color: #2563eb; font-weight: normal; margin-left: 3px;">[Total Master: {{ $master->items->count() }} Varian]</span>
+                        @endif
+                    </td>
+                    <td class="text-right" style="font-weight: bold;">{{ number_format($master->total_weight, 2, ',', '.') }} kg</td>
+                    <td class="text-right">
+                        @if($master->has_variants)
+                            <span style="font-size: 7.5px; color: #64748b;">Rerata Rp {{ number_format($master->avg_sell_price, 0, ',', '.') }}</span>
+                        @else
+                            Rp {{ number_format($master->items->first()->sell_price_per_kg, 0, ',', '.') }}
+                        @endif
+                    </td>
+                    <td class="text-right" style="font-weight: bold;">Rp {{ number_format($master->total_subtotal, 0, ',', '.') }}</td>
                 </tr>
+
+                <!-- Rincian Jenis Varian (Bila Ada Varian) -->
+                @if($master->has_variants)
+                    @foreach($master->items as $vIt)
+                        <tr class="variant-row">
+                            <td class="text-center" style="color: #64748b;">↳</td>
+                            <td style="color: #94a3b8; font-size: 7.5px;">{{ $vIt->item_code_snapshot ?: '-' }}</td>
+                            <td style="padding-left: 14px;">
+                                <span class="variant-badge">Varian: {{ $vIt->item_type_name ?: 'Standar' }}</span>
+                                @if($vIt->notes)
+                                    <span style="color: #64748b; font-size: 7px; font-style: italic;">({{ $vIt->notes }})</span>
+                                @endif
+                            </td>
+                            <td class="text-right" style="color: #334155;">{{ number_format($vIt->weight, 2, ',', '.') }} kg</td>
+                            <td class="text-right" style="color: #334155;">Rp {{ number_format($vIt->sell_price_per_kg, 0, ',', '.') }}</td>
+                            <td class="text-right" style="font-weight: bold; color: #1e293b;">Rp {{ number_format($vIt->subtotal, 0, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
+                @endif
             @endforeach
         </tbody>
     </table>

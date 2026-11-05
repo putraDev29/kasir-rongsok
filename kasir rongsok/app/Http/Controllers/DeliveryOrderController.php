@@ -86,6 +86,8 @@ class DeliveryOrderController extends Controller
             'items.*.quantity' => 'nullable|numeric|min:0.01',
             'items.*.weight' => 'nullable|numeric|min:0',
             'items.*.package_qty' => 'nullable|integer|min:0',
+            'items.*.price_per_kg' => 'nullable|numeric|min:0',
+            'items.*.subtotal' => 'nullable|numeric|min:0',
             'items.*.notes' => 'nullable|string|max:255',
         ], [
             'recipient_name.required' => 'Nama penerima / pabrik tujuan pengiriman wajib diisi.',
@@ -126,6 +128,10 @@ class DeliveryOrderController extends Controller
                 ]);
 
                 foreach ($validated['items'] as $item) {
+                    $weight = (float) ($item['weight'] ?? 0);
+                    $pricePerKg = (float) ($item['price_per_kg'] ?? 0);
+                    $subtotal = (float) ($item['subtotal'] ?? ($pricePerKg * $weight));
+
                     DeliveryOrderItem::create([
                         'delivery_order_id' => $order->id,
                         'scrap_item_id' => $item['scrap_item_id'] ?? null,
@@ -133,8 +139,10 @@ class DeliveryOrderController extends Controller
                         'unit_type' => $item['unit_type'] ?? 'kg',
                         'item_type_name' => $item['item_type_name'] ?? null,
                         'quantity' => $item['quantity'] ?? 1,
-                        'weight' => (float) ($item['weight'] ?? 0),
+                        'weight' => $weight,
                         'package_qty' => (int) ($item['package_qty'] ?? 0),
+                        'price_per_kg' => $pricePerKg,
+                        'subtotal' => $subtotal,
                         'notes' => $item['notes'] ?? null,
                     ]);
                 }
@@ -224,7 +232,7 @@ class DeliveryOrderController extends Controller
         $totalKg = number_format($deliveryOrder->total_weight, 2, ',', '.');
         $dateStr = $deliveryOrder->delivery_date->format('d/m/Y');
 
-        $msg = "*SURAT JALAN PENGIRIMAN RONGSOK*\n";
+        $msg = "*SURAT JALAN PENGIRIMAN *\n";
         $msg .= "🏢 *{$companyName}*\n";
         $msg .= "----------------------------------------\n";
         $msg .= "🔖 No. SJ     : *{$deliveryOrder->delivery_number}*\n";

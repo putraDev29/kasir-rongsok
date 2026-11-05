@@ -37,9 +37,9 @@
             <div class="flex flex-wrap items-center gap-2">
                 <a href="{{ route('sales.batch-pdf', request()->all()) }}" target="_blank"
                    class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1 shadow-xs transition-colors"
-                   title="Unduh Berkas PDF Rekap Penjualan Partai">
+                   title="Preview & Unduh Berkas PDF Rekap Penjualan Partai">
                     <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-600"></i>
-                    <span>PDF</span>
+                    <span>Preview Rekap PDF</span>
                 </a>
 
                 <a href="{{ route('sales.excel', request()->all()) }}" 
@@ -181,14 +181,14 @@
                                         <x-whatsapp-icon class="w-4 h-4" />
                                     </button>
                                     <a href="{{ route('sales.pdf', $sale) }}" target="_blank"
-                                       class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50" title="Unduh Faktur PDF">
+                                       class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50" title="Preview & Unduh Faktur PDF">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
                                     </a>
-                                    <a href="{{ route('sales.show', $sale) }}" title="Rincian"
+                                    <a href="{{ route('sales.show', $sale) }}" title="Lihat Rincian"
                                        class="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </a>
-                                    <a href="{{ route('sales.print', $sale) }}" target="_blank" title="Cetak Surat Jalan / Invoice"
+                                    <a href="{{ route('sales.print', $sale) }}" target="_blank" title="Preview & Cetak Faktur"
                                        class="p-1 rounded text-blue-600 hover:text-blue-800 hover:bg-blue-50">
                                         <i data-lucide="printer" class="w-4 h-4"></i>
                                     </a>

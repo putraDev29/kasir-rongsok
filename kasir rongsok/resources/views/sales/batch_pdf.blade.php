@@ -50,6 +50,20 @@
                         @if($t->buyer_phone)
                             <span style="color: #64748b; font-size: 8.5px;">({{ $t->buyer_phone }})</span>
                         @endif
+                        <div style="margin-top: 2px; font-size: 8px; color: #475569;">
+                            @foreach($t->grouped_master_items as $gm)
+                                <div>
+                                    • <strong>{{ $gm->item_name }}</strong>: {{ number_format($gm->total_weight, 2, ',', '.') }} kg
+                                    @if($gm->has_variants)
+                                        <div style="padding-left: 6px; color: #1e40af;">
+                                            @foreach($gm->items as $vi)
+                                                ↳ Varian: {{ $vi->item_type_name ?: 'Standar' }} ({{ number_format($vi->weight, 2, ',', '.') }} kg @ Rp {{ number_format($vi->sell_price_per_kg, 0, ',', '.') }})
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
                     </td>
                     <td class="text-right font-mono">{{ \App\Services\FormatHelper::weight($t->total_weight) }} kg</td>
                     <td class="text-right font-mono font-bold">{{ \App\Services\FormatHelper::rupiah($t->final_amount) }}</td>

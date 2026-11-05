@@ -163,6 +163,8 @@
                             <!-- Pilih Dari Master (Searchable Combobox) -->
                             <div class="w-48 sm:w-60 shrink-0 relative" @click.outside="row.dropdown_open = false">
                                 <input type="hidden" :name="'items['+idx+'][scrap_item_id]'" :value="row.scrap_item_id">
+                                <input type="hidden" :name="'items['+idx+'][price_per_kg]'" :value="row.price_per_kg || 0">
+                                <input type="hidden" :name="'items['+idx+'][subtotal]'" :value="(row.price_per_kg && row.weight) ? (row.price_per_kg * row.weight) : 0">
 
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -369,12 +371,14 @@ function deliveryOrderForm() {
                         item_type_name: '{{ addslashes($si->item_type_name ?? "") }}',
                         unit_type: '{{ $si->unit_type ?? "kg" }}',
                         weight: {{ (float) ($si->weight ?? $si->quantity ?? 0) }},
+                        price_per_kg: {{ (float) ($si->sell_price_per_kg ?? 0) }},
+                        subtotal: {{ (float) ($si->subtotal ?? 0) }},
                         package_qty: 0,
                         notes: ''
                     },
                 @endforeach
             @else
-                { uid: 1, scrap_item_id: '', search_text: '', dropdown_open: false, item_name: '', item_type_name: '', unit_type: 'kg', weight: '', package_qty: '', notes: '' }
+                { uid: 1, scrap_item_id: '', search_text: '', dropdown_open: false, item_name: '', item_type_name: '', unit_type: 'kg', weight: '', price_per_kg: 0, subtotal: 0, package_qty: '', notes: '' }
             @endif
         ],
 
@@ -397,12 +401,16 @@ function deliveryOrderForm() {
             if (item.unit_type) {
                 row.unit_type = item.unit_type;
             }
+            if (item.current_price && item.current_price.sell_price_per_kg) {
+                row.price_per_kg = parseFloat(item.current_price.sell_price_per_kg) || 0;
+            }
             row.dropdown_open = false;
         },
 
         clearRowItem(row) {
             row.scrap_item_id = '';
             row.search_text = '';
+            row.price_per_kg = 0;
             row.dropdown_open = true;
         },
 
@@ -416,6 +424,8 @@ function deliveryOrderForm() {
                 item_type_name: '',
                 unit_type: 'kg',
                 weight: '',
+                price_per_kg: 0,
+                subtotal: 0,
                 package_qty: '',
                 notes: ''
             });

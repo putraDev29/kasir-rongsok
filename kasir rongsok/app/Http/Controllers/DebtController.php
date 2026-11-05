@@ -211,7 +211,8 @@ class DebtController extends Controller
         }
         $msg .= "----------------------------------------\n";
         $msg .= "📄 *Terlampir berkas PDF resmi {$title} (2 Lembar: Asli Owner & Salinan Peminjam)*.\n";
-        $msg .= "Dokumen ini dicatat sah pada sistem kasir depo rongsok.";
+        $commodityTerm = BusinessSetting::commodityTerm();
+        $msg .= "Dokumen ini dicatat sah pada sistem kasir depo {$commodityTerm}.";
 
         $cleanNum = str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number);
         $pdfFilename = "SPH_{$cleanNum}.pdf";
@@ -374,7 +375,8 @@ class DebtController extends Controller
         }
 
         $msg .= "📄 *Terlampir berkas PDF dokumen Buku Kasbon & Rekap Pinjaman Modal*.\n";
-        $msg .= "Diterbitkan resmi oleh Sistem Kasir Rongsok.";
+        $commodityTerm = BusinessSetting::commodityTerm();
+        $msg .= "Diterbitkan resmi oleh Sistem Kasir {$commodityTerm}.";
 
         $pdfFilename = "Rekap_Hutang_Modal_" . date('Ymd_His') . ".pdf";
         $pdfUrl = route('debts.batch-pdf', $request->query());

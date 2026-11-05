@@ -65,6 +65,10 @@
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>
                 <span>Cetak / Print</span>
             </button>
+            <a href="{{ route('delivery-orders.pdf', [$deliveryOrder, 'copy' => $copy, 'download' => 1]) }}" class="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Unduh PDF</span>
+            </a>
             <a href="{{ route('delivery-orders.show', $deliveryOrder) }}" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold">
                 Kembali
             </a>
@@ -156,20 +160,66 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-300">
-                        @foreach($deliveryOrder->items as $idx => $item)
-                            <tr>
+                        @foreach($deliveryOrder->grouped_master_items as $idx => $master)
+                            <!-- Baris Master Barang (Akumulasi Total dari Master) -->
+                            <tr class="{{ $master->has_variants ? 'bg-slate-50 font-bold' : '' }}">
                                 <td class="py-1 px-2 text-center font-mono text-slate-500 border-r border-slate-300">{{ $idx + 1 }}</td>
-                                <td class="py-1 px-2 font-bold text-slate-900 border-r border-slate-300">{{ $item->item_name }}</td>
-                                <td class="py-1 px-2 text-right font-mono border-r border-slate-300">
-                                    {{ $item->package_qty > 0 ? $item->package_qty . ' Koli' : '-' }}
+                                <td class="py-1 px-2 font-bold text-slate-900 border-r border-slate-300">
+                                    {{ $master->item_name }}
+                                    <span class="text-slate-400 font-mono text-[9px] font-normal">({{ $master->item_code }})</span>
+                                    @if($master->has_variants)
+                                        <span class="ml-1 text-[8px] font-semibold text-blue-700 bg-blue-50 px-1 py-0.2 rounded border border-blue-200">
+                                            Total Master ({{ $master->items->count() }} Varian)
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="py-1 px-2 text-right font-mono border-r border-slate-300 font-bold">
+                                    {{ $master->total_packages > 0 ? $master->total_packages . ' Koli' : '-' }}
                                 </td>
                                 <td class="py-1 px-2 text-right font-mono font-bold text-slate-900 border-r border-slate-300">
-                                    {{ number_format($item->weight, 2) }} kg
+                                    {{ number_format($master->total_weight, 2) }} kg
                                 </td>
-                                <td class="py-1 px-2 text-[9px] text-slate-600 italic">
-                                    {{ $item->notes ?: '-' }}
+                                <td class="py-1 px-2 text-[9px] text-slate-600">
+                                    @if(!$master->has_variants && $master->items->first()->notes)
+                                        <span class="italic">{{ $master->items->first()->notes }}</span>
+                                    @else
+                                        -
+                                    @endif
                                 </td>
                             </tr>
+
+                            <!-- Rincian Jenis Varian (Bila Ada Varian) -->
+                            @if($master->has_variants)
+                                @foreach($master->items as $vItem)
+                                    <tr class="bg-blue-50/20 text-[9px]">
+                                        <td class="py-0.5 px-2 text-center font-mono text-blue-400 border-r border-slate-300">↳</td>
+                                        <td class="py-0.5 px-2 pl-4 border-r border-slate-300">
+                                            <span class="font-semibold text-blue-900">• Varian: {{ $vItem->item_type_name ?: 'Standar' }}</span>
+                                            @if($vItem->effective_price > 0)
+                                                <span class="text-emerald-700 font-mono font-medium ml-1">
+                                                    (@ Rp {{ number_format($vItem->effective_price, 0, ',', '.') }}/kg)
+                                                </span>
+                                            @endif
+                                            @if($vItem->notes)
+                                                <span class="text-slate-500 italic ml-1">({{ $vItem->notes }})</span>
+                                            @endif
+                                        </td>
+                                        <td class="py-0.5 px-2 text-right font-mono border-r border-slate-300 text-slate-700">
+                                            {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
+                                        </td>
+                                        <td class="py-0.5 px-2 text-right font-mono font-semibold text-slate-800 border-r border-slate-300">
+                                            {{ number_format($vItem->weight, 2) }} kg
+                                        </td>
+                                        <td class="py-0.5 px-2 text-[8.5px] text-slate-600">
+                                            @if($vItem->effective_price > 0)
+                                                <span class="font-mono font-bold text-slate-800">Rp {{ number_format($vItem->effective_subtotal, 0, ',', '.') }}</span>
+                                            @else
+                                                <span class="italic text-slate-400">{{ $vItem->notes ?: '-' }}</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endif
                         @endforeach
                     </tbody>
                     <tfoot class="border-t-2 border-slate-900 font-bold bg-slate-50">
@@ -327,20 +377,66 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-300">
-                        @foreach($deliveryOrder->items as $idx => $item)
-                            <tr>
+                        @foreach($deliveryOrder->grouped_master_items as $idx => $master)
+                            <!-- Baris Master Barang (Akumulasi Total dari Master) -->
+                            <tr class="{{ $master->has_variants ? 'bg-slate-50 font-bold' : '' }}">
                                 <td class="py-1 px-2 text-center font-mono text-slate-500 border-r border-slate-300">{{ $idx + 1 }}</td>
-                                <td class="py-1 px-2 font-bold text-slate-900 border-r border-slate-300">{{ $item->item_name }}</td>
-                                <td class="py-1 px-2 text-right font-mono border-r border-slate-300">
-                                    {{ $item->package_qty > 0 ? $item->package_qty . ' Koli' : '-' }}
+                                <td class="py-1 px-2 font-bold text-slate-900 border-r border-slate-300">
+                                    {{ $master->item_name }}
+                                    <span class="text-slate-400 font-mono text-[9px] font-normal">({{ $master->item_code }})</span>
+                                    @if($master->has_variants)
+                                        <span class="ml-1 text-[8px] font-semibold text-blue-700 bg-blue-50 px-1 py-0.2 rounded border border-blue-200">
+                                            Total Master ({{ $master->items->count() }} Varian)
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="py-1 px-2 text-right font-mono border-r border-slate-300 font-bold">
+                                    {{ $master->total_packages > 0 ? $master->total_packages . ' Koli' : '-' }}
                                 </td>
                                 <td class="py-1 px-2 text-right font-mono font-bold text-slate-900 border-r border-slate-300">
-                                    {{ number_format($item->weight, 2) }} kg
+                                    {{ number_format($master->total_weight, 2) }} kg
                                 </td>
-                                <td class="py-1 px-2 text-[9px] text-slate-600 italic">
-                                    {{ $item->notes ?: '-' }}
+                                <td class="py-1 px-2 text-[9px] text-slate-600">
+                                    @if(!$master->has_variants && $master->items->first()->notes)
+                                        <span class="italic">{{ $master->items->first()->notes }}</span>
+                                    @else
+                                        -
+                                    @endif
                                 </td>
                             </tr>
+
+                            <!-- Rincian Jenis Varian (Bila Ada Varian) -->
+                            @if($master->has_variants)
+                                @foreach($master->items as $vItem)
+                                    <tr class="bg-blue-50/20 text-[9px]">
+                                        <td class="py-0.5 px-2 text-center font-mono text-blue-400 border-r border-slate-300">↳</td>
+                                        <td class="py-0.5 px-2 pl-4 border-r border-slate-300">
+                                            <span class="font-semibold text-blue-900">• Varian: {{ $vItem->item_type_name ?: 'Standar' }}</span>
+                                            @if($vItem->effective_price > 0)
+                                                <span class="text-emerald-700 font-mono font-medium ml-1">
+                                                    (@ Rp {{ number_format($vItem->effective_price, 0, ',', '.') }}/kg)
+                                                </span>
+                                            @endif
+                                            @if($vItem->notes)
+                                                <span class="text-slate-500 italic ml-1">({{ $vItem->notes }})</span>
+                                            @endif
+                                        </td>
+                                        <td class="py-0.5 px-2 text-right font-mono border-r border-slate-300 text-slate-700">
+                                            {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
+                                        </td>
+                                        <td class="py-0.5 px-2 text-right font-mono font-semibold text-slate-800 border-r border-slate-300">
+                                            {{ number_format($vItem->weight, 2) }} kg
+                                        </td>
+                                        <td class="py-0.5 px-2 text-[8.5px] text-slate-600">
+                                            @if($vItem->effective_price > 0)
+                                                <span class="font-mono font-bold text-slate-800">Rp {{ number_format($vItem->effective_subtotal, 0, ',', '.') }}</span>
+                                            @else
+                                                <span class="italic text-slate-400">{{ $vItem->notes ?: '-' }}</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endif
                         @endforeach
                     </tbody>
                     <tfoot class="border-t-2 border-slate-900 font-bold bg-slate-50">

@@ -50,9 +50,9 @@
 
             <a href="{{ route('delivery-orders.print', $deliveryOrder) }}" target="_blank"
                class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs"
-               title="Cetak Surat Jalan (Tersedia Pilihan Lembar 1 & Lembar 2)">
+               title="Preview & Cetak Surat Jalan (Tersedia Pilihan Lembar 1 & Lembar 2)">
                 <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
-                <span>Cetak Print</span>
+                <span>Preview & Cetak Print</span>
             </a>
 
             @if(!$deliveryOrder->salesTransaction)
@@ -215,20 +215,72 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
-                    @foreach($deliveryOrder->items as $idx => $item)
-                        <tr class="hover:bg-slate-50/80">
-                            <td class="py-3 px-4 text-center font-mono text-slate-400">{{ $idx + 1 }}</td>
-                            <td class="py-3 px-4 font-bold text-slate-900">{{ $item->item_name }}</td>
-                            <td class="py-3 px-4 text-right font-mono text-slate-700">
-                                {{ $item->package_qty > 0 ? $item->package_qty . ' Koli/Ikat' : '-' }}
+                    @foreach($deliveryOrder->grouped_master_items as $idx => $master)
+                        <!-- Baris Master Barang (Akumulasi Total) -->
+                        <tr class="{{ $master->has_variants ? 'bg-slate-50/60 font-semibold' : 'hover:bg-slate-50/80' }}">
+                            <td class="py-3 px-4 text-center font-mono text-slate-500">{{ $idx + 1 }}</td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-bold text-slate-900">{{ $master->item_name }}</span>
+                                    <span class="text-[10px] font-mono text-slate-400 font-normal">({{ $master->item_code }})</span>
+                                    @if($master->has_variants)
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                            Total Master ({{ $master->items->count() }} Varian)
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
-                            <td class="py-3 px-4 text-right font-mono font-bold text-emerald-700">
-                                {{ number_format($item->weight, 2) }} kg
+                            <td class="py-3 px-4 text-right font-mono text-slate-800 font-bold">
+                                {{ $master->total_packages > 0 ? $master->total_packages . ' Koli/Ikat' : '-' }}
                             </td>
-                            <td class="py-3 px-4 text-slate-600 italic">
-                                {{ $item->notes ?: '-' }}
+                            <td class="py-3 px-4 text-right font-mono font-bold text-emerald-800 text-sm">
+                                {{ number_format($master->total_weight, 2) }} kg
+                            </td>
+                            <td class="py-3 px-4 text-slate-600">
+                                @if(!$master->has_variants && $master->items->first()->notes)
+                                    <span class="italic">{{ $master->items->first()->notes }}</span>
+                                @else
+                                    <span class="text-slate-400 text-[11px]">-</span>
+                                @endif
                             </td>
                         </tr>
+
+                        <!-- Rincian Jenis Varian (Bila Ada Varian) -->
+                        @if($master->has_variants)
+                            @foreach($master->items as $vItem)
+                                <tr class="bg-blue-50/30 hover:bg-blue-50/60 border-l-4 border-l-blue-500 text-xs transition-colors">
+                                    <td class="py-2.5 px-4 text-center font-mono text-blue-400 text-[11px]">↳</td>
+                                    <td class="py-2.5 px-4 pl-8">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded bg-white border border-blue-300 font-semibold text-blue-900 text-[11px] shadow-xs">
+                                                Varian: {{ $vItem->item_type_name ?: 'Standar' }}
+                                            </span>
+                                            @if($vItem->effective_price > 0)
+                                                <span class="text-[11px] text-emerald-700 font-mono font-semibold">
+                                                    @ Rp {{ number_format($vItem->effective_price, 0, ',', '.') }}/kg
+                                                </span>
+                                            @endif
+                                            @if($vItem->notes)
+                                                <span class="text-[11px] text-slate-500 italic">({{ $vItem->notes }})</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="py-2.5 px-4 text-right font-mono text-slate-700">
+                                        {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
+                                    </td>
+                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-800">
+                                        {{ number_format($vItem->weight, 2) }} kg
+                                    </td>
+                                    <td class="py-2.5 px-4 text-slate-600 text-[11px]">
+                                        @if($vItem->effective_price > 0)
+                                            <span class="font-mono font-bold text-slate-800">Rp {{ number_format($vItem->effective_subtotal, 0, ',', '.') }}</span>
+                                        @else
+                                            <span class="italic text-slate-400">{{ $vItem->notes ?: '-' }}</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endif
                     @endforeach
                 </tbody>
                 <tfoot class="bg-slate-50 font-bold text-xs border-t-2 border-slate-200">

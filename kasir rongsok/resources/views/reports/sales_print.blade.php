@@ -61,7 +61,14 @@
                     <td class="p-1.5 border-r border-slate-300 text-slate-600">{{ $tx->transaction_date->format('d/m/y H:i') }}</td>
                     <td class="p-1.5 border-r border-slate-300 font-semibold">{{ $tx->invoice_number }}</td>
                     <td class="p-1.5 border-r border-slate-300 font-sans font-bold">{{ $tx->buyer_name }}</td>
-                    <td class="p-1.5 border-r border-slate-300 font-sans">{{ $item->item_name_snapshot }}</td>
+                    <td class="p-1.5 border-r border-slate-300 font-sans">
+                        <div class="font-bold text-slate-900">{{ $item->item_name_snapshot }}</div>
+                        @if($item->item_type_name)
+                            <div class="text-[9px] text-blue-900 font-semibold mt-0.5">
+                                ↳ Varian: {{ $item->item_type_name }} ({{ number_format($item->weight, 2) }} kg @ Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }})
+                            </div>
+                        @endif
+                    </td>
                     <td class="p-1.5 border-r border-slate-300 text-right font-bold">{{ number_format($item->weight, 2) }} kg</td>
                     <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }}</td>
                     <td class="p-1.5 border-r border-slate-300 text-right font-bold">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>

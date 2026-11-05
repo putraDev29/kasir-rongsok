@@ -111,17 +111,76 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        @foreach($sale->items as $idx => $item)
-                            <tr class="hover:bg-slate-50">
-                                <td class="py-2.5 px-3 text-slate-400">{{ $idx + 1 }}</td>
-                                <td class="py-2.5 px-3 font-mono font-medium text-slate-600">{{ $item->item_code_snapshot }}</td>
-                                <td class="py-2.5 px-3 font-bold text-slate-800">{{ $item->item_name_snapshot }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">{{ number_format($item->weight, 2) }} kg</td>
-                                <td class="py-2.5 px-3 text-right font-mono">Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono text-slate-500">Rp {{ number_format($item->cogs_subtotal, 0, ',', '.') }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">Rp {{ number_format($item->profit_subtotal, 0, ',', '.') }}</td>
+                        @foreach($sale->grouped_master_items as $idx => $master)
+                            <!-- Master Item Row (Akumulasi Total dari Master Barang) -->
+                            <tr class="{{ $master->has_variants ? 'bg-slate-50/50 font-semibold' : 'hover:bg-slate-50' }}">
+                                <td class="py-2.5 px-3 text-slate-500 font-mono">{{ $idx + 1 }}</td>
+                                <td class="py-2.5 px-3 font-mono font-medium text-slate-600">{{ $master->item_code }}</td>
+                                <td class="py-2.5 px-3">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="font-bold text-slate-900">{{ $master->item_name }}</span>
+                                        @if($master->has_variants)
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                                Master Item ({{ $master->items->count() }} Varian)
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                                    {{ number_format($master->total_weight, 2) }} kg
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono">
+                                    @if($master->has_variants)
+                                        <span class="text-slate-400 text-[11px] italic">Rerata Rp {{ number_format($master->avg_sell_price, 0, ',', '.') }}</span>
+                                    @else
+                                        Rp {{ number_format($master->items->first()->sell_price_per_kg, 0, ',', '.') }}
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                                    Rp {{ number_format($master->total_subtotal, 0, ',', '.') }}
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono text-slate-500">
+                                    Rp {{ number_format($master->total_cogs, 0, ',', '.') }}
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">
+                                    Rp {{ number_format($master->total_profit, 0, ',', '.') }}
+                                </td>
                             </tr>
+
+                            <!-- Rincian Jenis Varian (Bila Ada Varian) -->
+                            @if($master->has_variants)
+                                @foreach($master->items as $vItem)
+                                    <tr class="bg-blue-50/30 hover:bg-blue-50/60 border-l-4 border-l-blue-500 text-xs transition-colors">
+                                        <td class="py-2 px-3 text-right text-blue-400 font-mono text-[11px]">↳</td>
+                                        <td class="py-2 px-3 text-slate-400 font-mono text-[11px]">{{ $vItem->item_code_snapshot ?: '-' }}</td>
+                                        <td class="py-2 px-3 pl-6">
+                                            <div class="flex items-center gap-2">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded bg-white border border-blue-300 font-semibold text-blue-900 text-[11px] shadow-xs">
+                                                    Varian: {{ $vItem->item_type_name ?: 'Standar' }}
+                                                </span>
+                                                @if($vItem->notes)
+                                                    <span class="text-[11px] text-slate-500 italic">({{ $vItem->notes }})</span>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="py-2 px-3 text-right font-mono text-slate-700 font-medium">
+                                            {{ number_format($vItem->weight, 2) }} kg
+                                        </td>
+                                        <td class="py-2 px-3 text-right font-mono text-slate-700 font-medium">
+                                            Rp {{ number_format($vItem->sell_price_per_kg, 0, ',', '.') }}
+                                        </td>
+                                        <td class="py-2 px-3 text-right font-mono font-bold text-slate-800">
+                                            Rp {{ number_format($vItem->subtotal, 0, ',', '.') }}
+                                        </td>
+                                        <td class="py-2 px-3 text-right font-mono text-slate-400 text-[11px]">
+                                            Rp {{ number_format($vItem->cogs_subtotal, 0, ',', '.') }}
+                                        </td>
+                                        <td class="py-2 px-3 text-right font-mono font-medium text-emerald-600 text-[11px]">
+                                            Rp {{ number_format($vItem->profit_subtotal, 0, ',', '.') }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endif
                         @endforeach
                     </tbody>
                 </table>

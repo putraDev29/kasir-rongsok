@@ -108,11 +108,18 @@
                             </td>
                             <td class="py-3 px-3 font-bold text-slate-800">{{ $tx->buyer_name }}</td>
                             <td class="py-3 px-3 font-medium text-slate-900">
-                                {{ $item->item_name_snapshot }}
+                                <div class="font-bold text-slate-900">{{ $item->item_name_snapshot }}</div>
+                                <div class="text-[10px] font-mono text-slate-400">{{ $item->item_code_snapshot }}</div>
                                 @if($item->item_type_name)
-                                    <span class="text-xs font-semibold text-emerald-700">({{ $item->item_type_name }})</span>
+                                    <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold">
+                                            Varian: {{ $item->item_type_name }}
+                                        </span>
+                                        <span class="text-[10px] text-slate-500 font-mono">
+                                            ({{ number_format($item->weight, 2) }} kg @ Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }})
+                                        </span>
+                                    </div>
                                 @endif
-                                <span class="text-[10px] font-mono text-slate-400">({{ $item->item_code_snapshot }})</span>
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-slate-800">
                                 @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
