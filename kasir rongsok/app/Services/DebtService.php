@@ -54,6 +54,7 @@ class DebtService
                 'borrower_name' => $borrowerName,
                 'borrower_phone' => $borrowerPhone,
                 'borrower_type' => $data['borrower_type'] ?? Debt::TYPE_SUPPLIER,
+                'loan_category' => $data['loan_category'] ?? Debt::CATEGORY_MODAL,
                 'user_id' => $user->id,
                 'date' => $date,
                 'due_date' => !empty($data['due_date']) ? Carbon::parse($data['due_date']) : null,

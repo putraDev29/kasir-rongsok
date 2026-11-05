@@ -28,6 +28,7 @@ class DebtController extends Controller
     {
         $status = $request->query('status');
         $type = $request->query('borrower_type');
+        $loanCategory = $request->query('loan_category');
         $search = $request->query('search');
 
         $query = Debt::with(['supplier', 'user', 'payments'])
@@ -36,6 +37,9 @@ class DebtController extends Controller
             })
             ->when($type, function ($q) use ($type) {
                 $q->where('borrower_type', $type);
+            })
+            ->when($loanCategory, function ($q) use ($loanCategory) {
+                $q->where('loan_category', $loanCategory);
             })
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
@@ -60,7 +64,7 @@ class DebtController extends Controller
             $justCreatedDebt = Debt::with(['supplier', 'user'])->find(session('just_created_debt_id'));
         }
 
-        return view('debts.index', compact('debts', 'suppliers', 'paymentMethods', 'status', 'type', 'search', 'totalInitial', 'totalPaid', 'totalRemaining', 'justCreatedDebt'));
+        return view('debts.index', compact('debts', 'suppliers', 'paymentMethods', 'status', 'type', 'loanCategory', 'search', 'totalInitial', 'totalPaid', 'totalRemaining', 'justCreatedDebt'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -69,6 +73,7 @@ class DebtController extends Controller
             'borrower_name' => 'required|string|max:150',
             'borrower_phone' => 'nullable|string|max:30',
             'borrower_type' => 'required|in:supplier,karyawan,lainnya',
+            'loan_category' => 'nullable|in:modal,hutang,komitmen',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:date',
@@ -81,8 +86,9 @@ class DebtController extends Controller
 
         try {
             $debt = $this->debtService->createDebt($validated, Auth::user());
+            $categoryLabel = $debt->getCategoryLabel();
             return redirect()->route('debts.index')
-                ->with('success', "Pinjaman modal {$debt->debt_number} untuk {$debt->borrower_name} berhasil dicatat.")
+                ->with('success', "Transaksi {$categoryLabel} {$debt->debt_number} untuk {$debt->borrower_name} berhasil dicatat.")
                 ->with('just_created_debt_id', $debt->id);
         } catch (Exception $e) {
             return back()->withInput()->with('error', $e->getMessage());
@@ -178,19 +184,23 @@ class DebtController extends Controller
         $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
         $phone = $debt->borrower_phone ?? '';
 
-        $msg = "*SURAT PERJANJIAN PINJAMAN MODAL / HUTANG*\n";
+        $title = $debt->getAgreementTitle();
+        $label = $debt->getCategoryLabel();
+
+        $msg = "*{$title}*\n";
         $msg .= "*{$companyName}*\n";
         $msg .= "----------------------------------------\n";
         $msg .= "🔖 No. Perjanjian: *" . ($debt->agreement_number ?: ('SPH-SBL-' . $debt->debt_number)) . "*\n";
         $msg .= "🔖 No. Referensi : {$debt->debt_number}\n";
+        $msg .= "🏷️ Kategori     : *{$label}*\n";
         $msg .= "🗓️ Tanggal       : " . $debt->date->format('d/m/Y') . "\n";
         $msg .= "👤 Pihak Pertama : *{$ownerName}* (Owner)\n";
-        $msg .= "👤 Pihak Kedua   : *{$debt->borrower_name}* (Peminjam)\n";
+        $msg .= "👤 Pihak Kedua   : *{$debt->borrower_name}* (Penerima)\n";
         if ($debt->borrower_phone) {
-            $msg .= "📞 HP Peminjam   : {$debt->borrower_phone}\n";
+            $msg .= "📞 HP Penerima   : {$debt->borrower_phone}\n";
         }
         $msg .= "----------------------------------------\n";
-        $msg .= "💰 *NOMINAL PINJAMAN MODAL:*\n";
+        $msg .= "💰 *NOMINAL " . strtoupper($label) . ":*\n";
         $msg .= "👉 *" . FormatHelper::rupiah($debt->initial_amount) . "*\n";
         $msg .= "👉 _(" . FormatHelper::terbilang($debt->initial_amount) . " Rupiah)_\n";
         if ($debt->due_date) {
@@ -200,7 +210,7 @@ class DebtController extends Controller
             $msg .= "🔒 Jaminan/Agunan: {$debt->guarantee_info}\n";
         }
         $msg .= "----------------------------------------\n";
-        $msg .= "📄 *Terlampir berkas PDF resmi Surat Perjanjian Hutang Piutang (SPH)* lengkap tanda tangan Owner & Peminjam.\n";
+        $msg .= "📄 *Terlampir berkas PDF resmi {$title} (2 Lembar: Asli Owner & Salinan Peminjam)*.\n";
         $msg .= "Dokumen ini dicatat sah pada sistem kasir depo rongsok.";
 
         $cleanNum = str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number);
@@ -213,7 +223,7 @@ class DebtController extends Controller
             'message' => $msg,
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
-            'file_description' => "Dokumen PDF Surat Perjanjian Hutang Modal ({$debt->debt_number})",
+            'file_description' => "Dokumen PDF {$title} ({$debt->debt_number})",
         ]);
     }
 
@@ -240,14 +250,17 @@ class DebtController extends Controller
         }
 
         if (empty($caption)) {
-            $caption = "*SURAT PERJANJIAN PINJAMAN MODAL / HUTANG*\n";
+            $title = $debt->getAgreementTitle();
+            $label = $debt->getCategoryLabel();
+            $caption = "*{$title}*\n";
             $caption .= "*{$companyName}*\n";
             $caption .= "----------------------------------------\n";
             $caption .= "🔖 No. Perjanjian: *" . ($debt->agreement_number ?: ('SPH-SBL-' . $debt->debt_number)) . "*\n";
+            $caption .= "🏷️ Kategori      : *{$label}*\n";
             $caption .= "👤 Owner Depo    : *{$ownerName}*\n";
-            $caption .= "👤 Peminjam      : *{$debt->borrower_name}*\n";
-            $caption .= "💰 Nominal Pinjam: *" . FormatHelper::rupiah($debt->initial_amount) . "*\n";
-            $caption .= "📄 Terlampir berkas resmi Surat Perjanjian Hutang Modal (SPH).";
+            $caption .= "👤 Penerima Dana : *{$debt->borrower_name}*\n";
+            $caption .= "💰 Nominal Dana  : *" . FormatHelper::rupiah($debt->initial_amount) . "*\n";
+            $caption .= "📄 Terlampir berkas resmi {$title} (A4 - 2 Lembar Rangkap).";
         }
 
         $waService = app(WhatsAppGatewayService::class);

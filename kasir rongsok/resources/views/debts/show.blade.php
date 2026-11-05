@@ -118,6 +118,13 @@
                 </div>
 
                 <div>
+                    <span class="text-slate-400 block text-[11px]">Kategori Transaksi:</span>
+                    <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold border {{ $debt->getCategoryBadgeClass() }}">
+                        {{ $debt->getCategoryLabel() }}
+                    </span>
+                </div>
+
+                <div>
                     <span class="text-slate-400 block text-[11px]">Tipe:</span>
                     <span class="font-semibold text-slate-700 capitalize">{{ $debt->borrower_type }}</span>
                     @if($debt->supplier)

@@ -663,5 +663,73 @@ class ScrapCashierSystemTest extends TestCase
         $createdItem->forceDelete();
         $createdCategory->delete();
     }
+
+    public function test_debt_categories_and_two_sheet_agreement_pdf(): void
+    {
+        $debtService = app(\App\Services\DebtService::class);
+
+        // 1. Create Modal Loan
+        $debtModal = $debtService->createDebt([
+            'borrower_name' => 'Pak Bambang Modal',
+            'borrower_phone' => '081299991111',
+            'borrower_type' => 'supplier',
+            'loan_category' => 'modal',
+            'date' => date('Y-m-d'),
+            'initial_amount' => 5000000,
+            'notes' => 'Tambahan modal kerja keliling cari besi & tembaga',
+        ], $this->superAdmin);
+
+        $this->assertEquals('modal', $debtModal->loan_category);
+        $this->assertEquals('Modal Usaha', $debtModal->getCategoryLabel());
+        $this->assertEquals('SURAT PERJANJIAN PINJAMAN MODAL USAHA', $debtModal->getAgreementTitle());
+
+        // 2. Create Hutang / Bon
+        $debtHutang = $debtService->createDebt([
+            'borrower_name' => 'Mas Rudi Kasbon',
+            'borrower_phone' => '081299992222',
+            'borrower_type' => 'karyawan',
+            'loan_category' => 'hutang',
+            'date' => date('Y-m-d'),
+            'initial_amount' => 1500000,
+            'notes' => 'Pinjaman dana keperluan darurat',
+        ], $this->superAdmin);
+
+        $this->assertEquals('hutang', $debtHutang->loan_category);
+        $this->assertEquals('Hutang / Pinjaman', $debtHutang->getCategoryLabel());
+        $this->assertEquals('SURAT PERJANJIAN HUTANG PIUTANG', $debtHutang->getAgreementTitle());
+
+        // 3. Create Komitmen Pasokan
+        $debtKomitmen = $debtService->createDebt([
+            'borrower_name' => 'Juragan Agus Suplai',
+            'borrower_phone' => '081299993333',
+            'borrower_type' => 'supplier',
+            'loan_category' => 'komitmen',
+            'date' => date('Y-m-d'),
+            'initial_amount' => 10000000,
+            'notes' => 'Uang muka komitmen pasokan kardus 10 ton',
+        ], $this->superAdmin);
+
+        $this->assertEquals('komitmen', $debtKomitmen->loan_category);
+        $this->assertEquals('Komitmen Pasokan', $debtKomitmen->getCategoryLabel());
+        $this->assertEquals('SURAT PERJANJIAN KOMITMEN PASOKAN MATERIAL SCRAP', $debtKomitmen->getAgreementTitle());
+
+        // 4. Test Web Agreement View contains 2 sheets (Owner & Peminjam)
+        $viewResponse = $this->actingAs($this->superAdmin)->get(route('debts.agreement', $debtKomitmen));
+        $viewResponse->assertStatus(200);
+        $viewResponse->assertSee('LEMBAR 1: ASLI (UNTUK OWNER');
+        $viewResponse->assertSee('LEMBAR 2: SALINAN (UNTUK PEMINJAM');
+        $viewResponse->assertSee('SURAT PERJANJIAN KOMITMEN PASOKAN MATERIAL SCRAP');
+        $viewResponse->assertSee('Pasal 1: Dana Uang Muka Komitmen Pasokan');
+
+        // 5. Test PDF Stream endpoint
+        $pdfResponse = $this->actingAs($this->superAdmin)->get(route('debts.agreement-pdf', $debtModal));
+        $pdfResponse->assertStatus(200);
+        $this->assertEquals('application/pdf', $pdfResponse->headers->get('Content-Type'));
+
+        // Clean up
+        $debtModal->forceDelete();
+        $debtHutang->forceDelete();
+        $debtKomitmen->forceDelete();
+    }
 }
 

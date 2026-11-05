@@ -10,6 +10,7 @@
     payBorrowerName: '',
     payRemainingAmount: 0,
     payAmount: 0,
+    loanCategory: 'modal',
     borrowerType: 'supplier',
     supplierId: '',
     borrowerName: '',
@@ -91,6 +92,14 @@
                        class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 focus:border-emerald-500">
             </div>
 
+            <select name="loan_category" onchange="this.form.submit()" 
+                    class="py-1.5 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-700 font-medium">
+                <option value="">-- Semua Kategori --</option>
+                <option value="modal" {{ ($loanCategory ?? '') === 'modal' ? 'selected' : '' }}>Modal Usaha</option>
+                <option value="hutang" {{ ($loanCategory ?? '') === 'hutang' ? 'selected' : '' }}>Hutang / Bon</option>
+                <option value="komitmen" {{ ($loanCategory ?? '') === 'komitmen' ? 'selected' : '' }}>Komitmen Pasokan</option>
+            </select>
+
             <select name="status" onchange="this.form.submit()" 
                     class="py-1.5 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-700">
                 <option value="">-- Semua Status --</option>
@@ -107,7 +116,7 @@
                 <option value="lainnya" {{ $type === 'lainnya' ? 'selected' : '' }}>Pihak Lain</option>
             </select>
 
-            @if($search || $status || $type)
+            @if($search || $status || $type || !empty($loanCategory))
                 <a href="{{ route('debts.index') }}" class="px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 rounded-lg">
                     Reset
                 </a>
@@ -193,9 +202,14 @@
 
                             <td class="py-3 px-4">
                                 <div class="font-bold text-slate-900">{{ $debt->borrower_name }}</div>
-                                @if($debt->borrower_phone)
-                                    <div class="text-[11px] text-slate-500 font-mono">{{ $debt->borrower_phone }}</div>
-                                @endif
+                                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                    <span class="px-1.5 py-0.2 rounded text-[9px] font-bold border {{ $debt->getCategoryBadgeClass() }}">
+                                        {{ $debt->getCategoryLabel() }}
+                                    </span>
+                                    @if($debt->borrower_phone)
+                                        <span class="text-[10px] text-slate-500 font-mono">{{ $debt->borrower_phone }}</span>
+                                    @endif
+                                </div>
                                 @if($debt->supplier)
                                     <div class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded w-max mt-0.5">
                                         Pemasok: {{ $debt->supplier->code }}
@@ -329,6 +343,57 @@
             <form action="{{ route('debts.store') }}" method="POST" class="space-y-3.5">
                 @csrf
 
+                <!-- Pilihan Kategori Transaksi: Modal, Hutang, Komitmen -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kategori Transaksi <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-3 gap-2 text-xs">
+                        <label class="flex flex-col p-2.5 rounded-xl border cursor-pointer transition-all"
+                               :class="loanCategory === 'modal' ? 'bg-blue-50 border-blue-500 text-blue-900 ring-2 ring-blue-500/20 shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
+                            <div class="flex items-center gap-1.5 font-bold mb-0.5">
+                                <input type="radio" name="loan_category" value="modal" x-model="loanCategory" class="text-blue-600 focus:ring-blue-500">
+                                <span>Modal Usaha</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 leading-tight">Perputaran pembelian rongsok & timbangan</p>
+                        </label>
+                        
+                        <label class="flex flex-col p-2.5 rounded-xl border cursor-pointer transition-all"
+                               :class="loanCategory === 'hutang' ? 'bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-500/20 shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
+                            <div class="flex items-center gap-1.5 font-bold mb-0.5">
+                                <input type="radio" name="loan_category" value="hutang" x-model="loanCategory" class="text-amber-600 focus:ring-amber-500">
+                                <span>Hutang / Bon</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 leading-tight">Kasbon / pinjaman uang kebutuhan umum</p>
+                        </label>
+                        
+                        <label class="flex flex-col p-2.5 rounded-xl border cursor-pointer transition-all"
+                               :class="loanCategory === 'komitmen' ? 'bg-purple-50 border-purple-500 text-purple-900 ring-2 ring-purple-500/20 shadow-xs' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'">
+                            <div class="flex items-center gap-1.5 font-bold mb-0.5">
+                                <input type="radio" name="loan_category" value="komitmen" x-model="loanCategory" class="text-purple-600 focus:ring-purple-500">
+                                <span>Komitmen</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 leading-tight">Uang muka ikatan suplai barang ke depo</p>
+                        </label>
+                    </div>
+
+                    <!-- Keterangan Dinamis Surat Perjanjian (A4 - 2 Lembar Rangkap) -->
+                    <div class="mt-2 p-2 rounded-lg text-[11px] leading-relaxed border"
+                         :class="{
+                             'bg-blue-50/70 border-blue-200 text-blue-800': loanCategory === 'modal',
+                             'bg-amber-50/70 border-amber-200 text-amber-800': loanCategory === 'hutang',
+                             'bg-purple-50/70 border-purple-200 text-purple-800': loanCategory === 'komitmen'
+                         }">
+                        <div class="font-bold flex items-center gap-1">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                            <span>Format Surat Perjanjian A4 (1 Lembar, Rangkap 2: Asli Owner & Salinan Peminjam):</span>
+                        </div>
+                        <div class="mt-0.5 text-[10px] text-slate-600">
+                            <span x-show="loanCategory === 'modal'">Teks surat perjanjian mengatur penyerahan modal usaha perputaran scrap dengan klausul pengembalian melalui pemotongan bertahap nota timbangan atau setoran.</span>
+                            <span x-show="loanCategory === 'hutang'">Teks surat perjanjian mengatur pinjaman hutang uang tunai dengan kewajiban pelunasan penuh sesuai tempo atau cicilan berkala.</span>
+                            <span x-show="loanCategory === 'komitmen'">Teks surat perjanjian mengatur uang muka ikatan komitmen pasokan eksklusif material scrap ke depo owner hingga nilai komitmen tuntas.</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Borrower Type -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Tipe Peminjam</label>
@@ -450,12 +515,12 @@
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <h3 class="text-sm font-bold text-slate-900">Pinjaman Modal Berhasil Dicatat!</h3>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                SPH RESMI
+                            <h3 class="text-sm font-bold text-slate-900">Transaksi {{ $justCreatedDebt->getCategoryLabel() }} Dicatat!</h3>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border {{ $justCreatedDebt->getCategoryBadgeClass() }}">
+                                {{ $justCreatedDebt->getCategoryLabel() }} (2 LEMBAR A4)
                             </span>
                         </div>
-                        <p class="text-[11px] text-slate-500">Surat Perjanjian Hutang Piutang (SPH) telah dibuat lengkap tanda tangan Owner & Peminjam.</p>
+                        <p class="text-[11px] text-slate-500">Surat Perjanjian telah dibuat (Format A4: Lembar 1 Asli Owner &amp; Lembar 2 Salinan Peminjam).</p>
                     </div>
                 </div>
                 <button type="button" @click="showSuccessModal = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
@@ -470,7 +535,11 @@
                     <span class="font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200">{{ $justCreatedDebt->debt_number }}</span>
                 </div>
                 <div class="flex justify-between items-center pb-1.5 border-b border-slate-200">
-                    <span class="text-slate-500">No. Surat Perjanjian (SPH):</span>
+                    <span class="text-slate-500">Kategori Transaksi:</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold border {{ $justCreatedDebt->getCategoryBadgeClass() }}">{{ $justCreatedDebt->getCategoryLabel() }}</span>
+                </div>
+                <div class="flex justify-between items-center pb-1.5 border-b border-slate-200">
+                    <span class="text-slate-500">No. Surat Perjanjian:</span>
                     <span class="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{{ $justCreatedDebt->agreement_number }}</span>
                 </div>
                 <div class="flex justify-between items-center pb-1.5 border-b border-slate-200">
