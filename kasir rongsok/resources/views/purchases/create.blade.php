@@ -100,25 +100,45 @@
                             <span class="w-6 h-6 rounded-md bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shadow-xs" x-text="rows.length">1</span>
                             <span class="text-xs font-bold uppercase tracking-wider text-slate-800">Daftar Timbangan Masuk</span>
                         </div>
-                        <button type="button" @click="addNewEmptyRow()" 
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                            <span>Tambah Baris (+F2)</span>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click="addNewItemRow()" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-all shadow-2xs">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                <span>+ Input Barang Baru</span>
+                            </button>
+                            <button type="button" @click="addNewEmptyRow()" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Tambah Baris (+F2)</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Scrollable Items Container (Scroll saat barang melebihi layar) -->
                     <div class="p-3 space-y-2.5 max-h-[460px] overflow-y-auto bg-slate-100/60" style="scrollbar-width: thin;">
                         <template x-for="(row, index) in rows" :key="row.uid">
                             <div class="bg-white rounded-xl border border-slate-200 shadow-xs hover:border-emerald-400 transition-all p-3 space-y-2">
-                                <!-- BARIS 1: NAMA BARANG & JENIS / VARIAN -->
-                                <div class="flex items-center gap-2">
-                                    <!-- Nomor Urut -->
-                                    <span class="w-6 h-6 rounded-md bg-slate-800 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-xs" x-text="index + 1">1</span>
+                                <!-- HEADER ROW: Row # & Mode Toggle (Sama seperti Tambah Pemasok Baru) -->
+                                <div class="flex items-center justify-between pb-1 border-b border-slate-100">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-5 h-5 rounded-md bg-slate-800 text-white font-mono font-bold text-[10px] flex items-center justify-center shadow-xs" x-text="index + 1">1</span>
+                                        <span x-show="!row.is_new" class="text-[11px] font-bold text-slate-700">Material Scrap & Daur Ulang</span>
+                                        <span x-show="row.is_new" style="display: none;" class="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                            Input Barang Baru (Auto Simpan ke Master)
+                                        </span>
+                                    </div>
+                                    <button type="button" @click="toggleRowItemMode(row)" 
+                                            class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline inline-flex items-center gap-1">
+                                        <span x-text="row.is_new ? '← Pilih dari Master Barang' : '+ Tambah Barang Baru'"></span>
+                                    </button>
+                                </div>
 
-                                    <!-- Pilihan Material Scrap & Daur Ulang (Searchable Combobox) -->
-                                    <div class="flex-1 min-w-0 relative" @click.outside="row.dropdown_open = false">
-                                        <input type="hidden" :name="'items[' + index + '][scrap_item_id]'" :value="row.scrap_item_id" required>
+                                <!-- BARIS 1: NAMA BARANG / MODE SELEKSI & JENIS / VARIAN -->
+                                <div class="flex items-center gap-2">
+                                    <!-- Mode 1: Searchable Combobox Master Barang -->
+                                    <div x-show="!row.is_new" class="flex-1 min-w-0 relative" @click.outside="row.dropdown_open = false">
+                                        <input type="hidden" :name="'items[' + index + '][scrap_item_id]'" :value="row.scrap_item_id" :disabled="row.is_new">
 
                                         <div class="relative">
                                             <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -130,7 +150,7 @@
                                                    @focus="row.dropdown_open = true"
                                                    @input="row.dropdown_open = true"
                                                    placeholder="Cari / pilih material scrap & daur ulang..."
-                                                   required
+                                                   :required="!row.is_new"
                                                    class="w-full pl-8 pr-14 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900 bg-white shadow-2xs">
 
                                             <!-- Quick Clear & Caret Icons -->
@@ -176,16 +196,61 @@
                                                 </button>
                                             </template>
 
+                                            <!-- Quick Add Button if not found -->
                                             <template x-if="filteredMasterItems(row.search_text).length === 0">
-                                                <div class="p-3 text-center text-xs text-slate-400">
-                                                    Tidak ada barang dengan kata kunci "<span class="font-bold text-slate-700" x-text="row.search_text"></span>"
+                                                <div class="p-3 text-center space-y-2">
+                                                    <p class="text-xs text-slate-500">Tidak ada barang dengan kata kunci "<span class="font-bold text-slate-700" x-text="row.search_text"></span>"</p>
+                                                    <button type="button" 
+                                                            @click="addNewItemToRow(row, row.search_text)"
+                                                            class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs inline-flex items-center gap-1">
+                                                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                                        <span x-text="'+ Tambah &quot;' + row.search_text + '&quot; sebagai Barang Baru'"></span>
+                                                    </button>
+                                                </div>
+                                            </template>
+
+                                            <!-- Option to add as new even when matching results exist -->
+                                            <template x-if="filteredMasterItems(row.search_text).length > 0 && row.search_text && !isExactMatchMaster(row.search_text)">
+                                                <div class="p-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                                                    <span class="text-[10px] text-slate-500 truncate max-w-[200px]">Barang tidak ada di daftar?</span>
+                                                    <button type="button"
+                                                            @click="addNewItemToRow(row, row.search_text)"
+                                                            class="px-2.5 py-1 text-[11px] font-bold rounded-md bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs inline-flex items-center gap-1 shrink-0">
+                                                        <i data-lucide="plus" class="w-3 h-3"></i>
+                                                        <span>+ Input Barang Baru</span>
+                                                    </button>
                                                 </div>
                                             </template>
                                         </div>
                                     </div>
 
+                                    <!-- Mode 2: Input Manual Barang Baru (Sama seperti Tambah Pemasok Baru) -->
+                                    <div x-show="row.is_new" style="display: none;" class="flex-1 min-w-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                        <input type="hidden" :name="'items[' + index + '][scrap_item_id]'" value="__new__" :disabled="!row.is_new">
+                                        
+                                        <div class="flex-1 relative">
+                                            <input type="text" 
+                                                   :name="'items[' + index + '][new_item_name]'" 
+                                                   x-model="row.new_item_name" 
+                                                   placeholder="Ketik nama material / barang baru..."
+                                                   :required="row.is_new"
+                                                   class="w-full py-1.5 px-3 text-xs rounded-lg border border-emerald-500 focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900 bg-emerald-50/30">
+                                        </div>
+
+                                        <div class="w-44 sm:w-48 shrink-0">
+                                            <select :name="'items[' + index + '][category_id]'" 
+                                                    x-model="row.category_id" 
+                                                    class="w-full py-1.5 px-2 text-xs rounded-lg border border-emerald-400 bg-white font-medium text-slate-800 focus:ring-1 focus:ring-emerald-500">
+                                                <option value="">-- Kategori (Opsional) --</option>
+                                                <template x-for="cat in categories" :key="cat.id">
+                                                    <option :value="cat.id" x-text="cat.name" :selected="row.category_id == cat.id"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                    </div>
+
                                     <!-- Jenis / Varian Manual -->
-                                    <div class="w-40 sm:w-56 shrink-0">
+                                    <div class="w-36 sm:w-48 shrink-0">
                                         <input type="text" 
                                                :name="'items[' + index + '][item_type_name]'" 
                                                x-model="row.item_type_name" 
@@ -200,6 +265,12 @@
                                             title="Hapus baris item">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
+                                </div>
+
+                                <!-- Helper Text for New Item Mode -->
+                                <div x-show="row.is_new" style="display: none;" class="px-1 text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                                    <i data-lucide="sparkles" class="w-3 h-3 text-emerald-500"></i>
+                                    <span>Barang baru otomatis tersimpan ke Master Data saat transaksi disimpan. Masukkan harga beli pada kolom harga di bawah.</span>
                                 </div>
 
                                 <!-- BARIS 2: VALUE ANGKA & SATUAN (TETAP 1 BARIS PENUH) -->
@@ -886,7 +957,7 @@ function cashierPos() {
         isSubmitting: false,
 
         rows: [
-            { uid: 1, scrap_item_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
+            { uid: 1, scrap_item_id: '', is_new: false, new_item_name: '', category_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
         ],
 
         init() {
@@ -1053,7 +1124,85 @@ function cashierPos() {
             });
         },
 
+        isExactMatchMaster(text) {
+            if (!text) return false;
+            const q = text.toLowerCase().trim();
+            return this.masterItems.some(i => i.name.toLowerCase() === q);
+        },
+
+        toggleRowItemMode(row) {
+            row.is_new = !row.is_new;
+            if (row.is_new) {
+                row.scrap_item_id = '__new__';
+                row.new_item_name = row.search_text ? row.search_text.split(' (')[0].trim() : '';
+                if (!row.category_id && this.selectedCategory !== 'all') {
+                    row.category_id = this.selectedCategory;
+                }
+                row.dropdown_open = false;
+            } else {
+                row.scrap_item_id = '';
+                row.new_item_name = '';
+                row.search_text = '';
+                row.category_id = '';
+                row.dropdown_open = true;
+            }
+            this.$nextTick(() => {
+                if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                    window.lucide.createIcons();
+                }
+            });
+        },
+
+        addNewItemToRow(row, customName) {
+            row.is_new = true;
+            row.scrap_item_id = '__new__';
+            row.new_item_name = (customName || '').trim();
+            row.search_text = row.new_item_name;
+            if (!row.category_id && this.selectedCategory !== 'all') {
+                row.category_id = this.selectedCategory;
+            }
+            row.dropdown_open = false;
+            this.$nextTick(() => {
+                if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                    window.lucide.createIcons();
+                }
+            });
+        },
+
+        addNewItemRow() {
+            const lastRow = this.rows[this.rows.length - 1];
+            if (lastRow && !lastRow.scrap_item_id && !lastRow.search_text && !lastRow.gross_weight && (!lastRow.quantity || lastRow.quantity == 1)) {
+                this.addNewItemToRow(lastRow, '');
+            } else {
+                this.rows.push({
+                    uid: Date.now() + Math.random(),
+                    scrap_item_id: '__new__',
+                    is_new: true,
+                    new_item_name: '',
+                    category_id: this.selectedCategory !== 'all' ? this.selectedCategory : '',
+                    search_text: '',
+                    dropdown_open: false,
+                    unit_type: 'kg',
+                    item_type_name: '',
+                    quantity: 1,
+                    gross_weight: '',
+                    tare_weight: '',
+                    tare_percent: '',
+                    tare_mode: 'kg',
+                    price_per_kg: 0
+                });
+            }
+            this.$nextTick(() => {
+                if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                    window.lucide.createIcons();
+                }
+            });
+        },
+
         selectRowItem(row, item, index) {
+            row.is_new = false;
+            row.new_item_name = '';
+            row.category_id = item.category_id || '';
             row.scrap_item_id = item.id;
             row.search_text = item.name + ' (' + item.code + ')';
             row.price_per_kg = parseFloat(item.buy_price_per_kg) || 0;
@@ -1074,6 +1223,9 @@ function cashierPos() {
         },
 
         clearRowItem(row, index) {
+            row.is_new = false;
+            row.new_item_name = '';
+            row.category_id = '';
             row.scrap_item_id = '';
             row.search_text = '';
             row.price_per_kg = 0;
@@ -1084,6 +1236,9 @@ function cashierPos() {
             this.rows.push({
                 uid: Date.now() + Math.random(),
                 scrap_item_id: '',
+                is_new: false,
+                new_item_name: '',
+                category_id: '',
                 search_text: '',
                 dropdown_open: false,
                 unit_type: 'kg',
@@ -1106,8 +1261,11 @@ function cashierPos() {
             const itemUnit = item.unit_type || 'kg';
             const itemLabel = item.name + ' (' + item.code + ')';
             const lastRow = this.rows[this.rows.length - 1];
-            if (lastRow && !lastRow.scrap_item_id && !lastRow.gross_weight && (!lastRow.quantity || lastRow.quantity == 1)) {
+            if (lastRow && !lastRow.scrap_item_id && !lastRow.is_new && !lastRow.gross_weight && (!lastRow.quantity || lastRow.quantity == 1)) {
                 lastRow.scrap_item_id = item.id;
+                lastRow.is_new = false;
+                lastRow.new_item_name = '';
+                lastRow.category_id = item.category_id || '';
                 lastRow.search_text = itemLabel;
                 lastRow.unit_type = itemUnit;
                 lastRow.tare_mode = itemUnit;
@@ -1116,6 +1274,9 @@ function cashierPos() {
                 this.rows.push({
                     uid: Date.now() + Math.random(),
                     scrap_item_id: item.id,
+                    is_new: false,
+                    new_item_name: '',
+                    category_id: item.category_id || '',
                     search_text: itemLabel,
                     dropdown_open: false,
                     unit_type: itemUnit,
@@ -1337,12 +1498,13 @@ function cashierPos() {
         },
 
         getMasterPrice(row) {
-            if (!row || !row.scrap_item_id) return 0;
+            if (!row || !row.scrap_item_id || row.scrap_item_id === '__new__' || row.is_new) return 0;
             const found = this.masterItems.find(i => i.id == row.scrap_item_id);
             return found ? parseFloat(found.buy_price_per_kg) || 0 : 0;
         },
 
         validatePrice(row) {
+            if (row.is_new || row.scrap_item_id === '__new__') return;
             const max = this.getMasterPrice(row);
             if (max > 0 && parseFloat(row.price_per_kg) > max) {
                 alert('Harga beli tidak boleh melebihi harga master (' + this.formatRp(max) + ')! Harga otomatis disesuaikan ke batas maksimum.');
@@ -1360,11 +1522,36 @@ function cashierPos() {
 
             for (let i = 0; i < this.rows.length; i++) {
                 const row = this.rows[i];
-                if (!row.scrap_item_id) {
-                    e.preventDefault();
-                    alert('Silakan pilih material scrap & daur ulang untuk baris ke-' + (i + 1) + '.');
-                    this.isSubmitting = false;
-                    return;
+
+                // Auto-detect typed new item if not in master list
+                if (!row.scrap_item_id && !row.is_new) {
+                    const query = (row.search_text || '').trim();
+                    if (query) {
+                        const match = this.masterItems.find(item => item.name.toLowerCase() === query.toLowerCase());
+                        if (match) {
+                            row.scrap_item_id = match.id;
+                            row.price_per_kg = row.price_per_kg || parseFloat(match.buy_price_per_kg) || 0;
+                        } else {
+                            row.is_new = true;
+                            row.scrap_item_id = '__new__';
+                            row.new_item_name = query;
+                        }
+                    } else {
+                        e.preventDefault();
+                        alert('Silakan pilih material scrap atau ketik nama barang baru untuk baris ke-' + (i + 1) + '.');
+                        this.isSubmitting = false;
+                        return;
+                    }
+                } else if (row.is_new) {
+                    const name = (row.new_item_name || row.search_text || '').trim();
+                    if (!name) {
+                        e.preventDefault();
+                        alert('Silakan ketik nama barang baru untuk baris ke-' + (i + 1) + '.');
+                        this.isSubmitting = false;
+                        return;
+                    }
+                    row.new_item_name = name;
+                    row.scrap_item_id = '__new__';
                 }
 
                 if (this.isPcsUnit(row)) {
@@ -1385,16 +1572,25 @@ function cashierPos() {
                     }
                 }
 
-                const max = this.getMasterPrice(row);
                 const currentPrice = parseFloat(row.price_per_kg) || 0;
-                if (max > 0 && currentPrice > max) {
+                if (currentPrice <= 0) {
                     e.preventDefault();
-                    const found = this.masterItems.find(it => it.id == row.scrap_item_id);
-                    const itemName = found ? found.name : 'Baris ' + (i + 1);
-                    alert('Harga beli untuk "' + itemName + '" (Rp ' + currentPrice.toLocaleString('id-ID') + ') tidak boleh melebihi harga master (' + this.formatRp(max) + ').\nSilakan input harga sama atau di bawahnya.');
-                    row.price_per_kg = max;
+                    alert('Harga beli per satuan pada baris ke-' + (i + 1) + ' harus lebih dari Rp 0.');
                     this.isSubmitting = false;
                     return;
+                }
+
+                if (!row.is_new && row.scrap_item_id !== '__new__') {
+                    const max = this.getMasterPrice(row);
+                    if (max > 0 && currentPrice > max) {
+                        e.preventDefault();
+                        const found = this.masterItems.find(it => it.id == row.scrap_item_id);
+                        const itemName = found ? found.name : 'Baris ' + (i + 1);
+                        alert('Harga beli untuk "' + itemName + '" (Rp ' + currentPrice.toLocaleString('id-ID') + ') tidak boleh melebihi harga master (' + this.formatRp(max) + ').\nSilakan input harga sama atau di bawahnya.');
+                        row.price_per_kg = max;
+                        this.isSubmitting = false;
+                        return;
+                    }
                 }
             }
 
@@ -1404,7 +1600,7 @@ function cashierPos() {
         resetForm() {
             if (confirm('Yakin ingin mengosongkan seluruh tabel timbangan kasir?')) {
                 this.rows = [
-                    { uid: Date.now(), scrap_item_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
+                    { uid: Date.now(), scrap_item_id: '', is_new: false, new_item_name: '', category_id: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
                 ];
                 this.selectedSupplierId = '';
                 this.supplierName = '';

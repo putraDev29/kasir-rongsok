@@ -564,5 +564,58 @@ class ScrapCashierSystemTest extends TestCase
         $priceListResponse->assertSee('Harga Beli per Kg');
         $priceListResponse->assertSee('TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI');
     }
+
+    public function test_cashier_can_input_new_item_during_purchase_and_auto_saves_to_master(): void
+    {
+        $uniqueItemName = 'Kabel Tembaga Rambut Spesial ' . uniqid();
+        $category = \App\Models\ItemCategory::first();
+
+        $response = $this->actingAs($this->kasir)->post('/purchases', [
+            'supplier_name' => 'Pemasok Barang Baru',
+            'payment_method_id' => $this->cashMethod->id,
+            'discount_amount' => 0,
+            'rounding_amount' => 0,
+            'items' => [
+                [
+                    'scrap_item_id' => '__new__',
+                    'new_item_name' => $uniqueItemName,
+                    'category_id' => $category?->id,
+                    'unit_type' => 'kg',
+                    'gross_weight' => 25.00,
+                    'tare_weight' => 1.00,
+                    'price_per_kg' => 95000.00,
+                ]
+            ]
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        // 1. Assert ScrapItem was automatically created in master table
+        $createdItem = ScrapItem::where('name', $uniqueItemName)->first();
+        $this->assertNotNull($createdItem);
+        $this->assertEquals(95000.00, (float) $createdItem->buy_price_per_kg);
+        $this->assertEquals('kg', $createdItem->unit);
+        $this->assertStringStartsWith('BRG-', $createdItem->code);
+
+        // 2. Assert StockBalance is created and has correct 24.0 kg stock
+        $createdItem->load('stockBalance');
+        $this->assertNotNull($createdItem->stockBalance);
+        $this->assertEquals(24.00, (float) $createdItem->stockBalance->current_stock);
+        $this->assertEquals(95000.00, (float) $createdItem->stockBalance->average_buy_price);
+
+        // 3. Assert StockMovement ledger was created
+        $this->assertDatabaseHas('stock_movements', [
+            'scrap_item_id' => $createdItem->id,
+            'type' => 'purchase',
+            'weight_qty' => 24.00,
+        ]);
+
+        // 4. Clean up test item
+        $createdItem->stockMovements()->delete();
+        $createdItem->stockBalance()->delete();
+        $createdItem->purchaseItems()->delete();
+        $createdItem->forceDelete();
+    }
 }
 

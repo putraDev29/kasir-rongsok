@@ -32,7 +32,10 @@ class StorePurchaseRequest extends FormRequest
             'debt_deduction_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:500',
             'items' => 'required|array|min:1',
-            'items.*.scrap_item_id' => 'required|exists:scrap_items,id',
+            'items.*.scrap_item_id' => 'nullable',
+            'items.*.new_item_name' => 'nullable|string|max:150',
+            'items.*.search_text' => 'nullable|string|max:150',
+            'items.*.category_id' => 'nullable|exists:item_categories,id',
             'items.*.unit_type' => 'nullable|string|in:kg,pcs,satuan,unit',
             'items.*.item_type_name' => 'nullable|string|max:150',
             'items.*.quantity' => 'nullable|numeric|min:0.01',
@@ -50,8 +53,8 @@ class StorePurchaseRequest extends FormRequest
         return [
             'items.required' => 'Daftar timbangan rongsok tidak boleh kosong.',
             'items.min' => 'Minimal harus menimbang 1 jenis barang rongsok.',
-            'items.*.scrap_item_id.required' => 'Jenis barang rongsok wajib dipilih.',
-            'items.*.scrap_item_id.exists' => 'Barang rongsok yang dipilih tidak valid.',
+            'items.*.scrap_item_id.required' => 'Jenis barang rongsok wajib dipilih atau diinput.',
+            'items.*.price_per_kg.gt' => 'Harga beli barang rongsok harus lebih dari Rp 0.',
         ];
     }
 
@@ -63,14 +66,23 @@ class StorePurchaseRequest extends FormRequest
                 return;
             }
 
-            $scrapItemIds = array_filter(array_column($items, 'scrap_item_id'));
-            if (empty($scrapItemIds)) {
-                return;
-            }
-
-            $scrapItems = \App\Models\ScrapItem::whereIn('id', $scrapItemIds)->get()->keyBy('id');
+            $scrapItemIds = array_filter(array_column($items, 'scrap_item_id'), fn($id) => is_numeric($id) && $id > 0);
+            $scrapItems = !empty($scrapItemIds)
+                ? \App\Models\ScrapItem::whereIn('id', $scrapItemIds)->get()->keyBy('id')
+                : collect();
 
             foreach ($items as $index => $item) {
+                $scrapItemId = $item['scrap_item_id'] ?? null;
+                $newItemName = trim($item['new_item_name'] ?? $item['search_text'] ?? '');
+
+                if ((empty($scrapItemId) || $scrapItemId === '__new__') && empty($newItemName)) {
+                    $validator->errors()->add("items.{$index}.scrap_item_id", "Pilih barang rongsok atau ketik nama barang baru pada baris ke-" . ($index + 1) . ".");
+                } elseif (!empty($scrapItemId) && $scrapItemId !== '__new__') {
+                    if (is_numeric($scrapItemId) && !isset($scrapItems[$scrapItemId])) {
+                        $validator->errors()->add("items.{$index}.scrap_item_id", "Barang rongsok yang dipilih pada baris ke-" . ($index + 1) . " tidak valid.");
+                    }
+                }
+
                 $unitType = strtolower($item['unit_type'] ?? 'kg');
                 if (in_array($unitType, ['pcs', 'satuan', 'unit'])) {
                     $qty = (float) ($item['quantity'] ?? 0);
@@ -84,12 +96,11 @@ class StorePurchaseRequest extends FormRequest
                     }
                 }
 
-                $scrapItemId = $item['scrap_item_id'] ?? null;
                 $pricePerKg = isset($item['price_per_kg']) && is_numeric($item['price_per_kg'])
                     ? (float) $item['price_per_kg']
                     : null;
 
-                if ($scrapItemId && $pricePerKg !== null && isset($scrapItems[$scrapItemId])) {
+                if ($scrapItemId && $scrapItemId !== '__new__' && is_numeric($scrapItemId) && $pricePerKg !== null && isset($scrapItems[$scrapItemId])) {
                     $masterItem = $scrapItems[$scrapItemId];
                     $masterBuyPrice = (float) $masterItem->buy_price_per_kg;
 

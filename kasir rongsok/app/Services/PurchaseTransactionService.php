@@ -76,10 +76,74 @@ class PurchaseTransactionService
             $processedItems = [];
 
             foreach ($itemsData as $row) {
-                $scrapItemId = $row['scrap_item_id'];
-                $scrapItem = ScrapItem::lockForUpdate()->findOrFail($scrapItemId);
+                $scrapItemId = $row['scrap_item_id'] ?? null;
+                $newItemName = trim($row['new_item_name'] ?? $row['search_text'] ?? $row['name'] ?? '');
+                $isNewlyCreated = false;
 
-                $unitType = strtolower($row['unit_type'] ?? ($scrapItem->unit_type ?? 'kg'));
+                if ($scrapItemId === '__new__' || (empty($scrapItemId) && !empty($newItemName)) || (!is_numeric($scrapItemId) && !empty($newItemName))) {
+                    // Check if an item with this name already exists in ScrapItem master
+                    $scrapItem = ScrapItem::withTrashed()->where('name', $newItemName)->first();
+
+                    if ($scrapItem) {
+                        if ($scrapItem->trashed()) {
+                            $scrapItem->restore();
+                        }
+                        if (!$scrapItem->is_active) {
+                            $scrapItem->update(['is_active' => true]);
+                        }
+                    } else {
+                        $enteredPrice = isset($row['price_per_kg']) && is_numeric($row['price_per_kg'])
+                            ? (float) $row['price_per_kg']
+                            : 0;
+
+                        $unitType = strtolower($row['unit_type'] ?? 'kg');
+                        if (!in_array($unitType, ['kg', 'pcs', 'satuan', 'unit'])) {
+                            $unitType = 'kg';
+                        }
+
+                        $categoryId = !empty($row['category_id']) && is_numeric($row['category_id'])
+                            ? (int) $row['category_id']
+                            : null;
+
+                        $code = 'BRG-' . strtoupper(substr(uniqid(), -5));
+                        while (ScrapItem::where('code', $code)->exists()) {
+                            $code = 'BRG-' . strtoupper(substr(uniqid(), -5));
+                        }
+
+                        $scrapItem = ScrapItem::create([
+                            'code' => $code,
+                            'name' => $newItemName,
+                            'category_id' => $categoryId,
+                            'unit' => $unitType,
+                            'buy_price_per_kg' => $enteredPrice,
+                            'sell_price_per_kg' => 0,
+                            'min_stock_alert' => 0,
+                            'is_active' => true,
+                        ]);
+
+                        StockBalance::firstOrCreate(
+                            ['scrap_item_id' => $scrapItem->id],
+                            [
+                                'current_stock' => 0,
+                                'total_in' => 0,
+                                'total_out' => 0,
+                                'average_buy_price' => $enteredPrice,
+                            ]
+                        );
+
+                        ActivityLog::record(
+                            action: 'scrap_item_created_from_purchase',
+                            subject: $scrapItem,
+                            description: "Menambahkan jenis barang baru '{$scrapItem->name}' ({$scrapItem->code}) langsung saat transaksi pembelian"
+                        );
+
+                        $isNewlyCreated = true;
+                    }
+                } else {
+                    $scrapItem = ScrapItem::lockForUpdate()->findOrFail($scrapItemId);
+                }
+
+                $unitType = strtolower($row['unit_type'] ?? ($scrapItem->unit ?? 'kg'));
                 if (!in_array($unitType, ['kg', 'pcs', 'satuan', 'unit'])) {
                     $unitType = 'kg';
                 }
@@ -99,7 +163,7 @@ class PurchaseTransactionService
                         : (float) $scrapItem->buy_price_per_kg;
 
                     $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                    if ($masterBuyPrice > 0 && $pricePerUnit > $masterBuyPrice) {
+                    if (!$isNewlyCreated && $masterBuyPrice > 0 && $pricePerUnit > $masterBuyPrice) {
                         throw new Exception("Harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerUnit) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . ").");
                     }
 
@@ -120,7 +184,7 @@ class PurchaseTransactionService
                         : (float) $scrapItem->buy_price_per_kg;
 
                     $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                    if ($masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
+                    if (!$isNewlyCreated && $masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
                         throw new Exception("Harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerKg) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . ").");
                     }
 
