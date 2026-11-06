@@ -25,7 +25,7 @@ class StockController extends Controller
         $categoryId = $request->query('category_id');
         $lowStockOnly = $request->boolean('low_stock');
 
-        $query = ScrapItem::with(['category', 'stockBalance'])
+        $query = ScrapItem::with(['category', 'stockBalance', 'priceStocks'])
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('name', 'LIKE', "%{$search}%")

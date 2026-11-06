@@ -56,8 +56,8 @@ class ScrapItem extends Model
     }
 
     /**
-     * Get available sales/delivery order options split by price tier.
-     * Misal Besi ada 3 harga berbeda, maka ada 3 opsi sesuai harga.
+     * Get available sales/delivery order/purchase options split by price tier.
+     * Misal Besi ada 3 harga berbeda, maka ada 3 opsi sesuai masing-masing harga.
      */
     public function getPriceTierOptions(bool $onlyWithStock = true): array
     {
@@ -66,46 +66,85 @@ class ScrapItem extends Model
             $query->where('current_stock', '>', 0);
         }
         $tiers = $query->get();
+        $masterBuyPrice = (float) $this->buy_price_per_kg;
 
         if ($tiers->isEmpty()) {
-            $defaultPrice = (float) $this->buy_price_per_kg;
             $stock = (float) ($this->stockBalance?->current_stock ?? 0);
             return [
                 [
                     'id' => $this->id,
-                    'tier_id' => $this->id . '_' . (int) $defaultPrice,
+                    'item_price_stock_id' => null,
+                    'tier_id' => $this->id . '_' . str_replace('.', '_', (string) $masterBuyPrice),
+                    'unique_key' => $this->id . '_' . str_replace('.', '_', (string) $masterBuyPrice),
                     'scrap_item_id' => $this->id,
                     'code' => $this->code,
                     'base_name' => $this->name,
-                    'name' => $this->name . ' - ' . \App\Services\FormatHelper::rupiah($defaultPrice),
-                    'price_per_kg' => $defaultPrice,
-                    'buy_price_snapshot' => $defaultPrice,
+                    'name' => $this->name . ' - ' . \App\Services\FormatHelper::rupiah($masterBuyPrice),
+                    'price_per_kg' => $masterBuyPrice,
+                    'buy_price_per_kg' => $masterBuyPrice,
+                    'master_buy_price' => $masterBuyPrice,
+                    'buy_price_snapshot' => $masterBuyPrice,
                     'sell_price_per_kg' => (float) $this->sell_price_per_kg,
                     'current_stock' => $stock,
                     'unit_type' => $this->unit_type ?: 'kg',
                     'category_name' => $this->category?->name,
                     'category_id' => $this->category_id,
+                    'category' => $this->category,
                 ]
             ];
         }
 
         $options = [];
+        $hasMasterPriceInTiers = false;
+
         foreach ($tiers as $tier) {
             $price = (float) $tier->price_per_kg;
+            if (abs($price - $masterBuyPrice) < 0.01) {
+                $hasMasterPriceInTiers = true;
+            }
             $options[] = [
                 'id' => $this->id,
-                'tier_id' => $this->id . '_' . (int) $price,
+                'item_price_stock_id' => $tier->id,
+                'tier_id' => $this->id . '_' . str_replace('.', '_', (string) $price),
+                'unique_key' => $this->id . '_' . str_replace('.', '_', (string) $price),
                 'scrap_item_id' => $this->id,
                 'code' => $this->code,
                 'base_name' => $this->name,
                 'name' => $this->name . ' - ' . \App\Services\FormatHelper::rupiah($price),
                 'price_per_kg' => $price,
+                'buy_price_per_kg' => $price,
+                'master_buy_price' => $masterBuyPrice,
                 'buy_price_snapshot' => $price,
                 'sell_price_per_kg' => (float) $this->sell_price_per_kg,
                 'current_stock' => (float) $tier->current_stock,
                 'unit_type' => $this->unit_type ?: 'kg',
                 'category_name' => $this->category?->name,
                 'category_id' => $this->category_id,
+                'category' => $this->category,
+            ];
+        }
+
+        // If master price is not among tiers and $onlyWithStock is false (e.g. for intake purchases), also include master price
+        if (!$hasMasterPriceInTiers && !$onlyWithStock && $masterBuyPrice > 0) {
+            $options[] = [
+                'id' => $this->id,
+                'item_price_stock_id' => null,
+                'tier_id' => $this->id . '_' . str_replace('.', '_', (string) $masterBuyPrice),
+                'unique_key' => $this->id . '_' . str_replace('.', '_', (string) $masterBuyPrice),
+                'scrap_item_id' => $this->id,
+                'code' => $this->code,
+                'base_name' => $this->name,
+                'name' => $this->name . ' - ' . \App\Services\FormatHelper::rupiah($masterBuyPrice),
+                'price_per_kg' => $masterBuyPrice,
+                'buy_price_per_kg' => $masterBuyPrice,
+                'master_buy_price' => $masterBuyPrice,
+                'buy_price_snapshot' => $masterBuyPrice,
+                'sell_price_per_kg' => (float) $this->sell_price_per_kg,
+                'current_stock' => 0,
+                'unit_type' => $this->unit_type ?: 'kg',
+                'category_name' => $this->category?->name,
+                'category_id' => $this->category_id,
+                'category' => $this->category,
             ];
         }
 

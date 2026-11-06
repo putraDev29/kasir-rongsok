@@ -541,7 +541,10 @@ class PurchaseTransactionService
                     : (float) $item->net_weight;
 
                 $priceStock = ItemPriceStock::where('scrap_item_id', $item->scrap_item_id)
-                    ->where('price_per_kg', $item->price_per_kg)
+                    ->where(function ($q) use ($item) {
+                        $q->where('price_per_kg', $item->price_per_kg)
+                          ->orWhereRaw('ABS(price_per_kg - ?) < 0.01', [$item->price_per_kg]);
+                    })
                     ->first();
                 if ($priceStock) {
                     $priceStock->update([
@@ -686,7 +689,10 @@ class PurchaseTransactionService
                     : (float) $item->net_weight;
 
                 $priceStock = ItemPriceStock::where('scrap_item_id', $item->scrap_item_id)
-                    ->where('price_per_kg', $item->price_per_kg)
+                    ->where(function ($q) use ($item) {
+                        $q->where('price_per_kg', $item->price_per_kg)
+                          ->orWhereRaw('ABS(price_per_kg - ?) < 0.01', [$item->price_per_kg]);
+                    })
                     ->first();
                 if ($priceStock) {
                     $priceStock->update([

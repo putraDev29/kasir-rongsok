@@ -285,6 +285,8 @@
                                         </label>
 
                                         <input type="hidden" :name="'items[' + idx + '][scrap_item_id]'" :value="row.scrap_item_id" required>
+                                        <input type="hidden" :name="'items[' + idx + '][item_price_stock_id]'" :value="row.item_price_stock_id || ''">
+                                        <input type="hidden" :name="'items[' + idx + '][tier_id]'" :value="row.tier_id || ''">
                                         <input type="hidden" :name="'items[' + idx + '][buy_price_snapshot]'" :value="row.buy_price_snapshot || row.avg_buy_price || 0">
 
                                         <div class="relative">
@@ -563,6 +565,7 @@ function salesPos() {
                         uid: Math.random(),
                         scrap_item_id: it.scrap_item_id || '',
                         tier_id: found ? found.tier_id : '',
+                        item_price_stock_id: found ? (found.item_price_stock_id || '') : '',
                         search_text: found ? (found.name + ' [Stok: ' + this.formatNum(stock) + ' ' + (found.unit_type || 'kg') + ']') : (it.item_name || ''),
                         dropdown_open: false,
                         item_type_name: it.item_type_name || '',
@@ -618,7 +621,8 @@ function salesPos() {
         },
 
         selectRowItem(row, item) {
-            row.scrap_item_id = item.id;
+            row.scrap_item_id = item.scrap_item_id || item.id;
+            row.item_price_stock_id = item.item_price_stock_id || '';
             row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
             row.search_text = item.name + ' [Stok: ' + this.formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg') + ']';
             row.sell_price_per_kg = parseFloat(item.sell_price_per_kg) || 0;
@@ -632,6 +636,7 @@ function salesPos() {
 
         clearRowItem(row) {
             row.scrap_item_id = '';
+            row.item_price_stock_id = '';
             row.tier_id = '';
             row.search_text = '';
             row.sell_price_per_kg = 0;
@@ -655,6 +660,7 @@ function salesPos() {
             this.rows.push({
                 uid: Date.now() + Math.random(),
                 scrap_item_id: '',
+                item_price_stock_id: '',
                 tier_id: '',
                 search_text: '',
                 dropdown_open: false,

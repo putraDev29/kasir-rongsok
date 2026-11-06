@@ -31,15 +31,17 @@ class PurchaseTransactionController extends Controller
      */
     public function create(): View
     {
-        $scrapItems = ScrapItem::with(['category', 'stockBalance'])
+        $rawItems = ScrapItem::with(['category', 'stockBalance', 'priceStocks'])
             ->where('is_active', true)
             ->orderBy('name')
-            ->get()
-            ->map(function ($item) {
-                $arr = $item->toArray();
-                $arr['current_stock'] = (float) ($item->stockBalance?->current_stock ?? 0);
-                return $arr;
-            });
+            ->get();
+
+        $scrapItems = [];
+        foreach ($rawItems as $item) {
+            foreach ($item->getPriceTierOptions(onlyWithStock: false) as $opt) {
+                $scrapItems[] = $opt;
+            }
+        }
 
         $categories = ItemCategory::where('is_active', true)
             ->orderBy('id')

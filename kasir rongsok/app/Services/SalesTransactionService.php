@@ -138,6 +138,7 @@ class SalesTransactionService
                 $processedItems[] = [
                     'scrap_item' => $scrapItem,
                     'stock_balance' => $stockBalance,
+                    'item_price_stock_id' => $row['item_price_stock_id'] ?? null,
                     'unit_type' => $unitType,
                     'item_type_name' => $itemTypeName,
                     'quantity' => $quantity,
@@ -400,9 +401,25 @@ class SalesTransactionService
                 ]);
 
                 // Reduce price-tiered inventory
-                $priceStock = ItemPriceStock::where('scrap_item_id', $scrapItem->id)
-                    ->where('price_per_kg', $item['buy_price_snapshot'])
-                    ->first();
+                $priceStock = null;
+                if (!empty($item['item_price_stock_id'])) {
+                    $priceStock = ItemPriceStock::where('id', $item['item_price_stock_id'])
+                        ->where('scrap_item_id', $scrapItem->id)
+                        ->first();
+                }
+                if (!$priceStock) {
+                    $priceStock = ItemPriceStock::where('scrap_item_id', $scrapItem->id)
+                        ->where(function ($q) use ($item) {
+                            $q->where('price_per_kg', $item['buy_price_snapshot'])
+                              ->orWhereRaw('ABS(price_per_kg - ?) < 0.01', [$item['buy_price_snapshot']]);
+                        })
+                        ->first();
+                }
+                if (!$priceStock) {
+                    $priceStock = ItemPriceStock::where('scrap_item_id', $scrapItem->id)
+                        ->orderByDesc('current_stock')
+                        ->first();
+                }
                 if ($priceStock) {
                     $priceStock->update([
                         'current_stock' => max(0, (float) $priceStock->current_stock - $reductionQty),
@@ -463,8 +480,12 @@ class SalesTransactionService
                     ->first();
 
                 if ($stockBalance) {
-                    $newStock = (float) $stockBalance->current_stock + (float) $item->weight;
-                    $newTotalOut = max(0, (float) $stockBalance->total_out - (float) $item->weight);
+                    $restoreQty = in_array(strtolower($item->unit_type ?? 'kg'), ['pcs', 'satuan', 'unit'])
+                        ? (float) ($item->quantity > 0 ? $item->quantity : $item->weight)
+                        : (float) $item->weight;
+
+                    $newStock = (float) $stockBalance->current_stock + $restoreQty;
+                    $newTotalOut = max(0, (float) $stockBalance->total_out - $restoreQty);
 
                     $stockBalance->update([
                         'current_stock' => $newStock,
@@ -473,12 +494,19 @@ class SalesTransactionService
 
                     // Restore price-tiered inventory
                     $priceStock = ItemPriceStock::where('scrap_item_id', $item->scrap_item_id)
-                        ->where('price_per_kg', $item->buy_price_snapshot)
+                        ->where(function ($q) use ($item) {
+                            $q->where('price_per_kg', $item->buy_price_snapshot)
+                              ->orWhereRaw('ABS(price_per_kg - ?) < 0.01', [$item->buy_price_snapshot]);
+                        })
                         ->first();
+                    if (!$priceStock) {
+                        $priceStock = ItemPriceStock::where('scrap_item_id', $item->scrap_item_id)
+                            ->first();
+                    }
                     if ($priceStock) {
                         $priceStock->update([
-                            'current_stock' => (float) $priceStock->current_stock + (float) $item->weight,
-                            'total_out' => max(0, (float) $priceStock->total_out - (float) $item->weight),
+                            'current_stock' => (float) $priceStock->current_stock + $restoreQty,
+                            'total_out' => max(0, (float) $priceStock->total_out - $restoreQty),
                         ]);
                     }
 
@@ -488,7 +516,7 @@ class SalesTransactionService
                         'type' => StockMovement::TYPE_REVERSAL,
                         'reference_type' => SalesTransaction::class,
                         'reference_id' => $transaction->id,
-                        'weight_qty' => $item->weight,
+                        'weight_qty' => $restoreQty,
                         'unit_price' => $item->sell_price_per_kg,
                         'balance_after' => $newStock,
                         'notes' => "Pembatalan penjualan nota {$transaction->invoice_number}: {$reason}",

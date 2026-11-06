@@ -60,7 +60,16 @@
                 @endphp
                 <tr>
                     <td class="p-1.5 border-r border-slate-300 font-bold">{{ $item->code }}</td>
-                    <td class="p-1.5 border-r border-slate-300 font-sans font-bold">{{ $item->name }}</td>
+                    <td class="p-1.5 border-r border-slate-300 font-sans font-bold">
+                        <div>{{ $item->name }}</div>
+                        @if($item->priceStocks && $item->priceStocks->count() > 1)
+                            <div class="text-[9px] font-normal text-slate-600 font-mono">
+                                @foreach($item->priceStocks as $ps)
+                                    Rp {{ \App\Services\FormatHelper::number($ps->price_per_kg) }}: {{ \App\Services\FormatHelper::weight($ps->current_stock) }} kg{{ !$loop->last ? ' | ' : '' }}
+                                @endforeach
+                            </div>
+                        @endif
+                    </td>
                     <td class="p-1.5 border-r border-slate-300 font-sans">{{ $item->category?->name }}</td>
                     <td class="p-1.5 border-r border-slate-300 text-right font-bold">{{ \App\Services\FormatHelper::weight($cur) }} kg</td>
                     <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ number_format($avg, 0, ',', '.') }}</td>

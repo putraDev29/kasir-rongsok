@@ -77,16 +77,16 @@
 
                     <!-- Fast Click Item Cards -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
-                        <template x-for="item in filteredItems()" :key="item.id">
+                        <template x-for="item in filteredItems()" :key="item.unique_key || item.tier_id || item.id">
                             <button type="button" @click="addItem(item)"
                                     class="text-left p-2 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group flex flex-col justify-between">
                                 <div>
                                     <div class="text-[11px] font-bold text-slate-900 group-hover:text-emerald-700 truncate" x-text="item.name"></div>
-                                    <div class="text-[10px] text-slate-400" x-text="item.code"></div>
+                                    <div class="text-[10px] text-slate-400 font-mono" x-text="item.code"></div>
                                 </div>
                                 <div class="mt-1 flex items-center justify-between text-[11px] font-bold text-emerald-600">
-                                    <span x-text="formatRp(item.buy_price_per_kg) + '/kg'"></span>
-                                    <span class="text-[10px] text-slate-400 font-normal" x-text="'Stok: ' + (item.current_stock || 0) + 'kg'"></span>
+                                    <span x-text="formatRp(item.price_per_kg || item.buy_price_per_kg) + '/' + (item.unit_type || 'kg')"></span>
+                                    <span class="text-[10px] text-slate-400 font-mono font-normal" x-text="'Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
                                 </div>
                             </button>
                         </template>
@@ -189,17 +189,21 @@
                                              class="absolute z-50 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl divide-y divide-slate-100"
                                              style="display: none;">
                                             
-                                            <template x-for="item in filteredMasterItems(row.search_text)" :key="item.id">
+                                            <template x-for="item in filteredMasterItems(row.search_text)" :key="item.unique_key || item.tier_id || item.id">
                                                 <button type="button" 
                                                         @click="selectRowItem(row, item, index)"
                                                         class="w-full text-left px-3 py-2 hover:bg-emerald-50 flex items-center justify-between transition-colors"
-                                                        :class="{ 'bg-emerald-50/70': row.scrap_item_id == item.id }">
+                                                        :class="{ 'bg-emerald-50/70': (row.tier_id ? (row.tier_id === item.tier_id) : (row.scrap_item_id == item.id && row.price_per_kg == item.price_per_kg)) }">
                                                     <div class="min-w-0 pr-2">
                                                         <div class="text-xs font-bold text-slate-900 truncate" x-text="item.name"></div>
-                                                        <div class="text-[10px] text-slate-500 font-mono" x-text="item.code + (item.category ? ' • ' + item.category.name : '')"></div>
+                                                        <div class="text-[10px] text-slate-500 font-mono">
+                                                            <span x-text="item.code"></span>
+                                                            <span x-show="item.category_name || (item.category && item.category.name)" x-text="' • ' + (item.category_name || (item.category && item.category.name))"></span>
+                                                            <span class="text-emerald-700 font-semibold" x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
+                                                        </div>
                                                     </div>
                                                     <div class="text-right shrink-0">
-                                                        <div class="text-[11px] font-mono font-bold text-emerald-700" x-text="formatRp(item.buy_price_per_kg) + '/' + (item.unit_type || 'kg')"></div>
+                                                        <div class="text-[11px] font-mono font-bold text-emerald-700" x-text="formatRp(item.price_per_kg || item.buy_price_per_kg) + '/' + (item.unit_type || 'kg')"></div>
                                                     </div>
                                                 </button>
                                             </template>
@@ -1282,16 +1286,18 @@ function cashierPos() {
             const q = searchText.toLowerCase().trim();
             return this.masterItems.filter(item => {
                 const name = (item.name || '').toLowerCase();
+                const baseName = (item.base_name || '').toLowerCase();
                 const code = (item.code || '').toLowerCase();
-                const cat = (item.category?.name || '').toLowerCase();
-                return name.includes(q) || code.includes(q) || cat.includes(q);
+                const cat = (item.category?.name || item.category_name || '').toLowerCase();
+                const price = String(item.price_per_kg || item.buy_price_per_kg || '');
+                return name.includes(q) || baseName.includes(q) || code.includes(q) || cat.includes(q) || price.includes(q);
             });
         },
 
         isExactMatchMaster(text) {
             if (!text) return false;
             const q = text.toLowerCase().trim();
-            return this.masterItems.some(i => i.name.toLowerCase() === q);
+            return this.masterItems.some(i => (i.name || '').toLowerCase() === q || (i.base_name || '').toLowerCase() === q);
         },
 
         refreshIcons() {
@@ -1375,9 +1381,10 @@ function cashierPos() {
             row.category_id = item.category_id || '';
             row.is_new_category = false;
             row.new_category_name = '';
-            row.scrap_item_id = item.id;
+            row.scrap_item_id = item.scrap_item_id || item.id;
+            row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
             row.search_text = item.name + ' (' + item.code + ')';
-            row.price_per_kg = parseFloat(item.buy_price_per_kg) || 0;
+            row.price_per_kg = parseFloat(item.price_per_kg || item.buy_price_per_kg) || 0;
             if (item.unit_type && item.unit_type !== 'kg') {
                 row.unit_type = item.unit_type;
             } else if (!row.unit_type) {
@@ -1397,6 +1404,7 @@ function cashierPos() {
             row.is_new_category = false;
             row.new_category_name = '';
             row.scrap_item_id = '';
+            row.tier_id = '';
             row.search_text = '';
             row.price_per_kg = 0;
             row.dropdown_open = true;
@@ -1406,6 +1414,7 @@ function cashierPos() {
             this.rows.push({
                 uid: Date.now() + Math.random(),
                 scrap_item_id: '',
+                tier_id: '',
                 is_new: false,
                 new_item_name: '',
                 category_id: '',
@@ -1428,9 +1437,12 @@ function cashierPos() {
         addItem(item) {
             const itemUnit = item.unit_type || 'kg';
             const itemLabel = item.name + ' (' + item.code + ')';
+            const itemPrice = parseFloat(item.price_per_kg || item.buy_price_per_kg) || 0;
+            const itemTierId = item.tier_id || (item.id + '_' + itemPrice);
             const lastRow = this.rows[this.rows.length - 1];
             if (lastRow && !lastRow.scrap_item_id && !lastRow.is_new && !lastRow.gross_weight && (!lastRow.quantity || lastRow.quantity == 1)) {
-                lastRow.scrap_item_id = item.id;
+                lastRow.scrap_item_id = item.scrap_item_id || item.id;
+                lastRow.tier_id = itemTierId;
                 lastRow.is_new = false;
                 lastRow.new_item_name = '';
                 lastRow.category_id = item.category_id || '';
@@ -1439,11 +1451,12 @@ function cashierPos() {
                 lastRow.search_text = itemLabel;
                 lastRow.unit_type = itemUnit;
                 lastRow.tare_mode = itemUnit;
-                lastRow.price_per_kg = parseFloat(item.buy_price_per_kg) || 0;
+                lastRow.price_per_kg = itemPrice;
             } else {
                 this.rows.push({
                     uid: Date.now() + Math.random(),
-                    scrap_item_id: item.id,
+                    scrap_item_id: item.scrap_item_id || item.id,
+                    tier_id: itemTierId,
                     is_new: false,
                     new_item_name: '',
                     category_id: item.category_id || '',
@@ -1458,7 +1471,7 @@ function cashierPos() {
                     tare_weight: '',
                     tare_percent: '',
                     tare_mode: itemUnit,
-                    price_per_kg: parseFloat(item.buy_price_per_kg) || 0
+                    price_per_kg: itemPrice
                 });
             }
             this.refreshIcons();
@@ -1668,8 +1681,9 @@ function cashierPos() {
 
         getMasterPrice(row) {
             if (!row || !row.scrap_item_id || row.scrap_item_id === '__new__' || row.is_new) return 0;
-            const found = this.masterItems.find(i => i.id == row.scrap_item_id);
-            return found ? parseFloat(found.buy_price_per_kg) || 0 : 0;
+            const matches = this.masterItems.filter(i => (i.scrap_item_id == row.scrap_item_id || i.id == row.scrap_item_id));
+            if (!matches.length) return 0;
+            return Math.max(...matches.map(i => parseFloat(i.master_buy_price || i.buy_price_per_kg || 0)));
         },
 
         validatePrice(row) {
@@ -1685,8 +1699,8 @@ function cashierPos() {
 
         getRowBaseName(row) {
             if (row.is_new) return row.new_item_name || row.search_text || 'Barang Baru';
-            const found = this.masterItems.find(i => i.id == row.scrap_item_id);
-            return found ? found.name : (row.search_text ? row.search_text.split(' (')[0] : '');
+            const found = this.masterItems.find(i => (i.scrap_item_id == row.scrap_item_id || i.id == row.scrap_item_id));
+            return found ? (found.base_name || found.name) : (row.search_text ? row.search_text.split(' (')[0] : '');
         },
 
         getItemRows(row) {
@@ -1842,8 +1856,8 @@ function cashierPos() {
                     const max = this.getMasterPrice(row);
                     if (max > 0 && currentPrice > max) {
                         e.preventDefault();
-                        const found = this.masterItems.find(it => it.id == row.scrap_item_id);
-                        const itemName = found ? found.name : 'Baris ' + (i + 1);
+                        const found = this.masterItems.find(it => (it.scrap_item_id == row.scrap_item_id || it.id == row.scrap_item_id));
+                        const itemName = found ? (found.base_name || found.name) : 'Baris ' + (i + 1);
                         const roleName = this.userRole === 'admin' ? 'Admin' : 'Kasir';
                         alert(roleName + ' tidak diizinkan memasukkan harga beli untuk "' + itemName + '" (Rp ' + currentPrice.toLocaleString('id-ID') + ') melebihi harga master (' + this.formatRp(max) + ').\nSilakan input harga sama atau di bawahnya. Hanya Owner yang dapat memasukkan harga di atas harga master.');
                         row.price_per_kg = max;

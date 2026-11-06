@@ -122,7 +122,16 @@
                             <td class="py-3 px-3 font-mono font-bold text-slate-700">{{ $item->code }}</td>
                             <td class="py-3 px-3 font-bold text-slate-900">
                                 <div>{{ $item->name }}</div>
-                                <div class="text-[10px] text-slate-400 font-normal">Min. Alert: {{ \App\Services\FormatHelper::weight($item->min_stock_alert) }} kg</div>
+                                @if($item->priceStocks && $item->priceStocks->count() > 1)
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        @foreach($item->priceStocks as $ps)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-50 text-blue-700 border border-blue-200">
+                                                Rp {{ \App\Services\FormatHelper::number($ps->price_per_kg) }}: <strong class="ml-1">{{ \App\Services\FormatHelper::weight($ps->current_stock) }}</strong> {{ $item->unit_type ?: 'kg' }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                                <div class="text-[10px] text-slate-400 font-normal mt-0.5">Min. Alert: {{ \App\Services\FormatHelper::weight($item->min_stock_alert) }} kg</div>
                             </td>
                             <td class="py-3 px-3 text-slate-600">{{ $item->category?->name ?? '-' }}</td>
                             <td class="py-3 px-3 text-right font-mono text-emerald-700">

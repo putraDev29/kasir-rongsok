@@ -70,7 +70,7 @@ class SalesTransactionController extends Controller
 
         $scrapItems = [];
         foreach ($rawItems as $item) {
-            foreach ($item->getPriceTierOptions(onlyWithStock: true) as $opt) {
+            foreach ($item->getPriceTierOptions(onlyWithStock: false) as $opt) {
                 $scrapItems[] = $opt;
             }
         }

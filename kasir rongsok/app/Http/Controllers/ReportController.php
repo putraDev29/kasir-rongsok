@@ -120,7 +120,7 @@ class ReportController extends Controller
     {
         $format = $request->query('format');
 
-        $items = ScrapItem::with(['category', 'stockBalance'])
+        $items = ScrapItem::with(['category', 'stockBalance', 'priceStocks'])
             ->orderBy('name')
             ->get();
 

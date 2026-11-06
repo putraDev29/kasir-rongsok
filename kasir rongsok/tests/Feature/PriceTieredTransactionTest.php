@@ -232,4 +232,87 @@ class PriceTieredTransactionTest extends TestCase
         $this->besiItem->refresh();
         $this->assertEquals(85, (float) $this->besiItem->stockBalance->current_stock);
     }
+
+    public function test_purchase_screen_displays_all_price_options_when_item_has_multiple_prices()
+    {
+        // 1 item dengan 3 harga berbeda di database: Rp 4.000, Rp 4.500, Rp 5.000
+        ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 4000],
+            ['current_stock' => 50, 'total_in' => 50, 'total_out' => 0]
+        );
+        ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 4500],
+            ['current_stock' => 30, 'total_in' => 30, 'total_out' => 0]
+        );
+        ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 5000],
+            ['current_stock' => 20, 'total_in' => 20, 'total_out' => 0]
+        );
+        $this->besiItem->stockBalance->update(['current_stock' => 100]);
+
+        $response = $this->actingAs($this->cashier)->get(route('purchases.create'));
+        $response->assertOk();
+
+        // Di halaman penerimaan, harus muncul list sesuai masing-masing dari 3 harga
+        $response->assertSee('Besi Campur Test - Rp 4.000');
+        $response->assertSee('Besi Campur Test - Rp 4.500');
+        $response->assertSee('Besi Campur Test - Rp 5.000');
+
+        // Juga di halaman penjualan, harus muncul list sesuai ketiga harga
+        $responseSales = $this->actingAs($this->admin)->get(route('sales.create'));
+        $responseSales->assertOk();
+        $responseSales->assertSee('Besi Campur Test - Rp 4.000');
+        $responseSales->assertSee('Besi Campur Test - Rp 4.500');
+        $responseSales->assertSee('Besi Campur Test - Rp 5.000');
+    }
+
+    public function test_sale_via_http_form_post_reduces_selected_tier_stock()
+    {
+        $tier4000 = ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 4000],
+            ['current_stock' => 50, 'total_in' => 50, 'total_out' => 0]
+        );
+        $tier4500 = ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 4500],
+            ['current_stock' => 30, 'total_in' => 30, 'total_out' => 0]
+        );
+        $tier5000 = ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 5000],
+            ['current_stock' => 20, 'total_in' => 20, 'total_out' => 0]
+        );
+        $this->besiItem->stockBalance->update(['current_stock' => 100]);
+
+        // Kirim HTTP POST simulasi form penjualan memilih tier Rp 4.500 sebanyak 10 kg
+        $postData = [
+            'buyer_name' => 'PT Mitra Logam Sejahtera',
+            'delivery_type' => 'pickup',
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_price_stock_id' => $tier4500->id,
+                    'buy_price_snapshot' => 4500,
+                    'weight' => 10,
+                    'sell_price_per_kg' => 6500,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->admin)->post(route('sales.store'), $postData);
+        $response->assertRedirect();
+
+        // Stok tier 4500 harus berkurang dari 30 jadi 20 kg
+        $tier4500->refresh();
+        $this->assertEquals(20, (float) $tier4500->current_stock);
+
+        // Stok tier 4000 dan 5000 tetap utuh
+        $tier4000->refresh();
+        $this->assertEquals(50, (float) $tier4000->current_stock);
+        $tier5000->refresh();
+        $this->assertEquals(20, (float) $tier5000->current_stock);
+
+        // StockBalance berkurang dari 100 jadi 90 kg
+        $this->besiItem->refresh();
+        $this->assertEquals(90, (float) $this->besiItem->stockBalance->current_stock);
+    }
 }
