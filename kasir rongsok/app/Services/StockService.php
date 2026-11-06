@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
+use App\Models\ItemPriceStock;
 use App\Models\ScrapItem;
 use App\Models\ScrapItemPriceHistory;
 use App\Models\StockBalance;
@@ -39,6 +40,19 @@ class StockService
 
             $balance->update([
                 'current_stock' => $newStock,
+            ]);
+
+            // Sync with price-tiered inventory
+            $primaryPrice = (float) $item->buy_price_per_kg;
+            $priceStock = ItemPriceStock::firstOrCreate(
+                ['scrap_item_id' => $item->id, 'price_per_kg' => $primaryPrice],
+                ['current_stock' => 0, 'total_in' => 0, 'total_out' => 0]
+            );
+            $otherTiersStock = (float) ItemPriceStock::where('scrap_item_id', $item->id)
+                ->where('id', '!=', $priceStock->id)
+                ->sum('current_stock');
+            $priceStock->update([
+                'current_stock' => max(0, round($newStock - $otherTiersStock, 2)),
             ]);
 
             StockMovement::create([

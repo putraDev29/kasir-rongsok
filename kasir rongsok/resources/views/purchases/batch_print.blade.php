@@ -234,6 +234,27 @@
                                     @endforeach
                                 </div>
 
+                                @php
+                                    $grpComm = $purchase->items->groupBy('item_name_snapshot');
+                                    $hasMulti = $grpComm->contains(fn($g) => $g->count() > 1);
+                                @endphp
+                                @if($hasMulti)
+                                    <div class="py-1 border-t border-dotted border-slate-300 font-mono text-[8px] text-slate-700">
+                                        <div class="font-bold uppercase text-[7.5px]">Akumulasi Komoditas:</div>
+                                        @foreach($grpComm as $cName => $cGrp)
+                                            @php
+                                                $tW = $cGrp->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+                                                $u = $cGrp->first()->unit_type ?: 'kg';
+                                                $tS = $cGrp->sum('subtotal');
+                                            @endphp
+                                            <div class="flex justify-between">
+                                                <span>{{ $cName }}:</span>
+                                                <span class="font-bold">{{ \App\Services\FormatHelper::weight($tW) }} {{ $u }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+
                                 <!-- Total Calculation -->
                                 <div class="pt-1.5 font-mono text-[9px] space-y-0.5">
                                     <div style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">

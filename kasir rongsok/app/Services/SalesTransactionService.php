@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ActivityLog;
 use App\Models\DeliveryOrder;
 use App\Models\DeliveryOrderItem;
+use App\Models\ItemPriceStock;
 use App\Models\SalesTransaction;
 use App\Models\SalesTransactionItem;
 use App\Models\ScrapItem;
@@ -79,10 +80,16 @@ class SalesTransactionService
                         throw new Exception("Harga jual satuan untuk '{$scrapItem->name}' harus lebih dari Rp 0.");
                     }
 
-                    $avgBuyPrice = (float) ($stockBalance?->average_buy_price ?? $scrapItem->buy_price_per_kg);
+                    $selectedBuyPrice = isset($row['buy_price_snapshot']) && is_numeric($row['buy_price_snapshot']) && (float) $row['buy_price_snapshot'] > 0
+                        ? (float) $row['buy_price_snapshot']
+                        : (isset($row['tier_price']) && is_numeric($row['tier_price']) && (float) $row['tier_price'] > 0
+                            ? (float) $row['tier_price']
+                            : (float) ($stockBalance?->average_buy_price ?? $scrapItem->buy_price_per_kg));
+
                     $itemSubtotal = round($quantity * $sellPrice, 2);
-                    $itemCogs = round($quantity * $avgBuyPrice, 2);
+                    $itemCogs = round($quantity * $selectedBuyPrice, 2);
                     $itemProfit = round($itemSubtotal - $itemCogs, 2);
+                    $avgBuyPrice = $selectedBuyPrice;
                 } else {
                     $weight = max(0, (float) ($row['weight'] ?? 0));
                     $quantity = 1;
@@ -109,10 +116,16 @@ class SalesTransactionService
                         throw new Exception("Harga jual per kg untuk '{$scrapItem->name}' harus lebih dari Rp 0.");
                     }
 
-                    $avgBuyPrice = (float) ($stockBalance?->average_buy_price ?? $scrapItem->buy_price_per_kg);
+                    $selectedBuyPrice = isset($row['buy_price_snapshot']) && is_numeric($row['buy_price_snapshot']) && (float) $row['buy_price_snapshot'] > 0
+                        ? (float) $row['buy_price_snapshot']
+                        : (isset($row['tier_price']) && is_numeric($row['tier_price']) && (float) $row['tier_price'] > 0
+                            ? (float) $row['tier_price']
+                            : (float) ($stockBalance?->average_buy_price ?? $scrapItem->buy_price_per_kg));
+
                     $itemSubtotal = round($weight * $sellPrice, 2);
-                    $itemCogs = round($weight * $avgBuyPrice, 2);
+                    $itemCogs = round($weight * $selectedBuyPrice, 2);
                     $itemProfit = round($itemSubtotal - $itemCogs, 2);
+                    $avgBuyPrice = $selectedBuyPrice;
 
                     $totalWeight += $weight;
                 }
@@ -296,6 +309,17 @@ class SalesTransactionService
                     'total_out' => $newTotalOut,
                 ]);
 
+                // Reduce price-tiered inventory
+                $priceStock = ItemPriceStock::where('scrap_item_id', $scrapItem->id)
+                    ->where('price_per_kg', $item['buy_price_snapshot'])
+                    ->first();
+                if ($priceStock) {
+                    $priceStock->update([
+                        'current_stock' => max(0, (float) $priceStock->current_stock - $reductionQty),
+                        'total_out' => (float) $priceStock->total_out + $reductionQty,
+                    ]);
+                }
+
                 // Log movement
                 StockMovement::create([
                     'scrap_item_id' => $scrapItem->id,
@@ -356,6 +380,17 @@ class SalesTransactionService
                         'current_stock' => $newStock,
                         'total_out' => $newTotalOut,
                     ]);
+
+                    // Restore price-tiered inventory
+                    $priceStock = ItemPriceStock::where('scrap_item_id', $item->scrap_item_id)
+                        ->where('price_per_kg', $item->buy_price_snapshot)
+                        ->first();
+                    if ($priceStock) {
+                        $priceStock->update([
+                            'current_stock' => (float) $priceStock->current_stock + (float) $item->weight,
+                            'total_out' => max(0, (float) $priceStock->total_out - (float) $item->weight),
+                        ]);
+                    }
 
                     StockMovement::create([
                         'scrap_item_id' => $item->scrap_item_id,

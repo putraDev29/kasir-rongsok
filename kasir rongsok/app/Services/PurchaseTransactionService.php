@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ActivityLog;
 use App\Models\Debt;
 use App\Models\ItemCategory;
+use App\Models\ItemPriceStock;
 use App\Models\PurchaseTransaction;
 use App\Models\PurchaseTransactionItem;
 use App\Models\ScrapItem;
@@ -74,7 +75,7 @@ class PurchaseTransactionService
             $totalNetWeight = 0;
             $subtotalAmount = 0;
 
-            $processedItems = [];
+            $consolidatedItems = [];
 
             foreach ($itemsData as $row) {
                 $scrapItemId = $row['scrap_item_id'] ?? null;
@@ -223,19 +224,38 @@ class PurchaseTransactionService
                 $totalNetWeight += ($unitType === 'kg' ? $net : 0);
                 $subtotalAmount += $itemSubtotal;
 
-                $processedItems[] = [
-                    'scrap_item' => $scrapItem,
-                    'unit_type' => $unitType,
-                    'item_type_name' => $itemTypeName,
-                    'quantity' => $quantity,
-                    'gross_weight' => $gross,
-                    'tare_weight' => $tare,
-                    'net_weight' => $net,
-                    'price_per_kg' => $pricePerKg,
-                    'subtotal' => $itemSubtotal,
-                    'notes' => $row['notes'] ?? null,
-                ];
+                // Group items by item ID and price tier (Task: simpan berdasarkan harga)
+                $groupKey = $scrapItem->id . '_' . number_format($pricePerKg, 2, '.', '') . '_' . $unitType . '_' . trim($itemTypeName ?? '');
+
+                if (isset($consolidatedItems[$groupKey])) {
+                    // Harga sama: akumulasi ke baris tier harga tersebut
+                    $consolidatedItems[$groupKey]['gross_weight'] += $gross;
+                    $consolidatedItems[$groupKey]['tare_weight'] += $tare;
+                    $consolidatedItems[$groupKey]['net_weight'] += $net;
+                    $consolidatedItems[$groupKey]['quantity'] += $quantity;
+                    $consolidatedItems[$groupKey]['subtotal'] += $itemSubtotal;
+                    if (!empty($row['notes'])) {
+                        $existingNotes = $consolidatedItems[$groupKey]['notes'];
+                        $consolidatedItems[$groupKey]['notes'] = $existingNotes ? ($existingNotes . '; ' . $row['notes']) : $row['notes'];
+                    }
+                } else {
+                    // Harga beda: buat entri daftar harga yang berbeda untuk barang ini
+                    $consolidatedItems[$groupKey] = [
+                        'scrap_item' => $scrapItem,
+                        'unit_type' => $unitType,
+                        'item_type_name' => $itemTypeName,
+                        'quantity' => $quantity,
+                        'gross_weight' => $gross,
+                        'tare_weight' => $tare,
+                        'net_weight' => $net,
+                        'price_per_kg' => $pricePerKg,
+                        'subtotal' => $itemSubtotal,
+                        'notes' => $row['notes'] ?? null,
+                    ];
+                }
             }
+
+            $processedItems = array_values($consolidatedItems);
 
             $discountAmount = max(0, (float) ($data['discount_amount'] ?? 0));
             $roundingAmount = (float) ($data['rounding_amount'] ?? 0);
@@ -367,6 +387,20 @@ class PurchaseTransactionService
                     'average_buy_price' => round($newAvg, 2),
                 ]);
 
+                // Update price-tiered inventory (item_price_stocks)
+                $incomingQty = ($item['unit_type'] === 'pcs' || $item['unit_type'] === 'satuan' || $item['unit_type'] === 'unit')
+                    ? (float) ($item['quantity'] > 0 ? $item['quantity'] : $item['net_weight'])
+                    : (float) $item['net_weight'];
+
+                $priceStock = ItemPriceStock::firstOrCreate(
+                    ['scrap_item_id' => $scrapItem->id, 'price_per_kg' => $item['price_per_kg']],
+                    ['current_stock' => 0, 'total_in' => 0, 'total_out' => 0]
+                );
+                $priceStock->update([
+                    'current_stock' => (float) $priceStock->current_stock + $incomingQty,
+                    'total_in' => (float) $priceStock->total_in + $incomingQty,
+                ]);
+
                 // Record stock ledger movement
                 StockMovement::create([
                     'scrap_item_id' => $scrapItem->id,
@@ -441,6 +475,21 @@ class PurchaseTransactionService
                         'unit_price' => $item->price_per_kg,
                         'balance_after' => $newStock,
                         'notes' => "Batal item {$item->item_name_snapshot} pada nota {$transaction->invoice_number}: {$reason}",
+                    ]);
+                }
+
+                // Reverse price-tiered inventory
+                $revQty = ($item->unit_type === 'pcs' || $item->unit_type === 'satuan' || $item->unit_type === 'unit')
+                    ? (float) ($item->quantity > 0 ? $item->quantity : $item->net_weight)
+                    : (float) $item->net_weight;
+
+                $priceStock = ItemPriceStock::where('scrap_item_id', $item->scrap_item_id)
+                    ->where('price_per_kg', $item->price_per_kg)
+                    ->first();
+                if ($priceStock) {
+                    $priceStock->update([
+                        'current_stock' => max(0, (float) $priceStock->current_stock - $revQty),
+                        'total_in' => max(0, (float) $priceStock->total_in - $revQty),
                     ]);
                 }
             }
@@ -544,7 +593,7 @@ class PurchaseTransactionService
             $transaction->load('items.scrapItem');
 
             foreach ($transaction->items as $item) {
-                if (!$item->scrap_item_id) {
+                if (!$item->scrap_item_id || $item->is_cancelled) {
                     continue;
                 }
 
@@ -571,6 +620,21 @@ class PurchaseTransactionService
                         'unit_price' => $item->price_per_kg,
                         'balance_after' => $newStock,
                         'notes' => "Pembatalan nota penerimaan {$transaction->invoice_number}: {$reason}",
+                    ]);
+                }
+
+                // Reverse price-tiered inventory
+                $revQty = ($item->unit_type === 'pcs' || $item->unit_type === 'satuan' || $item->unit_type === 'unit')
+                    ? (float) ($item->quantity > 0 ? $item->quantity : $item->net_weight)
+                    : (float) $item->net_weight;
+
+                $priceStock = ItemPriceStock::where('scrap_item_id', $item->scrap_item_id)
+                    ->where('price_per_kg', $item->price_per_kg)
+                    ->first();
+                if ($priceStock) {
+                    $priceStock->update([
+                        'current_stock' => max(0, (float) $priceStock->current_stock - $revQty),
+                        'total_in' => max(0, (float) $priceStock->total_in - $revQty),
                     ]);
                 }
             }

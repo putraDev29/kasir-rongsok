@@ -59,13 +59,20 @@ class SalesTransactionController extends Controller
 
     public function create(Request $request): View
     {
-        $scrapItems = ScrapItem::with('stockBalance')
+        $rawItems = ScrapItem::with(['stockBalance', 'priceStocks', 'category'])
             ->where('is_active', true)
             ->whereHas('stockBalance', function ($q) {
                 $q->where('current_stock', '>', 0);
             })
             ->orderBy('name')
             ->get();
+
+        $scrapItems = [];
+        foreach ($rawItems as $item) {
+            foreach ($item->getPriceTierOptions(onlyWithStock: true) as $opt) {
+                $scrapItems[] = $opt;
+            }
+        }
 
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
 

@@ -59,7 +59,17 @@ class DeliveryOrderController extends Controller
             $salesTx = SalesTransaction::with('items.scrapItem')->find($salesTxId);
         }
 
-        $scrapItems = ScrapItem::where('is_active', true)->orderBy('name')->get();
+        $rawItems = ScrapItem::with(['stockBalance', 'priceStocks', 'category'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $scrapItems = [];
+        foreach ($rawItems as $item) {
+            foreach ($item->getPriceTierOptions(onlyWithStock: false) as $opt) {
+                $scrapItems[] = $opt;
+            }
+        }
         $recentSales = SalesTransaction::where('delivery_type', SalesTransaction::DELIVERY_TYPE_DELIVERY)
             ->whereNull('delivery_order_id')
             ->where('status', '!=', SalesTransaction::STATUS_CANCELLED)

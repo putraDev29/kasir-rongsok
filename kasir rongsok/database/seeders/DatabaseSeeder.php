@@ -33,36 +33,32 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Users
-        $superAdmin = User::create([
+        $superAdmin = User::firstOrCreate(['email' => 'owner@kasirrongsok.com'], [
             'name' => 'Bapak Hartono (Owner)',
-            'email' => 'owner@kasirrongsok.com',
             'password' => Hash::make('password123'),
             'role' => User::ROLE_SUPER_ADMIN,
             'phone' => '081122334455',
             'is_active' => true,
         ]);
 
-        $admin = User::create([
+        $admin = User::firstOrCreate(['email' => 'admin@kasirrongsok.com'], [
             'name' => 'Dewi Safitri (Admin)',
-            'email' => 'admin@kasirrongsok.com',
             'password' => Hash::make('password123'),
             'role' => User::ROLE_ADMIN,
             'phone' => '081233445566',
             'is_active' => true,
         ]);
 
-        $kasir1 = User::create([
+        $kasir1 = User::firstOrCreate(['email' => 'kasir1@kasirrongsok.com'], [
             'name' => 'Rian Pratama (Kasir 1)',
-            'email' => 'kasir1@kasirrongsok.com',
             'password' => Hash::make('password123'),
             'role' => User::ROLE_KASIR,
             'phone' => '081344556677',
             'is_active' => true,
         ]);
 
-        $kasir2 = User::create([
+        $kasir2 = User::firstOrCreate(['email' => 'kasir2@kasirrongsok.com'], [
             'name' => 'Agus Santoso (Kasir 2)',
-            'email' => 'kasir2@kasirrongsok.com',
             'password' => Hash::make('password123'),
             'role' => User::ROLE_KASIR,
             'phone' => '081455667788',
@@ -83,32 +79,32 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($settings as $key => $val) {
-            BusinessSetting::create(['key' => $key, 'value' => $val, 'group' => 'general']);
+            BusinessSetting::updateOrCreate(['key' => $key], ['value' => $val, 'group' => 'general']);
         }
 
         // 3. Payment Methods
-        $cash = PaymentMethod::create(['name' => 'Tunai / Cash', 'code' => 'cash', 'is_active' => true]);
-        $bca = PaymentMethod::create(['name' => 'Transfer Bank BCA', 'code' => 'transfer_bca', 'is_active' => true]);
-        $bri = PaymentMethod::create(['name' => 'Transfer Bank BRI', 'code' => 'transfer_bri', 'is_active' => true]);
-        $mandiri = PaymentMethod::create(['name' => 'Transfer Bank Mandiri', 'code' => 'transfer_mandiri', 'is_active' => true]);
-        $bni = PaymentMethod::create(['name' => 'Transfer Bank BNI', 'code' => 'transfer_bni', 'is_active' => true]);
-        $qris = PaymentMethod::create(['name' => 'QRIS / Digital', 'code' => 'qris', 'is_active' => true]);
+        $cash = PaymentMethod::firstOrCreate(['code' => 'cash'], ['name' => 'Tunai / Cash', 'is_active' => true]);
+        $bca = PaymentMethod::firstOrCreate(['code' => 'transfer_bca'], ['name' => 'Transfer Bank BCA', 'is_active' => true]);
+        $bri = PaymentMethod::firstOrCreate(['code' => 'transfer_bri'], ['name' => 'Transfer Bank BRI', 'is_active' => true]);
+        $mandiri = PaymentMethod::firstOrCreate(['code' => 'transfer_mandiri'], ['name' => 'Transfer Bank Mandiri', 'is_active' => true]);
+        $bni = PaymentMethod::firstOrCreate(['code' => 'transfer_bni'], ['name' => 'Transfer Bank BNI', 'is_active' => true]);
+        $qris = PaymentMethod::firstOrCreate(['code' => 'qris'], ['name' => 'QRIS / Digital', 'is_active' => true]);
 
         // 4. Expense Categories
-        $expTransport = ExpenseCategory::create(['name' => 'Biaya Transportasi & Armada', 'description' => 'BBM truk, tol, sewa pick up']);
-        $expLabor = ExpenseCategory::create(['name' => 'Biaya Bongkar Muat / Tenaga Angkut', 'description' => 'Upah harian kuli bongkar muat rongsok']);
-        $expMeals = ExpenseCategory::create(['name' => 'Uang Makan Karyawan', 'description' => 'Konsumsi makan & minum operator timbang']);
-        $expMaintenance = ExpenseCategory::create(['name' => 'Perawatan Kendaraan & Alat Timbang', 'description' => 'Kalibrasi timbangan duduk, servis armada']);
-        $expUtility = ExpenseCategory::create(['name' => 'Listrik, Air & Operasional Kantor', 'description' => 'Token PLN gudang, PDAM, ATK kertas nota']);
+        $expTransport = ExpenseCategory::firstOrCreate(['name' => 'Biaya Transportasi & Armada'], ['description' => 'BBM truk, tol, sewa pick up']);
+        $expLabor = ExpenseCategory::firstOrCreate(['name' => 'Biaya Bongkar Muat / Tenaga Angkut'], ['description' => 'Upah harian kuli bongkar muat rongsok']);
+        $expMeals = ExpenseCategory::firstOrCreate(['name' => 'Uang Makan Karyawan'], ['description' => 'Konsumsi makan & minum operator timbang']);
+        $expMaintenance = ExpenseCategory::firstOrCreate(['name' => 'Perawatan Kendaraan & Alat Timbang'], ['description' => 'Kalibrasi timbangan duduk, servis armada']);
+        $expUtility = ExpenseCategory::firstOrCreate(['name' => 'Listrik, Air & Operasional Kantor'], ['description' => 'Token PLN gudang, PDAM, ATK kertas nota']);
 
         // 5. Item Categories
-        $catTembagaKuningan = ItemCategory::create(['name' => 'Tembaga & Kuningan', 'slug' => 'tembaga-kuningan', 'description' => 'Tembaga murni, dangdang, kuningan bersih, kuningan radiator, dan gram kuningan']);
-        $catAlumunium = ItemCategory::create(['name' => 'Alumunium', 'slug' => 'alumunium', 'description' => 'Aluminium siku/kawat, blok mesin, panci/plat, kuali, babet, prodo, eleman, AC, dan part aluminium']);
-        $catBesi = ItemCategory::create(['name' => 'Besi', 'slug' => 'besi', 'description' => 'Besi tua balok tebal (BTG), besi tipis behel (BTK), seng pasir, dan spandek tipis']);
-        $catTimahAkiStanlis = ItemCategory::create(['name' => 'Timah, Aki & Stainless', 'slug' => 'timah-aki-stanlis', 'description' => 'Timah batangan/pancing, aki basah/kering motor & mobil bekas, dan stainless steel']);
-        $catPlastic = ItemCategory::create(['name' => 'Plastik', 'slug' => 'plastik', 'description' => 'Botol Aqua susun bening, galon bekas, emberan warna campur, dan plastik kerasan/impek']);
-        $catPaper = ItemCategory::create(['name' => 'Kertas & Karton', 'slug' => 'kertas-karton', 'description' => 'Kertas putih HVS/swl arsip, kardus boks kering & lembap, buku cetak, kertas buram, dan duplek kones']);
-        $catGembel = ItemCategory::create(['name' => 'Kain Majun & Gembel', 'slug' => 'kain-gembel', 'description' => 'Kain majun perca katun gembel kasar dan gembel alus']);
+        $catTembagaKuningan = ItemCategory::firstOrCreate(['slug' => 'tembaga-kuningan'], ['name' => 'Tembaga & Kuningan', 'description' => 'Tembaga murni, dangdang, kuningan bersih, kuningan radiator, dan gram kuningan', 'is_active' => true]);
+        $catAlumunium = ItemCategory::firstOrCreate(['slug' => 'alumunium'], ['name' => 'Alumunium', 'description' => 'Aluminium siku/kawat, blok mesin, panci/plat, kuali, babet, prodo, eleman, AC, dan part aluminium', 'is_active' => true]);
+        $catBesi = ItemCategory::firstOrCreate(['slug' => 'besi'], ['name' => 'Besi', 'description' => 'Besi tua balok tebal (BTG), besi tipis behel (BTK), seng pasir, dan spandek tipis', 'is_active' => true]);
+        $catTimahAkiStanlis = ItemCategory::firstOrCreate(['slug' => 'timah-aki-stanlis'], ['name' => 'Timah, Aki & Stainless', 'description' => 'Timah batangan/pancing, aki basah/kering motor & mobil bekas, dan stainless steel', 'is_active' => true]);
+        $catPlastic = ItemCategory::firstOrCreate(['slug' => 'plastik'], ['name' => 'Plastik', 'description' => 'Botol Aqua susun bening, galon bekas, emberan warna campur, dan plastik kerasan/impek', 'is_active' => true]);
+        $catPaper = ItemCategory::firstOrCreate(['slug' => 'kertas-karton'], ['name' => 'Kertas & Karton', 'description' => 'Kertas putih HVS/swl arsip, kardus boks kering & lembap, buku cetak, kertas buram, dan duplek kones', 'is_active' => true]);
+        $catGembel = ItemCategory::firstOrCreate(['slug' => 'kain-gembel'], ['name' => 'Kain Majun & Gembel', 'description' => 'Kain majun perca katun gembel kasar dan gembel alus', 'is_active' => true]);
 
         // 6. Scrap Items with initial stock (35 Items Sesuai Standar Lapak / Depo)
         $itemsData = [
@@ -549,27 +545,42 @@ class DatabaseSeeder extends Seeder
 
         $createdScrapItems = [];
         foreach ($itemsData as $row) {
-            $item = ScrapItem::create([
-                'category_id' => $row['category_id'],
-                'code' => $row['code'],
-                'name' => $row['name'],
-                'unit' => $row['unit'],
-                'unit_type' => $row['unit'],
-                'buy_price_per_kg' => $row['buy_price'],
-                'sell_price_per_kg' => $row['sell_price'],
-                'min_stock_alert' => $row['min_stock'],
-                'description' => $row['desc'],
-                'is_active' => $row['is_active'] ?? true,
-            ]);
+            $item = ScrapItem::where('code', $row['code'])->first();
+            if (!$item) {
+                $item = ScrapItem::create([
+                    'category_id' => $row['category_id'],
+                    'code' => $row['code'],
+                    'name' => $row['name'],
+                    'unit' => $row['unit'],
+                    'unit_type' => $row['unit'],
+                    'buy_price_per_kg' => $row['buy_price'],
+                    'sell_price_per_kg' => $row['sell_price'],
+                    'min_stock_alert' => $row['min_stock'],
+                    'description' => $row['desc'],
+                    'is_active' => $row['is_active'] ?? true,
+                ]);
+            }
 
             // Create initial Stock Balance
-            StockBalance::create([
-                'scrap_item_id' => $item->id,
-                'current_stock' => $row['stock'],
-                'total_in' => $row['stock'] + 200,
-                'total_out' => 200,
-                'average_buy_price' => $row['buy_price'],
-            ]);
+            StockBalance::firstOrCreate(
+                ['scrap_item_id' => $item->id],
+                [
+                    'current_stock' => $row['stock'],
+                    'total_in' => $row['stock'] + 200,
+                    'total_out' => 200,
+                    'average_buy_price' => $row['buy_price'],
+                ]
+            );
+
+            // Create initial price tier stock
+            \App\Models\ItemPriceStock::firstOrCreate(
+                ['scrap_item_id' => $item->id, 'price_per_kg' => $row['buy_price']],
+                [
+                    'current_stock' => $row['stock'],
+                    'total_in' => $row['stock'] + 200,
+                    'total_out' => 200,
+                ]
+            );
 
             // Initial movement
             StockMovement::create([

@@ -129,6 +129,12 @@
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-2">
+                                        <!-- Indicator for multiple price tiers / accumulated weight -->
+                                        <template x-if="hasMultiplePrices(row)">
+                                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                                                📦 Akumulasi <span x-text="getRowBaseName(row)"></span>: <strong x-text="formatNum(getItemAccumulatedWeight(row)) + ' ' + (row.unit_type || 'kg')"></strong>
+                                            </span>
+                                        </template>
                                         <button type="button" @click="toggleRowItemMode(row)" 
                                                 class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline inline-flex items-center gap-1">
                                             <span x-text="row.is_new ? '← Pilih dari Master Barang' : '+ Tambah Barang Baru'"></span>
@@ -453,28 +459,49 @@
                     </div>
 
                     <!-- Bottom Bar: Tambah Baris & Rekap Total -->
-                    <div class="p-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                        <button type="button" @click="addNewEmptyRow()" 
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all">
-                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                            <span>Tambah Item Barang Lain (+F2)</span>
-                        </button>
+                    <div class="p-3 bg-slate-50 border-t border-slate-200 space-y-2">
+                        <!-- Commodities accumulation summary if any commodity has multiple prices -->
+                        <template x-if="multiPriceCommodities().length > 0">
+                            <div class="p-2 bg-emerald-50 rounded-lg border border-emerald-200 text-xs">
+                                <div class="text-[10px] font-bold uppercase text-emerald-900 tracking-wider mb-1 flex items-center gap-1">
+                                    <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-700"></i>
+                                    <span>Akumulasi Komoditas Barang (Tercatat Dalam Beberapa Harga):</span>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <template x-for="c in multiPriceCommodities()" :key="c.name">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white border border-emerald-300 font-mono text-[11px] text-slate-800 shadow-2xs">
+                                            <strong x-text="c.name"></strong>: 
+                                            <span class="font-bold text-emerald-700" x-text="formatNum(c.totalWeight) + ' ' + c.unit"></span>
+                                            <span class="text-slate-400" x-text="'(' + formatRp(c.totalSubtotal) + ')'"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
 
-                        <div class="text-xs text-slate-600 flex items-center gap-3 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
-                            <span>Item: <strong class="text-slate-900 font-mono" x-text="rows.length"></strong></span>
-                            <template x-if="totalGrossWeight() > 0 && totalTareWeight() > 0">
-                                <span>Kotor: <strong class="text-slate-700 font-mono" x-text="formatNum(totalGrossWeight()) + ' kg'"></strong></span>
-                            </template>
-                            <template x-if="totalTareWeight() > 0">
-                                <span>Tara: <strong class="text-red-600 font-mono font-bold" x-text="'-' + formatNum(totalTareWeight()) + ' kg'"></strong></span>
-                            </template>
-                            <template x-if="totalNetWeight() > 0">
-                                <span>Bersih: <strong class="text-emerald-700 font-mono font-bold" x-text="formatNum(totalNetWeight()) + ' kg'"></strong></span>
-                            </template>
-                            <template x-if="totalNetWeight() <= 0 && totalPcsQty() > 0">
-                                <span>Satuan: <strong class="text-amber-700 font-mono font-bold" x-text="formatInteger(totalPcsQty()) + ' pcs'"></strong></span>
-                            </template>
-                            <span>Subtotal: <strong class="text-slate-900 font-mono font-black" x-text="formatRp(subtotalAmount())"></strong></span>
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <button type="button" @click="addNewEmptyRow()" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                <span>Tambah Item Barang Lain (+F2)</span>
+                            </button>
+
+                            <div class="text-xs text-slate-600 flex items-center gap-3 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                                <span>Item: <strong class="text-slate-900 font-mono" x-text="rows.length"></strong></span>
+                                <template x-if="totalGrossWeight() > 0 && totalTareWeight() > 0">
+                                    <span>Kotor: <strong class="text-slate-700 font-mono" x-text="formatNum(totalGrossWeight()) + ' kg'"></strong></span>
+                                </template>
+                                <template x-if="totalTareWeight() > 0">
+                                    <span>Tara: <strong class="text-red-600 font-mono font-bold" x-text="'-' + formatNum(totalTareWeight()) + ' kg'"></strong></span>
+                                </template>
+                                <template x-if="totalNetWeight() > 0">
+                                    <span>Bersih: <strong class="text-emerald-700 font-mono font-bold" x-text="formatNum(totalNetWeight()) + ' kg'"></strong></span>
+                                </template>
+                                <template x-if="totalNetWeight() <= 0 && totalPcsQty() > 0">
+                                    <span>Satuan: <strong class="text-amber-700 font-mono font-bold" x-text="formatInteger(totalPcsQty()) + ' pcs'"></strong></span>
+                                </template>
+                                <span>Subtotal: <strong class="text-slate-900 font-mono font-black" x-text="formatRp(subtotalAmount())"></strong></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1604,7 +1631,94 @@ function cashierPos() {
             }
         },
 
+        getRowBaseName(row) {
+            if (row.is_new) return row.new_item_name || row.search_text || 'Barang Baru';
+            const found = this.masterItems.find(i => i.id == row.scrap_item_id);
+            return found ? found.name : (row.search_text ? row.search_text.split(' (')[0] : '');
+        },
+
+        getItemRows(row) {
+            const id = row.is_new ? ('new_' + (row.new_item_name || row.search_text)) : row.scrap_item_id;
+            if (!id || id === '__new__') return [row];
+            return this.rows.filter(r => {
+                const rId = r.is_new ? ('new_' + (r.new_item_name || r.search_text)) : r.scrap_item_id;
+                return rId === id;
+            });
+        },
+
+        hasMultiplePrices(row) {
+            const matching = this.getItemRows(row);
+            return matching.length > 1;
+        },
+
+        getItemAccumulatedWeight(row) {
+            const matching = this.getItemRows(row);
+            return matching.reduce((acc, r) => acc + this.rowNetWeight(r), 0);
+        },
+
+        getItemAccumulatedSubtotal(row) {
+            const matching = this.getItemRows(row);
+            return matching.reduce((acc, r) => acc + this.rowSubtotal(r), 0);
+        },
+
+        multiPriceCommodities() {
+            const map = {};
+            for (const r of this.rows) {
+                const name = this.getRowBaseName(r);
+                if (!name) continue;
+                if (!map[name]) {
+                    map[name] = { name: name, rows: [], unit: r.unit_type || 'kg' };
+                }
+                map[name].rows.push(r);
+            }
+            const res = [];
+            for (const k in map) {
+                if (map[k].rows.length > 1) {
+                    const totalWeight = map[k].rows.reduce((acc, r) => acc + this.rowNetWeight(r), 0);
+                    const totalSubtotal = map[k].rows.reduce((acc, r) => acc + this.rowSubtotal(r), 0);
+                    res.push({
+                        name: map[k].name,
+                        totalWeight: totalWeight,
+                        totalSubtotal: totalSubtotal,
+                        unit: map[k].unit
+                    });
+                }
+            }
+            return res;
+        },
+
+        consolidateRowsByPrice() {
+            const map = {};
+            const consolidated = [];
+            for (const row of this.rows) {
+                const id = row.is_new ? ('new_' + (row.new_item_name || row.search_text)) : (row.scrap_item_id || 'empty');
+                const price = parseFloat(row.price_per_kg) || 0;
+                const unit = row.unit_type || 'kg';
+                const typeName = (row.item_type_name || '').trim();
+                const key = id + '_' + price + '_' + unit + '_' + typeName;
+
+                if (id !== 'empty' && map[key] !== undefined) {
+                    // Harga sama: otomatis akumulasi berat / kuantitas ke baris tersebut
+                    const existing = consolidated[map[key]];
+                    if (this.isPcsUnit(row)) {
+                        existing.quantity = (parseFloat(existing.quantity) || 1) + (parseFloat(row.quantity) || 1);
+                    } else {
+                        existing.gross_weight = (parseFloat(existing.gross_weight) || 0) + (parseFloat(row.gross_weight) || 0);
+                        existing.tare_weight = (parseFloat(existing.tare_weight) || 0) + (parseFloat(row.tare_weight) || 0);
+                    }
+                } else {
+                    map[key] = consolidated.length;
+                    consolidated.push(row);
+                }
+            }
+            if (consolidated.length < this.rows.length) {
+                this.rows = consolidated;
+            }
+        },
+
         handleSubmit(e) {
+            this.consolidateRowsByPrice();
+
             if (this.subtotalAmount() <= 0) {
                 e.preventDefault();
                 alert('Silakan masukkan timbangan atau jumlah barang yang valid (subtotal > Rp 0).');

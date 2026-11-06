@@ -196,6 +196,42 @@
                     </tbody>
                 </table>
             </div>
+
+            @php
+                $groupedCommodities = $purchase->items->groupBy('item_name_snapshot');
+                $hasMultiPrice = $groupedCommodities->contains(fn($grp) => $grp->count() > 1);
+            @endphp
+
+            @if($hasMultiPrice)
+                <div class="mt-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-900 mb-1.5 flex items-center gap-1.5">
+                        <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-700"></i>
+                        <span>Akumulasi Total Berat per Komoditas (Gabungan Semua Daftar Harga)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                        @foreach($groupedCommodities as $commodityName => $groupItems)
+                            @php
+                                $totWeight = $groupItems->where('is_cancelled', false)->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+                                $unit = $groupItems->first()->unit_type ?: 'kg';
+                                $totSub = $groupItems->where('is_cancelled', false)->sum('subtotal');
+                                $priceCount = $groupItems->pluck('price_per_kg')->unique()->count();
+                            @endphp
+                            <div class="p-2.5 bg-white rounded-lg border border-emerald-200 shadow-2xs">
+                                <div class="text-xs font-bold text-slate-900">{{ $commodityName }}</div>
+                                <div class="text-[11px] text-slate-600 flex justify-between mt-1">
+                                    <span>Total Akumulasi:</span>
+                                    <strong class="font-mono text-emerald-700">
+                                        {{ \App\Services\FormatHelper::weight($totWeight) }} {{ $unit }}
+                                    </strong>
+                                </div>
+                                <div class="text-[10px] text-slate-500 font-mono text-right mt-0.5">
+                                    {{ \App\Services\FormatHelper::rupiah($totSub) }} @if($priceCount > 1) <span class="text-blue-600 font-semibold">({{ $priceCount }} variasi harga)</span> @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- Total Breakdown Box -->

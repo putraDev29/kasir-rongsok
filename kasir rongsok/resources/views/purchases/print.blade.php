@@ -273,6 +273,28 @@
             </div>
         @endif
 
+        @php
+            $groupedPrintCommodities = $purchase->items->groupBy('item_name_snapshot');
+            $hasPrintMultiPrice = $groupedPrintCommodities->contains(fn($grp) => $grp->count() > 1);
+        @endphp
+
+        @if($hasPrintMultiPrice)
+            <div class="py-1.5 border-t border-dotted border-slate-300 font-mono text-[9px]">
+                <div class="font-bold text-[9px] uppercase mb-0.5 text-slate-800">Akumulasi Komoditas Barang:</div>
+                @foreach($groupedPrintCommodities as $name => $grp)
+                    @php
+                        $totW = $grp->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+                        $u = $grp->first()->unit_type ?: 'kg';
+                        $totS = $grp->sum('subtotal');
+                    @endphp
+                    <div class="flex justify-between text-slate-700">
+                        <span>• {{ $name }}:</span>
+                        <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($totW) }} {{ $u }} ({{ \App\Services\FormatHelper::rupiah($totS) }})</span>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
         <!-- Total Calculation (Colons aligned right after longest label, values right-aligned strictly 1 line) -->
         <div class="pt-2 border-t border-dashed border-slate-400 font-mono text-[10px] space-y-1">
             <div style="{{ $calcGrid }}">

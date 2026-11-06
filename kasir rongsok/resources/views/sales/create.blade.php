@@ -217,23 +217,84 @@
                             <div class="p-3.5 space-y-3">
                                 <!-- Baris 1: Pilihan Barang, Jenis/Varian & Tipe Hitungan -->
                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                    <div class="md:col-span-6">
+                                    <div class="md:col-span-6 relative" @click.outside="row.dropdown_open = false">
                                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                            Barang & Stok Gudang <span class="text-red-500">*</span>
+                                            Barang Sesuai Harga & Stok <span class="text-red-500">*</span>
                                         </label>
-                                        <select :name="'items[' + idx + '][scrap_item_id]'" 
-                                                x-model="row.scrap_item_id" 
-                                                @change="onItemChanged(idx)"
-                                                required
-                                                class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-slate-900 bg-white">
-                                            <option value="">-- Pilih Barang dari Gudang --</option>
-                                            <template x-for="item in masterItems" :key="item.id">
-                                                <option :value="item.id" 
-                                                        x-text="item.name + ' [Stok: ' + (item.stock_balance ? formatNum(item.stock_balance.current_stock) : 0) + ' ' + (item.unit_type || 'kg') + ']'"></option>
+
+                                        <input type="hidden" :name="'items[' + idx + '][scrap_item_id]'" :value="row.scrap_item_id" required>
+                                        <input type="hidden" :name="'items[' + idx + '][buy_price_snapshot]'" :value="row.buy_price_snapshot || row.avg_buy_price || 0">
+
+                                        <div class="relative">
+                                            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                                                <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                                            </span>
+
+                                            <input type="text"
+                                                   x-model="row.search_text"
+                                                   @focus="row.dropdown_open = true"
+                                                   @input="row.dropdown_open = true"
+                                                   placeholder="Cari nama barang atau harga (cth: Besi, 4000)..."
+                                                   required
+                                                   class="w-full pl-8 pr-12 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-bold text-slate-900 bg-white shadow-2xs">
+
+                                            <!-- Quick Clear & Caret Icons -->
+                                            <div class="absolute inset-y-0 right-0 pr-1.5 flex items-center gap-0.5">
+                                                <button type="button" 
+                                                        x-show="row.search_text"
+                                                        @click="clearRowItem(row)" 
+                                                        class="text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                                                        title="Hapus pilihan barang">
+                                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                                <button type="button" 
+                                                        @click="row.dropdown_open = !row.dropdown_open"
+                                                        class="text-slate-400 hover:text-slate-600 p-0.5 rounded">
+                                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': row.dropdown_open }"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Floating Filtered List -->
+                                        <div x-show="row.dropdown_open"
+                                             x-transition:enter="transition ease-out duration-100"
+                                             x-transition:enter-start="opacity-0 scale-95"
+                                             x-transition:enter-end="opacity-100 scale-100"
+                                             x-transition:leave="transition ease-in duration-75"
+                                             x-transition:leave-start="opacity-100 scale-100"
+                                             x-transition:leave-end="opacity-0 scale-95"
+                                             class="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl divide-y divide-slate-100"
+                                             style="display: none;">
+                                            
+                                            <template x-for="item in filteredMasterItems(row.search_text)" :key="item.tier_id || (item.id + '_' + item.price_per_kg)">
+                                                <button type="button" 
+                                                        @click="selectRowItem(row, item)"
+                                                        class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center justify-between transition-colors"
+                                                        :class="{ 'bg-blue-50/70': row.tier_id === item.tier_id }">
+                                                    <div class="min-w-0 pr-2">
+                                                        <div class="text-xs font-bold text-slate-900 truncate" x-text="item.name"></div>
+                                                        <div class="text-[10px] text-slate-500 font-mono">
+                                                            <span x-text="item.code"></span>
+                                                            <span x-show="item.category_name" x-text="' • ' + item.category_name"></span>
+                                                            <span class="text-emerald-700 font-semibold" x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right shrink-0">
+                                                        <div class="text-[11px] font-mono font-bold text-blue-700" x-text="formatRp(item.sell_price_per_kg) + '/' + (item.unit_type || 'kg')"></div>
+                                                        <div class="text-[9px] text-slate-400 font-mono" x-text="'Modal: ' + formatRp(item.buy_price_snapshot)"></div>
+                                                    </div>
+                                                </button>
                                             </template>
-                                        </select>
+
+                                            <template x-if="filteredMasterItems(row.search_text).length === 0">
+                                                <div class="p-3 text-center text-xs text-slate-500">
+                                                    Tidak ada barang dengan kata kunci "<span class="font-bold text-slate-700" x-text="row.search_text"></span>"
+                                                </div>
+                                            </template>
+                                        </div>
+
                                         <!-- Warning if stock exceeded -->
-                                        <div x-show="rowStockQuantity(row) > row.maxStock" class="text-[11px] text-red-600 font-bold mt-1">
+                                        <div x-show="row.scrap_item_id && rowStockQuantity(row) > row.maxStock" class="text-[11px] text-red-600 font-bold mt-1">
                                             ⚠️ Melebihi stok gudang! Maks: <span x-text="formatNum(row.maxStock)"></span>
                                         </div>
                                     </div>
@@ -404,17 +465,24 @@ function salesPos() {
         init() {
             if (this.selectedDeliveryOrder && this.selectedDeliveryOrder.items && this.selectedDeliveryOrder.items.length > 0) {
                 this.rows = this.selectedDeliveryOrder.items.map(it => {
-                    const found = this.masterItems.find(m => m.id == it.scrap_item_id);
+                    const found = this.masterItems.find(m => m.id == it.scrap_item_id && (parseFloat(m.price_per_kg) == parseFloat(it.price_per_kg) || !it.price_per_kg)) || this.masterItems.find(m => m.id == it.scrap_item_id);
+                    const buyPrice = found ? (parseFloat(found.buy_price_snapshot) || parseFloat(found.price_per_kg) || 0) : 0;
+                    const sellPrice = (it.price_per_kg && parseFloat(it.price_per_kg) > 0) ? parseFloat(it.price_per_kg) : (found ? (parseFloat(found.sell_price_per_kg) || 0) : 0);
+                    const stock = found ? (parseFloat(found.current_stock) || 0) : 0;
                     return {
                         uid: Math.random(),
                         scrap_item_id: it.scrap_item_id || '',
+                        tier_id: found ? found.tier_id : '',
+                        search_text: found ? (found.name + ' [Stok: ' + this.formatNum(stock) + ' ' + (found.unit_type || 'kg') + ']') : (it.item_name || ''),
+                        dropdown_open: false,
                         item_type_name: it.item_type_name || '',
                         unit_type: it.unit_type || 'kg',
                         quantity: it.quantity || 1,
                         weight: it.weight || 0,
-                        sell_price_per_kg: found ? (parseFloat(found.sell_price_per_kg) || 0) : 0,
-                        avg_buy_price: found && found.stock_balance ? (parseFloat(found.stock_balance.average_buy_price) || 0) : 0,
-                        maxStock: found && found.stock_balance ? (parseFloat(found.stock_balance.current_stock) || 0) : 0
+                        sell_price_per_kg: sellPrice,
+                        buy_price_snapshot: buyPrice,
+                        avg_buy_price: buyPrice,
+                        maxStock: stock
                     };
                 });
             } else {
@@ -437,19 +505,72 @@ function salesPos() {
             return name.includes('transfer') || name.includes('bank');
         },
 
+        filteredMasterItems(searchText) {
+            if (!searchText || searchText.trim() === '') {
+                return this.masterItems;
+            }
+            const q = searchText.toLowerCase().trim();
+            return this.masterItems.filter(item => {
+                const name = (item.name || '').toLowerCase();
+                const code = (item.code || '').toLowerCase();
+                const base = (item.base_name || '').toLowerCase();
+                const cat = (item.category_name || '').toLowerCase();
+                const price = String(item.price_per_kg || '');
+                return name.includes(q) || code.includes(q) || base.includes(q) || cat.includes(q) || price.includes(q);
+            });
+        },
+
+        selectRowItem(row, item) {
+            row.scrap_item_id = item.id;
+            row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
+            row.search_text = item.name + ' [Stok: ' + this.formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg') + ']';
+            row.sell_price_per_kg = parseFloat(item.sell_price_per_kg) || 0;
+            row.buy_price_snapshot = parseFloat(item.buy_price_snapshot) || parseFloat(item.price_per_kg) || 0;
+            row.avg_buy_price = row.buy_price_snapshot;
+            row.maxStock = parseFloat(item.current_stock) || 0;
+            row.unit_type = item.unit_type || 'kg';
+            row.dropdown_open = false;
+            this.refreshIcons();
+        },
+
+        clearRowItem(row) {
+            row.scrap_item_id = '';
+            row.tier_id = '';
+            row.search_text = '';
+            row.sell_price_per_kg = 0;
+            row.buy_price_snapshot = 0;
+            row.avg_buy_price = 0;
+            row.maxStock = 0;
+            row.dropdown_open = true;
+        },
+
+        refreshIcons() {
+            this.$nextTick(() => {
+                if (typeof window.refreshIcons === 'function') {
+                    window.refreshIcons();
+                } else if (window.createIcons && window.lucideIcons) {
+                    window.createIcons({ icons: window.lucideIcons });
+                }
+            });
+        },
+
         addRow() {
             this.rows.push({
                 uid: Date.now() + Math.random(),
                 scrap_item_id: '',
+                tier_id: '',
+                search_text: '',
+                dropdown_open: false,
                 item_type_name: '',
                 unit_type: 'kg',
                 quantity: 1,
                 weight: '',
                 sell_price_per_kg: 0,
+                buy_price_snapshot: 0,
                 avg_buy_price: 0,
                 maxStock: 0
             });
-            if (window.refreshIcons) window.refreshIcons();
+            this.refreshIcons();
         },
 
         removeRow(idx) {
@@ -459,18 +580,7 @@ function salesPos() {
         },
 
         onItemChanged(idx) {
-            const row = this.rows[idx];
-            const found = this.masterItems.find(i => i.id == row.scrap_item_id);
-            if (found) {
-                row.sell_price_per_kg = parseFloat(found.sell_price_per_kg) || 0;
-                row.unit_type = found.unit_type || row.unit_type || 'kg';
-                row.maxStock = found.stock_balance ? parseFloat(found.stock_balance.current_stock) : 0;
-                row.avg_buy_price = found.stock_balance ? parseFloat(found.stock_balance.average_buy_price) : 0;
-            } else {
-                row.sell_price_per_kg = 0;
-                row.maxStock = 0;
-                row.avg_buy_price = 0;
-            }
+            // Handled by selectRowItem
         },
 
         isPcsUnit(row) {

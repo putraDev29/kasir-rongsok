@@ -432,6 +432,18 @@ class WhatsAppGatewayService
 
         $itemsFormatted = count($itemLines) > 0 ? implode("\n\n", $itemLines) : "- (Tidak ada rincian barang)";
 
+        $grouped = $items->groupBy('item_name_snapshot');
+        if ($grouped->contains(fn($grp) => $grp->count() > 1)) {
+            $accumLines = [];
+            foreach ($grouped as $cName => $cGrp) {
+                $cTotW = $cGrp->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+                $cU = $cGrp->first()->unit_type ?: 'kg';
+                $cTotS = number_format($cGrp->sum('subtotal'), 0, ',', '.');
+                $accumLines[] = "   • *{$cName}*: " . number_format($cTotW, 2, ',', '.') . " {$cU} (Rp {$cTotS})";
+            }
+            $itemsFormatted .= "\n\n📊 *Akumulasi Komoditas (Gabungan Semua Harga):*\n" . implode("\n", $accumLines);
+        }
+
         $totalNetto = number_format($purchase->total_net_weight, 2, ',', '.');
         $totalGross = number_format($purchase->total_gross_weight, 2, ',', '.');
         $totalTare = number_format($purchase->total_tare_weight, 2, ',', '.');

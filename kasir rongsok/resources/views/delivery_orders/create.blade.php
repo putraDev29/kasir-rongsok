@@ -230,14 +230,17 @@
                                      class="absolute z-50 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl divide-y divide-slate-100"
                                      style="display: none;">
                                     
-                                    <template x-for="item in filteredMasterItems(row.search_text)" :key="item.id">
+                                    <template x-for="item in filteredMasterItems(row.search_text)" :key="item.tier_id || (item.id + '_' + item.price_per_kg)">
                                         <button type="button" 
                                                 @click="selectRowItem(row, item)"
                                                 class="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 flex items-center justify-between transition-colors"
-                                                :class="{ 'bg-emerald-50/70': row.scrap_item_id == item.id }">
+                                                :class="{ 'bg-emerald-50/70': row.tier_id ? (row.tier_id === item.tier_id) : (row.scrap_item_id == item.id) }">
                                             <div class="min-w-0 pr-2">
                                                 <div class="text-xs font-bold text-slate-900 truncate" x-text="item.name"></div>
-                                                <div class="text-[10px] text-slate-500 font-mono" x-text="item.code"></div>
+                                                <div class="text-[10px] text-slate-500 font-mono">
+                                                    <span x-text="item.code"></span>
+                                                    <span x-show="item.current_stock > 0" class="text-emerald-700 font-semibold" x-text="' • Stok: ' + item.current_stock + ' ' + (item.unit_type || 'kg')"></span>
+                                                </div>
                                             </div>
                                             <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1 rounded uppercase" x-text="item.unit_type || 'kg'"></span>
                                         </button>
@@ -415,20 +418,21 @@ function deliveryOrderForm() {
             return this.masterItems.filter(item => {
                 const nameMatch = (item.name || '').toLowerCase().includes(q);
                 const codeMatch = (item.code || '').toLowerCase().includes(q);
-                return nameMatch || codeMatch;
+                const baseMatch = (item.base_name || '').toLowerCase().includes(q);
+                const priceMatch = String(item.price_per_kg || '').includes(q);
+                return nameMatch || codeMatch || baseMatch || priceMatch;
             });
         },
 
         selectRowItem(row, item) {
             row.scrap_item_id = item.id;
+            row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
             row.search_text = item.name + (item.code ? ' (' + item.code + ')' : '');
             row.item_name = item.name;
             if (item.unit_type) {
                 row.unit_type = item.unit_type;
             }
-            if (item.current_price && item.current_price.sell_price_per_kg) {
-                row.price_per_kg = parseFloat(item.current_price.sell_price_per_kg) || 0;
-            }
+            row.price_per_kg = parseFloat(item.price_per_kg) || parseFloat(item.sell_price_per_kg) || 0;
             row.dropdown_open = false;
         },
 
