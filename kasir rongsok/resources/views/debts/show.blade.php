@@ -142,6 +142,15 @@
                     <span class="font-mono text-slate-800">{{ $debt->borrower_phone ?? '-' }}</span>
                 </div>
 
+                @if($debt->supplier && $debt->supplier->hasBankDetails())
+                <div>
+                    <span class="text-slate-400 block text-[11px]">Rekening Bank Pemasok:</span>
+                    <span class="font-mono text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block font-semibold text-xs">
+                        {{ $debt->supplier->bankDisplay() }}
+                    </span>
+                </div>
+                @endif
+
                 <div>
                     <span class="text-slate-400 block text-[11px]">Jatuh Tempo:</span>
                     <span class="font-medium text-slate-800">

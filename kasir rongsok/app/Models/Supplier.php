@@ -18,10 +18,31 @@ class Supplier extends Model
         'tier_override',
         'name',
         'phone',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_name',
         'address',
         'notes',
         'is_active',
     ];
+
+    public function hasBankDetails(): bool
+    {
+        return !empty($this->bank_name) && !empty($this->bank_account_number);
+    }
+
+    public function bankDisplay(): ?string
+    {
+        if (!$this->hasBankDetails()) {
+            return null;
+        }
+
+        $str = "{$this->bank_name} - Rek: {$this->bank_account_number}";
+        if (!empty($this->bank_account_name)) {
+            $str .= " (a/n {$this->bank_account_name})";
+        }
+        return $str;
+    }
 
     protected function casts(): array
     {

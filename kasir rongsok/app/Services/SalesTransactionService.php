@@ -174,6 +174,15 @@ class SalesTransactionService
                 $bankInfo = implode(' - ', $parts);
             }
 
+            // Sync bank account to current Cashier/Operator User profile if requested (Task 10)
+            if (!empty($data['save_to_user_bank']) && (!empty($customBank) || !empty($customAccountNo) || !empty($customAccountName))) {
+                $user->update(array_filter([
+                    'bank_name' => $customBank ?: $user->bank_name,
+                    'bank_account_number' => $customAccountNo ?: $user->bank_account_number,
+                    'bank_account_name' => $customAccountName ?: $user->bank_account_name,
+                ], fn($val) => !is_null($val) && $val !== ''));
+            }
+
             // Auto-fallback bankInfo if empty and payment method is bank/transfer
             if (empty($bankInfo) && !empty($data['payment_method_id'])) {
                 $pm = PaymentMethod::find($data['payment_method_id']);

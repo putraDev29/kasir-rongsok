@@ -40,6 +40,9 @@ class SupplierController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:150',
             'phone' => 'nullable|string|max:30',
+            'bank_name' => 'nullable|string|max:100',
+            'bank_account_number' => 'nullable|string|max:60',
+            'bank_account_name' => 'nullable|string|max:150',
             'address' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:500',
             'member_number' => 'nullable|string|max:50',
@@ -72,6 +75,9 @@ class SupplierController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:150',
             'phone' => 'nullable|string|max:30',
+            'bank_name' => 'nullable|string|max:100',
+            'bank_account_number' => 'nullable|string|max:60',
+            'bank_account_name' => 'nullable|string|max:150',
             'address' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:500',
             'member_number' => 'nullable|string|max:50',

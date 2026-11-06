@@ -15,6 +15,9 @@
     supplierId: '',
     borrowerName: '',
     borrowerPhone: '',
+    bankName: '',
+    bankAccountNumber: '',
+    bankAccountName: '',
 
     openPayModal(id, number, name, remaining) {
         this.payDebtId = id;
@@ -30,9 +33,15 @@
         if (opt && opt.value) {
             this.borrowerName = opt.dataset.name || '';
             this.borrowerPhone = opt.dataset.phone || '';
+            this.bankName = opt.dataset.bankName || '';
+            this.bankAccountNumber = opt.dataset.bankNumber || '';
+            this.bankAccountName = opt.dataset.bankHolder || '';
         } else {
             this.borrowerName = '';
             this.borrowerPhone = '';
+            this.bankName = '';
+            this.bankAccountNumber = '';
+            this.bankAccountName = '';
         }
     }
 }" class="space-y-6">
@@ -423,7 +432,8 @@
                             class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-emerald-500">
                         <option value="">-- Pilih Pemasok / Atau ketik manual di bawah --</option>
                         @foreach($suppliers as $sup)
-                            <option value="{{ $sup->id }}" data-name="{{ $sup->name }}" data-phone="{{ $sup->phone }}">
+                            <option value="{{ $sup->id }}" data-name="{{ $sup->name }}" data-phone="{{ $sup->phone }}"
+                                    data-bank-name="{{ $sup->bank_name }}" data-bank-number="{{ $sup->bank_account_number }}" data-bank-holder="{{ $sup->bank_account_name }}">
                                 {{ $sup->name }} [{{ $sup->member_number }}]
                             </option>
                         @endforeach
@@ -441,6 +451,40 @@
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor HP</label>
                         <input type="text" name="borrower_phone" x-model="borrowerPhone" placeholder="08..."
                                class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono">
+                    </div>
+                </div>
+
+                <!-- Informasi Rekening Bank Peminjam / Pemasok (Task 10) -->
+                <div class="p-3 bg-blue-50/60 border border-blue-200 rounded-xl space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="block text-[11px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-600"></i>
+                            <span>Rekening Bank Peminjam (Pencairan / Transfer Modal)</span>
+                        </span>
+                        <span class="text-[10px] text-blue-700 font-medium">Opsional</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Bank</label>
+                            <input type="text" name="bank_name" x-model="bankName" placeholder="BCA / BRI / Mandiri"
+                                   class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nomor Rekening</label>
+                            <input type="text" name="bank_account_number" x-model="bankAccountNumber" placeholder="No. Rekening"
+                                   class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Pemilik (A/N)</label>
+                            <input type="text" name="bank_account_name" x-model="bankAccountName" placeholder="Atas Nama Pemilik"
+                                   class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500 bg-white">
+                        </div>
+                    </div>
+                    <div class="pt-1 flex items-center" x-show="borrowerType === 'supplier' || supplierId">
+                        <label class="inline-flex items-center gap-1.5 text-blue-900 text-[10.5px] font-medium cursor-pointer">
+                            <input type="checkbox" name="save_to_supplier_bank" value="1" checked class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                            <span>Simpan / perbarui nomor rekening ini ke data master pemasok</span>
+                        </label>
                     </div>
                 </div>
 

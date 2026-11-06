@@ -893,14 +893,17 @@
 
                         <!-- Bank Transfer Input (Task 11 & Update: Nama Pemilik Rekening & No Rekening) -->
                         <div x-show="isTransferPayment()" class="mt-2.5 p-2.5 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
-                            <div class="text-[11px] font-bold text-blue-900 flex items-center gap-1">
-                                <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-600"></i>
-                                <span>Detail Rekening Pembayaran (Dicetak di Nota):</span>
+                            <div class="text-[11px] font-bold text-blue-900 flex items-center justify-between">
+                                <div class="flex items-center gap-1">
+                                    <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-600"></i>
+                                    <span>Detail Rekening Bank (Dicetak di Nota):</span>
+                                </div>
+                                <span class="text-[9px] text-blue-700 font-medium">Bisa transfer ke pemasok / kasir</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <div>
-                                    <label class="block text-[10px] font-bold text-blue-900 mb-0.5">Nama Pemilik (A/N)</label>
-                                    <input type="text" name="custom_account_name" x-model="customAccountName" placeholder="Nama Pemilik Rekening"
+                                    <label class="block text-[10px] font-bold text-blue-900 mb-0.5">Nama Bank</label>
+                                    <input type="text" name="custom_bank" x-model="customBank" placeholder="BCA / BRI / Mandiri"
                                            class="w-full py-1.5 px-2 text-xs rounded-lg border border-blue-300 focus:ring-2 focus:ring-blue-500 bg-white font-medium text-slate-800">
                                 </div>
                                 <div>
@@ -908,6 +911,22 @@
                                     <input type="text" name="custom_account_no" x-model="customAccountNo" placeholder="No. Rekening"
                                            class="w-full py-1.5 px-2 text-xs rounded-lg border border-blue-300 focus:ring-2 focus:ring-blue-500 bg-white font-mono text-slate-800">
                                 </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-blue-900 mb-0.5">Nama Pemilik (A/N)</label>
+                                    <input type="text" name="custom_account_name" x-model="customAccountName" placeholder="Nama Pemilik Rekening"
+                                           class="w-full py-1.5 px-2 text-xs rounded-lg border border-blue-300 focus:ring-2 focus:ring-blue-500 bg-white font-medium text-slate-800">
+                                </div>
+                            </div>
+                            <!-- Opsi Simpan ke Data Pemasok & User -->
+                            <div class="pt-1 border-t border-blue-200 flex flex-wrap items-center gap-3 text-[10.5px]">
+                                <label class="inline-flex items-center gap-1.5 text-blue-900 font-medium cursor-pointer">
+                                    <input type="checkbox" name="save_to_supplier_bank" value="1" checked class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Simpan / update rekening ke data pemasok</span>
+                                </label>
+                                <label class="inline-flex items-center gap-1.5 text-blue-900 font-medium cursor-pointer">
+                                    <input type="checkbox" name="save_to_user_bank" value="1" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                                    <span>Simpan ke profil user kasir saya</span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -1032,8 +1051,10 @@ function cashierPos() {
         paymentMethodDropdownOpen: false,
         isManualPaymentMethod: false,
         newPaymentMethodName: '',
+        customBank: '{{ addslashes(auth()->user()->bank_name ?? '') }}',
         customAccountName: '{{ addslashes(auth()->user()->bank_account_name ?? '') }}',
         customAccountNo: '{{ addslashes(auth()->user()->bank_account_number ?? '') }}',
+        currentUserBankName: '{{ addslashes(auth()->user()->bank_name ?? '') }}',
         currentUserBankHolder: '{{ addslashes(auth()->user()->bank_account_name ?? '') }}',
         currentUserBankNo: '{{ addslashes(auth()->user()->bank_account_number ?? '') }}',
 
@@ -1210,6 +1231,11 @@ function cashierPos() {
                 this.supplierAddress = sup.address || '';
                 this.supplierDebt = parseFloat(sup.total_debt || sup.remaining_debt) || 0;
                 this.debtDeductionAmount = 0;
+                if (sup.bank_name || sup.bank_account_number || sup.bank_account_name) {
+                    if (sup.bank_name) this.customBank = sup.bank_name;
+                    if (sup.bank_account_number) this.customAccountNo = sup.bank_account_number;
+                    if (sup.bank_account_name) this.customAccountName = sup.bank_account_name;
+                }
             }
             this.supplierDropdownOpen = false;
             this.$nextTick(() => {

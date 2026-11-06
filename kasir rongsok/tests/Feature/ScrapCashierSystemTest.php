@@ -1401,5 +1401,168 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertEquals('1370011223344', $newUser->bank_account_number);
         $this->assertEquals('Operator Baru Updated', $newUser->bank_account_name);
     }
+
+    public function test_supplier_management_supports_bank_details(): void
+    {
+        // 1. Create Supplier with Bank Details
+        $createRes = $this->actingAs($this->superAdmin)->post(route('suppliers.store'), [
+            'name' => 'Juragan Rongsok Bank Mandiri',
+            'phone' => '081234567890',
+            'bank_name' => 'BCA',
+            'bank_account_number' => '8899001122',
+            'bank_account_name' => 'Juragan Rongsok',
+            'address' => 'Jl. Pengepul No. 10',
+        ]);
+
+        $createRes->assertSessionHasNoErrors();
+        $supplier = Supplier::where('name', 'Juragan Rongsok Bank Mandiri')->firstOrFail();
+        $this->assertEquals('BCA', $supplier->bank_name);
+        $this->assertEquals('8899001122', $supplier->bank_account_number);
+        $this->assertEquals('Juragan Rongsok', $supplier->bank_account_name);
+        $this->assertTrue($supplier->hasBankDetails());
+
+        // 2. View in Index Table
+        $indexRes = $this->actingAs($this->superAdmin)->get(route('suppliers.index'));
+        $indexRes->assertOk();
+        $indexRes->assertSee('BCA');
+        $indexRes->assertSee('8899001122');
+
+        // 3. Update Supplier Bank Details
+        $updateRes = $this->actingAs($this->superAdmin)->put(route('suppliers.update', $supplier), [
+            'name' => 'Juragan Rongsok Bank Mandiri',
+            'phone' => '081234567890',
+            'bank_name' => 'BRI',
+            'bank_account_number' => '5544332211',
+            'bank_account_name' => 'Juragan Rongsok Cabang',
+        ]);
+
+        $updateRes->assertSessionHasNoErrors();
+        $supplier->refresh();
+        $this->assertEquals('BRI', $supplier->bank_name);
+        $this->assertEquals('5544332211', $supplier->bank_account_number);
+        $this->assertEquals('Juragan Rongsok Cabang', $supplier->bank_account_name);
+    }
+
+    public function test_purchase_transaction_syncs_bank_details_to_supplier_and_user(): void
+    {
+        $cashier = User::factory()->create([
+            'role' => User::ROLE_KASIR,
+            'is_active' => true,
+            'bank_name' => null,
+            'bank_account_number' => null,
+            'bank_account_name' => null,
+        ]);
+
+        $supplier = Supplier::create([
+            'code' => 'SUP-TESTBANK',
+            'name' => 'Pak Budi Scrap Logam',
+            'phone' => '081399887766',
+        ]);
+
+        $item = ScrapItem::first();
+
+        $postData = [
+            'supplier_id' => $supplier->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $item->id,
+                    'gross_weight' => 20,
+                    'tare_weight' => 0,
+                    'price_per_kg' => (float) $item->buy_price_per_kg,
+                ]
+            ],
+            'payment_method_id' => 1,
+            'custom_bank' => 'Bank Mandiri',
+            'custom_account_no' => '123000998877',
+            'custom_account_name' => 'Pak Budi Scrap',
+            'save_to_supplier_bank' => '1',
+            'save_to_user_bank' => '1',
+        ];
+
+        $res = $this->actingAs($cashier)->post(route('purchases.store'), $postData);
+        $res->assertSessionHasNoErrors();
+
+        // Verify supplier got updated
+        $supplier->refresh();
+        $this->assertEquals('Bank Mandiri', $supplier->bank_name);
+        $this->assertEquals('123000998877', $supplier->bank_account_number);
+        $this->assertEquals('Pak Budi Scrap', $supplier->bank_account_name);
+
+        // Verify cashier user got updated
+        $cashier->refresh();
+        $this->assertEquals('Bank Mandiri', $cashier->bank_name);
+        $this->assertEquals('123000998877', $cashier->bank_account_number);
+        $this->assertEquals('Pak Budi Scrap', $cashier->bank_account_name);
+    }
+
+    public function test_sales_transaction_syncs_bank_details_to_user(): void
+    {
+        $owner = User::factory()->create([
+            'role' => User::ROLE_SUPER_ADMIN,
+            'is_active' => true,
+            'bank_name' => null,
+            'bank_account_number' => null,
+            'bank_account_name' => null,
+        ]);
+
+        $item = ScrapItem::first();
+
+        $postData = [
+            'delivery_type' => 'pickup',
+            'buyer_name' => 'Pabrik Peleburan Besi Baja',
+            'buyer_phone' => '081299998888',
+            'payment_method_id' => 1,
+            'custom_bank' => 'Bank BCA',
+            'custom_account_no' => '8877665544',
+            'custom_account_name' => 'Kasir Rongsok Depo',
+            'save_to_user_bank' => '1',
+            'items' => [
+                [
+                    'scrap_item_id' => $item->id,
+                    'weight' => 50,
+                    'sell_price_per_kg' => (float) $item->sell_price_per_kg,
+                ]
+            ],
+        ];
+
+        $res = $this->actingAs($owner)->post(route('sales.store'), $postData);
+        $res->assertSessionHasNoErrors();
+
+        $owner->refresh();
+        $this->assertEquals('Bank BCA', $owner->bank_name);
+        $this->assertEquals('8877665544', $owner->bank_account_number);
+        $this->assertEquals('Kasir Rongsok Depo', $owner->bank_account_name);
+    }
+
+    public function test_debt_creation_syncs_bank_details_to_supplier(): void
+    {
+        $supplier = Supplier::create([
+            'code' => 'SUP-DEBTBANK',
+            'name' => 'Pengepul Binaan Depo',
+            'phone' => '081288776655',
+        ]);
+
+        $postData = [
+            'borrower_name' => $supplier->name,
+            'borrower_phone' => $supplier->phone,
+            'borrower_type' => 'supplier',
+            'loan_category' => 'modal',
+            'supplier_id' => $supplier->id,
+            'date' => now()->format('Y-m-d'),
+            'initial_amount' => 500000,
+            'bank_name' => 'Bank BNI',
+            'bank_account_number' => '0192837465',
+            'bank_account_name' => 'Pengepul Binaan',
+            'save_to_supplier_bank' => 1,
+        ];
+
+        $res = $this->actingAs($this->superAdmin)->post(route('debts.store'), $postData);
+        $res->assertSessionHasNoErrors();
+
+        $supplier->refresh();
+        $this->assertEquals('Bank BNI', $supplier->bank_name);
+        $this->assertEquals('0192837465', $supplier->bank_account_number);
+        $this->assertEquals('Pengepul Binaan', $supplier->bank_account_name);
+    }
 }
 

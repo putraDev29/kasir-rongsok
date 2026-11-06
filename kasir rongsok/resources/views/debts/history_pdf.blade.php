@@ -288,6 +288,13 @@
                         <td class="info-colon">:</td>
                         <td class="info-value font-mono">{{ $debt->borrower_phone ?: '-' }}</td>
                     </tr>
+                    @if($debt->supplier && $debt->supplier->hasBankDetails())
+                    <tr>
+                        <td class="info-label">Rekening Bank</td>
+                        <td class="info-colon">:</td>
+                        <td class="info-value font-mono" style="color: #1e40af;">{{ $debt->supplier->bankDisplay() }}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td class="info-label">Dicatat Oleh</td>
                         <td class="info-colon">:</td>

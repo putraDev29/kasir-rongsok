@@ -28,6 +28,7 @@ class StoreSalesRequest extends FormRequest
             'custom_bank' => 'nullable|string|max:100',
             'custom_account_name' => 'nullable|string|max:150',
             'custom_account_no' => 'nullable|string|max:100',
+            'save_to_user_bank' => 'nullable|boolean',
             'transaction_date' => 'nullable|date',
             'discount_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:500',

@@ -177,6 +177,12 @@
                         <input type="text" name="custom_account_name" x-model="customAccountName" placeholder="Nama Pemilik Rekening (A/N)"
                                class="w-full py-1.5 px-3 text-xs rounded-lg border border-blue-300 bg-blue-50/50">
                     </div>
+                    <div class="mt-1.5 flex items-center">
+                        <label class="inline-flex items-center gap-1.5 text-blue-900 text-xs font-medium cursor-pointer">
+                            <input type="checkbox" name="save_to_user_bank" value="1" checked class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                            <span>Simpan / perbarui nomor rekening ini ke data profil kasir/user saya</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 

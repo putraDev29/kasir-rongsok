@@ -37,9 +37,15 @@ class PurchaseTransactionService
             if ($supplierId === '__new__' || $supplierId === '__cash__' || empty($supplierId)) {
                 $supplierId = null;
             }
+            $supplier = null;
             $supplierName = $data['supplier_name'] ?? null;
             $supplierPhone = $data['supplier_phone'] ?? null;
             $supplierAddress = $data['supplier_address'] ?? null;
+
+            // Bank details extracted early for supplier / user bank account synchronization (Task 10)
+            $customBank = trim($data['custom_bank'] ?? '');
+            $customAccountName = trim($data['custom_account_name'] ?? '');
+            $customAccountNo = trim($data['custom_account_no'] ?? '');
 
             if ($supplierId) {
                 $supplier = Supplier::find($supplierId);
@@ -57,12 +63,37 @@ class PurchaseTransactionService
                         'name' => $trimmedName,
                         'phone' => $supplierPhone,
                         'address' => $supplierAddress,
+                        'bank_name' => $customBank ?: null,
+                        'bank_account_number' => $customAccountNo ?: null,
+                        'bank_account_name' => $customAccountName ?: null,
                     ]);
                 }
                 $supplierId = $supplier->id;
                 $supplierName = $supplier->name;
             } else {
                 $supplierName = !empty($supplierName) ? trim($supplierName) : null;
+            }
+
+            // Sync bank account to Supplier if provided and requested
+            if ($supplier) {
+                $hasBankInput = !empty($customBank) || !empty($customAccountNo) || !empty($customAccountName);
+                $shouldSaveToSupplier = !empty($data['save_to_supplier_bank']) || (empty($supplier->bank_account_number) && !empty($customAccountNo));
+                if ($hasBankInput && $shouldSaveToSupplier) {
+                    $supplier->update(array_filter([
+                        'bank_name' => $customBank ?: $supplier->bank_name,
+                        'bank_account_number' => $customAccountNo ?: $supplier->bank_account_number,
+                        'bank_account_name' => $customAccountName ?: $supplier->bank_account_name,
+                    ], fn($val) => !is_null($val) && $val !== ''));
+                }
+            }
+
+            // Sync bank account to current Cashier/Operator User profile if requested
+            if (!empty($data['save_to_user_bank']) && (!empty($customBank) || !empty($customAccountNo) || !empty($customAccountName))) {
+                $user->update(array_filter([
+                    'bank_name' => $customBank ?: $user->bank_name,
+                    'bank_account_number' => $customAccountNo ?: $user->bank_account_number,
+                    'bank_account_name' => $customAccountName ?: $user->bank_account_name,
+                ], fn($val) => !is_null($val) && $val !== ''));
             }
 
             // Calculate items & totals safely on backend

@@ -30,6 +30,7 @@ class DebtService
             $debtNumber = $this->generateDebtNumber($date);
 
             $supplierId = $data['supplier_id'] ?? null;
+            $supplier = null;
             $borrowerName = $data['borrower_name'] ?? null;
             $borrowerPhone = $data['borrower_phone'] ?? null;
 
@@ -37,7 +38,20 @@ class DebtService
                 $supplier = Supplier::find($supplierId);
                 if ($supplier) {
                     $borrowerName = $supplier->name;
-                    $borrowerPhone = $supplier->phone ?? $borrowerPhone;
+                    $borrowerPhone = $supplier->phone ?? $supplierPhone ?? $supplier->phone;
+
+                    $bankName = trim($data['bank_name'] ?? '');
+                    $bankAccountNo = trim($data['bank_account_number'] ?? '');
+                    $bankAccountName = trim($data['bank_account_name'] ?? '');
+                    $hasBankInfo = !empty($bankName) || !empty($bankAccountNo) || !empty($bankAccountName);
+
+                    if ($hasBankInfo && (!empty($data['save_to_supplier_bank']) || empty($supplier->bank_account_number))) {
+                        $supplier->update(array_filter([
+                            'bank_name' => $bankName ?: $supplier->bank_name,
+                            'bank_account_number' => $bankAccountNo ?: $supplier->bank_account_number,
+                            'bank_account_name' => $bankAccountName ?: $supplier->bank_account_name,
+                        ], fn($val) => !is_null($val) && $val !== ''));
+                    }
                 }
             }
 
