@@ -38,8 +38,18 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password123'),
             'role' => User::ROLE_SUPER_ADMIN,
             'phone' => '081122334455',
+            'bank_name' => 'BCA',
+            'bank_account_number' => '8830123456',
+            'bank_account_name' => 'Bapak Hartono',
             'is_active' => true,
         ]);
+        if (empty($superAdmin->bank_account_number)) {
+            $superAdmin->update([
+                'bank_name' => 'BCA',
+                'bank_account_number' => '8830123456',
+                'bank_account_name' => 'Bapak Hartono',
+            ]);
+        }
 
         $admin = User::firstOrCreate(['email' => 'admin@kasirrongsok.com'], [
             'name' => 'Dewi Safitri (Admin)',
@@ -76,6 +86,9 @@ class DatabaseSeeder extends Seeder
             'default_printer_type' => 'thermal_58', // thermal_58, thermal_80, a4
             'currency_symbol' => 'Rp',
             'delivery_order_notes' => 'Surat jalan ini dibuat 2 (dua) rangkap: Lembar 1 dipegang oleh gudang dan Lembar 2 dipegang oleh supir. Dokumen sah penyerahan material scrap & daur ulang.',
+            'company_bank_name' => 'BCA',
+            'company_bank_account_number' => '8830123456',
+            'company_bank_account_name' => 'PT PENATA PRIMA JAYA',
         ];
 
         foreach ($settings as $key => $val) {
@@ -84,10 +97,34 @@ class DatabaseSeeder extends Seeder
 
         // 3. Payment Methods
         $cash = PaymentMethod::firstOrCreate(['code' => 'cash'], ['name' => 'Tunai / Cash', 'is_active' => true]);
-        $bca = PaymentMethod::firstOrCreate(['code' => 'transfer_bca'], ['name' => 'Transfer Bank BCA', 'is_active' => true]);
-        $bri = PaymentMethod::firstOrCreate(['code' => 'transfer_bri'], ['name' => 'Transfer Bank BRI', 'is_active' => true]);
-        $mandiri = PaymentMethod::firstOrCreate(['code' => 'transfer_mandiri'], ['name' => 'Transfer Bank Mandiri', 'is_active' => true]);
-        $bni = PaymentMethod::firstOrCreate(['code' => 'transfer_bni'], ['name' => 'Transfer Bank BNI', 'is_active' => true]);
+        $bca = PaymentMethod::updateOrCreate(['code' => 'transfer_bca'], [
+            'name' => 'Transfer Bank BCA',
+            'bank_name' => 'BCA',
+            'account_number' => '8830123456',
+            'account_holder' => 'PT PENATA PRIMA JAYA',
+            'is_active' => true
+        ]);
+        $bri = PaymentMethod::updateOrCreate(['code' => 'transfer_bri'], [
+            'name' => 'Transfer Bank BRI',
+            'bank_name' => 'BRI',
+            'account_number' => '012301000123508',
+            'account_holder' => 'PT PENATA PRIMA JAYA',
+            'is_active' => true
+        ]);
+        $mandiri = PaymentMethod::updateOrCreate(['code' => 'transfer_mandiri'], [
+            'name' => 'Transfer Bank Mandiri',
+            'bank_name' => 'Mandiri',
+            'account_number' => '1370012345678',
+            'account_holder' => 'PT PENATA PRIMA JAYA',
+            'is_active' => true
+        ]);
+        $bni = PaymentMethod::updateOrCreate(['code' => 'transfer_bni'], [
+            'name' => 'Transfer Bank BNI',
+            'bank_name' => 'BNI',
+            'account_number' => '0987654321',
+            'account_holder' => 'PT PENATA PRIMA JAYA',
+            'is_active' => true
+        ]);
         $qris = PaymentMethod::firstOrCreate(['code' => 'qris'], ['name' => 'QRIS / Digital', 'is_active' => true]);
 
         // 4. Expense Categories

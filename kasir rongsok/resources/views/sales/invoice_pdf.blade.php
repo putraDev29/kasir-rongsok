@@ -202,17 +202,22 @@
                 <td class="meta-label">Metode Bayar</td>
                 <td>:</td>
                 <td class="meta-val">
-                    {{ $sale->paymentMethod?->name ?? 'Transfer Bank' }}
-                    @php
-                        $isBankSale = str_contains(strtolower($sale->paymentMethod?->name ?? ''), 'bank') || 
-                                      str_contains(strtolower($sale->paymentMethod?->name ?? ''), 'transfer') || 
-                                      !empty($sale->bank_info);
-                        $saleBankText = $sale->bank_info ?: ($sale->user?->bankDisplay() ?? null);
-                    @endphp
-                    @if($isBankSale && $saleBankText)
-                        <div style="font-size: 7.5px; color: #1e40af; font-weight: bold; margin-top: 1px;">
-                            {{ $saleBankText }}
-                        </div>
+                    <strong>{{ $sale->paymentMethod?->name ?? 'Transfer Bank' }}</strong>
+                    @if($sale->isBankPayment())
+                        @if($sale->getBankAccountNumber() || $sale->getBankAccountName())
+                            <div style="font-size: 7.5px; color: #1e40af; margin-top: 1px;">
+                                @if($sale->getBankAccountNumber())
+                                    <div><strong>No. Rek:</strong> {{ $sale->getBankAccountNumber() }}</div>
+                                @endif
+                                @if($sale->getBankAccountName())
+                                    <div><strong>a/n:</strong> {{ $sale->getBankAccountName() }}</div>
+                                @endif
+                            </div>
+                        @elseif(!empty($sale->bank_info))
+                            <div style="font-size: 7.5px; color: #1e40af; font-weight: bold; margin-top: 1px;">
+                                {{ $sale->bank_info }}
+                            </div>
+                        @endif
                     @endif
                 </td>
                 <td class="meta-label">{{ $sale->isPickup() ? 'Metode Serah' : 'Alamat Kirim' }}</td>

@@ -181,16 +181,28 @@
                     <span>TOTAL TAGIHAN:</span>
                     <span class="font-mono text-base">Rp {{ \App\Services\FormatHelper::number($sale->final_amount) }}</span>
                 </div>
-                @php
-                    $isBankSale = str_contains(strtolower($sale->paymentMethod?->name ?? ''), 'bank') || 
-                                  str_contains(strtolower($sale->paymentMethod?->name ?? ''), 'transfer') || 
-                                  !empty($sale->bank_info);
-                    $saleBankText = $sale->bank_info ?: ($sale->user?->bankDisplay() ?? null);
-                @endphp
-                @if($isBankSale && $saleBankText)
-                    <div class="text-[10px] text-blue-900 font-bold pt-1 text-right font-mono">
-                        Rek. Transfer: {{ $saleBankText }}
-                    </div>
+                <div class="pt-1 flex justify-between text-slate-700 text-xs">
+                    <span>Metode Bayar:</span>
+                    <span class="font-bold text-slate-900">{{ $sale->paymentMethod?->name ?? 'Tunai' }}</span>
+                </div>
+                @if($sale->isBankPayment())
+                    @if($sale->getBankAccountNumber())
+                        <div class="flex justify-between text-blue-900 font-mono text-xs">
+                            <span>No. Rekening:</span>
+                            <span class="font-bold">{{ $sale->getBankAccountNumber() }}</span>
+                        </div>
+                    @endif
+                    @if($sale->getBankAccountName())
+                        <div class="flex justify-between text-blue-900 text-xs">
+                            <span>Nama Rekening:</span>
+                            <span class="font-semibold">{{ $sale->getBankAccountName() }}</span>
+                        </div>
+                    @endif
+                    @if(!$sale->getBankAccountNumber() && !$sale->getBankAccountName() && !empty($sale->bank_info))
+                        <div class="text-[10px] text-blue-900 font-bold pt-1 text-right font-mono">
+                            Rek. Transfer: {{ $sale->bank_info }}
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>

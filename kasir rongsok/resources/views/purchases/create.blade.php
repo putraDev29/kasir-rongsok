@@ -1032,8 +1032,10 @@ function cashierPos() {
         paymentMethodDropdownOpen: false,
         isManualPaymentMethod: false,
         newPaymentMethodName: '',
-        customAccountName: '',
-        customAccountNo: '',
+        customAccountName: '{{ addslashes(auth()->user()->bank_account_name ?? '') }}',
+        customAccountNo: '{{ addslashes(auth()->user()->bank_account_number ?? '') }}',
+        currentUserBankHolder: '{{ addslashes(auth()->user()->bank_account_name ?? '') }}',
+        currentUserBankNo: '{{ addslashes(auth()->user()->bank_account_number ?? '') }}',
 
         selectedSupplierId: '',
         isManualSupplier: false,
@@ -1102,6 +1104,16 @@ function cashierPos() {
             this.paymentMethodId = pm.id;
             this.paymentMethodSearchQuery = pm.name;
             this.paymentMethodDropdownOpen = false;
+            if (pm.account_number) {
+                this.customAccountNo = pm.account_number;
+            } else if (!this.customAccountNo && this.currentUserBankNo) {
+                this.customAccountNo = this.currentUserBankNo;
+            }
+            if (pm.account_holder) {
+                this.customAccountName = pm.account_holder;
+            } else if (!this.customAccountName && this.currentUserBankHolder) {
+                this.customAccountName = this.currentUserBankHolder;
+            }
             this.refreshIcons();
         },
 

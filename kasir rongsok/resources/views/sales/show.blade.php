@@ -140,6 +140,19 @@
             <div>
                 <span class="text-slate-400 block font-medium uppercase text-[10px]">Metode Pembayaran</span>
                 <span class="font-semibold text-slate-800 text-sm">{{ $sale->paymentMethod?->name ?? 'Transfer' }}</span>
+                @if($sale->isBankPayment())
+                    <div class="mt-1 text-xs font-mono text-blue-900 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200 space-y-0.5">
+                        @if($sale->getBankAccountNumber())
+                            <div class="font-bold">💳 No. Rek: <span class="font-black">{{ $sale->getBankAccountNumber() }}</span></div>
+                        @endif
+                        @if($sale->getBankAccountName())
+                            <div class="text-[11px] font-semibold text-blue-800">👤 a/n: {{ $sale->getBankAccountName() }}</div>
+                        @endif
+                        @if(!$sale->getBankAccountNumber() && !$sale->getBankAccountName() && !empty($sale->bank_info))
+                            <div class="font-bold">🏦 {{ $sale->bank_info }}</div>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
 

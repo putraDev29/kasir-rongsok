@@ -294,12 +294,28 @@
                                     <td class="meta-colon">:</td>
                                     <td class="meta-value" style="font-weight: bold;">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</td>
                                 </tr>
-                                @if($purchase->bank_info)
-                                    <tr>
-                                        <td class="meta-label">Data Bayar</td>
-                                        <td class="meta-colon">:</td>
-                                        <td class="meta-value" style="font-size: 6.5px;">{{ $purchase->bank_info }}</td>
-                                    </tr>
+                                @if($purchase->isBankPayment())
+                                    @if($purchase->getBankAccountNumber())
+                                        <tr>
+                                            <td class="meta-label">No. Rekening</td>
+                                            <td class="meta-colon">:</td>
+                                            <td class="meta-value" style="font-family: monospace; font-weight: bold;">{{ $purchase->getBankAccountNumber() }}</td>
+                                        </tr>
+                                    @endif
+                                    @if($purchase->getBankAccountName())
+                                        <tr>
+                                            <td class="meta-label">Nama Rekening</td>
+                                            <td class="meta-colon">:</td>
+                                            <td class="meta-value">{{ $purchase->getBankAccountName() }}</td>
+                                        </tr>
+                                    @endif
+                                    @if(!$purchase->getBankAccountNumber() && !$purchase->getBankAccountName() && !empty($purchase->bank_info))
+                                        <tr>
+                                            <td class="meta-label">Data Bayar</td>
+                                            <td class="meta-colon">:</td>
+                                            <td class="meta-value" style="font-size: 6.5px;">{{ $purchase->bank_info }}</td>
+                                        </tr>
+                                    @endif
                                 @endif
                             </table>
 

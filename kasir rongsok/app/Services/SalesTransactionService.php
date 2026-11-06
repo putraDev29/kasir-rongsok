@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\DeliveryOrder;
 use App\Models\DeliveryOrderItem;
 use App\Models\ItemPriceStock;
+use App\Models\PaymentMethod;
 use App\Models\SalesTransaction;
 use App\Models\SalesTransactionItem;
 use App\Models\ScrapItem;
@@ -171,6 +172,29 @@ class SalesTransactionService
                     $parts[] = "a/n {$customAccountName}";
                 }
                 $bankInfo = implode(' - ', $parts);
+            }
+
+            // Auto-fallback bankInfo if empty and payment method is bank/transfer
+            if (empty($bankInfo) && !empty($data['payment_method_id'])) {
+                $pm = PaymentMethod::find($data['payment_method_id']);
+                $isBank = $pm && (
+                    str_contains(strtolower($pm->name), 'bank') ||
+                    str_contains(strtolower($pm->name), 'transfer') ||
+                    str_contains(strtolower($pm->code ?? ''), 'transfer')
+                );
+                if ($isBank) {
+                    $accNo = $pm->account_number ?: ($user->bank_account_number ?? null);
+                    $accName = $pm->account_holder ?: ($user->bank_account_name ?? null);
+                    $bName = $pm->bank_name ?: ($user->bank_name ?? null);
+
+                    $parts = [];
+                    if (!empty($bName)) $parts[] = $bName;
+                    if (!empty($accNo)) $parts[] = "Rek: {$accNo}";
+                    if (!empty($accName)) $parts[] = "a/n {$accName}";
+                    if (!empty($parts)) {
+                        $bankInfo = implode(' - ', $parts);
+                    }
+                }
             }
 
             $deliveryType = $data['delivery_type'] ?? (isset($data['delivery_order_id']) ? SalesTransaction::DELIVERY_TYPE_DELIVERY : SalesTransaction::DELIVERY_TYPE_PICKUP);

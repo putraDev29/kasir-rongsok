@@ -97,15 +97,17 @@
             <div>
                 <span class="text-slate-400 block font-medium uppercase text-[10px]">Metode Pembayaran</span>
                 <span class="font-semibold text-slate-800 text-sm">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
-                @php
-                    $isBank = str_contains(strtolower($purchase->paymentMethod?->name ?? ''), 'bank') || 
-                              str_contains(strtolower($purchase->paymentMethod?->name ?? ''), 'transfer') || 
-                              !empty($purchase->bank_info);
-                    $bankText = $purchase->bank_info ?: ($purchase->user?->bankDisplay() ?? null);
-                @endphp
-                @if($isBank && $bankText)
-                    <div class="mt-1 text-xs font-mono text-blue-800 font-bold bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-                        🏦 {{ $bankText }}
+                @if($purchase->isBankPayment())
+                    <div class="mt-1 text-xs font-mono text-blue-900 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-200 space-y-0.5">
+                        @if($purchase->getBankAccountNumber())
+                            <div class="font-bold">💳 No. Rek: <span class="font-black">{{ $purchase->getBankAccountNumber() }}</span></div>
+                        @endif
+                        @if($purchase->getBankAccountName())
+                            <div class="text-[11px] font-semibold text-blue-800">👤 a/n: {{ $purchase->getBankAccountName() }}</div>
+                        @endif
+                        @if(!$purchase->getBankAccountNumber() && !$purchase->getBankAccountName() && !empty($purchase->bank_info))
+                            <div class="font-bold">🏦 {{ $purchase->bank_info }}</div>
+                        @endif
                     </div>
                 @endif
             </div>

@@ -176,18 +176,28 @@
                                         <span class="text-center">:</span>
                                         <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
                                     </div>
-                                    @php
-                                        $isBankMethod = str_contains(strtolower($purchase->paymentMethod?->name ?? ''), 'bank') || 
-                                                        str_contains(strtolower($purchase->paymentMethod?->name ?? ''), 'transfer') || 
-                                                        !empty($purchase->bank_info);
-                                        $bankDetailText = $purchase->bank_info ?: ($purchase->user?->bankDisplay() ?? null);
-                                    @endphp
-                                    @if($isBankMethod && $bankDetailText)
-                                        <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                            <span class="whitespace-nowrap text-slate-700">Data Rekening</span>
-                                            <span class="text-center">:</span>
-                                            <span class="text-left pl-1 text-[8px] font-bold whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $bankDetailText }}">{{ $bankDetailText }}</span>
-                                        </div>
+                                    @if($purchase->isBankPayment())
+                                        @if($purchase->getBankAccountNumber())
+                                            <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
+                                                <span class="whitespace-nowrap text-slate-700">No. Rekening</span>
+                                                <span class="text-center">:</span>
+                                                <span class="text-left pl-1 font-mono font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountNumber() }}</span>
+                                            </div>
+                                        @endif
+                                        @if($purchase->getBankAccountName())
+                                            <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
+                                                <span class="whitespace-nowrap text-slate-700">Nama Rekening</span>
+                                                <span class="text-center">:</span>
+                                                <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountName() }}</span>
+                                            </div>
+                                        @endif
+                                        @if(!$purchase->getBankAccountNumber() && !$purchase->getBankAccountName() && !empty($purchase->bank_info))
+                                            <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
+                                                <span class="whitespace-nowrap text-slate-700">Data Rekening</span>
+                                                <span class="text-center">:</span>
+                                                <span class="text-left pl-1 text-[8px] font-bold whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
+                                            </div>
+                                        @endif
                                     @endif
                                 </div>
 

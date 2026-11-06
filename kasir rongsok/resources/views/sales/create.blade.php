@@ -168,12 +168,14 @@
 
                 <!-- Bank Info for Sales (Task 11) -->
                 <div class="sm:col-span-2" x-show="isTransferPayment()">
-                    <label class="block text-xs font-semibold text-blue-900 uppercase mb-1">Informasi Rekening Bank Tujuan Transfer (Dicetak di Faktur)</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" name="custom_bank" placeholder="Nama Bank (BCA / Mandiri / BRI)"
+                    <label class="block text-xs font-semibold text-blue-900 uppercase mb-1">Informasi Rekening Bank Tujuan Transfer (Dicetak di Faktur / Nota)</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input type="text" name="custom_bank" x-model="customBank" placeholder="Nama Bank (BCA / Mandiri / BRI)"
                                class="w-full py-1.5 px-3 text-xs rounded-lg border border-blue-300 bg-blue-50/50">
-                        <input type="text" name="custom_account_no" placeholder="No. Rek & Atas Nama Rekening"
+                        <input type="text" name="custom_account_no" x-model="customAccountNo" placeholder="Nomor Rekening"
                                class="w-full py-1.5 px-3 text-xs rounded-lg border border-blue-300 bg-blue-50/50 font-mono">
+                        <input type="text" name="custom_account_name" x-model="customAccountName" placeholder="Nama Pemilik Rekening (A/N)"
+                               class="w-full py-1.5 px-3 text-xs rounded-lg border border-blue-300 bg-blue-50/50">
                     </div>
                 </div>
             </div>
@@ -457,6 +459,9 @@ function salesPos() {
         buyerPhone: '{{ $selectedDeliveryOrder?->recipient_phone ?? "" }}',
         buyerAddress: '{{ $selectedDeliveryOrder?->recipient_address ?? "" }}',
         paymentMethodId: '{{ $paymentMethods->first()?->id ?? 1 }}',
+        customBank: '{{ addslashes(auth()->user()->bank_name ?? '') }}',
+        customAccountNo: '{{ addslashes(auth()->user()->bank_account_number ?? '') }}',
+        customAccountName: '{{ addslashes(auth()->user()->bank_account_name ?? '') }}',
         notes: '{{ $selectedDeliveryOrder ? "Sinkron Surat Jalan: " . $selectedDeliveryOrder->delivery_number : "" }}',
 
         discountAmount: 0,
@@ -488,6 +493,15 @@ function salesPos() {
             } else {
                 this.addRow();
             }
+
+            this.$watch('paymentMethodId', (val) => {
+                const pm = this.paymentMethodsList.find(m => m.id == val);
+                if (pm) {
+                    if (pm.bank_name) this.customBank = pm.bank_name;
+                    if (pm.account_number) this.customAccountNo = pm.account_number;
+                    if (pm.account_holder) this.customAccountName = pm.account_holder;
+                }
+            });
         },
 
         loadFromDeliveryOrder() {

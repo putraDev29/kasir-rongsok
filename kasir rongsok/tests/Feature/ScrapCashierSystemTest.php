@@ -1285,5 +1285,70 @@ class ScrapCashierSystemTest extends TestCase
         $currentBesiStock = (float) \App\Models\StockBalance::where('scrap_item_id', $this->besiItem->id)->value('current_stock');
         $this->assertEquals($initialBesiStock + 100, $currentBesiStock);
     }
+
+    public function test_receipt_shows_bank_account_number_and_name_under_payment_method(): void
+    {
+        $bcaMethod = PaymentMethod::where('code', 'transfer_bca')->first() ?? PaymentMethod::firstOrCreate(
+            ['code' => 'transfer_bca'],
+            ['name' => 'Transfer Bank BCA', 'bank_name' => 'BCA', 'account_number' => '8830123456', 'account_holder' => 'PT PENATA PRIMA JAYA', 'is_active' => true]
+        );
+
+        // 1. Penerimaan Barang dengan Metode Bank & Custom Rekening
+        $purchaseService = app(\App\Services\PurchaseTransactionService::class);
+        $purchase = $purchaseService->createPurchase([
+            'supplier_name' => 'Pemasok Rekening Test',
+            'payment_method_id' => $bcaMethod->id,
+            'custom_bank' => 'BCA',
+            'custom_account_no' => '9988776655',
+            'custom_account_name' => 'H. Suwandi Rek Bank',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 20,
+                    'tare_weight' => 0,
+                    'price_per_kg' => (float) $this->besiItem->buy_price_per_kg,
+                ]
+            ]
+        ], $this->superAdmin);
+
+        $printRes = $this->actingAs($this->superAdmin)->get("/purchases/{$purchase->id}/print");
+        $printRes->assertOk();
+        $printRes->assertSee('Metode Bayar');
+        $printRes->assertSee('No. Rekening');
+        $printRes->assertSee('9988776655');
+        $printRes->assertSee('Nama Rekening');
+        $printRes->assertSee('H. Suwandi Rek Bank');
+
+        // Cek juga pada batch print dan show
+        $showRes = $this->actingAs($this->superAdmin)->get("/purchases/{$purchase->id}");
+        $showRes->assertOk();
+        $showRes->assertSee('9988776655');
+        $showRes->assertSee('H. Suwandi Rek Bank');
+
+        // 2. Penjualan Barang dengan Metode Bank
+        $salesService = app(\App\Services\SalesTransactionService::class);
+        $sale = $salesService->createSale([
+            'buyer_name' => 'Pabrik Pembeli Rekening Test',
+            'delivery_type' => \App\Models\SalesTransaction::DELIVERY_TYPE_PICKUP,
+            'payment_method_id' => $bcaMethod->id,
+            'custom_bank' => 'BCA',
+            'custom_account_no' => '1122334455',
+            'custom_account_name' => 'PT PENATA REKENING',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'weight' => 5,
+                    'sell_price_per_kg' => 6500,
+                ]
+            ]
+        ], $this->superAdmin);
+
+        $salePrintRes = $this->actingAs($this->superAdmin)->get("/sales/{$sale->id}/print");
+        $salePrintRes->assertOk();
+        $salePrintRes->assertSee('No. Rekening:');
+        $salePrintRes->assertSee('1122334455');
+        $salePrintRes->assertSee('Nama Rekening:');
+        $salePrintRes->assertSee('PT PENATA REKENING');
+    }
 }
 

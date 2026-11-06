@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Debt;
 use App\Models\ItemCategory;
 use App\Models\ItemPriceStock;
+use App\Models\PaymentMethod;
 use App\Models\PurchaseTransaction;
 use App\Models\PurchaseTransactionItem;
 use App\Models\ScrapItem;
@@ -305,6 +306,29 @@ class PurchaseTransactionService
                 $paymentMethodId = (int) $paymentMethodId;
             } else {
                 $paymentMethodId = PaymentMethod::first()?->id ?? null;
+            }
+
+            // Auto-fallback bankInfo if empty and payment method is bank/transfer
+            if (empty($bankInfo) && $paymentMethodId) {
+                $pm = PaymentMethod::find($paymentMethodId);
+                $isBank = $pm && (
+                    str_contains(strtolower($pm->name), 'bank') ||
+                    str_contains(strtolower($pm->name), 'transfer') ||
+                    str_contains(strtolower($pm->code ?? ''), 'transfer')
+                );
+                if ($isBank) {
+                    $accNo = $pm->account_number ?: ($user->bank_account_number ?? null);
+                    $accName = $pm->account_holder ?: ($user->bank_account_name ?? null);
+                    $bName = $pm->bank_name ?: ($user->bank_name ?? null);
+
+                    $parts = [];
+                    if (!empty($bName)) $parts[] = $bName;
+                    if (!empty($accNo)) $parts[] = "Rek: {$accNo}";
+                    if (!empty($accName)) $parts[] = "a/n {$accName}";
+                    if (!empty($parts)) {
+                        $bankInfo = implode(' - ', $parts);
+                    }
+                }
             }
 
             // Create Transaction record
