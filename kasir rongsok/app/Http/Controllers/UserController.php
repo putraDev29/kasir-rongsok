@@ -25,7 +25,7 @@ class UserController extends Controller
             'name' => 'required|string|max:150',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'role' => ['required', Rule::in([User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN, User::ROLE_KASIR])],
+            'role' => ['required', Rule::in([User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN, User::ROLE_KASIR, User::ROLE_DRIVER])],
             'phone' => 'nullable|string|max:30',
             'bank_name' => 'nullable|string|max:100',
             'bank_account_number' => 'nullable|string|max:60',
@@ -51,7 +51,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:150',
             'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'role' => ['required', Rule::in([User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN, User::ROLE_KASIR])],
+            'role' => ['required', Rule::in([User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN, User::ROLE_KASIR, User::ROLE_DRIVER])],
             'phone' => 'nullable|string|max:30',
             'bank_name' => 'nullable|string|max:100',
             'bank_account_number' => 'nullable|string|max:60',

@@ -17,12 +17,16 @@ class DeliveryOrder extends Model
     protected $fillable = [
         'delivery_number',
         'sales_transaction_id',
+        'driver_id',
         'delivery_date',
         'recipient_name',
         'recipient_address',
         'recipient_phone',
         'driver_name',
         'driver_phone',
+        'driver_bank_name',
+        'driver_bank_account_number',
+        'driver_bank_account_name',
         'vehicle_number',
         'vehicle_type',
         'total_weight',
@@ -48,6 +52,34 @@ class DeliveryOrder extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function driver(): BelongsTo
+    {
+        return $this->belongsTo(Driver::class);
+    }
+
+    public function hasDriverBankDetails(): bool
+    {
+        return (!empty($this->driver_bank_name) && !empty($this->driver_bank_account_number))
+            || ($this->driver && $this->driver->hasBankDetails());
+    }
+
+    public function driverBankDisplay(): ?string
+    {
+        $bankName = $this->driver_bank_name ?: $this->driver?->bank_name;
+        $accNo = $this->driver_bank_account_number ?: $this->driver?->bank_account_number;
+        $accName = $this->driver_bank_account_name ?: $this->driver?->bank_account_name;
+
+        if (empty($bankName) || empty($accNo)) {
+            return null;
+        }
+
+        $str = "{$bankName} - Rek: {$accNo}";
+        if (!empty($accName)) {
+            $str .= " (a/n {$accName})";
+        }
+        return $str;
     }
 
     public function salesTransaction(): BelongsTo
@@ -114,6 +146,8 @@ class DeliveryOrder extends Model
             $num = $latest ? ((int) substr($latest, strrpos($latest, '-') + 1) + 1) : 1;
             $expNum = $prefix . str_pad((string) $num, 4, '0', STR_PAD_LEFT);
 
+            $bankSuffix = $this->hasDriverBankDetails() ? " [Rek. Sopir: {$this->driverBankDisplay()}]" : "";
+
             Expense::create([
                 'expense_number' => $expNum,
                 'expense_category_id' => $cat->id,
@@ -121,7 +155,7 @@ class DeliveryOrder extends Model
                 'payment_method_id' => $cashMethod?->id,
                 'expense_date' => $date,
                 'amount' => (float) $this->shipping_cost,
-                'description' => "Ongkos armada pengiriman SJ {$this->delivery_number} (Tujuan: {$this->recipient_name}, Sopir: {$this->driver_name})",
+                'description' => "Ongkos armada pengiriman SJ {$this->delivery_number} (Tujuan: {$this->recipient_name}, Sopir: {$this->driver_name}){$bankSuffix}",
                 'recipient' => $this->driver_name,
             ]);
         }

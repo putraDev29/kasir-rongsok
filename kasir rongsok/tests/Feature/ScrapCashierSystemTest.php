@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\BusinessSetting;
+use App\Models\DeliveryOrder;
+use App\Models\Driver;
 use App\Models\PaymentMethod;
 use App\Models\PurchaseTransaction;
 use App\Models\ScrapItem;
@@ -1563,6 +1565,104 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertEquals('Bank BNI', $supplier->bank_name);
         $this->assertEquals('0192837465', $supplier->bank_account_number);
         $this->assertEquals('Pengepul Binaan', $supplier->bank_account_name);
+    }
+
+    public function test_driver_management_supports_bank_details(): void
+    {
+        // 1. Create Driver with Bank Details
+        $createRes = $this->actingAs($this->superAdmin)->post(route('drivers.store'), [
+            'name' => 'Sopir Truk Budi Santoso',
+            'phone' => '081233445566',
+            'vehicle_number' => 'B 9988 KAS',
+            'vehicle_type' => 'Truk Colt Diesel',
+            'bank_name' => 'BCA',
+            'bank_account_number' => '9988776655',
+            'bank_account_name' => 'Budi Santoso',
+            'address' => 'Pangkalan Truk Karawang',
+        ]);
+
+        $createRes->assertSessionHasNoErrors();
+        $driver = Driver::where('name', 'Sopir Truk Budi Santoso')->firstOrFail();
+        $this->assertEquals('BCA', $driver->bank_name);
+        $this->assertEquals('9988776655', $driver->bank_account_number);
+        $this->assertEquals('Budi Santoso', $driver->bank_account_name);
+        $this->assertEquals('B 9988 KAS', $driver->vehicle_number);
+        $this->assertTrue($driver->hasBankDetails());
+
+        // 2. View in Index Table
+        $indexRes = $this->actingAs($this->superAdmin)->get(route('drivers.index'));
+        $indexRes->assertOk();
+        $indexRes->assertSee('Sopir Truk Budi Santoso');
+        $indexRes->assertSee('9988776655');
+
+        // 3. Update Driver Bank Details
+        $updateRes = $this->actingAs($this->superAdmin)->put(route('drivers.update', $driver), [
+            'name' => 'Sopir Truk Budi Santoso Updated',
+            'phone' => '081233445566',
+            'vehicle_number' => 'B 9988 KAS',
+            'vehicle_type' => 'Truk Fuso',
+            'bank_name' => 'BRI',
+            'bank_account_number' => '1122334455',
+            'bank_account_name' => 'Budi Santoso Ekspedisi',
+        ]);
+
+        $updateRes->assertSessionHasNoErrors();
+        $driver->refresh();
+        $this->assertEquals('BRI', $driver->bank_name);
+        $this->assertEquals('1122334455', $driver->bank_account_number);
+        $this->assertEquals('Budi Santoso Ekspedisi', $driver->bank_account_name);
+        $this->assertEquals('Truk Fuso', $driver->vehicle_type);
+    }
+
+    public function test_delivery_order_creation_syncs_driver_bank_details(): void
+    {
+        $postData = [
+            'delivery_date' => now()->format('Y-m-d'),
+            'recipient_name' => 'PT. Krakatau Steelindo',
+            'recipient_address' => 'Cilegon, Banten',
+            'recipient_phone' => '0819998877',
+            'driver_name' => 'Pak Ahmad Fuso',
+            'driver_phone' => '081255667788',
+            'vehicle_number' => 'B 7788 FSO',
+            'vehicle_type' => 'Truk Fuso',
+            'driver_bank_name' => 'Mandiri',
+            'driver_bank_account_number' => '137000889900',
+            'driver_bank_account_name' => 'Ahmad Ekspedisi',
+            'save_to_driver_bank' => 1,
+            'shipping_cost' => 1500000,
+            'loading_cost' => 300000,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_name' => $this->besiItem->name,
+                    'unit_type' => 'kg',
+                    'weight' => 1200,
+                    'price_per_kg' => 5000,
+                    'subtotal' => 6000000,
+                ]
+            ],
+        ];
+
+        $res = $this->actingAs($this->superAdmin)->post(route('delivery-orders.store'), $postData);
+        $res->assertSessionHasNoErrors();
+
+        // Verify driver was created in drivers table
+        $driver = Driver::where('name', 'Pak Ahmad Fuso')->firstOrFail();
+        $this->assertEquals('Mandiri', $driver->bank_name);
+        $this->assertEquals('137000889900', $driver->bank_account_number);
+        $this->assertEquals('Ahmad Ekspedisi', $driver->bank_account_name);
+
+        // Verify Delivery Order
+        $order = DeliveryOrder::where('recipient_name', 'PT. Krakatau Steelindo')->firstOrFail();
+        $this->assertEquals($driver->id, $order->driver_id);
+        $this->assertEquals('Mandiri', $order->driver_bank_name);
+        $this->assertEquals('137000889900', $order->driver_bank_account_number);
+        $this->assertEquals('Ahmad Ekspedisi', $order->driver_bank_account_name);
+        $this->assertTrue($order->hasDriverBankDetails());
+
+        // Verify PDF output contains bank details
+        $pdfRes = $this->actingAs($this->superAdmin)->get(route('delivery-orders.pdf', $order));
+        $pdfRes->assertOk();
     }
 }
 

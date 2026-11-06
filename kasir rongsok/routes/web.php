@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DebtController;
 use App\Http\Controllers\DeliveryOrderController;
+use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\PurchaseTransactionController;
 use App\Http\Controllers\ReportController;
@@ -171,6 +172,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('suppliers', SupplierController::class)
         ->except(['create', 'show', 'edit'])
         ->middleware('role:super_admin');
+
+    // Drivers (Data Sopir & Rekening Bank Ongkos Armada) - Owner & Admin
+    Route::resource('drivers', DriverController::class)
+        ->except(['create', 'show', 'edit'])
+        ->middleware('role:super_admin,admin');
 
     // Hutang Piutang / Pinjaman Modal (Debts & Loans) - Hanya Owner
     Route::get('/debts/excel', [DebtController::class, 'exportExcel'])->name('debts.excel')->middleware('role:super_admin');

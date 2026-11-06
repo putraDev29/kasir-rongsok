@@ -14,6 +14,7 @@ class User extends Authenticatable
     public const ROLE_SUPER_ADMIN = 'super_admin';
     public const ROLE_ADMIN = 'admin';
     public const ROLE_KASIR = 'kasir';
+    public const ROLE_DRIVER = 'driver';
 
     protected $fillable = [
         'name',
@@ -59,6 +60,11 @@ class User extends Authenticatable
     public function isKasir(): bool
     {
         return $this->role === self::ROLE_KASIR;
+    }
+
+    public function isDriver(): bool
+    {
+        return $this->role === self::ROLE_DRIVER;
     }
 
     public function hasBankDetails(): bool

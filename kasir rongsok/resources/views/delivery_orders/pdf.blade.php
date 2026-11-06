@@ -289,6 +289,12 @@
                             <span class="label">No. HP Sopir:</span>
                             <span style="font-family: monospace;">{{ $deliveryOrder->driver_phone ?: '-' }}</span>
                         </div>
+                        @if($deliveryOrder->hasDriverBankDetails())
+                        <div class="info-row">
+                            <span class="label">Rek. Sopir:</span>
+                            <span style="font-family: monospace; color: #1e40af; font-weight: bold;">{{ $deliveryOrder->driverBankDisplay() }}</span>
+                        </div>
+                        @endif
                     </div>
                 </td>
             </tr>
@@ -405,6 +411,11 @@
                         </td>
                     </tr>
                 </table>
+                @if($deliveryOrder->hasDriverBankDetails())
+                    <div style="margin-top: 2px; font-size: 7px; color: #1e40af;">
+                        Pencairan Ongkos Transfer ke Rek. Sopir: <strong>{{ $deliveryOrder->driverBankDisplay() }}</strong>
+                    </div>
+                @endif
             </div>
         @endif
 

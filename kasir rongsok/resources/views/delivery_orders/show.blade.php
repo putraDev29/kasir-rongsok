@@ -201,6 +201,15 @@
                     <span class="font-mono text-slate-800">{{ $deliveryOrder->driver_phone ?: '-' }}</span>
                 </div>
 
+                @if($deliveryOrder->hasDriverBankDetails())
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Rekening Bank Sopir (Pencairan Ongkos):</span>
+                        <span class="font-mono text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block font-semibold text-xs">
+                            {{ $deliveryOrder->driverBankDisplay() }}
+                        </span>
+                    </div>
+                @endif
+
                 <div>
                     <span class="text-slate-400 block text-[11px]">Catatan / Instruksi:</span>
                     <p class="text-slate-600 italic">{{ $deliveryOrder->notes ?: 'Tidak ada instruksi khusus.' }}</p>

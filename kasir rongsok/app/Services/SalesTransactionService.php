@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ActivityLog;
 use App\Models\DeliveryOrder;
 use App\Models\DeliveryOrderItem;
+use App\Models\Driver;
 use App\Models\ItemPriceStock;
 use App\Models\PaymentMethod;
 use App\Models\SalesTransaction;
@@ -257,17 +258,73 @@ class SalesTransactionService
                     $totalPackages += (int) ($it['package_qty'] ?? 0);
                 }
 
+                $driverId = $data['driver_id'] ?? null;
+                $driverName = trim($data['driver_name'] ?? '');
+                $driverPhone = $data['driver_phone'] ?? null;
+                $vehicleNumber = strtoupper(trim($data['vehicle_number'] ?? ''));
+                $vehicleType = $data['vehicle_type'] ?? 'Truk';
+                $driverBankName = trim($data['driver_bank_name'] ?? '');
+                $driverBankAccNo = trim($data['driver_bank_account_number'] ?? '');
+                $driverBankAccName = trim($data['driver_bank_account_name'] ?? '');
+
+                $driver = null;
+                if ($driverId) {
+                    $driver = Driver::find($driverId);
+                } elseif (!empty($driverName)) {
+                    $driver = Driver::where('name', $driverName)->first();
+                    if (!$driver) {
+                        $latestId = Driver::max('id') ?? 0;
+                        $code = 'DRV-' . str_pad((string) ($latestId + 1), 3, '0', STR_PAD_LEFT);
+                        while (Driver::where('code', $code)->exists()) {
+                            $code = 'DRV-' . strtoupper(substr(uniqid(), -5));
+                        }
+                        $driver = Driver::create([
+                            'code' => $code,
+                            'name' => $driverName,
+                            'phone' => $driverPhone,
+                            'vehicle_number' => $vehicleNumber ?: null,
+                            'vehicle_type' => $vehicleType ?: null,
+                            'bank_name' => $driverBankName ?: null,
+                            'bank_account_number' => $driverBankAccNo ?: null,
+                            'bank_account_name' => $driverBankAccName ?: null,
+                            'is_active' => true,
+                        ]);
+                    }
+                    $driverId = $driver->id;
+                }
+
+                if ($driver) {
+                    $driverId = $driver->id;
+                    $driverName = $driver->name;
+                    $hasBankInfo = !empty($driverBankName) || !empty($driverBankAccNo) || !empty($driverBankAccName);
+                    $shouldSaveToDriver = !empty($data['save_to_driver_bank']) || empty($driver->bank_account_number);
+                    if ($hasBankInfo && $shouldSaveToDriver) {
+                        $driver->update(array_filter([
+                            'bank_name' => $driverBankName ?: $driver->bank_name,
+                            'bank_account_number' => $driverBankAccNo ?: $driver->bank_account_number,
+                            'bank_account_name' => $driverBankAccName ?: $driver->bank_account_name,
+                            'phone' => $driverPhone ?: $driver->phone,
+                            'vehicle_number' => $vehicleNumber ?: $driver->vehicle_number,
+                            'vehicle_type' => $vehicleType ?: $driver->vehicle_type,
+                        ], fn($val) => !is_null($val) && $val !== ''));
+                    }
+                }
+
                 $createdDo = DeliveryOrder::create([
                     'delivery_number' => $deliveryNumber,
                     'sales_transaction_id' => $transaction->id,
+                    'driver_id' => $driverId,
                     'delivery_date' => $doDate,
                     'recipient_name' => $buyerName,
                     'recipient_address' => $data['buyer_address'] ?? null,
                     'recipient_phone' => $data['buyer_phone'] ?? null,
-                    'driver_name' => $data['driver_name'] ?: 'Sopir Pengirim',
-                    'driver_phone' => $data['driver_phone'] ?? null,
-                    'vehicle_number' => strtoupper($data['vehicle_number'] ?: 'KENDARAAN'),
-                    'vehicle_type' => $data['vehicle_type'] ?? 'Truk',
+                    'driver_name' => $driverName ?: 'Sopir Pengirim',
+                    'driver_phone' => $driverPhone,
+                    'driver_bank_name' => $driverBankName ?: ($driver?->bank_name ?? null),
+                    'driver_bank_account_number' => $driverBankAccNo ?: ($driver?->bank_account_number ?? null),
+                    'driver_bank_account_name' => $driverBankAccName ?: ($driver?->bank_account_name ?? null),
+                    'vehicle_number' => $vehicleNumber ?: 'KENDARAAN',
+                    'vehicle_type' => $vehicleType ?: 'Truk',
                     'total_weight' => $totalWeight,
                     'shipping_cost' => max(0, (float) ($data['shipping_cost'] ?? 0)),
                     'loading_cost' => max(0, (float) ($data['loading_cost'] ?? 0)),

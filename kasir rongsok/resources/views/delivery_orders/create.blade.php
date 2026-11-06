@@ -81,7 +81,26 @@
 
                 <!-- Vehicle Info -->
                 <div class="space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-200/80">
-                    <span class="text-xs font-bold text-slate-700 uppercase">Armada Kendaraan & Pengemudi</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-700 uppercase">Armada Kendaraan & Pengemudi</span>
+                        <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Bisa Simpan Rekening</span>
+                    </div>
+
+                    <!-- Pilih dari Master Sopir -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Pilih Dari Master Sopir (Opsional)</label>
+                        <select name="driver_id" x-model="driverId" @change="onDriverSelect($event)"
+                                class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 bg-white">
+                            <option value="">-- Ketik Sopir Baru / Atau Pilih dari Master --</option>
+                            @foreach($drivers ?? [] as $drv)
+                                <option value="{{ $drv->id }}" data-name="{{ $drv->name }}" data-phone="{{ $drv->phone }}"
+                                        data-vehicle-number="{{ $drv->vehicle_number }}" data-vehicle-type="{{ $drv->vehicle_type }}"
+                                        data-bank-name="{{ $drv->bank_name }}" data-bank-number="{{ $drv->bank_account_number }}" data-bank-holder="{{ $drv->bank_account_name }}">
+                                    {{ $drv->name }} [{{ $drv->code }}] {{ $drv->vehicle_number ? ' - Plat: ' . $drv->vehicle_number : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
@@ -112,6 +131,40 @@
                             <label class="block text-[11px] font-semibold text-slate-600 mb-1">Nomor HP Sopir</label>
                             <input type="text" name="driver_phone" x-model="driverPhone" placeholder="08..."
                                    class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono">
+                        </div>
+                    </div>
+
+                    <!-- Informasi Rekening Bank Sopir (Pencairan Ongkos Armada) -->
+                    <div class="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="block text-[11px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1">
+                                <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-600"></i>
+                                <span>Informasi Rekening Bank Sopir (Pencairan Ongkos Armada)</span>
+                            </span>
+                            <span class="text-[9.5px] text-blue-700 font-medium">Opsional</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Bank</label>
+                                <input type="text" name="driver_bank_name" x-model="driverBankName" placeholder="BCA / BRI / Mandiri"
+                                       class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500 bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nomor Rekening</label>
+                                <input type="text" name="driver_bank_account_number" x-model="driverBankAccountNumber" placeholder="No. Rekening"
+                                       class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Pemilik (A/N)</label>
+                                <input type="text" name="driver_bank_account_name" x-model="driverBankAccountName" placeholder="Atas Nama Pemilik"
+                                       class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500 bg-white">
+                            </div>
+                        </div>
+                        <div class="pt-1 flex items-center">
+                            <label class="inline-flex items-center gap-1.5 text-blue-900 text-[10.5px] font-medium cursor-pointer">
+                                <input type="checkbox" name="save_to_driver_bank" value="1" checked class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
+                                <span>Simpan / perbarui nomor rekening ke data master sopir/driver</span>
+                            </label>
                         </div>
                     </div>
 
@@ -383,10 +436,31 @@ function deliveryOrderForm() {
         salesTx: @json($salesTx),
         recipientName: '{{ $salesTx ? $salesTx->buyer_name : '' }}',
         recipientPhone: '{{ $salesTx ? $salesTx->buyer_phone : '' }}',
+        driverId: '',
         vehicleNumber: '',
         driverName: '',
         driverPhone: '',
         vehicleType: 'Truk Colt Diesel',
+        driverBankName: '',
+        driverBankAccountNumber: '',
+        driverBankAccountName: '',
+        saveToDriverBank: true,
+
+        onDriverSelect(e) {
+            const opt = e.target.selectedOptions[0];
+            if (opt && opt.value) {
+                this.driverName = opt.dataset.name || '';
+                this.driverPhone = opt.dataset.phone || '';
+                if (opt.dataset.vehicleNumber) this.vehicleNumber = opt.dataset.vehicleNumber;
+                if (opt.dataset.vehicleType) this.vehicleType = opt.dataset.vehicleType;
+                this.driverBankName = opt.dataset.bankName || '';
+                this.driverBankAccountNumber = opt.dataset.bankNumber || '';
+                this.driverBankAccountName = opt.dataset.bankHolder || opt.dataset.name || '';
+            } else {
+                this.driverId = '';
+            }
+        },
+
         rows: [
             @if($salesTx && $salesTx->items->count() > 0)
                 @foreach($salesTx->items as $si)

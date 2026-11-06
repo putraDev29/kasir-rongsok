@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\BusinessSetting;
 use App\Models\DeliveryOrder;
 use App\Models\DeliveryOrderItem;
+use App\Models\Driver;
 use App\Models\SalesTransaction;
 use App\Models\ScrapItem;
 use App\Services\FormatHelper;
@@ -77,7 +78,9 @@ class DeliveryOrderController extends Controller
             ->take(15)
             ->get();
 
-        return view('delivery_orders.create', compact('scrapItems', 'recentSales', 'salesTx'));
+        $drivers = Driver::where('is_active', true)->orderBy('name')->get();
+
+        return view('delivery_orders.create', compact('scrapItems', 'recentSales', 'salesTx', 'drivers'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -88,8 +91,13 @@ class DeliveryOrderController extends Controller
             'recipient_name' => 'required|string|max:150',
             'recipient_address' => 'nullable|string|max:255',
             'recipient_phone' => 'nullable|string|max:30',
+            'driver_id' => 'nullable|exists:drivers,id',
             'driver_name' => 'required|string|max:100',
             'driver_phone' => 'nullable|string|max:30',
+            'driver_bank_name' => 'nullable|string|max:100',
+            'driver_bank_account_number' => 'nullable|string|max:60',
+            'driver_bank_account_name' => 'nullable|string|max:150',
+            'save_to_driver_bank' => 'nullable|boolean',
             'vehicle_number' => 'required|string|max:20',
             'vehicle_type' => 'nullable|string|max:50',
             'shipping_cost' => 'nullable|numeric|min:0',
@@ -126,17 +134,73 @@ class DeliveryOrderController extends Controller
                     $totalPackages += (int) ($item['package_qty'] ?? 0);
                 }
 
+                $driverId = $validated['driver_id'] ?? null;
+                $driverName = trim($validated['driver_name']);
+                $driverPhone = $validated['driver_phone'] ?? null;
+                $vehicleNumber = strtoupper(trim($validated['vehicle_number']));
+                $vehicleType = $validated['vehicle_type'] ?? 'Truk';
+                $driverBankName = trim($validated['driver_bank_name'] ?? '');
+                $driverBankAccNo = trim($validated['driver_bank_account_number'] ?? '');
+                $driverBankAccName = trim($validated['driver_bank_account_name'] ?? '');
+
+                $driver = null;
+                if ($driverId) {
+                    $driver = Driver::find($driverId);
+                } elseif (!empty($driverName)) {
+                    $driver = Driver::where('name', $driverName)->first();
+                    if (!$driver) {
+                        $latestId = Driver::max('id') ?? 0;
+                        $code = 'DRV-' . str_pad((string) ($latestId + 1), 3, '0', STR_PAD_LEFT);
+                        while (Driver::where('code', $code)->exists()) {
+                            $code = 'DRV-' . strtoupper(substr(uniqid(), -5));
+                        }
+                        $driver = Driver::create([
+                            'code' => $code,
+                            'name' => $driverName,
+                            'phone' => $driverPhone,
+                            'vehicle_number' => $vehicleNumber,
+                            'vehicle_type' => $vehicleType,
+                            'bank_name' => $driverBankName ?: null,
+                            'bank_account_number' => $driverBankAccNo ?: null,
+                            'bank_account_name' => $driverBankAccName ?: null,
+                            'is_active' => true,
+                        ]);
+                    }
+                    $driverId = $driver->id;
+                }
+
+                if ($driver) {
+                    $driverId = $driver->id;
+                    $driverName = $driver->name;
+                    $hasBankInfo = !empty($driverBankName) || !empty($driverBankAccNo) || !empty($driverBankAccName);
+                    $shouldSaveToDriver = !empty($validated['save_to_driver_bank']) || empty($driver->bank_account_number);
+                    if ($hasBankInfo && $shouldSaveToDriver) {
+                        $driver->update(array_filter([
+                            'bank_name' => $driverBankName ?: $driver->bank_name,
+                            'bank_account_number' => $driverBankAccNo ?: $driver->bank_account_number,
+                            'bank_account_name' => $driverBankAccName ?: $driver->bank_account_name,
+                            'phone' => $driverPhone ?: $driver->phone,
+                            'vehicle_number' => $vehicleNumber ?: $driver->vehicle_number,
+                            'vehicle_type' => $vehicleType ?: $driver->vehicle_type,
+                        ], fn($val) => !is_null($val) && $val !== ''));
+                    }
+                }
+
                 $order = DeliveryOrder::create([
                     'delivery_number' => $deliveryNumber,
                     'sales_transaction_id' => $validated['sales_transaction_id'] ?? null,
+                    'driver_id' => $driverId,
                     'delivery_date' => $date,
                     'recipient_name' => $validated['recipient_name'],
                     'recipient_address' => $validated['recipient_address'] ?? null,
                     'recipient_phone' => $validated['recipient_phone'] ?? null,
-                    'driver_name' => $validated['driver_name'],
-                    'driver_phone' => $validated['driver_phone'] ?? null,
-                    'vehicle_number' => strtoupper($validated['vehicle_number']),
-                    'vehicle_type' => $validated['vehicle_type'] ?? 'Truk',
+                    'driver_name' => $driverName,
+                    'driver_phone' => $driverPhone,
+                    'driver_bank_name' => $driverBankName ?: ($driver?->bank_name ?? null),
+                    'driver_bank_account_number' => $driverBankAccNo ?: ($driver?->bank_account_number ?? null),
+                    'driver_bank_account_name' => $driverBankAccName ?: ($driver?->bank_account_name ?? null),
+                    'vehicle_number' => $vehicleNumber,
+                    'vehicle_type' => $vehicleType,
                     'total_weight' => $totalWeight,
                     'shipping_cost' => (float) ($validated['shipping_cost'] ?? 0),
                     'loading_cost' => (float) ($validated['loading_cost'] ?? 0),

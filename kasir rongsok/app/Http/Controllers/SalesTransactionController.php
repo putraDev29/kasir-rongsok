@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSalesRequest;
 use App\Models\BusinessSetting;
+use App\Models\Driver;
 use App\Models\PaymentMethod;
 use App\Models\SalesTransaction;
 use App\Models\ScrapItem;
@@ -87,7 +88,9 @@ class SalesTransactionController extends Controller
             ->take(20)
             ->get();
 
-        return view('sales.create', compact('scrapItems', 'paymentMethods', 'selectedDeliveryOrder', 'unbilledDeliveryOrders'));
+        $drivers = Driver::where('is_active', true)->orderBy('name')->get();
+
+        return view('sales.create', compact('scrapItems', 'paymentMethods', 'selectedDeliveryOrder', 'unbilledDeliveryOrders', 'drivers'));
     }
 
     public function store(StoreSalesRequest $request): RedirectResponse

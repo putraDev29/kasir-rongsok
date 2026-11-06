@@ -175,6 +175,12 @@
                         <span>Data Pemasok / Pengepul</span>
                     </a>
 
+                    <a href="{{ route('drivers.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('drivers.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="truck" class="w-4 h-4 {{ request()->routeIs('drivers.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Data Sopir / Driver</span>
+                    </a>
+
                     <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">6. Laporan & Rekapitulasi</div>
 
                     <a href="{{ route('reports.purchases') }}" 
