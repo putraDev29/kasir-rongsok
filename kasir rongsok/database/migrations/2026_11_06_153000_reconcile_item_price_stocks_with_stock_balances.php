@@ -94,3 +94,4 @@ return new class extends Migration
         // No-op rollback as this is a data synchronization migration
     }
 };
+

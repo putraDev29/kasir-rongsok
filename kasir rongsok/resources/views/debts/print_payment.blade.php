@@ -6,9 +6,29 @@
     <title>Kwitansi_{{ $payment->payment_number }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        @media screen {
+            .receipt-58mm {
+                width: 58mm !important;
+                max-width: 58mm !important;
+            }
+        }
         @media print {
             .no-print { display: none !important; }
             body { margin: 0; padding: 0; background: #fff; }
+            .receipt-58mm {
+                width: 48mm !important;
+                max-width: 48mm !important;
+                font-size: 8.5px !important;
+                line-height: 1.25 !important;
+            }
+            .receipt-58mm h1 {
+                font-size: 11px !important;
+            }
+            .receipt-80mm {
+                width: 72mm !important;
+                max-width: 72mm !important;
+                font-size: 11px !important;
+            }
         }
     </style>
 </head>
@@ -45,11 +65,11 @@
 
     <!-- RECEIPT CONTAINER -->
     <div class="bg-white text-slate-900 shadow-md border border-slate-200 
-         {{ $format === 'thermal_58' ? 'receipt-58mm w-[58mm] text-[10px] p-2' : ($format === 'thermal_80' ? 'receipt-80mm w-[80mm] text-xs p-3' : 'receipt-a4 max-w-xl w-full p-8 rounded-xl') }}">
+         {{ $format === 'thermal_58' ? 'receipt-58mm w-[58mm] text-[9px] p-2' : ($format === 'thermal_80' ? 'receipt-80mm w-[80mm] text-xs p-3' : 'receipt-a4 max-w-xl w-full p-8 rounded-xl') }}">
         
         <!-- Header -->
         <div class="text-center pb-2 border-b border-dashed border-slate-400">
-            <h1 class="{{ $format === 'a4' ? 'text-lg' : 'text-sm' }} font-black tracking-tight uppercase">
+            <h1 class="{{ $format === 'a4' ? 'text-lg' : ($format === 'thermal_58' ? 'text-[11px]' : 'text-sm') }} font-bold tracking-tight uppercase">
                 {{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}
             </h1>
             <p class="text-[9px] text-slate-600 mt-0.5 leading-tight">
@@ -58,7 +78,7 @@
             <p class="text-[9px] text-slate-600 font-mono">
                 Telp: {{ $settings['company_phone'] ?? '0812-3456-7890' }}
             </p>
-            <div class="mt-2 inline-block px-2 py-0.5 border border-slate-800 text-[10px] font-black uppercase tracking-wider">
+            <div class="mt-2 inline-block px-2 py-0.5 border border-slate-800 {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} font-bold uppercase tracking-wider">
                 BUKTI PEMBAYARAN HUTANG / BON
             </div>
         </div>
@@ -72,7 +92,7 @@
         @endphp
 
         <!-- Meta Info (Colons aligned, values left-aligned strictly 1 line) -->
-        <div class="py-2 text-[10px] space-y-1 border-b border-dashed border-slate-400 font-mono">
+        <div class="py-1.5 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-[10px]' }} space-y-0.5 border-b border-dashed border-slate-400 font-mono">
             <div style="{{ $debtMetaGrid }}">
                 <span class="whitespace-nowrap">No. Bukti</span>
                 <span class="text-center">:</span>
@@ -106,7 +126,7 @@
         </div>
 
         <!-- Financial Breakdown -->
-        <div class="py-2.5 font-mono text-[10px] space-y-1">
+        <div class="py-2 font-mono {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} space-y-0.5">
             @php
                 $beforeAmount = $payment->remaining_balance + $payment->amount;
             @endphp
@@ -115,14 +135,14 @@
                 <span>Rp {{ number_format($beforeAmount, 0, ',', '.') }}</span>
             </div>
 
-            <div class="pt-1 border-t border-slate-900 flex justify-between text-xs font-black">
+            <div class="pt-1 border-t border-slate-900 flex justify-between {{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }} font-bold">
                 <span>JUMLAH DIBAYARKAN:</span>
-                <span class="text-sm font-bold text-slate-900">Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
+                <span class="{{ $format === 'thermal_58' ? 'text-[10px]' : 'text-sm' }} font-bold text-slate-900">Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
             </div>
 
-            <div class="pt-1 border-t border-dashed border-slate-400 flex justify-between font-bold text-amber-800">
+            <div class="pt-1 border-t border-dashed border-slate-400 flex justify-between font-bold text-amber-800 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-[10px]' }}">
                 <span>SISA SALDO HUTANG:</span>
-                <span class="text-xs">Rp {{ number_format($payment->remaining_balance, 0, ',', '.') }}</span>
+                <span class="{{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }}">Rp {{ number_format($payment->remaining_balance, 0, ',', '.') }}</span>
             </div>
 
             @if($payment->remaining_balance <= 0)

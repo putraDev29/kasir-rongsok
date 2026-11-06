@@ -32,8 +32,22 @@
             .receipt-58mm {
                 width: 48mm !important;
                 max-width: 48mm !important;
-                font-size: 9px !important;
+                font-size: 8.5px !important;
                 line-height: 1.25 !important;
+            }
+            .receipt-58mm h1,
+            .receipt-58mm .thermal-shrink-title {
+                font-size: 11px !important;
+            }
+            .receipt-58mm .thermal-total-label,
+            .receipt-58mm .thermal-total-val {
+                font-size: 9.5px !important;
+            }
+            .receipt-58mm .thermal-cash-label {
+                font-size: 10px !important;
+            }
+            .receipt-58mm .thermal-cash-val {
+                font-size: 10.5px !important;
             }
             .receipt-80mm {
                 width: 72mm !important;
@@ -51,6 +65,25 @@
                 color: #000 !important;
                 border-color: #000 !important;
                 box-shadow: none !important;
+            }
+        }
+        @media screen {
+            .receipt-58mm {
+                width: 58mm !important;
+                max-width: 58mm !important;
+            }
+            .receipt-58mm .thermal-shrink-title {
+                font-size: 11px !important;
+            }
+            .receipt-58mm .thermal-total-label,
+            .receipt-58mm .thermal-total-val {
+                font-size: 9.5px !important;
+            }
+            .receipt-58mm .thermal-cash-label {
+                font-size: 10px !important;
+            }
+            .receipt-58mm .thermal-cash-val {
+                font-size: 10.5px !important;
             }
         }
     </style>
@@ -88,7 +121,7 @@
 
     <!-- RECEIPT CONTAINER -->
     <div class="receipt-container bg-white text-slate-900 shadow-md border border-slate-200 
-         {{ $format === 'thermal_58' ? 'receipt-58mm w-[58mm] max-w-[58mm] text-[10px] p-2' : ($format === 'thermal_80' ? 'receipt-80mm w-[80mm] max-w-[80mm] text-xs p-3' : 'receipt-a4 max-w-3xl w-full p-8 rounded-xl') }}">
+         {{ $format === 'thermal_58' ? 'receipt-58mm w-[58mm] max-w-[58mm] text-[9px] p-2' : ($format === 'thermal_80' ? 'receipt-80mm w-[80mm] max-w-[80mm] text-xs p-3' : 'receipt-a4 max-w-3xl w-full p-8 rounded-xl') }}">
         
         <!-- Header -->
         <div class="text-center pb-2 border-b border-dashed border-slate-400">
@@ -97,7 +130,7 @@
                     <img src="{{ \App\Models\BusinessSetting::logoUrl() }}" alt="Logo" class="{{ $format === 'a4' ? 'h-14' : 'h-8' }} max-w-[140px] object-contain">
                 </div>
             @endif
-            <h1 class="{{ $format === 'a4' ? 'text-xl' : 'text-sm' }} font-black tracking-tight uppercase">
+            <h1 class="{{ $format === 'a4' ? 'text-xl' : ($format === 'thermal_58' ? 'text-[11px] thermal-shrink-title' : 'text-sm') }} font-bold tracking-tight uppercase">
                 {{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}
             </h1>
             <p class="text-[9px] text-slate-600 mt-0.5 leading-tight">
@@ -110,20 +143,20 @@
 
         @php
             $metaGrid = ($format === 'thermal_58') 
-                ? 'display: grid; grid-template-columns: 68px 6px 1fr; align-items: center;' 
+                ? 'display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;' 
                 : (($format === 'thermal_80') 
                     ? 'display: grid; grid-template-columns: 95px 8px 1fr; align-items: center;' 
                     : 'display: grid; grid-template-columns: 130px 12px 1fr; align-items: center;');
 
             $calcGrid = ($format === 'thermal_58') 
-                ? 'display: grid; grid-template-columns: 74px 6px 1fr; align-items: center;' 
+                ? 'display: grid; grid-template-columns: 70px 6px 1fr; align-items: center;' 
                 : (($format === 'thermal_80') 
                     ? 'display: grid; grid-template-columns: 105px 8px 1fr; align-items: center;' 
                     : 'display: grid; grid-template-columns: 140px 12px 1fr; align-items: center;');
         @endphp
 
         <!-- Meta Info (Colons vertically aligned right after longest label, values left-aligned strictly 1 line) -->
-        <div class="py-2 text-[10px] space-y-1 border-b border-dashed border-slate-400 font-mono">
+        <div class="py-1.5 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-[10px]' }} space-y-0.5 border-b border-dashed border-slate-400 font-mono">
             <div style="{{ $metaGrid }}">
                 <span class="whitespace-nowrap">No. Nota</span>
                 <span class="text-center">:</span>
@@ -306,7 +339,7 @@
         @endif
 
         <!-- Total Calculation (Colons aligned right after longest label, values right-aligned strictly 1 line) -->
-        <div class="pt-2 border-t border-dashed border-slate-400 font-mono text-[10px] space-y-1">
+        <div class="pt-1.5 border-t border-dashed border-slate-400 font-mono {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} space-y-0.5">
             <div style="{{ $calcGrid }}">
                 <span class="whitespace-nowrap">Berat Kotor</span>
                 <span class="text-center">:</span>
@@ -320,7 +353,7 @@
             <div style="{{ $calcGrid }}" class="font-bold text-slate-900">
                 <span class="whitespace-nowrap">BERAT BERSIH</span>
                 <span class="text-center">:</span>
-                <span class="text-right font-black whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_net_weight) }} kg</span>
+                <span class="text-right font-bold whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_net_weight) }} kg</span>
             </div>
             
             <div class="pt-1 border-t border-dotted border-slate-300" style="{{ $calcGrid }}">
@@ -343,10 +376,10 @@
                 </div>
             @endif
 
-            <div class="pt-1.5 border-t border-slate-900 text-xs font-black" style="{{ $calcGrid }}">
-                <span class="whitespace-nowrap">TOTAL HARGA</span>
+            <div class="pt-1 border-t border-slate-900 {{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }} font-bold" style="{{ $calcGrid }}">
+                <span class="whitespace-nowrap thermal-total-label">TOTAL HARGA</span>
                 <span class="text-center">:</span>
-                <span class="text-right text-xs whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->final_amount) }}</span>
+                <span class="text-right {{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }} font-bold whitespace-nowrap thermal-total-val">{{ \App\Services\FormatHelper::rupiah($purchase->final_amount) }}</span>
             </div>
 
             @php
@@ -356,8 +389,8 @@
             @endphp
 
             @if($hasDebtInfo)
-                <div class="mt-2 pt-2 border-t border-dashed border-slate-400 font-mono text-[9px] sm:text-[10px] space-y-1 bg-slate-50 p-1.5 rounded">
-                    <div class="font-bold text-center text-[10px] uppercase tracking-wider text-slate-800 pb-0.5 border-b border-dotted border-slate-300">
+                <div class="mt-1.5 pt-1.5 border-t border-dashed border-slate-400 font-mono {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[9px] sm:text-[10px]' }} space-y-0.5 bg-slate-50 p-1 rounded">
+                    <div class="font-bold text-center {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} uppercase tracking-wider text-slate-800 pb-0.5 border-b border-dotted border-slate-300">
                         -- RINCIAN HUTANG / BON MODAL --
                     </div>
                     <div style="{{ $calcGrid }}">
@@ -378,45 +411,45 @@
                 </div>
             @endif
 
-            <div class="pt-2 border-t border-slate-900 text-xs font-black" style="{{ $calcGrid }}">
-                <span class="whitespace-nowrap">UANG DITERIMA</span>
+            <div class="pt-1.5 border-t border-slate-900 {{ $format === 'thermal_58' ? 'text-[10px]' : 'text-xs' }} font-bold" style="{{ $calcGrid }}">
+                <span class="whitespace-nowrap thermal-cash-label">UANG DITERIMA</span>
                 <span class="text-center">:</span>
-                <span class="text-right text-sm whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0))) }}</span>
+                <span class="text-right {{ $format === 'thermal_58' ? 'text-[10.5px]' : 'text-sm' }} font-bold whitespace-nowrap thermal-cash-val">{{ \App\Services\FormatHelper::rupiah($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0))) }}</span>
             </div>
         </div>
 
         <!-- Signatures (Especially in A4 / Receipt for supplier confirmation) -->
-        <div class="mt-6 pt-2 border-t border-slate-300 text-center font-sans">
-            <div class="grid grid-cols-2 gap-4 text-[10px] text-slate-600">
+        <div class="mt-4 pt-1.5 border-t border-slate-300 text-center font-sans">
+            <div class="grid grid-cols-2 gap-2 {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} text-slate-600">
                 <div>
                     <p>Penjual / Pemasok</p>
-                    <div class="h-10"></div>
+                    <div class="{{ $format === 'thermal_58' ? 'h-7' : 'h-10' }}"></div>
                     <p class="font-bold">({{ $purchase->supplier_name ?: '...................' }})</p>
                 </div>
                 <div>
                     <p>Operator Kasir</p>
-                    <div class="h-10"></div>
+                    <div class="{{ $format === 'thermal_58' ? 'h-7' : 'h-10' }}"></div>
                     <p class="font-bold">({{ $purchase->user?->name }})</p>
                 </div>
             </div>
 
             <!-- Peringatan Disclaimer Hukum: Tidak Menerima Barang Bukan Milik Pribadi -->
-            <div class="mt-4 pt-2.5 border-t-2 border-dashed border-slate-900 text-center font-sans space-y-1">
-                <div class="inline-block px-1.5 py-0.5 bg-slate-900 text-white font-black text-[8px] sm:text-[9px] uppercase tracking-wider rounded">
+            <div class="mt-3 pt-2 border-t border-dashed border-slate-900 text-center font-sans space-y-0.5">
+                <div class="inline-block px-1.5 py-0.2 bg-slate-900 text-white font-bold {{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[8px] sm:text-[9px]' }} uppercase tracking-wider rounded">
                     PERHATIAN / DISCLAIMER
                 </div>
-                <div class="font-black uppercase text-[9px] sm:text-[10px] text-slate-900 tracking-tight leading-tight">
+                <div class="font-bold uppercase {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[9px] sm:text-[10px]' }} text-slate-900 tracking-tight leading-tight">
                     *** {{ $settings['receipt_disclaimer'] ?? 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI' }} ***
                 </div>
-                <p class="text-[8px] text-slate-600 leading-tight">
+                <p class="text-[7.5px] text-slate-600 leading-tight">
                     Barang yang dijual wajib milik sah pribadi penjual. Depo tidak melayani barang curian / ilegal.
                 </p>
                 @if(!empty($settings['receipt_terms']))
-                    <p class="text-[8px] text-slate-500 leading-tight">
+                    <p class="text-[7.5px] text-slate-500 leading-tight">
                         {{ $settings['receipt_terms'] }}
                     </p>
                 @endif
-                <p class="text-[8px] text-slate-400 italic leading-tight pt-0.5">
+                <p class="text-[7px] text-slate-400 italic leading-tight pt-0.5">
                     {{ $settings['receipt_footer'] ?? 'Barang yang sudah ditimbang & dibayar tidak dapat ditarik kembali.' }}
                 </p>
             </div>

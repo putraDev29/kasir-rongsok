@@ -280,7 +280,7 @@
                                     <div class="font-bold text-slate-900" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap">BERAT BERSIH</span>
                                         <span class="text-center">:</span>
-                                        <span class="text-right font-black whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_net_weight) }} kg</span>
+                                        <span class="text-right font-bold whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_net_weight) }} kg</span>
                                     </div>
                                     
                                     <div class="pt-1 border-t border-dotted border-slate-300" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
@@ -303,7 +303,7 @@
                                         </div>
                                     @endif
 
-                                    <div class="pt-1 border-t border-slate-900 text-[10px] font-black" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
+                                    <div class="pt-1 border-t border-slate-900 text-[9.5px] font-bold" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap">TOTAL NOTA</span>
                                         <span class="text-center">:</span>
                                         <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->final_amount) }}</span>
@@ -317,7 +317,7 @@
                                         </div>
                                     @endif
 
-                                    <div class="pt-1 border-t border-slate-900 text-[10.5px] font-black" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
+                                    <div class="pt-1 border-t border-slate-900 text-[10px] font-bold" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                         <span class="whitespace-nowrap">UANG DITERIMA</span>
                                         <span class="text-center">:</span>
                                         <span class="text-right whitespace-nowrap text-slate-900">{{ \App\Services\FormatHelper::rupiah($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0))) }}</span>
