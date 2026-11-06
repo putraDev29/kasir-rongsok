@@ -130,29 +130,29 @@ class DatabaseSeeder extends Seeder
         $bca = PaymentMethod::updateOrCreate(['code' => 'transfer_bca'], [
             'name' => 'Transfer Bank BCA',
             'bank_name' => 'BCA',
-            'account_number' => '8830123456',
-            'account_holder' => 'PT PENATA PRIMA JAYA',
+            'account_number' => null,
+            'account_holder' => null,
             'is_active' => true
         ]);
         $bri = PaymentMethod::updateOrCreate(['code' => 'transfer_bri'], [
             'name' => 'Transfer Bank BRI',
             'bank_name' => 'BRI',
-            'account_number' => '012301000123508',
-            'account_holder' => 'PT PENATA PRIMA JAYA',
+            'account_number' => null,
+            'account_holder' => null,
             'is_active' => true
         ]);
         $mandiri = PaymentMethod::updateOrCreate(['code' => 'transfer_mandiri'], [
             'name' => 'Transfer Bank Mandiri',
             'bank_name' => 'Mandiri',
-            'account_number' => '1370012345678',
-            'account_holder' => 'PT PENATA PRIMA JAYA',
+            'account_number' => null,
+            'account_holder' => null,
             'is_active' => true
         ]);
         $bni = PaymentMethod::updateOrCreate(['code' => 'transfer_bni'], [
             'name' => 'Transfer Bank BNI',
             'bank_name' => 'BNI',
-            'account_number' => '0987654321',
-            'account_holder' => 'PT PENATA PRIMA JAYA',
+            'account_number' => null,
+            'account_holder' => null,
             'is_active' => true
         ]);
         $qris = PaymentMethod::firstOrCreate(['code' => 'qris'], ['name' => 'QRIS / Digital', 'is_active' => true]);

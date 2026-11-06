@@ -1663,5 +1663,91 @@ class ScrapCashierSystemTest extends TestCase
         $pdfRes = $this->actingAs($this->superAdmin)->get(route('delivery-orders.pdf', $order));
         $pdfRes->assertOk();
     }
+
+    public function test_bank_account_remains_empty_without_default_and_populates_only_when_entity_has_bank(): void
+    {
+        // 1. Transaction without bank details must return null (no default fake account or company bank fallback)
+        $purchaseService = app(\App\Services\PurchaseTransactionService::class);
+        $cashierNoBank = User::factory()->create([
+            'role' => User::ROLE_KASIR,
+            'bank_name' => null,
+            'bank_account_number' => null,
+            'bank_account_name' => null,
+        ]);
+        $supplierNoBank = Supplier::create([
+            'code' => 'SPL-NOBANK',
+            'name' => 'Supplier Tanpa Bank',
+            'phone' => '0899999999',
+            'bank_name' => null,
+            'bank_account_number' => null,
+            'bank_account_name' => null,
+            'type' => 'lapak',
+        ]);
+
+        $purchase = $purchaseService->createPurchase([
+            'supplier_id' => $supplierNoBank->id,
+            'supplier_name' => $supplierNoBank->name,
+            'payment_method_id' => $this->cashMethod->id,
+            'custom_bank' => '',
+            'custom_account_no' => '',
+            'custom_account_name' => '',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 10,
+                    'tare_weight' => 0,
+                    'price_per_kg' => (float) $this->besiItem->buy_price_per_kg,
+                ]
+            ]
+        ], $cashierNoBank);
+
+        $this->assertNull($purchase->getBankAccountNumber());
+        $this->assertNull($purchase->getBankAccountName());
+
+        // 2. Transaction with supplier that has bank details returns supplier bank
+        $supplierWithBank = Supplier::create([
+            'code' => 'SPL-WITHBANK',
+            'name' => 'Supplier Ber-Rekening',
+            'phone' => '0888888888',
+            'bank_name' => 'BCA',
+            'bank_account_number' => '5544332211',
+            'bank_account_name' => 'Bambang Rekening',
+            'type' => 'lapak',
+        ]);
+
+        $purchaseWithSupplierBank = $purchaseService->createPurchase([
+            'supplier_id' => $supplierWithBank->id,
+            'supplier_name' => $supplierWithBank->name,
+            'payment_method_id' => $this->cashMethod->id,
+            'custom_bank' => '',
+            'custom_account_no' => '',
+            'custom_account_name' => '',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 10,
+                    'tare_weight' => 0,
+                    'price_per_kg' => (float) $this->besiItem->buy_price_per_kg,
+                ]
+            ]
+        ], $cashierNoBank);
+
+        $this->assertEquals('5544332211', $purchaseWithSupplierBank->getBankAccountNumber());
+        $this->assertEquals('Bambang Rekening', $purchaseWithSupplierBank->getBankAccountName());
+        $this->assertEquals('BCA', $purchaseWithSupplierBank->getBankName());
+
+        // 3. Driver without bank hasDriverBankDetails returns false
+        $driverNoBank = Driver::create([
+            'name' => 'Driver Tanpa Bank',
+            'code' => 'DRV-NB-001',
+            'vehicle_number' => 'B 1000 NB',
+            'vehicle_type' => 'Pick Up',
+            'bank_name' => null,
+            'bank_account_number' => null,
+            'bank_account_name' => null,
+        ]);
+        $this->assertFalse($driverNoBank->hasBankDetails());
+        $this->assertNull($driverNoBank->bankDisplay());
+    }
 }
 

@@ -129,22 +129,12 @@ class PurchaseTransaction extends Model
             }
         }
 
-        if (!empty($this->paymentMethod?->account_number)) {
-            return $this->paymentMethod->account_number;
+        if (!empty($this->supplier?->bank_account_number)) {
+            return $this->supplier->bank_account_number;
         }
 
         if (!empty($this->user?->bank_account_number)) {
             return $this->user->bank_account_number;
-        }
-
-        $owner = User::where('role', User::ROLE_SUPER_ADMIN)->whereNotNull('bank_account_number')->first();
-        if ($owner && !empty($owner->bank_account_number)) {
-            return $owner->bank_account_number;
-        }
-
-        $settingAcc = BusinessSetting::get('company_bank_account_number');
-        if (!empty($settingAcc)) {
-            return $settingAcc;
         }
 
         return null;
@@ -161,22 +151,12 @@ class PurchaseTransaction extends Model
             }
         }
 
-        if (!empty($this->paymentMethod?->account_holder)) {
-            return $this->paymentMethod->account_holder;
+        if (!empty($this->supplier?->bank_account_name)) {
+            return $this->supplier->bank_account_name;
         }
 
         if (!empty($this->user?->bank_account_name)) {
             return $this->user->bank_account_name;
-        }
-
-        $owner = User::where('role', User::ROLE_SUPER_ADMIN)->whereNotNull('bank_account_name')->first();
-        if ($owner && !empty($owner->bank_account_name)) {
-            return $owner->bank_account_name;
-        }
-
-        $settingName = BusinessSetting::get('company_bank_account_name');
-        if (!empty($settingName)) {
-            return $settingName;
         }
 
         return null;
@@ -192,6 +172,14 @@ class PurchaseTransaction extends Model
             }
         }
 
+        if (!empty($this->supplier?->bank_name)) {
+            return $this->supplier->bank_name;
+        }
+
+        if (!empty($this->user?->bank_name)) {
+            return $this->user->bank_name;
+        }
+
         if (!empty($this->paymentMethod?->bank_name)) {
             return $this->paymentMethod->bank_name;
         }
@@ -199,10 +187,6 @@ class PurchaseTransaction extends Model
         $methodName = $this->paymentMethod?->name ?? '';
         if (preg_match('/(BCA|BRI|Mandiri|BNI|BSI|CIMB|Permata|Danamon)/i', $methodName, $matches)) {
             return strtoupper($matches[1]);
-        }
-
-        if (!empty($this->user?->bank_name)) {
-            return $this->user->bank_name;
         }
 
         return null;

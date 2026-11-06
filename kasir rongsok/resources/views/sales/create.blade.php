@@ -531,9 +531,12 @@ function salesPos() {
                 if (opt.dataset.vehicleType) this.vehicleType = opt.dataset.vehicleType;
                 this.driverBankName = opt.dataset.bankName || '';
                 this.driverBankAccountNumber = opt.dataset.bankNumber || '';
-                this.driverBankAccountName = opt.dataset.bankHolder || opt.dataset.name || '';
+                this.driverBankAccountName = opt.dataset.bankHolder || '';
             } else {
                 this.driverId = '';
+                this.driverBankName = '';
+                this.driverBankAccountNumber = '';
+                this.driverBankAccountName = '';
             }
         },
         transactionDate: '',
@@ -578,10 +581,8 @@ function salesPos() {
 
             this.$watch('paymentMethodId', (val) => {
                 const pm = this.paymentMethodsList.find(m => m.id == val);
-                if (pm) {
-                    if (pm.bank_name) this.customBank = pm.bank_name;
-                    if (pm.account_number) this.customAccountNo = pm.account_number;
-                    if (pm.account_holder) this.customAccountName = pm.account_holder;
+                if (pm && pm.bank_name && !this.customBank) {
+                    this.customBank = pm.bank_name;
                 }
             });
         },

@@ -1051,9 +1051,9 @@ function cashierPos() {
         paymentMethodDropdownOpen: false,
         isManualPaymentMethod: false,
         newPaymentMethodName: '',
-        customBank: '{{ addslashes(auth()->user()->bank_name ?? '') }}',
-        customAccountName: '{{ addslashes(auth()->user()->bank_account_name ?? '') }}',
-        customAccountNo: '{{ addslashes(auth()->user()->bank_account_number ?? '') }}',
+        customBank: '',
+        customAccountName: '',
+        customAccountNo: '',
         currentUserBankName: '{{ addslashes(auth()->user()->bank_name ?? '') }}',
         currentUserBankHolder: '{{ addslashes(auth()->user()->bank_account_name ?? '') }}',
         currentUserBankNo: '{{ addslashes(auth()->user()->bank_account_number ?? '') }}',
@@ -1125,15 +1125,8 @@ function cashierPos() {
             this.paymentMethodId = pm.id;
             this.paymentMethodSearchQuery = pm.name;
             this.paymentMethodDropdownOpen = false;
-            if (pm.account_number) {
-                this.customAccountNo = pm.account_number;
-            } else if (!this.customAccountNo && this.currentUserBankNo) {
-                this.customAccountNo = this.currentUserBankNo;
-            }
-            if (pm.account_holder) {
-                this.customAccountName = pm.account_holder;
-            } else if (!this.customAccountName && this.currentUserBankHolder) {
-                this.customAccountName = this.currentUserBankHolder;
+            if (pm.bank_name && !this.customBank) {
+                this.customBank = pm.bank_name;
             }
             this.refreshIcons();
         },
@@ -1223,6 +1216,9 @@ function cashierPos() {
                 this.supplierAddress = '';
                 this.supplierDebt = 0;
                 this.debtDeductionAmount = 0;
+                this.customBank = '';
+                this.customAccountNo = '';
+                this.customAccountName = '';
             } else {
                 this.selectedSupplierId = sup.id;
                 this.supplierName = sup.name;
@@ -1231,11 +1227,10 @@ function cashierPos() {
                 this.supplierAddress = sup.address || '';
                 this.supplierDebt = parseFloat(sup.total_debt || sup.remaining_debt) || 0;
                 this.debtDeductionAmount = 0;
-                if (sup.bank_name || sup.bank_account_number || sup.bank_account_name) {
-                    if (sup.bank_name) this.customBank = sup.bank_name;
-                    if (sup.bank_account_number) this.customAccountNo = sup.bank_account_number;
-                    if (sup.bank_account_name) this.customAccountName = sup.bank_account_name;
-                }
+                // Tampilkan sesuai data supplier yang dipilih jika ada, jika kosong tetap kosongkan
+                this.customBank = (sup && sup.bank_name) ? sup.bank_name : '';
+                this.customAccountNo = (sup && sup.bank_account_number) ? sup.bank_account_number : '';
+                this.customAccountName = (sup && sup.bank_account_name) ? sup.bank_account_name : '';
             }
             this.supplierDropdownOpen = false;
             this.$nextTick(() => {
@@ -1253,6 +1248,9 @@ function cashierPos() {
             this.supplierAddress = '';
             this.supplierDebt = 0;
             this.debtDeductionAmount = 0;
+            this.customBank = '';
+            this.customAccountNo = '';
+            this.customAccountName = '';
             this.supplierDropdownOpen = false;
         },
 

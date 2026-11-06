@@ -455,9 +455,12 @@ function deliveryOrderForm() {
                 if (opt.dataset.vehicleType) this.vehicleType = opt.dataset.vehicleType;
                 this.driverBankName = opt.dataset.bankName || '';
                 this.driverBankAccountNumber = opt.dataset.bankNumber || '';
-                this.driverBankAccountName = opt.dataset.bankHolder || opt.dataset.name || '';
+                this.driverBankAccountName = opt.dataset.bankHolder || '';
             } else {
                 this.driverId = '';
+                this.driverBankName = '';
+                this.driverBankAccountNumber = '';
+                this.driverBankAccountName = '';
             }
         },
 

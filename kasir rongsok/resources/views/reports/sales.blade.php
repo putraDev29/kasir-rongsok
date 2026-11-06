@@ -91,8 +91,8 @@
                         <th class="py-2.5 px-3">Material Scrap & Daur Ulang</th>
                         <th class="py-2.5 px-3 text-right">Berat Terjual</th>
                         <th class="py-2.5 px-3 text-right font-bold text-amber-700">Harga Beli</th>
-                        <th class="py-2.5 px-3 text-right">Harga Jual</th>
                         <th class="py-2.5 px-3 text-right font-bold text-slate-600">Total Modal (HPP)</th>
+                        <th class="py-2.5 px-3 text-right">Harga Jual</th>
                         <th class="py-2.5 px-3 text-right font-bold text-blue-700">Subtotal Jual</th>
                         <th class="py-2.5 px-3 text-right font-bold text-emerald-700">Estimasi Laba</th>
                     </tr>
@@ -130,8 +130,8 @@
                                 @endif
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-semibold text-amber-700">Rp {{ \App\Services\FormatHelper::number($item->buy_price_snapshot) }}</td>
-                            <td class="py-3 px-3 text-right font-mono text-slate-600">Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }}</td>
                             <td class="py-3 px-3 text-right font-mono font-semibold text-slate-700">Rp {{ \App\Services\FormatHelper::number($item->cogs_subtotal) }}</td>
+                            <td class="py-3 px-3 text-right font-mono text-slate-600">Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }}</td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-blue-700">Rp {{ \App\Services\FormatHelper::number($item->subtotal) }}</td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">Rp {{ \App\Services\FormatHelper::number($item->profit_subtotal) }}</td>
                         </tr>
@@ -149,10 +149,10 @@
                                 {{ \App\Services\FormatHelper::weight($totalWeight) }} kg
                             </td>
                             <td></td>
-                            <td></td>
                             <td class="py-3 px-3 text-right font-mono font-black text-slate-800">
                                 Rp {{ \App\Services\FormatHelper::number($totalCogs) }}
                             </td>
+                            <td></td>
                             <td class="py-3 px-3 text-right font-mono font-black text-blue-700">
                                 Rp {{ \App\Services\FormatHelper::number($totalSales) }}
                             </td>
