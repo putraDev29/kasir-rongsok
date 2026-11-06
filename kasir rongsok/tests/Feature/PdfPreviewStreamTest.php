@@ -66,20 +66,25 @@ class PdfPreviewStreamTest extends TestCase
         $resDownload->assertStatus(200);
         $this->assertStringContainsString('attachment', $resDownload->headers->get('content-disposition'));
 
-        // 1b. Debt History PDF (sesuai status saat itu)
+        // 1b. Debt History PDF (sesuai status saat itu & nama file peminjam)
+        $cleanBorrower = preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($debt->borrower_name ?: 'Peminjam'));
+        $cleanBorrower = trim(preg_replace('/_+/', '_', $cleanBorrower), '_');
         $resHistoryPdf = $this->actingAs($this->superAdmin)->get(route('debts.pdf', $debt));
         $resHistoryPdf->assertStatus(200);
         $this->assertStringContainsString('application/pdf', $resHistoryPdf->headers->get('content-type'));
         $this->assertStringContainsString('inline', $resHistoryPdf->headers->get('content-disposition'));
+        $this->assertStringContainsString("Riwayat_Hutang_{$cleanBorrower}.pdf", $resHistoryPdf->headers->get('content-disposition'));
 
         $resHistoryPdfDownload = $this->actingAs($this->superAdmin)->get(route('debts.pdf', [$debt, 'download' => 1]));
         $resHistoryPdfDownload->assertStatus(200);
         $this->assertStringContainsString('attachment', $resHistoryPdfDownload->headers->get('content-disposition'));
+        $this->assertStringContainsString("Riwayat_Hutang_{$cleanBorrower}.pdf", $resHistoryPdfDownload->headers->get('content-disposition'));
 
         // 1c. Debt History WA Preview
         $resWaPreview = $this->actingAs($this->superAdmin)->get(route('debts.wa-preview', $debt));
         $resWaPreview->assertStatus(200);
         $resWaPreview->assertJson(['success' => true]);
+        $this->assertEquals("Riwayat_Hutang_{$cleanBorrower}.pdf", $resWaPreview->json('pdf_filename'));
 
         // 2. Debt Batch PDF
         $res = $this->actingAs($this->superAdmin)->get(route('debts.batch-pdf'));

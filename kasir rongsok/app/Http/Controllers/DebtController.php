@@ -308,8 +308,7 @@ class DebtController extends Controller
 
         $borrowerClean = preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($debt->borrower_name ?: 'Peminjam'));
         $borrowerClean = trim(preg_replace('/_+/', '_', $borrowerClean), '_');
-        $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
-        $filename = "Riwayat_Hutang_{$borrowerClean}_{$cleanNum}.pdf";
+        $filename = "Riwayat_Hutang_{$borrowerClean}.pdf";
 
         if ($request->boolean('download')) {
             return $pdf->download($filename);
@@ -361,8 +360,9 @@ class DebtController extends Controller
         $commodityTerm = BusinessSetting::commodityTerm();
         $msg .= "Diterbitkan resmi oleh Sistem Kasir {$commodityTerm}.";
 
-        $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
-        $pdfFilename = "Riwayat_Hutang_{$cleanNum}.pdf";
+        $borrowerClean = preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($debt->borrower_name ?: 'Peminjam'));
+        $borrowerClean = trim(preg_replace('/_+/', '_', $borrowerClean), '_');
+        $pdfFilename = "Riwayat_Hutang_{$borrowerClean}.pdf";
         $pdfUrl = route('debts.pdf', $debt);
 
         return response()->json([
@@ -419,8 +419,7 @@ class DebtController extends Controller
         $waService = app(WhatsAppGatewayService::class);
         $borrowerClean = preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($debt->borrower_name ?: 'Peminjam'));
         $borrowerClean = trim(preg_replace('/_+/', '_', $borrowerClean), '_');
-        $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
-        $filename = "Riwayat_Hutang_{$borrowerClean}_{$cleanNum}.pdf";
+        $filename = "Riwayat_Hutang_{$borrowerClean}.pdf";
 
         if ($sendPdf) {
             $payments = $debt->payments()

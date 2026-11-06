@@ -1170,9 +1170,8 @@ class ScrapCashierSystemTest extends TestCase
         $initialPdfRes->assertStatus(200);
         $this->assertEquals('application/pdf', $initialPdfRes->headers->get('Content-Type'));
         $this->assertStringContainsString('inline', $initialPdfRes->headers->get('Content-Disposition'));
-        $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
         $cleanBorrower = preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($debt->borrower_name ?: 'Peminjam'));
-        $this->assertStringContainsString("Riwayat_Hutang_{$cleanBorrower}_{$cleanNum}.pdf", $initialPdfRes->headers->get('Content-Disposition'));
+        $this->assertStringContainsString("Riwayat_Hutang_{$cleanBorrower}.pdf", $initialPdfRes->headers->get('Content-Disposition'));
 
         // 3. Make Partial Payment
         $pay1 = $this->actingAs($this->superAdmin)->post(route('debts.pay', $debt), [

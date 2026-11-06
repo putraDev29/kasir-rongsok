@@ -115,3 +115,4 @@ class DriverController extends Controller
         return back()->with('success', "Data sopir {$driverName} berhasil dihapus.");
     }
 }
+

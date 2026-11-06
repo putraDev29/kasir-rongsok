@@ -40,7 +40,7 @@
             </button>
 
             <button type="button"
-               @click="openPdfPreview('{{ route('debts.pdf', $debt) }}', 'Riwayat Hutang #{{ $debt->debt_number }}', 'Riwayat_Hutang_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '_' + ('{{ str_replace(['/', ' '], '_', $debt->debt_number) }}') + '.pdf', 'Peminjam: {{ $debt->borrower_name }} (Saldo: Rp {{ number_format($debt->remaining_amount, 0, ',', '.') }})')"
+               @click="openPdfPreview('{{ route('debts.pdf', $debt) }}', 'Riwayat Hutang #{{ $debt->debt_number }}', 'Riwayat_Hutang_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '.pdf', 'Peminjam: {{ $debt->borrower_name }} (Saldo: Rp {{ number_format($debt->remaining_amount, 0, ',', '.') }})')"
                class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                title="Preview & Unduh PDF Kartu Riwayat Hutang & Mutasi Angsuran Terkini">
                 <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
@@ -52,7 +52,7 @@
                         title: 'Kirim PDF Riwayat Hutang & Saldo Pinjaman',
                         subtitle: 'Kirim berkas PDF ringkasan riwayat pinjaman dan mutasi cicilan sesuai status saat ini ke WhatsApp peminjam',
                         phone: '{{ $debt->borrower_phone }}',
-                        filename: 'Riwayat_Hutang_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '_' + ('{{ str_replace(['/', ' '], '_', $debt->debt_number) }}') + '.pdf',
+                        filename: 'Riwayat_Hutang_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '.pdf',
                         fileDescription: 'Dokumen PDF Resmi Kartu Riwayat & Posisi Saldo Hutang Modal',
                         pdfUrl: '{{ route('debts.pdf', $debt) }}',
                         previewUrl: '{{ route('debts.wa-preview', $debt) }}',
