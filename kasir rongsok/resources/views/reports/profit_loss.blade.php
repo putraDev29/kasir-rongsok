@@ -26,23 +26,23 @@
             <div class="flex items-center gap-1.5 font-medium">
                 <span class="text-slate-400">Pilihan Cepat:</span>
                 <a href="{{ route('reports.profit-loss') }}" 
+                   class="px-2.5 py-1 rounded-md transition-colors {{ (!$allDates && $startDate === date('Y-m-01') && $endDate === date('Y-m-t')) ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                    Bulan Ini (1 - {{ date('t M Y') }})
+                </a>
+                <a href="{{ route('reports.profit-loss', ['start_date' => date('Y-m-d'), 'end_date' => date('Y-m-d')]) }}" 
                    class="px-2.5 py-1 rounded-md transition-colors {{ (!$allDates && $startDate === date('Y-m-d') && $endDate === date('Y-m-d')) ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                    Hari Ini (Saat Ini)
+                    Hari Ini
                 </a>
                 <a href="{{ route('reports.profit-loss', ['start_date' => date('Y-m-d', strtotime('-1 day')), 'end_date' => date('Y-m-d', strtotime('-1 day'))]) }}" 
                    class="px-2.5 py-1 rounded-md transition-colors {{ ($startDate === date('Y-m-d', strtotime('-1 day')) && $endDate === date('Y-m-d', strtotime('-1 day'))) ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                     Kemarin
-                </a>
-                <a href="{{ route('reports.profit-loss', ['start_date' => date('Y-m-01'), 'end_date' => date('Y-m-d')]) }}" 
-                   class="px-2.5 py-1 rounded-md transition-colors {{ ($startDate === date('Y-m-01') && $endDate === date('Y-m-d')) ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                    Bulan Ini
                 </a>
                 <a href="{{ route('reports.profit-loss', ['all_dates' => 1]) }}" 
                    class="px-2.5 py-1 rounded-md transition-colors {{ $allDates ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                     Semua Periode
                 </a>
             </div>
-            <span class="text-[11px] text-slate-400">Diambil sesuai tanggal saat itu (Hari Ini)</span>
+            <span class="text-[11px] text-slate-400">Default: 1 Bulan Penuh (Tgl 1 s/d Akhir Bulan)</span>
         </div>
 
         <form method="GET" action="{{ route('reports.profit-loss') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">

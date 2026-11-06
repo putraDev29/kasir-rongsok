@@ -156,11 +156,17 @@
                 <span class="text-center">:</span>
                 <span class="text-left pl-1.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
             </div>
-            @if($purchase->bank_info)
+            @php
+                $isBankMethod = str_contains(strtolower($purchase->paymentMethod?->name ?? ''), 'bank') || 
+                                str_contains(strtolower($purchase->paymentMethod?->name ?? ''), 'transfer') || 
+                                !empty($purchase->bank_info);
+                $bankDetailText = $purchase->bank_info ?: ($purchase->user?->bankDisplay() ?? null);
+            @endphp
+            @if($isBankMethod && $bankDetailText)
                 <div style="{{ $metaGrid }}">
-                    <span class="whitespace-nowrap">Data Bayar</span>
+                    <span class="whitespace-nowrap">Data Rekening</span>
                     <span class="text-center">:</span>
-                    <span class="text-left pl-1.5 font-mono text-[8.5px] whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
+                    <span class="text-left pl-1.5 font-mono text-[8.5px] font-bold whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $bankDetailText }}">{{ $bankDetailText }}</span>
                 </div>
             @endif
         </div>

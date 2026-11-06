@@ -123,6 +123,31 @@
                 </div>
 
             </div>
+
+            <!-- Biaya Operasional Pengiriman (Task 10) -->
+            <div class="pt-3 border-t border-slate-100 bg-blue-50/50 p-4 rounded-xl border border-blue-200/80 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-blue-900 uppercase flex items-center gap-1.5">
+                        <i data-lucide="banknote" class="w-4 h-4 text-blue-600"></i>
+                        <span>Biaya Operasional Pengiriman (Masuk Operasional & Tampil di PDF Owner)</span>
+                    </span>
+                    <span class="text-[10px] text-blue-700 font-semibold bg-blue-100 px-2 py-0.5 rounded">Opsional</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Biaya Ongkos Armada / Supir (Rp)</label>
+                        <input type="number" name="shipping_cost" min="0" step="1000" placeholder="0"
+                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white">
+                        <span class="text-[10px] text-slate-400">Dicatat ke pengeluaran 'Biaya Transportasi & Armada' & Lembar 1 PDF Owner.</span>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Biaya Bongkar Muat / Tenaga Angkut (Rp)</label>
+                        <input type="number" name="loading_cost" min="0" step="1000" placeholder="0"
+                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white">
+                        <span class="text-[10px] text-slate-400">Dicatat ke pengeluaran 'Biaya Bongkar Muat' & Lembar 1 PDF Owner.</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Card 2: Cargo / Items Table (Tampilan sama seperti Form Barang di Penerimaan Barang) -->

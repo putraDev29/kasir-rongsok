@@ -1,7 +1,7 @@
 @extends('layouts.app', ['header' => 'Manajemen Pengguna & Hak Akses'])
 
 @section('content')
-<div class="space-y-4" x-data="{ userModal: false, isEdit: false, form: { id: '', name: '', email: '', role: 'kasir', phone: '', is_active: true } }">
+<div class="space-y-4" x-data="{ userModal: false, isEdit: false, form: { id: '', name: '', email: '', role: 'kasir', phone: '', bank_name: '', bank_account_number: '', bank_account_name: '', is_active: true } }">
 
     <!-- Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -10,7 +10,7 @@
             <p class="text-xs text-slate-500">Hak akses berbasis peran: Super Admin (Owner), Admin, dan Kasir Timbang</p>
         </div>
 
-        <button type="button" @click="isEdit = false; form = { id: '', name: '', email: '', role: 'kasir', phone: '', is_active: true }; userModal = true"
+        <button type="button" @click="isEdit = false; form = { id: '', name: '', email: '', role: 'kasir', phone: '', bank_name: '', bank_account_number: '', bank_account_name: '', is_active: true }; userModal = true"
                 class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm">
             <i data-lucide="user-plus" class="w-4 h-4"></i>
             <span>Tambah Pengguna Baru</span>
@@ -28,6 +28,7 @@
                         <th class="py-2.5 px-3">Email Login</th>
                         <th class="py-2.5 px-3">Peran / Role</th>
                         <th class="py-2.5 px-3">Telepon</th>
+                        <th class="py-2.5 px-3">Rekening Bank</th>
                         <th class="py-2.5 px-3 text-right">Nota Pembelian</th>
                         <th class="py-2.5 px-3 text-center">Status</th>
                         <th class="py-2.5 px-3 text-center">Aksi</th>
@@ -57,6 +58,15 @@
                                 @endif
                             </td>
                             <td class="py-3 px-3 font-mono text-slate-600">{{ $u->phone ?? '-' }}</td>
+                            <td class="py-3 px-3 font-sans">
+                                @if($u->hasBankDetails())
+                                    <div class="font-bold text-slate-800 text-[11px]">{{ $u->bank_name }}</div>
+                                    <div class="font-mono text-[10px] text-slate-600">{{ $u->bank_account_number }}</div>
+                                    <div class="text-[10px] text-slate-400">a/n {{ $u->bank_account_name ?: $u->name }}</div>
+                                @else
+                                    <span class="text-slate-400 italic text-[11px]">-</span>
+                                @endif
+                            </td>
                             <td class="py-3 px-3 text-right font-medium text-slate-800">
                                 <span class="px-2 py-0.5 rounded bg-slate-100 font-semibold">{{ $u->purchase_transactions_count }} Nota</span>
                             </td>
@@ -74,7 +84,7 @@
                             <td class="py-3 px-3 text-center">
                                 <div class="inline-flex items-center gap-1.5">
                                     <button type="button" 
-                                            @click="isEdit = true; form = { id: {{ $u->id }}, name: '{{ addslashes($u->name) }}', email: '{{ addslashes($u->email) }}', role: '{{ $u->role }}', phone: '{{ addslashes($u->phone ?? '') }}', is_active: {{ $u->is_active ? 'true' : 'false' }} }; userModal = true"
+                                            @click="isEdit = true; form = { id: {{ $u->id }}, name: '{{ addslashes($u->name) }}', email: '{{ addslashes($u->email) }}', role: '{{ $u->role }}', phone: '{{ addslashes($u->phone ?? '') }}', bank_name: '{{ addslashes($u->bank_name ?? '') }}', bank_account_number: '{{ addslashes($u->bank_account_number ?? '') }}', bank_account_name: '{{ addslashes($u->bank_account_name ?? '') }}', is_active: {{ $u->is_active ? 'true' : 'false' }} }; userModal = true"
                                             title="Edit Pengguna"
                                             class="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100">
                                         <i data-lucide="edit-3" class="w-4 h-4"></i>
@@ -151,6 +161,28 @@
                     </label>
                     <input type="password" name="password" :required="!isEdit" placeholder="Minimal 6 karakter"
                            class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono">
+                </div>
+
+                <!-- Data Rekening Bank User -->
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                    <span class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">Informasi Rekening Bank (Opsional)</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Bank</label>
+                            <input type="text" name="bank_name" x-model="form.bank_name" placeholder="BCA / BRI / Mandiri"
+                                   class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nomor Rekening</label>
+                            <input type="text" name="bank_account_number" x-model="form.bank_account_number" placeholder="No. Rekening"
+                                   class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Pemilik Rekening (A/N)</label>
+                        <input type="text" name="bank_account_name" x-model="form.bank_account_name" placeholder="Atas Nama Pemilik Rekening"
+                               class="w-full text-xs p-1.5 rounded-lg border border-slate-300 focus:ring-emerald-500">
+                    </div>
                 </div>
 
                 <template x-if="isEdit">

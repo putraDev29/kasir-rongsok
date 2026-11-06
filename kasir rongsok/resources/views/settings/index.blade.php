@@ -84,11 +84,9 @@
                             <div class="p-3 bg-white rounded-xl border border-emerald-300 inline-block shadow-sm">
                                 <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="Tanda Tangan Owner" style="height: 60px; max-height: 65px; width: auto; max-width: 180px; object-fit: contain;">
                             </div>
-                            <div class="mt-2">
-                                <label class="inline-flex items-center gap-1.5 text-xs text-red-600 font-semibold cursor-pointer">
-                                    <input type="checkbox" name="remove_signature" value="1" class="rounded border-slate-300 text-red-600 focus:ring-red-500">
-                                    <span>Hapus Tanda Tangan</span>
-                                </label>
+                            <div class="mt-2 flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
+                                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                <span>Tanda tangan aktif tersimpan</span>
                             </div>
                         @else
                             <div class="w-24 h-16 rounded-xl bg-slate-100 flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-300">

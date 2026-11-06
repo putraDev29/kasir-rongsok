@@ -82,6 +82,8 @@ class DeliveryOrderController extends Controller
             'driver_phone' => 'nullable|string|max:30',
             'vehicle_number' => 'required|string|max:20',
             'vehicle_type' => 'nullable|string|max:50',
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'loading_cost' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:500',
             'items' => 'required|array|min:1',
             'items.*.scrap_item_id' => 'nullable|exists:scrap_items,id',
@@ -126,6 +128,8 @@ class DeliveryOrderController extends Controller
                     'vehicle_number' => strtoupper($validated['vehicle_number']),
                     'vehicle_type' => $validated['vehicle_type'] ?? 'Truk',
                     'total_weight' => $totalWeight,
+                    'shipping_cost' => (float) ($validated['shipping_cost'] ?? 0),
+                    'loading_cost' => (float) ($validated['loading_cost'] ?? 0),
                     'total_packages' => $totalPackages,
                     'status' => 'sent',
                     'notes' => $validated['notes'] ?? null,
@@ -152,6 +156,9 @@ class DeliveryOrderController extends Controller
                     ]);
                 }
 
+                // Auto-record operational expenses (ongkos & bongkar muat)
+                $order->recordOperationalExpenses();
+
                 ActivityLog::record(
                     action: 'delivery_order_created',
                     subject: $order,
@@ -173,6 +180,7 @@ class DeliveryOrderController extends Controller
 
             return redirect()->route('delivery-orders.show', $deliveryOrder)->with('success', "Surat Jalan {$deliveryOrder->delivery_number} berhasil dibuat!");
         } catch (Exception $e) {
+            \Illuminate\Support\Facades\Log::error('DeliveryOrder store failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return back()->withInput()->with('error', $e->getMessage());
         }
     }

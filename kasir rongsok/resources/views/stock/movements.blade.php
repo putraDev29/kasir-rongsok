@@ -109,10 +109,10 @@
                                 @endif
                             </td>
                             <td class="py-3 px-3 text-right font-black text-sm {{ $mov->weight_qty > 0 ? 'text-emerald-700' : 'text-red-600' }}">
-                                {{ $mov->weight_qty > 0 ? '+' : '' }}{{ number_format($mov->weight_qty, 2) }} kg
+                                {{ $mov->weight_qty > 0 ? '+' : '' }}{{ \App\Services\FormatHelper::weight($mov->weight_qty) }} kg
                             </td>
                             <td class="py-3 px-3 text-right font-bold text-slate-900">
-                                {{ number_format($mov->balance_after, 2) }} kg
+                                {{ \App\Services\FormatHelper::weight($mov->balance_after) }} kg
                             </td>
                             <td class="py-3 px-3 font-sans text-xs text-slate-600 max-w-xs truncate">
                                 {{ $mov->notes }}

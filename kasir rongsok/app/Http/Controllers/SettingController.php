@@ -196,21 +196,8 @@ class SettingController extends Controller
                 }
 
                 BusinessSetting::set('owner_signature', 'uploads/signature/' . $filename, 'branding');
-            } elseif ($request->boolean('remove_signature')) {
-                $oldSig = BusinessSetting::get('owner_signature');
-                if ($oldSig) {
-                    if (file_exists(public_path($oldSig))) {
-                        @unlink(public_path($oldSig));
-                    }
-                    if (file_exists(base_path('../' . $oldSig))) {
-                        @unlink(base_path('../' . $oldSig));
-                    }
-                    if (file_exists(base_path('public/' . $oldSig))) {
-                        @unlink(base_path('public/' . $oldSig));
-                    }
-                }
-                BusinessSetting::set('owner_signature', null, 'branding');
             }
+            // Signature is retained permanently and only replaced if a new file is uploaded
         } catch (Throwable $e) {
             Log::error('Gagal mengunggah tanda tangan owner: ' . $e->getMessage(), [
                 'exception' => $e,

@@ -181,10 +181,11 @@
                                         <x-whatsapp-icon class="w-4 h-4" />
                                     </button>
 
-                                    <a href="{{ route('delivery-orders.pdf', $order) }}" target="_blank"
-                                       class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50" title="Preview & Unduh PDF Surat Jalan (2 Rangkap)">
+                                    <button type="button"
+                                            @click="openPdfPreview('{{ route('delivery-orders.pdf', $order) }}', 'Surat Jalan {{ $order->delivery_number }}', 'Surat_Jalan_{{ str_replace(['/', ' '], '_', $order->delivery_number) }}.pdf', 'Surat Jalan Pengiriman 2 Rangkap')"
+                                            class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 cursor-pointer" title="Preview PDF Surat Jalan (2 Rangkap)">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
-                                    </a>
+                                    </button>
 
                                     @if($order->salesTransaction)
                                         <a href="{{ route('sales.show', $order->salesTransaction) }}" 

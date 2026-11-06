@@ -23,6 +23,10 @@ class PurchaseTransactionItem extends Model
         'net_weight',
         'price_per_kg',
         'subtotal',
+        'is_cancelled',
+        'cancel_reason',
+        'cancelled_by',
+        'cancelled_at',
         'notes',
     ];
 
@@ -34,6 +38,8 @@ class PurchaseTransactionItem extends Model
             'net_weight' => 'decimal:2',
             'price_per_kg' => 'decimal:2',
             'subtotal' => 'decimal:2',
+            'is_cancelled' => 'boolean',
+            'cancelled_at' => 'datetime',
         ];
     }
 
@@ -45,6 +51,16 @@ class PurchaseTransactionItem extends Model
     public function scrapItem(): BelongsTo
     {
         return $this->belongsTo(ScrapItem::class);
+    }
+
+    public function cancelledByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function isCancelled(): bool
+    {
+        return (bool) $this->is_cancelled;
     }
 }
 

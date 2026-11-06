@@ -79,9 +79,12 @@ class SalarySlipController extends Controller
         $netSalary = max(0, $totalIncome - $totalDeduction);
 
         $date = Carbon::parse($validated['payment_date']);
-        $prefix = 'SLIP-' . $date->format('ymd') . '-';
-        $latest = SalarySlip::where('slip_number', 'LIKE', $prefix . '%')->orderBy('id', 'desc')->value('slip_number');
-        $num = $latest ? ((int) substr($latest, strlen($prefix)) + 1) : 1;
+        $prefix = 'PPJ-SLIP-' . $date->format('ymd') . '-';
+        $latest = SalarySlip::where('slip_number', 'LIKE', $prefix . '%')
+            ->orWhere('slip_number', 'LIKE', 'SLIP-' . $date->format('ymd') . '-%')
+            ->orderBy('id', 'desc')
+            ->value('slip_number');
+        $num = $latest ? ((int) substr($latest, strrpos($latest, '-') + 1) + 1) : 1;
         $slipNumber = $prefix . str_pad((string) $num, 3, '0', STR_PAD_LEFT);
 
         $slip = SalarySlip::create([

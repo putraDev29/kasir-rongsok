@@ -223,6 +223,8 @@ class SalesTransactionService
                     'vehicle_number' => strtoupper($data['vehicle_number'] ?: 'KENDARAAN'),
                     'vehicle_type' => $data['vehicle_type'] ?? 'Truk',
                     'total_weight' => $totalWeight,
+                    'shipping_cost' => max(0, (float) ($data['shipping_cost'] ?? 0)),
+                    'loading_cost' => max(0, (float) ($data['loading_cost'] ?? 0)),
                     'total_packages' => $totalPackages,
                     'status' => 'sent',
                     'notes' => $data['notes'] ?? null,
@@ -247,6 +249,8 @@ class SalesTransactionService
                         'notes' => $it['notes'] ?? null,
                     ]);
                 }
+
+                $createdDo->recordOperationalExpenses();
 
                 $transaction->update(['delivery_order_id' => $createdDo->id]);
             } elseif ($deliveryOrderId) {
@@ -390,7 +394,7 @@ class SalesTransactionService
      */
     protected function generateInvoiceNumber(Carbon $date): string
     {
-        $prefix = 'PJ-' . $date->format('ymd') . '-';
+        $prefix = 'PPJ-JL-' . $date->format('ymd') . '-';
         $latest = SalesTransaction::where('invoice_number', 'LIKE', $prefix . '%')
             ->orderBy('id', 'desc')
             ->value('invoice_number');

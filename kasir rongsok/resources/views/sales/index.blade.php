@@ -218,10 +218,11 @@
                                             title="Kirim Faktur PDF via WhatsApp">
                                         <x-whatsapp-icon class="w-4 h-4" />
                                     </button>
-                                    <a href="{{ route('sales.pdf', $sale) }}" target="_blank"
-                                       class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50" title="Preview & Unduh Faktur PDF">
+                                    <button type="button"
+                                            @click="openPdfPreview('{{ route('sales.pdf', $sale) }}', 'Faktur Penjualan {{ $sale->invoice_number }}', 'Faktur_{{ str_replace(['/', ' '], '_', $sale->invoice_number) }}.pdf', 'Pembeli: {{ $sale->buyer_name }}')"
+                                            class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 cursor-pointer" title="Preview Faktur PDF">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
-                                    </a>
+                                    </button>
                                     <a href="{{ route('sales.show', $sale) }}" title="Lihat Rincian"
                                        class="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100">
                                         <i data-lucide="eye" class="w-4 h-4"></i>

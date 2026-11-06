@@ -31,26 +31,28 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('debts.agreement', $debt) }}" target="_blank"
-               class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
-               title="Buka Dokumen Surat Perjanjian Resmi (Format A4 - 2 Lembar Rangkap)">
+            <button type="button"
+               @click="openPdfPreview('{{ route('debts.agreement', $debt) }}', 'Surat Perjanjian {{ $debt->debt_number }}', 'Surat_Perjanjian_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '.pdf', 'Surat Perjanjian Format A4 (2 Rangkap: Owner & Peminjam)')"
+               class="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+               title="Preview Dokumen Surat Perjanjian Resmi (Format A4 - 2 Lembar Rangkap)">
                 <i data-lucide="scroll-text" class="w-4 h-4 text-blue-600"></i>
                 <span>Surat Perjanjian</span>
-            </a>
+            </button>
 
-            <a href="{{ route('debts.pdf', $debt) }}" target="_blank"
-               class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+            <button type="button"
+               @click="openPdfPreview('{{ route('debts.pdf', $debt) }}', 'Riwayat Hutang #{{ $debt->debt_number }}', 'Riwayat_Hutang_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '_' + ('{{ str_replace(['/', ' '], '_', $debt->debt_number) }}') + '.pdf', 'Peminjam: {{ $debt->borrower_name }} (Saldo: Rp {{ number_format($debt->remaining_amount, 0, ',', '.') }})')"
+               class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                title="Preview & Unduh PDF Kartu Riwayat Hutang & Mutasi Angsuran Terkini">
                 <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
                 <span>Preview / Unduh PDF</span>
-            </a>
+            </button>
 
             <button type="button"
                     @click="openWaPdfModal({
                         title: 'Kirim PDF Riwayat Hutang & Saldo Pinjaman',
                         subtitle: 'Kirim berkas PDF ringkasan riwayat pinjaman dan mutasi cicilan sesuai status saat ini ke WhatsApp peminjam',
                         phone: '{{ $debt->borrower_phone }}',
-                        filename: 'Riwayat_Hutang_' + ('{{ str_replace(['/', ' '], '_', $debt->debt_number) }}') + '.pdf',
+                        filename: 'Riwayat_Hutang_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '_' + ('{{ str_replace(['/', ' '], '_', $debt->debt_number) }}') + '.pdf',
                         fileDescription: 'Dokumen PDF Resmi Kartu Riwayat & Posisi Saldo Hutang Modal',
                         pdfUrl: '{{ route('debts.pdf', $debt) }}',
                         previewUrl: '{{ route('debts.wa-preview', $debt) }}',

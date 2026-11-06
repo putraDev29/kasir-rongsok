@@ -322,7 +322,7 @@
                             {{ $master->total_packages > 0 ? $master->total_packages . ' Koli' : '-' }}
                         </td>
                         <td class="text-right" style="font-weight: bold; font-family: monospace;">
-                            {{ number_format($master->total_weight, 2, ',', '.') }} kg
+                            {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
                         </td>
                         <td style="font-size: 7.5px; color: #475569;">
                             @if(!$master->has_variants && $master->items->first()->notes)
@@ -354,7 +354,7 @@
                                     {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
                                 </td>
                                 <td class="text-right" style="font-family: monospace; color: #0f172a;">
-                                    {{ number_format($vItem->weight, 2, ',', '.') }} kg
+                                    {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
                                 </td>
                                 <td style="font-size: 7px; color: #475569;">
                                     @if($vItem->effective_price > 0)
@@ -373,7 +373,7 @@
                     <td colspan="3" class="text-right" style="padding-right: 6px;">TOTAL MUATAN RESMI:</td>
                     <td class="text-right" style="font-family: monospace;">{{ $deliveryOrder->total_packages }} Koli</td>
                     <td class="text-right" style="font-family: monospace; font-size: 9.5px; color: #047857;">
-                        {{ number_format($deliveryOrder->total_weight, 2, ',', '.') }} kg
+                        {{ \App\Services\FormatHelper::weight($deliveryOrder->total_weight) }} kg
                     </td>
                     <td style="font-size: 7px; color: #64748b;">Timbangan Resmi Depo</td>
                 </tr>
@@ -383,6 +383,28 @@
         @if($deliveryOrder->notes)
             <div class="instructions">
                 <strong>Instruksi Pengiriman:</strong> {{ $deliveryOrder->notes }}
+            </div>
+        @endif
+
+        {{-- Biaya Operasional Pengiriman (Khusus Lembar 1 Owner/Gudang - Task 10) --}}
+        @if($copyNum === 1 && (($deliveryOrder->shipping_cost ?? 0) > 0 || ($deliveryOrder->loading_cost ?? 0) > 0))
+            <div style="margin-top: 3px; border: 1px solid #93c5fd; background-color: #eff6ff; padding: 3px 6px; border-radius: 3px; font-size: 7.5px;">
+                <table style="width: 100%; border: none;">
+                    <tr>
+                        <td style="width: 38%; border: none; padding: 0; font-weight: bold; color: #1e40af;">
+                            💰 BIAYA OPERASIONAL PENGIRIMAN (LEMBAR 1 OWNER):
+                        </td>
+                        <td style="width: 20%; border: none; padding: 0; text-align: right; color: #1e3a8a;">
+                            Ongkos: <strong>Rp {{ \App\Services\FormatHelper::number($deliveryOrder->shipping_cost ?? 0) }}</strong>
+                        </td>
+                        <td style="width: 22%; border: none; padding: 0; text-align: right; color: #1e3a8a;">
+                            Bongkar Muat: <strong>Rp {{ \App\Services\FormatHelper::number($deliveryOrder->loading_cost ?? 0) }}</strong>
+                        </td>
+                        <td style="width: 20%; border: none; padding: 0; text-align: right; font-weight: bold; color: #047857;">
+                            Total: Rp {{ \App\Services\FormatHelper::number(($deliveryOrder->shipping_cost ?? 0) + ($deliveryOrder->loading_cost ?? 0)) }}
+                        </td>
+                    </tr>
+                </table>
             </div>
         @endif
 

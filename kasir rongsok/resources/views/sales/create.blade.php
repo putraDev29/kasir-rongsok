@@ -106,6 +106,22 @@
                                    class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:ring-blue-500">
                         </div>
                     </div>
+
+                    <!-- Biaya Operasional Pengiriman (Task 10) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-blue-100">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Biaya Ongkos Armada / Supir (Rp)</label>
+                            <input type="number" name="shipping_cost" min="0" step="1000" placeholder="0"
+                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Masuk ke pengeluaran operasional & Surat Jalan Lembar 1 Owner.</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Biaya Bongkar Muat / Tenaga Angkut (Rp)</label>
+                            <input type="number" name="loading_cost" min="0" step="1000" placeholder="0"
+                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:ring-blue-500">
+                            <span class="text-[10px] text-slate-400">Masuk ke pengeluaran operasional & Surat Jalan Lembar 1 Owner.</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 

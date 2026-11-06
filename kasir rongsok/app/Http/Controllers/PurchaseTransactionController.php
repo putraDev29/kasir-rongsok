@@ -7,6 +7,7 @@ use App\Models\BusinessSetting;
 use App\Models\ItemCategory;
 use App\Models\PaymentMethod;
 use App\Models\PurchaseTransaction;
+use App\Models\PurchaseTransactionItem;
 use App\Models\ScrapItem;
 use App\Models\Supplier;
 use App\Models\User;
@@ -402,6 +403,26 @@ class PurchaseTransactionController extends Controller
         }
 
         return back()->with($res['success'] ? 'success' : 'error', $res['message'] ?? 'Status terkirim.');
+    }
+
+    /**
+     * Cancel / void a single item from a transaction with stock reversal.
+     */
+    public function cancelItem(Request $request, PurchaseTransaction $purchase, PurchaseTransactionItem $item): RedirectResponse
+    {
+        $request->validate([
+            'cancel_reason' => 'required|string|min:3|max:255',
+        ], [
+            'cancel_reason.required' => 'Alasan pembatalan item wajib diisi.',
+            'cancel_reason.min' => 'Alasan pembatalan minimal 3 karakter.',
+        ]);
+
+        try {
+            $this->purchaseService->cancelPurchaseItem($purchase, $item, Auth::user(), $request->input('cancel_reason'));
+            return back()->with('success', "Barang {$item->item_name_snapshot} berhasil dibatalkan dan stok dikembalikan.");
+        } catch (Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     /**

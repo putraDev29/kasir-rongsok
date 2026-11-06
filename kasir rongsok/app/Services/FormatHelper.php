@@ -109,8 +109,8 @@ class FormatHelper
     }
 
     /**
-     * Generate Sales Invoice Number: PJL-[bulan_romawi]-[tahun_2_digit]-[0001]
-     * Format: PJL-XI-26-0001
+     * Generate Sales Invoice Number: PPJ-JL-[bulan_romawi]-[tahun_2_digit]-[0001]
+     * Format: PPJ-JL-XI-26-0001
      * Nomor urut reset setiap tahun.
      */
     public static function generateSalesInvoiceNumber(mixed $date = null): string
@@ -118,12 +118,13 @@ class FormatHelper
         $d = $date ? Carbon::parse($date) : Carbon::now();
         $roman = self::toRomanMonth($d->month);
         $year2 = $d->format('y');
-        $prefix = "PJL-{$roman}-{$year2}-";
+        $prefix = "PPJ-JL-{$roman}-{$year2}-";
 
         // Query max sequence for this year (reset setiap tahun)
         $records = SalesTransaction::withTrashed()
             ->where(function ($q) use ($d, $year2) {
                 $q->whereYear('transaction_date', $d->year)
+                  ->orWhere('invoice_number', 'LIKE', "PPJ-JL-%-{$year2}-%")
                   ->orWhere('invoice_number', 'LIKE', "PJL-%-{$year2}-%")
                   ->orWhere('invoice_number', 'LIKE', "PJL-%{$year2}-%");
             })
@@ -143,8 +144,8 @@ class FormatHelper
     }
 
     /**
-     * Generate Delivery Order Number (Nomor SPJ): SPJ-SBL-[bulan_romawi]-[tahun_2_digit]-[0001]
-     * Format: SPJ-SBL-XI-26-0001
+     * Generate Delivery Order Number (Nomor Surat Jalan): PPJ-SJ-[bulan_romawi]-[tahun_2_digit]-[0001]
+     * Format: PPJ-SJ-XI-26-0001
      * Nomor urut reset setiap tahun.
      */
     public static function generateDeliveryOrderNumber(mixed $date = null): string
@@ -152,12 +153,13 @@ class FormatHelper
         $d = $date ? Carbon::parse($date) : Carbon::now();
         $roman = self::toRomanMonth($d->month);
         $year2 = $d->format('y');
-        $prefix = "SPJ-SBL-{$roman}-{$year2}-";
+        $prefix = "PPJ-SJ-{$roman}-{$year2}-";
 
         // Query max sequence for this year (reset setiap tahun)
         $records = DeliveryOrder::withTrashed()
             ->where(function ($q) use ($d, $year2) {
                 $q->whereYear('delivery_date', $d->year)
+                  ->orWhere('delivery_number', 'LIKE', "PPJ-SJ-%-{$year2}-%")
                   ->orWhere('delivery_number', 'LIKE', "SPJ-SBL-%-{$year2}-%")
                   ->orWhere('delivery_number', 'LIKE', "SJ/PPJ-%{$year2}-%")
                   ->orWhere('delivery_number', 'LIKE', "SJ-%{$year2}-%");
@@ -178,8 +180,8 @@ class FormatHelper
     }
 
     /**
-     * Generate Debt Agreement Number (Nomor SPH): SPH-SBL-[bulan_romawi]-[tahun_2_digit]-[0001]
-     * Format: SPH-SBL-XI-26-0001
+     * Generate Debt Agreement Number (Nomor SPH): PPJ-SPH-[bulan_romawi]-[tahun_2_digit]-[0001]
+     * Format: PPJ-SPH-XI-26-0001
      * Nomor urut reset setiap tahun.
      */
     public static function generateDebtAgreementNumber(mixed $date = null): string
@@ -187,12 +189,13 @@ class FormatHelper
         $d = $date ? Carbon::parse($date) : Carbon::now();
         $roman = self::toRomanMonth($d->month);
         $year2 = $d->format('y');
-        $prefix = "SPH-SBL-{$roman}-{$year2}-";
+        $prefix = "PPJ-SPH-{$roman}-{$year2}-";
 
         // Query max sequence for this year (reset setiap tahun)
         $records = Debt::withTrashed()
             ->where(function ($q) use ($d, $year2) {
                 $q->whereYear('date', $d->year)
+                  ->orWhere('agreement_number', 'LIKE', "PPJ-SPH-%-{$year2}-%")
                   ->orWhere('agreement_number', 'LIKE', "SPH-SBL-%-{$year2}-%")
                   ->orWhere('agreement_number', 'LIKE', "SPH/PPJ-%{$year2}-%");
             })

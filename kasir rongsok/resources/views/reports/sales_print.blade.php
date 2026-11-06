@@ -49,6 +49,7 @@
                 <th class="p-1.5 border-r border-slate-300">Pembeli</th>
                 <th class="p-1.5 border-r border-slate-300">Nama Barang</th>
                 <th class="p-1.5 border-r border-slate-300 text-right">Berat (kg)</th>
+                <th class="p-1.5 border-r border-slate-300 text-right">Harga Beli/kg</th>
                 <th class="p-1.5 border-r border-slate-300 text-right">Harga Jual/kg</th>
                 <th class="p-1.5 border-r border-slate-300 text-right">Subtotal</th>
                 <th class="p-1.5 text-right font-sans">Est. Laba</th>
@@ -65,24 +66,26 @@
                         <div class="font-bold text-slate-900">{{ $item->item_name_snapshot }}</div>
                         @if($item->item_type_name)
                             <div class="text-[9px] text-blue-900 font-semibold mt-0.5">
-                                ↳ Varian: {{ $item->item_type_name }} ({{ number_format($item->weight, 2) }} kg @ Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }})
+                                ↳ Varian: {{ $item->item_type_name }} ({{ \App\Services\FormatHelper::weight($item->weight) }} kg @ Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }})
                             </div>
                         @endif
                     </td>
-                    <td class="p-1.5 border-r border-slate-300 text-right font-bold">{{ number_format($item->weight, 2) }} kg</td>
-                    <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-right font-bold">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
-                    <td class="p-1.5 text-right font-bold text-emerald-800">Rp {{ number_format($item->profit_subtotal, 0, ',', '.') }}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-right font-bold">{{ \App\Services\FormatHelper::weight($item->weight) }} kg</td>
+                    <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ \App\Services\FormatHelper::number($item->buy_price_snapshot) }}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-right font-bold">Rp {{ \App\Services\FormatHelper::number($item->subtotal) }}</td>
+                    <td class="p-1.5 text-right font-bold text-emerald-800">Rp {{ \App\Services\FormatHelper::number($item->profit_subtotal) }}</td>
                 </tr>
             @endforeach
         </tbody>
         <tfoot class="bg-slate-50 font-bold border-t-2 border-slate-400">
             <tr>
                 <td colspan="4" class="p-2 border-r border-slate-300 text-right font-sans">TOTAL KESELURUHAN:</td>
-                <td class="p-2 border-r border-slate-300 text-right">{{ number_format($totalWeight, 2) }} kg</td>
+                <td class="p-2 border-r border-slate-300 text-right">{{ \App\Services\FormatHelper::weight($totalWeight) }} kg</td>
                 <td class="p-2 border-r border-slate-300"></td>
-                <td class="p-2 border-r border-slate-300 text-right">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
-                <td class="p-2 text-right text-emerald-800">Rp {{ number_format($totalProfit, 0, ',', '.') }}</td>
+                <td class="p-2 border-r border-slate-300"></td>
+                <td class="p-2 border-r border-slate-300 text-right">Rp {{ \App\Services\FormatHelper::number($totalSales) }}</td>
+                <td class="p-2 text-right text-emerald-800">Rp {{ \App\Services\FormatHelper::number($totalProfit) }}</td>
             </tr>
         </tfoot>
     </table>

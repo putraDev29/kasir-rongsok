@@ -23,12 +23,13 @@
                 <span>Kelola Kategori</span>
             </button>
 
-            <!-- Export PDF (Task 13) -->
-            <a href="{{ route('expenses.pdf', request()->query()) }}" target="_blank"
-               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm">
+            <!-- Export PDF (Task 13 & 5) -->
+            <button type="button"
+               @click="openPdfPreview('{{ route('expenses.pdf', request()->query()) }}', 'Laporan Biaya Operasional', 'Laporan_Biaya_Operasional_' + ('{{ $startDate && $endDate ? "{$startDate}_sd_{$endDate}" : date("Ymd") }}') + '.pdf', 'Rekap Beban Pengeluaran Operasional Usaha Depo')"
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm cursor-pointer">
                 <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                 <span>PDF Biaya</span>
-            </a>
+            </button>
 
             <!-- Send WA (Task 13) -->
             <button type="button" 

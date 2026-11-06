@@ -23,12 +23,13 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('salary-slips.pdf', $salarySlip) }}" target="_blank"
-               class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm"
+            <button type="button"
+               @click="openPdfPreview('{{ route('salary-slips.pdf', $salarySlip) }}', 'Slip Gaji #{{ $salarySlip->slip_number }}', 'Slip_Gaji_{{ $salarySlip->slip_number }}.pdf', 'Karyawan: {{ $salarySlip->employee_name }} - Periode: {{ $salarySlip->period_month }}')"
+               class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
                title="Preview & Unduh Berkas PDF Slip Gaji">
                 <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
                 <span>Preview / Unduh PDF</span>
-            </a>
+            </button>
 
             <button type="button"
                     @click="openWaPdfModal({

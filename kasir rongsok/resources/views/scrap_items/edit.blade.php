@@ -18,7 +18,7 @@
             </div>
             <div class="text-right">
                 <span class="text-xs text-slate-400 block font-medium">Stok Saat Ini</span>
-                <span class="text-base font-bold text-emerald-700">{{ number_format($scrapItem->current_stock, 2) }} kg</span>
+                <span class="text-base font-bold text-emerald-700">{{ \App\Services\FormatHelper::weight($scrapItem->current_stock) }} kg</span>
             </div>
         </div>
 

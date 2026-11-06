@@ -126,6 +126,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/purchases/{purchase}/cancel', [PurchaseTransactionController::class, 'cancel'])
         ->name('purchases.cancel')
         ->middleware('role:super_admin');
+    Route::post('/purchases/{purchase}/items/{item}/cancel', [PurchaseTransactionController::class, 'cancelItem'])
+        ->name('purchases.items.cancel')
+        ->middleware('role:super_admin');
 
     // Scrap Items (Master Barang) & PDF Price List (Hanya Owner)
     Route::get('/scrap-items/print-price-list', [ScrapItemController::class, 'printPriceList'])

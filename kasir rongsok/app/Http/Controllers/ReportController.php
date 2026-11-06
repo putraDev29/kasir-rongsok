@@ -153,8 +153,8 @@ class ReportController extends Controller
             $startDate = $request->query('start_date');
             $endDate = $request->query('end_date');
         } else {
-            $startDate = Carbon::today()->toDateString();
-            $endDate = Carbon::today()->toDateString();
+            $startDate = Carbon::today()->startOfMonth()->toDateString();
+            $endDate = Carbon::today()->endOfMonth()->toDateString();
         }
 
         $format = $request->query('format');
@@ -198,8 +198,8 @@ class ReportController extends Controller
             $startDate = $request->query('start_date');
             $endDate = $request->query('end_date');
         } else {
-            $startDate = Carbon::today()->toDateString();
-            $endDate = Carbon::today()->toDateString();
+            $startDate = Carbon::today()->startOfMonth()->toDateString();
+            $endDate = Carbon::today()->endOfMonth()->toDateString();
         }
 
         $format = $request->query('format');
@@ -381,7 +381,7 @@ class ReportController extends Controller
         ];
 
         $output = "\xEF\xBB\xBF";
-        $output .= "No,Tanggal,No Nota,Pembeli,Kode,Nama Barang,Berat (kg),Harga Jual/kg,Subtotal,Estimasi Laba\n";
+        $output .= "No,Tanggal,No Nota,Pembeli,Kode,Nama Barang,Berat (kg),Harga Beli/kg,Harga Jual/kg,Subtotal,Estimasi Laba\n";
 
         foreach ($items as $idx => $item) {
             $tx = $item->transaction;
@@ -393,6 +393,7 @@ class ReportController extends Controller
                 $item->item_code_snapshot,
                 str_replace(',', ' ', $item->item_name_snapshot),
                 $item->weight,
+                $item->buy_price_snapshot,
                 $item->sell_price_per_kg,
                 $item->subtotal,
                 $item->profit_subtotal,

@@ -188,8 +188,9 @@ class PurchaseTransactionService
                         : (float) $scrapItem->buy_price_per_kg;
 
                     $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                    if (!$isNewlyCreated && $masterBuyPrice > 0 && $pricePerUnit > $masterBuyPrice) {
-                        throw new Exception("Harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerUnit) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . ").");
+                    $isOwnerOrAdmin = $user->isSuperAdmin() || $user->isAdmin();
+                    if (!$isOwnerOrAdmin && !$isNewlyCreated && $masterBuyPrice > 0 && $pricePerUnit > $masterBuyPrice) {
+                        throw new Exception("Kasir tidak diizinkan memasukkan harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerUnit) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . "). Hubungi Admin/Owner untuk penyesuaian harga.");
                     }
 
                     $itemSubtotal = round($quantity * $pricePerUnit, 2);
@@ -209,8 +210,9 @@ class PurchaseTransactionService
                         : (float) $scrapItem->buy_price_per_kg;
 
                     $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                    if (!$isNewlyCreated && $masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
-                        throw new Exception("Harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerKg) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . ").");
+                    $isOwnerOrAdmin = $user->isSuperAdmin() || $user->isAdmin();
+                    if (!$isOwnerOrAdmin && !$isNewlyCreated && $masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
+                        throw new Exception("Kasir tidak diizinkan memasukkan harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerKg) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . "). Hubungi Admin/Owner untuk penyesuaian harga.");
                     }
 
                     $itemSubtotal = round($net * $pricePerKg, 2);
@@ -391,6 +393,139 @@ class PurchaseTransactionService
     }
 
     /**
+     * Cancel a single item in a purchase transaction, reverse its stock, and recalculate totals.
+     *
+     * @throws Exception
+     */
+    public function cancelPurchaseItem(PurchaseTransaction $transaction, PurchaseTransactionItem $item, User $user, string $reason): bool
+    {
+        return DB::transaction(function () use ($transaction, $item, $user, $reason) {
+            if ($item->purchase_transaction_id !== $transaction->id) {
+                throw new Exception('Item tidak sesuai dengan transaksi ini.');
+            }
+
+            if ($item->is_cancelled) {
+                throw new Exception('Barang ini sudah dibatalkan sebelumnya.');
+            }
+
+            if ($transaction->isCancelled()) {
+                throw new Exception('Transaksi ini sudah dibatalkan secara keseluruhan.');
+            }
+
+            if (!$user->canCancelTransactions()) {
+                throw new Exception('Anda tidak memiliki hak akses untuk membatalkan item transaksi.');
+            }
+
+            // 1. Reverse stock for this specific item
+            if ($item->scrap_item_id) {
+                $stockBalance = StockBalance::where('scrap_item_id', $item->scrap_item_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($stockBalance) {
+                    $newStock = max(0, (float) $stockBalance->current_stock - (float) $item->net_weight);
+                    $newTotalIn = max(0, (float) $stockBalance->total_in - (float) $item->net_weight);
+
+                    $stockBalance->update([
+                        'current_stock' => $newStock,
+                        'total_in' => $newTotalIn,
+                    ]);
+
+                    StockMovement::create([
+                        'scrap_item_id' => $item->scrap_item_id,
+                        'user_id' => $user->id,
+                        'type' => StockMovement::TYPE_REVERSAL,
+                        'reference_type' => PurchaseTransaction::class,
+                        'reference_id' => $transaction->id,
+                        'weight_qty' => -$item->net_weight,
+                        'unit_price' => $item->price_per_kg,
+                        'balance_after' => $newStock,
+                        'notes' => "Batal item {$item->item_name_snapshot} pada nota {$transaction->invoice_number}: {$reason}",
+                    ]);
+                }
+            }
+
+            // 2. Mark item as cancelled
+            $item->update([
+                'is_cancelled' => true,
+                'cancel_reason' => $reason,
+                'cancelled_by' => $user->id,
+                'cancelled_at' => Carbon::now(),
+            ]);
+
+            // 3. Recalculate transaction totals from remaining active items
+            $activeItems = $transaction->items()->where('is_cancelled', false)->get();
+
+            if ($activeItems->isEmpty()) {
+                // If all items are now cancelled, cancel the whole transaction
+                if ($transaction->debt_deduction_amount > 0) {
+                    app(DebtService::class)->reversePurchaseDebtDeductions($transaction->id);
+                }
+
+                $transaction->update([
+                    'status' => PurchaseTransaction::STATUS_CANCELLED,
+                    'cancel_reason' => 'Semua barang telah dibatalkan. Alasan terakhir: ' . $reason,
+                    'cancelled_by' => $user->id,
+                    'cancelled_at' => Carbon::now(),
+                    'total_gross_weight' => 0,
+                    'total_tare_weight' => 0,
+                    'total_net_weight' => 0,
+                    'subtotal_amount' => 0,
+                    'final_amount' => 0,
+                    'net_cash_paid' => 0,
+                    'debt_deduction_amount' => 0,
+                ]);
+            } else {
+                $newTotalGross = 0;
+                $newTotalTare = 0;
+                $newTotalNet = 0;
+                $newSubtotal = 0;
+
+                foreach ($activeItems as $actItem) {
+                    $newTotalGross += (float) $actItem->gross_weight;
+                    $newTotalTare += (float) $actItem->tare_weight;
+                    $newTotalNet += (float) $actItem->net_weight;
+                    $newSubtotal += (float) $actItem->subtotal;
+                }
+
+                $discount = min((float) $transaction->discount_amount, $newSubtotal);
+                $rounding = (float) $transaction->rounding_amount;
+                $newFinalAmount = max(0, $newSubtotal - $discount + $rounding);
+
+                // Handle debt deduction if applied
+                $debtDeduction = (float) $transaction->debt_deduction_amount;
+                if ($debtDeduction > $newFinalAmount) {
+                    $debtDeduction = $newFinalAmount;
+                }
+                $newNetCashPaid = max(0, $newFinalAmount - $debtDeduction);
+
+                $transaction->update([
+                    'total_gross_weight' => $newTotalGross,
+                    'total_tare_weight' => $newTotalTare,
+                    'total_net_weight' => $newTotalNet,
+                    'subtotal_amount' => $newSubtotal,
+                    'final_amount' => $newFinalAmount,
+                    'debt_deduction_amount' => $debtDeduction,
+                    'net_cash_paid' => $newNetCashPaid,
+                ]);
+            }
+
+            ActivityLog::record(
+                action: 'purchase_item_cancelled',
+                subject: $transaction,
+                description: "Item '{$item->item_name_snapshot}' pada transaksi {$transaction->invoice_number} dibatalkan oleh {$user->name}. Alasan: {$reason}",
+                payload: [
+                    'item_id' => $item->id,
+                    'item_name' => $item->item_name_snapshot,
+                    'reason' => $reason
+                ]
+            );
+
+            return true;
+        });
+    }
+
+    /**
      * Cancel / void an existing purchase transaction and reverse stock.
      *
      * @throws Exception
@@ -468,7 +603,7 @@ class PurchaseTransactionService
      */
     protected function generateInvoiceNumber(Carbon $date): string
     {
-        $prefix = 'KB-' . $date->format('ymd') . '-';
+        $prefix = 'PPJ-' . $date->format('ymd') . '-';
         $latest = PurchaseTransaction::where('invoice_number', 'LIKE', $prefix . '%')
             ->orderBy('id', 'desc')
             ->value('invoice_number');

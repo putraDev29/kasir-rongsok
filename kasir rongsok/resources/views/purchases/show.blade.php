@@ -1,7 +1,7 @@
 @extends('layouts.app', ['header' => 'Detail Nota Penerimaan Barang'])
 
 @section('content')
-<div class="max-w-4xl mx-auto space-y-6" x-data="{ showCancelModal: false }">
+<div class="max-w-4xl mx-auto space-y-6" x-data="{ showCancelModal: false, showItemCancelModal: false, cancelItemAction: '', cancelItemName: '' }">
 
     <!-- Top Action Bar -->
     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -97,6 +97,17 @@
             <div>
                 <span class="text-slate-400 block font-medium uppercase text-[10px]">Metode Pembayaran</span>
                 <span class="font-semibold text-slate-800 text-sm">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
+                @php
+                    $isBank = str_contains(strtolower($purchase->paymentMethod?->name ?? ''), 'bank') || 
+                              str_contains(strtolower($purchase->paymentMethod?->name ?? ''), 'transfer') || 
+                              !empty($purchase->bank_info);
+                    $bankText = $purchase->bank_info ?: ($purchase->user?->bankDisplay() ?? null);
+                @endphp
+                @if($isBank && $bankText)
+                    <div class="mt-1 text-xs font-mono text-blue-800 font-bold bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                        🏦 {{ $bankText }}
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -115,30 +126,36 @@
                             <th class="py-2.5 px-3 text-right font-bold text-slate-900 bg-emerald-50/50">Berat Bersih</th>
                             <th class="py-2.5 px-3 text-right">Harga Beli/kg</th>
                             <th class="py-2.5 px-3 text-right font-bold">Subtotal</th>
+                            <th class="py-2.5 px-3 text-center">Status / Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @foreach($purchase->items as $idx => $item)
-                            <tr class="hover:bg-slate-50/80">
+                            <tr class="hover:bg-slate-50/80 transition-colors {{ $item->is_cancelled ? 'bg-red-50/40 text-slate-400' : '' }}">
                                 <td class="py-2.5 px-3 text-slate-400">{{ $idx + 1 }}</td>
-                                <td class="py-2.5 px-3 font-mono font-medium text-slate-600">{{ $item->item_code_snapshot }}</td>
-                                <td class="py-2.5 px-3 font-bold text-slate-800">{{ $item->item_name_snapshot }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono text-slate-600">
-                                    @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
-                                        {{ number_format($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), 0, ',', '.') }} {{ $item->unit_type ?: 'pcs' }}
-                                    @else
-                                        {{ number_format($item->gross_weight, 2, ',', '.') }} kg
+                                <td class="py-2.5 px-3 font-mono font-medium {{ $item->is_cancelled ? 'line-through text-slate-400' : 'text-slate-600' }}">{{ $item->item_code_snapshot }}</td>
+                                <td class="py-2.5 px-3 font-bold {{ $item->is_cancelled ? 'line-through text-slate-400' : 'text-slate-800' }}">
+                                    <div>{{ $item->item_name_snapshot }}</div>
+                                    @if($item->item_type_name)
+                                        <div class="text-[10px] text-blue-700 font-normal">Jenis: {{ $item->item_type_name }}</div>
                                     @endif
                                 </td>
-                                <td class="py-2.5 px-3 text-right font-mono text-slate-600">
+                                <td class="py-2.5 px-3 text-right font-mono {{ $item->is_cancelled ? 'line-through text-slate-400' : 'text-slate-600' }}">
+                                    @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                        {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }} {{ $item->unit_type ?: 'pcs' }}
+                                    @else
+                                        {{ \App\Services\FormatHelper::weight($item->gross_weight) }} kg
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono {{ $item->is_cancelled ? 'line-through text-slate-400' : 'text-slate-600' }}">
                                     @if($item->tare_weight > 0)
                                         @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
-                                            {{ number_format($item->tare_weight, 0, ',', '.') }} {{ $item->unit_type ?: 'pcs' }}
+                                            {{ \App\Services\FormatHelper::number($item->tare_weight) }} {{ $item->unit_type ?: 'pcs' }}
                                             @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
                                                 <span class="text-[11px] text-slate-400 font-normal">({{ $pct }})</span>
                                             @endif
                                         @else
-                                            {{ number_format($item->tare_weight, 2, ',', '.') }} kg
+                                            {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg
                                             @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
                                                 <span class="text-[11px] text-slate-400 font-normal">({{ $pct }})</span>
                                             @endif
@@ -147,15 +164,33 @@
                                         <span class="text-slate-300">-</span>
                                     @endif
                                 </td>
-                                <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700 bg-emerald-50/30">
+                                <td class="py-2.5 px-3 text-right font-mono font-bold {{ $item->is_cancelled ? 'line-through text-slate-400' : 'text-emerald-700 bg-emerald-50/30' }}">
                                     @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
-                                        {{ number_format($item->quantity, 0, ',', '.') }} {{ $item->unit_type ?: 'pcs' }}
+                                        {{ \App\Services\FormatHelper::number($item->quantity) }} {{ $item->unit_type ?: 'pcs' }}
                                     @else
-                                        {{ number_format($item->net_weight, 2, ',', '.') }} kg
+                                        {{ \App\Services\FormatHelper::weight($item->net_weight) }} kg
                                     @endif
                                 </td>
-                                <td class="py-2.5 px-3 text-right font-mono text-slate-700">Rp {{ number_format($item->price_per_kg, 0, ',', '.') }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                                <td class="py-2.5 px-3 text-right font-mono {{ $item->is_cancelled ? 'line-through text-slate-400' : 'text-slate-700' }}">{{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</td>
+                                <td class="py-2.5 px-3 text-right font-mono font-bold {{ $item->is_cancelled ? 'line-through text-slate-400' : 'text-slate-900' }}">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</td>
+                                <td class="py-2.5 px-3 text-center">
+                                    @if($item->is_cancelled)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200"
+                                              title="Dibatalkan: {{ $item->cancel_reason ?? 'Tidak ada keterangan' }}">
+                                            Dibatalkan
+                                        </span>
+                                    @elseif(!$purchase->isCancelled() && Auth::user()->canCancelTransactions())
+                                        <button type="button" 
+                                                @click="cancelItemAction = '{{ route('purchases.items.cancel', [$purchase, $item]) }}'; cancelItemName = '{{ addslashes($item->item_name_snapshot) }}'; showItemCancelModal = true;"
+                                                class="px-2 py-1 rounded bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-800 text-[11px] font-bold border border-red-200 transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                                title="Batalkan hanya barang ini">
+                                            <i data-lucide="trash-2" class="w-3 h-3 text-red-600"></i>
+                                            <span>Batal Barang</span>
+                                        </button>
+                                    @else
+                                        <span class="text-slate-300">-</span>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -187,38 +222,38 @@
             <div class="w-full sm:w-80 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
                 <div class="flex justify-between text-slate-600">
                     <span>Total Berat Kotor:</span>
-                    <span class="font-mono">{{ number_format($purchase->total_gross_weight, 2) }} kg</span>
+                    <span class="font-mono">{{ \App\Services\FormatHelper::weight($purchase->total_gross_weight) }} kg</span>
                 </div>
                 <div class="flex justify-between text-slate-600">
                     <span>Total Potongan Tara:</span>
-                    <span class="font-mono">{{ number_format($purchase->total_tare_weight, 2) }} kg</span>
+                    <span class="font-mono">{{ \App\Services\FormatHelper::weight($purchase->total_tare_weight) }} kg</span>
                 </div>
                 <div class="flex justify-between font-bold text-slate-800 pb-1 border-b border-slate-200">
                     <span>Total Berat Bersih:</span>
-                    <span class="font-mono text-emerald-700">{{ number_format($purchase->total_net_weight, 2) }} kg</span>
+                    <span class="font-mono text-emerald-700">{{ \App\Services\FormatHelper::weight($purchase->total_net_weight) }} kg</span>
                 </div>
 
                 <div class="flex justify-between text-slate-600 pt-1">
                     <span>Subtotal:</span>
-                    <span class="font-mono font-semibold">Rp {{ number_format($purchase->subtotal_amount, 0, ',', '.') }}</span>
+                    <span class="font-mono font-semibold">{{ \App\Services\FormatHelper::rupiah($purchase->subtotal_amount) }}</span>
                 </div>
                 @if($purchase->discount_amount > 0)
                     <div class="flex justify-between text-slate-600">
                         <span>Potongan Diskon:</span>
-                        <span class="font-mono text-red-600">- Rp {{ number_format($purchase->discount_amount, 0, ',', '.') }}</span>
+                        <span class="font-mono text-red-600">- {{ \App\Services\FormatHelper::rupiah($purchase->discount_amount) }}</span>
                     </div>
                 @endif
                 @if($purchase->rounding_amount != 0)
                     <div class="flex justify-between text-slate-600">
                         <span>Pembulatan:</span>
-                        <span class="font-mono">Rp {{ number_format($purchase->rounding_amount, 0, ',', '.') }}</span>
+                        <span class="font-mono">{{ \App\Services\FormatHelper::rupiah($purchase->rounding_amount) }}</span>
                     </div>
                 @endif
 
                 <div class="pt-2 border-t border-slate-200 flex justify-between items-center text-xs font-bold text-slate-800">
                     <span>Total Harga Barang:</span>
                     <span class="font-mono text-sm font-bold text-slate-900">
-                        Rp {{ number_format($purchase->final_amount, 0, ',', '.') }}
+                        {{ \App\Services\FormatHelper::rupiah($purchase->final_amount) }}
                     </span>
                 </div>
 
@@ -239,15 +274,15 @@
                         </div>
                         <div class="flex justify-between text-slate-700 pt-1">
                             <span>Hutang Sebelum Transaksi:</span>
-                            <span>Rp {{ number_format($debtBefore, 0, ',', '.') }}</span>
+                            <span>{{ \App\Services\FormatHelper::rupiah($debtBefore) }}</span>
                         </div>
                         <div class="flex justify-between text-emerald-800 font-semibold">
                             <span>Potongan Hutang Transaksi Ini:</span>
-                            <span>- Rp {{ number_format($purchase->debt_deduction_amount ?? 0, 0, ',', '.') }}</span>
+                            <span>- {{ \App\Services\FormatHelper::rupiah($purchase->debt_deduction_amount ?? 0) }}</span>
                         </div>
                         <div class="flex justify-between font-bold text-amber-900 pt-1 border-t border-amber-200">
                             <span>Sisa Saldo Hutang:</span>
-                            <span>Rp {{ number_format($debtAfter, 0, ',', '.') }}</span>
+                            <span>{{ \App\Services\FormatHelper::rupiah($debtAfter) }}</span>
                         </div>
                     </div>
                 @endif
@@ -258,11 +293,51 @@
                         <span class="text-[10px] font-normal text-slate-500 font-sans">Net tunai setelah potong hutang</span>
                     </div>
                     <span class="font-mono text-xl font-black text-emerald-600">
-                        Rp {{ number_format($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0)), 0, ',', '.') }}
+                        {{ \App\Services\FormatHelper::rupiah($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0))) }}
                     </span>
                 </div>
             </div>
         </div>
+
+    </div>
+
+    <!-- Modal Cancel Single Item (Task 9) -->
+    <div x-show="showItemCancelModal" 
+         class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4"
+         style="display: none;">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4" @click.away="showItemCancelModal = false">
+            <div class="flex items-center gap-3 text-red-600">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Batalkan Barang Ini Saja?</h3>
+                    <p class="text-xs text-slate-500">
+                        Barang: <strong class="text-slate-800" x-text="cancelItemName"></strong><br>
+                        Hanya barang terpilih yang dibatalkan & stoknya dikembalikan. Barang lain di nota ini tetap sah.
+                    </p>
+                </div>
+            </div>
+
+            <form :action="cancelItemAction" method="POST" class="space-y-3">
+                @csrf
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Alasan Pembatalan Barang *</label>
+                    <textarea name="cancel_reason" required rows="3" placeholder="Contoh: Salah timbang, salah pilih komoditas..."
+                              class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-red-500 focus:border-red-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" @click="showItemCancelModal = false" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm">
+                        Ya, Batalkan Barang Ini
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     </div>
 

@@ -58,12 +58,13 @@
                 <span>Kirim Surat Jalan WA</span>
             </button>
 
-            <a href="{{ route('delivery-orders.pdf', $deliveryOrder) }}" target="_blank"
-               class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm"
-               title="Preview & Unduh Berkas PDF Resmi Surat Jalan (2 Rangkap)">
+            <button type="button"
+               @click="openPdfPreview('{{ route('delivery-orders.pdf', $deliveryOrder) }}', 'Surat Jalan {{ $deliveryOrder->delivery_number }}', 'Surat_Jalan_{{ str_replace(['/', ' '], '_', $deliveryOrder->delivery_number) }}_2Rangkap.pdf', 'Surat Jalan Pengiriman 2 Rangkap (Lembar 1: Gudang & Lembar 2: Supir)')"
+               class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
+               title="Preview Dokumen PDF Resmi Surat Jalan (2 Rangkap)">
                 <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
                 <span>Preview / Unduh PDF (2 Rangkap)</span>
-            </a>
+            </button>
 
             <a href="{{ route('delivery-orders.print', $deliveryOrder) }}" target="_blank"
                class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs"
@@ -209,6 +210,33 @@
 
     </div>
 
+    @if(($deliveryOrder->shipping_cost ?? 0) > 0 || ($deliveryOrder->loading_cost ?? 0) > 0)
+        <!-- Biaya Operasional Pengiriman (Task 10) -->
+        <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-4 shadow-xs">
+            <div class="flex items-center justify-between pb-2 border-b border-blue-200/80 mb-3">
+                <span class="text-xs font-bold text-blue-950 uppercase flex items-center gap-1.5">
+                    <i data-lucide="banknote" class="w-4 h-4 text-blue-600"></i>
+                    <span>Biaya Operasional Pengiriman (Tercatat di Kas Operasional)</span>
+                </span>
+                <span class="text-[10px] text-blue-700 bg-blue-100 font-semibold px-2 py-0.5 rounded">Khusus Arsip Gudang & Owner</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div class="p-3 bg-white rounded-lg border border-blue-100">
+                    <span class="text-slate-500 block text-[11px] mb-0.5">Biaya Ongkos Armada / Driver:</span>
+                    <span class="font-mono font-bold text-slate-900 text-sm">Rp {{ \App\Services\FormatHelper::number($deliveryOrder->shipping_cost ?? 0) }}</span>
+                </div>
+                <div class="p-3 bg-white rounded-lg border border-blue-100">
+                    <span class="text-slate-500 block text-[11px] mb-0.5">Biaya Bongkar Muat / Tenaga Angkut:</span>
+                    <span class="font-mono font-bold text-slate-900 text-sm">Rp {{ \App\Services\FormatHelper::number($deliveryOrder->loading_cost ?? 0) }}</span>
+                </div>
+                <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <span class="text-emerald-800 block text-[11px] mb-0.5 font-semibold">Total Biaya Operasional:</span>
+                    <span class="font-mono font-black text-emerald-700 text-sm">Rp {{ \App\Services\FormatHelper::number(($deliveryOrder->shipping_cost ?? 0) + ($deliveryOrder->loading_cost ?? 0)) }}</span>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Items Table Card -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -216,7 +244,7 @@
                 Rincian Muatan Material Scrap & Daur Ulang
             </h3>
             <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                Total Berat: {{ number_format($deliveryOrder->total_weight, 2) }} kg
+                Total Berat: {{ \App\Services\FormatHelper::weight($deliveryOrder->total_weight) }} kg
             </span>
         </div>
 
@@ -251,7 +279,7 @@
                                 {{ $master->total_packages > 0 ? $master->total_packages . ' Koli/Ikat' : '-' }}
                             </td>
                             <td class="py-3 px-4 text-right font-mono font-bold text-emerald-800 text-sm">
-                                {{ number_format($master->total_weight, 2) }} kg
+                                {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
                             </td>
                             <td class="py-3 px-4 text-slate-600">
                                 @if(!$master->has_variants && $master->items->first()->notes)
@@ -286,7 +314,7 @@
                                         {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
                                     </td>
                                     <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-800">
-                                        {{ number_format($vItem->weight, 2) }} kg
+                                        {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
                                     </td>
                                     <td class="py-2.5 px-4 text-slate-600 text-[11px]">
                                         @if($vItem->effective_price > 0)
@@ -305,7 +333,7 @@
                         <td colspan="2" class="py-3 px-4 text-slate-900 uppercase">Total Muatan Resmi</td>
                         <td class="py-3 px-4 text-right font-mono">{{ $deliveryOrder->total_packages }} Koli</td>
                         <td class="py-3 px-4 text-right font-mono text-sm text-emerald-800">
-                            {{ number_format($deliveryOrder->total_weight, 2) }} kg
+                            {{ \App\Services\FormatHelper::weight($deliveryOrder->total_weight) }} kg
                         </td>
                         <td></td>
                     </tr>

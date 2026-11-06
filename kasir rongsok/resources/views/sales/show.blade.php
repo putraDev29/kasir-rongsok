@@ -64,12 +64,13 @@
                 <span>Kirim Faktur WA</span>
             </button>
 
-            <a href="{{ route('sales.pdf', $sale) }}" target="_blank"
-               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm"
+            <button type="button"
+               @click="openPdfPreview('{{ route('sales.pdf', $sale) }}', 'Faktur Penjualan {{ $sale->invoice_number }}', 'Faktur_{{ str_replace(['/', ' '], '_', $sale->invoice_number) }}.pdf', 'Pembeli: {{ $sale->buyer_name }} - Total: Rp {{ number_format($sale->final_amount, 0, ',', '.') }}')"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm cursor-pointer"
                title="Preview & Unduh Berkas PDF Faktur Penjualan">
                 <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-400"></i>
                 <span>Preview / Unduh PDF</span>
-            </a>
+            </button>
 
             <a href="{{ route('sales.print', $sale) }}" target="_blank"
                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm">
@@ -175,7 +176,7 @@
                                     </div>
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
-                                    {{ number_format($master->total_weight, 2) }} kg
+                                    {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono">
                                     @if($master->has_variants)
@@ -212,7 +213,7 @@
                                             </div>
                                         </td>
                                         <td class="py-2 px-3 text-right font-mono text-slate-700 font-medium">
-                                            {{ number_format($vItem->weight, 2) }} kg
+                                            {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
                                         </td>
                                         <td class="py-2 px-3 text-right font-mono text-slate-700 font-medium">
                                             Rp {{ number_format($vItem->sell_price_per_kg, 0, ',', '.') }}
@@ -252,7 +253,7 @@
             <div class="w-full sm:w-80 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
                 <div class="flex justify-between text-slate-600">
                     <span>Total Berat:</span>
-                    <span class="font-mono font-bold text-slate-900">{{ number_format($sale->total_weight, 2) }} kg</span>
+                    <span class="font-mono font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg</span>
                 </div>
                 <div class="flex justify-between text-slate-600">
                     <span>Subtotal:</span>

@@ -181,9 +181,15 @@
                     <span>TOTAL TAGIHAN:</span>
                     <span class="font-mono text-base">Rp {{ \App\Services\FormatHelper::number($sale->final_amount) }}</span>
                 </div>
-                @if($sale->bank_info)
-                    <div class="text-[10px] text-slate-500 pt-1 text-right">
-                        Rekening: {{ $sale->bank_info }}
+                @php
+                    $isBankSale = str_contains(strtolower($sale->paymentMethod?->name ?? ''), 'bank') || 
+                                  str_contains(strtolower($sale->paymentMethod?->name ?? ''), 'transfer') || 
+                                  !empty($sale->bank_info);
+                    $saleBankText = $sale->bank_info ?: ($sale->user?->bankDisplay() ?? null);
+                @endphp
+                @if($isBankSale && $saleBankText)
+                    <div class="text-[10px] text-blue-900 font-bold pt-1 text-right font-mono">
+                        Rek. Transfer: {{ $saleBankText }}
                     </div>
                 @endif
             </div>

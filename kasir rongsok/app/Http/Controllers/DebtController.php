@@ -302,8 +302,10 @@ class DebtController extends Controller
         $pdf = Pdf::loadView('debts.history_pdf', compact('debt', 'payments', 'settings', 'ownerName'))
             ->setPaper('a4', 'portrait');
 
+        $borrowerClean = preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($debt->borrower_name ?: 'Peminjam'));
+        $borrowerClean = trim(preg_replace('/_+/', '_', $borrowerClean), '_');
         $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
-        $filename = "Riwayat_Hutang_{$cleanNum}.pdf";
+        $filename = "Riwayat_Hutang_{$borrowerClean}_{$cleanNum}.pdf";
 
         if ($request->boolean('download')) {
             return $pdf->download($filename);
@@ -411,8 +413,10 @@ class DebtController extends Controller
         }
 
         $waService = app(WhatsAppGatewayService::class);
+        $borrowerClean = preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($debt->borrower_name ?: 'Peminjam'));
+        $borrowerClean = trim(preg_replace('/_+/', '_', $borrowerClean), '_');
         $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
-        $filename = "Riwayat_Hutang_{$cleanNum}.pdf";
+        $filename = "Riwayat_Hutang_{$borrowerClean}_{$cleanNum}.pdf";
 
         if ($sendPdf) {
             $payments = $debt->payments()

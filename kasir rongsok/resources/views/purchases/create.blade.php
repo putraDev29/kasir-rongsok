@@ -427,14 +427,14 @@
                                     <div>
                                         <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 whitespace-nowrap">Harga Beli *</label>
                                         <input type="number" step="100" min="0" 
-                                               :max="getMasterPrice(row) > 0 ? getMasterPrice(row) : null"
+                                               :max="!isSuperAdmin && getMasterPrice(row) > 0 ? getMasterPrice(row) : null"
                                                :name="'items[' + index + '][price_per_kg]'" 
                                                x-model.number="row.price_per_kg" 
                                                @input="validatePrice(row)"
                                                @change="validatePrice(row)"
                                                required
                                                class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border font-mono font-bold transition-colors"
-                                               :class="getMasterPrice(row) > 0 && row.price_per_kg > getMasterPrice(row) 
+                                               :class="!isSuperAdmin && getMasterPrice(row) > 0 && row.price_per_kg > getMasterPrice(row) 
                                                    ? 'border-red-500 bg-red-50 text-red-700' 
                                                    : 'border-slate-300 focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white'">
                                     </div>
@@ -973,6 +973,7 @@
 <script>
 function cashierPos() {
     return {
+        isSuperAdmin: {{ (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) ? 'true' : 'false' }},
         masterItems: @json($scrapItems),
         suppliersList: @json($suppliers),
         paymentMethodsList: @json($paymentMethods),
@@ -1594,10 +1595,11 @@ function cashierPos() {
         },
 
         validatePrice(row) {
+            if (this.isSuperAdmin) return;
             if (row.is_new || row.scrap_item_id === '__new__') return;
             const max = this.getMasterPrice(row);
             if (max > 0 && parseFloat(row.price_per_kg) > max) {
-                alert('Harga beli tidak boleh melebihi harga master (' + this.formatRp(max) + ')! Harga otomatis disesuaikan ke batas maksimum.');
+                alert('Kasir tidak boleh memasukkan harga beli melebihi harga master (' + this.formatRp(max) + ')! Harga otomatis disesuaikan ke batas maksimum.');
                 row.price_per_kg = max;
             }
         },
@@ -1670,13 +1672,13 @@ function cashierPos() {
                     return;
                 }
 
-                if (!row.is_new && row.scrap_item_id !== '__new__') {
+                if (!this.isSuperAdmin && !row.is_new && row.scrap_item_id !== '__new__') {
                     const max = this.getMasterPrice(row);
                     if (max > 0 && currentPrice > max) {
                         e.preventDefault();
                         const found = this.masterItems.find(it => it.id == row.scrap_item_id);
                         const itemName = found ? found.name : 'Baris ' + (i + 1);
-                        alert('Harga beli untuk "' + itemName + '" (Rp ' + currentPrice.toLocaleString('id-ID') + ') tidak boleh melebihi harga master (' + this.formatRp(max) + ').\nSilakan input harga sama atau di bawahnya.');
+                        alert('Kasir tidak diizinkan memasukkan harga beli untuk "' + itemName + '" (Rp ' + currentPrice.toLocaleString('id-ID') + ') melebihi harga master (' + this.formatRp(max) + ').\nSilakan input harga sama atau di bawahnya.');
                         row.price_per_kg = max;
                         this.isSubmitting = false;
                         return;

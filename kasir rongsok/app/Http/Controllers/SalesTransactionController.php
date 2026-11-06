@@ -94,6 +94,7 @@ class SalesTransactionController extends Controller
             return redirect()->route('sales.show', $transaction)
                 ->with('success', "Penjualan rongsok {$transaction->invoice_number} berhasil dicatat!");
         } catch (Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Sales store failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return back()->withInput()->with('error', $e->getMessage());
         }
     }

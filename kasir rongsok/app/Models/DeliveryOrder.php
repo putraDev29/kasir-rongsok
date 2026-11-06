@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 class DeliveryOrder extends Model
 {
@@ -24,6 +26,8 @@ class DeliveryOrder extends Model
         'vehicle_number',
         'vehicle_type',
         'total_weight',
+        'shipping_cost',
+        'loading_cost',
         'total_packages',
         'status',
         'notes',
@@ -35,6 +39,8 @@ class DeliveryOrder extends Model
         return [
             'delivery_date' => 'datetime',
             'total_weight' => 'decimal:2',
+            'shipping_cost' => 'decimal:2',
+            'loading_cost' => 'decimal:2',
             'total_packages' => 'integer',
         ];
     }
@@ -85,5 +91,62 @@ class DeliveryOrder extends Model
                 'items' => $items,
             ];
         })->values();
+    }
+
+    /**
+     * Record operational expenses (shipping_cost & loading_cost) into expenses table.
+     */
+    public function recordOperationalExpenses(): void
+    {
+        $date = $this->delivery_date ? Carbon::parse($this->delivery_date) : Carbon::today();
+        $cashMethod = PaymentMethod::where('is_active', true)->where('code', 'cash')->first() 
+            ?? PaymentMethod::where('is_active', true)->first();
+        $userId = $this->user_id ?? Auth::id() ?? 1;
+
+        if ((float) $this->shipping_cost > 0) {
+            $cat = ExpenseCategory::firstOrCreate(
+                ['name' => 'Biaya Transportasi & Armada'],
+                ['description' => 'Biaya operasional armada, bensin, tol & ongkos supir', 'is_active' => true]
+            );
+
+            $prefix = 'PPJ-EXP-' . $date->format('ymd') . '-';
+            $latest = Expense::where('expense_number', 'LIKE', $prefix . '%')->orderByDesc('id')->value('expense_number');
+            $num = $latest ? ((int) substr($latest, strrpos($latest, '-') + 1) + 1) : 1;
+            $expNum = $prefix . str_pad((string) $num, 4, '0', STR_PAD_LEFT);
+
+            Expense::create([
+                'expense_number' => $expNum,
+                'expense_category_id' => $cat->id,
+                'user_id' => $userId,
+                'payment_method_id' => $cashMethod?->id,
+                'expense_date' => $date,
+                'amount' => (float) $this->shipping_cost,
+                'description' => "Ongkos armada pengiriman SJ {$this->delivery_number} (Tujuan: {$this->recipient_name}, Sopir: {$this->driver_name})",
+                'recipient' => $this->driver_name,
+            ]);
+        }
+
+        if ((float) $this->loading_cost > 0) {
+            $cat = ExpenseCategory::firstOrCreate(
+                ['name' => 'Biaya Bongkar Muat / Tenaga Angkut'],
+                ['description' => 'Biaya tenaga bongkar muat di gudang atau lokasi pengiriman', 'is_active' => true]
+            );
+
+            $prefix = 'PPJ-EXP-' . $date->format('ymd') . '-';
+            $latest = Expense::where('expense_number', 'LIKE', $prefix . '%')->orderByDesc('id')->value('expense_number');
+            $num = $latest ? ((int) substr($latest, strrpos($latest, '-') + 1) + 1) : 1;
+            $expNum = $prefix . str_pad((string) $num, 4, '0', STR_PAD_LEFT);
+
+            Expense::create([
+                'expense_number' => $expNum,
+                'expense_category_id' => $cat->id,
+                'user_id' => $userId,
+                'payment_method_id' => $cashMethod?->id,
+                'expense_date' => $date,
+                'amount' => (float) $this->loading_cost,
+                'description' => "Biaya bongkar muat pengiriman SJ {$this->delivery_number} (Tujuan: {$this->recipient_name})",
+                'recipient' => $this->driver_name ?: 'Tenaga Angkut',
+            ]);
+        }
     }
 }

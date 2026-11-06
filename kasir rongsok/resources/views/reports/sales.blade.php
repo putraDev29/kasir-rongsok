@@ -90,6 +90,7 @@
                         <th class="py-2.5 px-3">Pembeli</th>
                         <th class="py-2.5 px-3">Material Scrap & Daur Ulang</th>
                         <th class="py-2.5 px-3 text-right">Berat Terjual</th>
+                        <th class="py-2.5 px-3 text-right font-bold text-amber-700">Harga Beli</th>
                         <th class="py-2.5 px-3 text-right">Harga Jual</th>
                         <th class="py-2.5 px-3 text-right font-bold text-slate-600">Total Modal (HPP)</th>
                         <th class="py-2.5 px-3 text-right font-bold text-blue-700">Subtotal Jual</th>
@@ -116,7 +117,7 @@
                                             Varian: {{ $item->item_type_name }}
                                         </span>
                                         <span class="text-[10px] text-slate-500 font-mono">
-                                            ({{ number_format($item->weight, 2) }} kg @ Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }})
+                                            ({{ \App\Services\FormatHelper::weight($item->weight) }} kg @ Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }})
                                         </span>
                                     </div>
                                 @endif
@@ -128,6 +129,7 @@
                                     {{ \App\Services\FormatHelper::weight($item->weight) }} kg
                                 @endif
                             </td>
+                            <td class="py-3 px-3 text-right font-mono font-semibold text-amber-700">Rp {{ \App\Services\FormatHelper::number($item->buy_price_snapshot) }}</td>
                             <td class="py-3 px-3 text-right font-mono text-slate-600">Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }}</td>
                             <td class="py-3 px-3 text-right font-mono font-semibold text-slate-700">Rp {{ \App\Services\FormatHelper::number($item->cogs_subtotal) }}</td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-blue-700">Rp {{ \App\Services\FormatHelper::number($item->subtotal) }}</td>
@@ -135,7 +137,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="py-8 text-center text-slate-400 font-sans">Belum ada transaksi penjualan pada rentang tanggal ini.</td>
+                            <td colspan="10" class="py-8 text-center text-slate-400 font-sans">Belum ada transaksi penjualan pada rentang tanggal ini.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -146,6 +148,7 @@
                             <td class="py-3 px-3 text-right font-mono font-black text-slate-900">
                                 {{ \App\Services\FormatHelper::weight($totalWeight) }} kg
                             </td>
+                            <td></td>
                             <td></td>
                             <td class="py-3 px-3 text-right font-mono font-black text-slate-800">
                                 Rp {{ \App\Services\FormatHelper::number($totalCogs) }}

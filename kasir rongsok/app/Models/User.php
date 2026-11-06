@@ -21,6 +21,9 @@ class User extends Authenticatable
         'password',
         'role',
         'phone',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_name',
         'is_active',
     ];
 
@@ -56,6 +59,24 @@ class User extends Authenticatable
     public function isKasir(): bool
     {
         return $this->role === self::ROLE_KASIR;
+    }
+
+    public function hasBankDetails(): bool
+    {
+        return !empty($this->bank_name) && !empty($this->bank_account_number);
+    }
+
+    public function bankDisplay(): ?string
+    {
+        if (!$this->hasBankDetails()) {
+            return null;
+        }
+
+        $str = "{$this->bank_name} - Rek: {$this->bank_account_number}";
+        if (!empty($this->bank_account_name)) {
+            $str .= " (a/n {$this->bank_account_name})";
+        }
+        return $str;
     }
 
     public function canManageUsers(): bool

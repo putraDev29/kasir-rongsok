@@ -791,9 +791,10 @@ class ScrapCashierSystemTest extends TestCase
 
         $removeResponse->assertSessionHasNoErrors();
         $removeResponse->assertSessionHas('success');
-        $this->assertNull(BusinessSetting::get('owner_signature'));
-        $this->assertFalse(BusinessSetting::hasOwnerSignature());
-        $this->assertNull(BusinessSetting::ownerSignatureBase64());
+        // Signature is permanently preserved per requirement: tanda tangan filenya tetep upload jangan di hapus
+        $this->assertNotNull(BusinessSetting::get('owner_signature'));
+        $this->assertTrue(BusinessSetting::hasOwnerSignature());
+        $this->assertNotNull(BusinessSetting::ownerSignatureBase64());
 
         // Restore original setting & clean up debt
         BusinessSetting::set('owner_signature', $oldSignature);
@@ -880,13 +881,13 @@ class ScrapCashierSystemTest extends TestCase
         // 2. Test Sales Show page has master item total and variant breakdown
         $showRes = $this->actingAs($this->superAdmin)->get(route('sales.show', $sale));
         $showRes->assertStatus(200);
-        $showRes->assertSee('150.00 kg');
+        $showRes->assertSee('150 kg');
         $showRes->assertSee('700.000');
         $showRes->assertSee('Besi Super Tebal');
-        $showRes->assertSee('100.00 kg');
+        $showRes->assertSee('100 kg');
         $showRes->assertSee('5.000');
         $showRes->assertSee('Besi Campur Tipis');
-        $showRes->assertSee('50.00 kg');
+        $showRes->assertSee('50 kg');
         $showRes->assertSee('4.000');
 
         // 3. Test Sales Print view has variant breakdown and preview toolbar
@@ -940,7 +941,7 @@ class ScrapCashierSystemTest extends TestCase
         $doShowRes->assertStatus(200);
         $doShowRes->assertSee('Besi Super Tebal');
         $doShowRes->assertSee('Besi Campur Tipis');
-        $doShowRes->assertSee('150.00 kg');
+        $doShowRes->assertSee('150 kg');
 
         // DO Print
         $doPrintRes = $this->actingAs($this->superAdmin)->get(route('delivery-orders.print', $deliveryOrder));
@@ -1140,7 +1141,8 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertEquals('application/pdf', $initialPdfRes->headers->get('Content-Type'));
         $this->assertStringContainsString('inline', $initialPdfRes->headers->get('Content-Disposition'));
         $cleanNum = str_replace(['/', ' '], '_', $debt->debt_number);
-        $this->assertStringContainsString("Riwayat_Hutang_{$cleanNum}.pdf", $initialPdfRes->headers->get('Content-Disposition'));
+        $cleanBorrower = preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($debt->borrower_name ?: 'Peminjam'));
+        $this->assertStringContainsString("Riwayat_Hutang_{$cleanBorrower}_{$cleanNum}.pdf", $initialPdfRes->headers->get('Content-Disposition'));
 
         // 3. Make Partial Payment
         $pay1 = $this->actingAs($this->superAdmin)->post(route('debts.pay', $debt), [
@@ -1192,6 +1194,68 @@ class ScrapCashierSystemTest extends TestCase
         $waPaidPreview = $this->actingAs($this->superAdmin)->get(route('debts.wa-preview', $debt));
         $waPaidPreview->assertStatus(200);
         $this->assertStringContainsString('LUNAS', $waPaidPreview->json('message'));
+    }
+
+    public function test_single_item_cancellation_reverses_stock_and_recalculates_totals(): void
+    {
+        $secondItem = ScrapItem::where('id', '!=', $this->besiItem->id)->first();
+        $initialBesiStock = (float) \App\Models\StockBalance::where('scrap_item_id', $this->besiItem->id)->value('current_stock');
+        $initialSecondStock = (float) \App\Models\StockBalance::where('scrap_item_id', $secondItem->id)->value('current_stock');
+
+        // Create purchase with 2 items: 100 kg Besi and 50 kg Second Item
+        $response = $this->actingAs($this->kasir)->post(route('purchases.store'), [
+            'supplier_name' => 'Supplier Test Item Cancel',
+            'supplier_phone' => '08123456789',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 100,
+                    'tare_weight' => 0,
+                    'price_per_kg' => 4000,
+                ],
+                [
+                    'scrap_item_id' => $secondItem->id,
+                    'gross_weight' => 50,
+                    'tare_weight' => 0,
+                    'price_per_kg' => 2000,
+                ],
+            ],
+            'payment_method_id' => $this->cashMethod->id,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $purchase = \App\Models\PurchaseTransaction::latest('id')->first();
+        $this->assertEquals(150, (float) $purchase->total_net_weight);
+        $this->assertEquals(500000, (float) $purchase->final_amount);
+        $this->assertCount(2, $purchase->items);
+
+        $besiItem = $purchase->items()->where('scrap_item_id', $this->besiItem->id)->first();
+        $cancelledItem = $purchase->items()->where('scrap_item_id', $secondItem->id)->first();
+
+        // Cancel only the second item (50 kg)
+        $cancelRes = $this->actingAs($this->superAdmin)->post(route('purchases.items.cancel', [$purchase, $cancelledItem]), [
+            'cancel_reason' => 'Salah timbang, penjual bawa pulang barangnya',
+        ]);
+
+        $cancelRes->assertSessionHasNoErrors();
+        $cancelRes->assertSessionHas('success');
+
+        $cancelledItem->refresh();
+        $this->assertTrue($cancelledItem->is_cancelled);
+        $this->assertEquals('Salah timbang, penjual bawa pulang barangnya', $cancelledItem->cancel_reason);
+
+        // Transaction remains active, but totals recalculated
+        $purchase->refresh();
+        $this->assertEquals('completed', $purchase->status);
+        $this->assertEquals(100, (float) $purchase->total_net_weight);
+        $this->assertEquals(400000, (float) $purchase->final_amount);
+
+        // Stock for second item was reversed back, while Besi remains in stock
+        $currentSecondStock = (float) \App\Models\StockBalance::where('scrap_item_id', $secondItem->id)->value('current_stock');
+        $this->assertEquals($initialSecondStock, $currentSecondStock);
+
+        $currentBesiStock = (float) \App\Models\StockBalance::where('scrap_item_id', $this->besiItem->id)->value('current_stock');
+        $this->assertEquals($initialBesiStock + 100, $currentBesiStock);
     }
 }
 
