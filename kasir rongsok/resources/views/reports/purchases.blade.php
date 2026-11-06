@@ -8,9 +8,9 @@
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Timbangan Bersih</span>
             <div class="text-xl font-bold text-slate-900 mt-1">
-                {{ number_format($totalWeight, 2, ',', '.') }} <span class="text-xs font-semibold text-slate-500">kg</span>
+                {{ \App\Services\FormatHelper::weight($totalWeight) }} <span class="text-xs font-semibold text-slate-500">kg</span>
             </div>
-            <div class="text-[11px] text-slate-400">{{ number_format($totalWeight / 1000, 2) }} Ton barang diterima</div>
+            <div class="text-[11px] text-slate-400">{{ \App\Services\FormatHelper::weight($totalWeight / 1000) }} Ton barang diterima</div>
         </div>
 
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">

@@ -745,7 +745,7 @@ function salesPos() {
         formatNum(val) {
             const num = parseFloat(val) || 0;
             if (Math.floor(num) === num) return num.toLocaleString('id-ID');
-            return num.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+            return num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
         }
     };
 }

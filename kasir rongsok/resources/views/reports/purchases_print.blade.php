@@ -31,7 +31,7 @@
     <div class="grid grid-cols-2 gap-4 my-4 p-3 bg-slate-50 border border-slate-200 rounded">
         <div>
             <span class="text-slate-500 font-semibold block">Total Berat Bersih Diterima:</span>
-            <span class="text-sm font-bold text-slate-900">{{ number_format($totalWeight, 2) }} kg ({{ number_format($totalWeight / 1000, 2) }} Ton)</span>
+            <span class="text-sm font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($totalWeight) }} kg ({{ \App\Services\FormatHelper::weight($totalWeight / 1000) }} Ton)</span>
         </div>
         <div class="text-right">
             <span class="text-slate-500 font-semibold block">Total Nominal Pembelian Kas:</span>
@@ -61,7 +61,7 @@
                     <td class="p-1.5 border-r border-slate-300 font-semibold">{{ $tx->invoice_number }}</td>
                     <td class="p-1.5 border-r border-slate-300 font-sans">{{ $tx->supplier_name }}</td>
                     <td class="p-1.5 border-r border-slate-300 font-sans font-bold">{{ $item->item_name_snapshot }}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-right">{{ number_format($item->net_weight, 2) }} kg</td>
+                    <td class="p-1.5 border-r border-slate-300 text-right">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</td>
                     <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ number_format($item->price_per_kg, 0, ',', '.') }}</td>
                     <td class="p-1.5 border-r border-slate-300 text-right font-bold">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
                     <td class="p-1.5 font-sans">{{ $tx->user?->name }}</td>
@@ -71,7 +71,7 @@
         <tfoot class="bg-slate-50 font-bold border-t-2 border-slate-400">
             <tr>
                 <td colspan="4" class="p-2 border-r border-slate-300 text-right font-sans">TOTAL KESELURUHAN:</td>
-                <td class="p-2 border-r border-slate-300 text-right">{{ number_format($totalWeight, 2) }} kg</td>
+                <td class="p-2 border-r border-slate-300 text-right">{{ \App\Services\FormatHelper::weight($totalWeight) }} kg</td>
                 <td class="p-2 border-r border-slate-300"></td>
                 <td class="p-2 border-r border-slate-300 text-right">Rp {{ number_format($totalAmount, 0, ',', '.') }}</td>
                 <td></td>

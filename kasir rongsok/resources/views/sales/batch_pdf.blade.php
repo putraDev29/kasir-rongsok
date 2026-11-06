@@ -53,11 +53,11 @@
                         <div style="margin-top: 2px; font-size: 8px; color: #475569;">
                             @foreach($t->grouped_master_items as $gm)
                                 <div>
-                                    • <strong>{{ $gm->item_name }}</strong>: {{ number_format($gm->total_weight, 2, ',', '.') }} kg
+                                    • <strong>{{ $gm->item_name }}</strong>: {{ \App\Services\FormatHelper::weight($gm->total_weight) }} kg
                                     @if($gm->has_variants)
                                         <div style="padding-left: 6px; color: #1e40af;">
                                             @foreach($gm->items as $vi)
-                                                ↳ Varian: {{ $vi->item_type_name ?: 'Standar' }} ({{ number_format($vi->weight, 2, ',', '.') }} kg @ Rp {{ number_format($vi->sell_price_per_kg, 0, ',', '.') }})
+                                                ↳ Varian: {{ $vi->item_type_name ?: 'Standar' }} ({{ \App\Services\FormatHelper::weight($vi->weight) }} kg @ Rp {{ number_format($vi->sell_price_per_kg, 0, ',', '.') }})
                                             @endforeach
                                         </div>
                                     @endif

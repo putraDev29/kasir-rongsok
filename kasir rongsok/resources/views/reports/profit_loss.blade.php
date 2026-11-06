@@ -283,7 +283,7 @@
                                     {{ $inItem->item_name }}
                                     <div class="text-[10px] text-slate-400 font-mono">Beli: @ Rp {{ number_format($inItem->avg_buy_price, 0, ',', '.') }}</div>
                                 </td>
-                                <td class="py-2.5 px-2 text-right font-mono font-bold text-slate-800">{{ number_format($inItem->total_weight, 2) }}</td>
+                                <td class="py-2.5 px-2 text-right font-mono font-bold text-slate-800">{{ \App\Services\FormatHelper::weight($inItem->total_weight) }}</td>
                                 <td class="py-2.5 px-2 text-right font-mono text-slate-700">Rp {{ number_format($inItem->total_amount, 0, ',', '.') }}</td>
                                 <td class="py-2.5 px-2 text-right font-mono text-blue-700">Rp {{ number_format($inItem->estimated_sales_value, 0, ',', '.') }}</td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600">+Rp {{ number_format($itemMargin, 0, ',', '.') }}</td>
@@ -297,7 +297,7 @@
                     <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
                         <tr>
                             <td class="py-2.5 px-3 text-slate-800">TOTAL STOK MASUK</td>
-                            <td class="py-2.5 px-2 text-right font-mono text-blue-700">{{ number_format($totalPurchasesWeight, 2) }} kg</td>
+                            <td class="py-2.5 px-2 text-right font-mono text-blue-700">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg</td>
                             <td class="py-2.5 px-2 text-right font-mono text-slate-900">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</td>
                             <td class="py-2.5 px-2 text-right font-mono text-blue-800">Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</td>
                             <td class="py-2.5 px-3 text-right font-mono text-emerald-700">+Rp {{ number_format($totalPotentialInventoryProfit, 0, ',', '.') }}</td>
@@ -320,7 +320,7 @@
                     </div>
                 </div>
                 <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">
-                    {{ number_format($totalSalesWeight, 1) }} kg
+                    {{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg
                 </span>
             </div>
 
@@ -338,7 +338,7 @@
                         @forelse($outgoingItems as $outItem)
                             <tr class="hover:bg-slate-50/80">
                                 <td class="py-2.5 px-3 font-medium text-slate-900">{{ $outItem->item_name }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">{{ number_format($outItem->total_weight, 2) }} kg</td>
+                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">{{ \App\Services\FormatHelper::weight($outItem->total_weight) }} kg</td>
                                 <td class="py-2.5 px-3 text-right font-mono text-slate-700">Rp {{ number_format($outItem->total_amount, 0, ',', '.') }}</td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600">Rp {{ number_format($outItem->total_profit, 0, ',', '.') }}</td>
                             </tr>
@@ -351,7 +351,7 @@
                     <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
                         <tr>
                             <td class="py-2.5 px-3 text-slate-800">TOTAL PENJUALAN</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-emerald-700">{{ number_format($totalSalesWeight, 2) }} kg</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-emerald-700">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg</td>
                             <td class="py-2.5 px-3 text-right font-mono text-slate-900">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
                             <td class="py-2.5 px-3 text-right font-mono text-emerald-700">Rp {{ number_format($grossProfit, 0, ',', '.') }}</td>
                         </tr>

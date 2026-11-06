@@ -90,7 +90,7 @@
                     <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
                         <i data-lucide="search" class="w-3.5 h-3.5"></i>
                     </span>
-                    <input type="text" name="search" value="{{ $search }}" placeholder="PJ-... atau PT..."
+                    <input type="text" name="search" value="{{ $search }}" placeholder="PPJ-JL-... atau PT..."
                            class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
                 </div>
             </div>

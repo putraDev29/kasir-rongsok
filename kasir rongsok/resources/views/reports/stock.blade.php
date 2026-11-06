@@ -8,7 +8,7 @@
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Akumulasi Stok Gudang</span>
             <div class="text-xl font-bold text-slate-900 mt-1">
-                {{ number_format($totalStock, 2, ',', '.') }} <span class="text-xs font-semibold text-slate-500">kg</span>
+                {{ \App\Services\FormatHelper::weight($totalStock) }} <span class="text-xs font-semibold text-slate-500">kg</span>
             </div>
             <div class="text-[11px] text-slate-400">Total berat fisik tersedia di depo</div>
         </div>
@@ -69,7 +69,7 @@
                             <td class="py-3 px-3 font-mono font-bold text-slate-700">{{ $item->code }}</td>
                             <td class="py-3 px-3 font-bold text-slate-900">{{ $item->name }}</td>
                             <td class="py-3 px-3 text-slate-600">{{ $item->category?->name ?? '-' }}</td>
-                            <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">{{ number_format($cur, 2) }} kg</td>
+                            <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($cur) }} {{ $item->unit_type ?: 'kg' }}</td>
                             <td class="py-3 px-3 text-right font-mono text-slate-600">Rp {{ number_format($avg, 0, ',', '.') }}</td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-purple-700">Rp {{ number_format($val, 0, ',', '.') }}</td>
                             <td class="py-3 px-3 text-right font-mono text-emerald-700">Rp {{ number_format($item->buy_price_per_kg, 0, ',', '.') }}</td>

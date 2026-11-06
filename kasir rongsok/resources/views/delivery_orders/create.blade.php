@@ -358,7 +358,7 @@
                                        :name="'items['+idx+'][weight]'" 
                                        x-model.number="row.weight" 
                                        required 
-                                       placeholder="0.00"
+                                       placeholder="0"
                                        class="w-full py-1.5 px-2 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
                             </div>
 

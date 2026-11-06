@@ -12,7 +12,7 @@
             <div>
                 <span class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">POS TIMBANGAN & PEMBELIAN</span>
                 <h2 class="text-xl sm:text-2xl font-black tracking-tight text-white">
-                    Nota Baru: <span class="text-emerald-400 font-mono" x-text="previewInvoice">KB-......-....</span>
+                    Nota Baru: <span class="text-emerald-400 font-mono" x-text="previewInvoice">PPJ-......-....</span>
                 </h2>
             </div>
         </div>
@@ -351,7 +351,7 @@
                                                        :name="'items[' + index + '][gross_weight]'" 
                                                        x-model.number="row.gross_weight" 
                                                        @input="onGrossOrQtyChanged(row)"
-                                                       placeholder="0.00"
+                                                       placeholder="0"
                                                        required
                                                        class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
                                                 <input type="hidden" :name="'items[' + index + '][quantity]'" value="1">
@@ -401,7 +401,7 @@
                                                     <input type="number" :step="isPcsUnit(row) ? '1' : '0.01'" min="0" 
                                                            x-model.number="row.tare_weight" 
                                                            @input="onTareWeightChanged(row)"
-                                                           placeholder="0.00"
+                                                           placeholder="0"
                                                            class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono text-slate-700 bg-white">
                                                 </div>
                                                 <div class="text-[9px] text-right font-mono text-slate-400 mt-0.5 truncate"
@@ -1889,7 +1889,7 @@ function cashierPos() {
             if (Math.floor(num) === num) {
                 return num.toLocaleString('id-ID');
             }
-            return num.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+            return num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
         },
 
         formatInteger(val) {

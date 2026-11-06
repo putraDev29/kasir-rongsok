@@ -220,24 +220,26 @@ class DebtService
 
     public function generateDebtNumber(Carbon $date): string
     {
-        $prefix = 'PPJ-HTG-' . $date->format('ymd') . '-';
+        $prefix = 'PPJ-BON-' . $date->format('ymd') . '-';
         $latest = Debt::where('debt_number', 'LIKE', $prefix . '%')
-            ->orWhere('debt_number', 'LIKE', 'HTG-' . $date->format('ymd') . '-%')
+            ->orWhere('debt_number', 'LIKE', 'BON-' . $date->format('ymd') . '-%')
+            ->orWhere('debt_number', 'LIKE', 'PPJ-HTG-' . $date->format('ymd') . '-%')
             ->orderBy('id', 'desc')
             ->value('debt_number');
         $num = $latest ? ((int) substr($latest, strrpos($latest, '-') + 1) + 1) : 1;
-        return $prefix . str_pad((string) $num, 4, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) $num, 3, '0', STR_PAD_LEFT);
     }
 
     public function generatePaymentNumber(Carbon $date): string
     {
         $prefix = 'PPJ-BYR-' . $date->format('ymd') . '-';
         $latest = DebtPayment::where('payment_number', 'LIKE', $prefix . '%')
+            ->orWhere('payment_number', 'LIKE', 'BAYAR-' . $date->format('ymd') . '-%')
             ->orWhere('payment_number', 'LIKE', 'BYR-' . $date->format('ymd') . '-%')
             ->orderBy('id', 'desc')
             ->value('payment_number');
         $num = $latest ? ((int) substr($latest, strrpos($latest, '-') + 1) + 1) : 1;
-        return $prefix . str_pad((string) $num, 4, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) $num, 3, '0', STR_PAD_LEFT);
     }
 }
 

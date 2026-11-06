@@ -251,7 +251,7 @@
                             <span style="font-size: 7.5px; color: #2563eb; font-weight: normal; margin-left: 3px;">[Total Master: {{ $master->items->count() }} Varian]</span>
                         @endif
                     </td>
-                    <td class="text-right" style="font-weight: bold;">{{ number_format($master->total_weight, 2, ',', '.') }} kg</td>
+                    <td class="text-right" style="font-weight: bold;">{{ \App\Services\FormatHelper::weight($master->total_weight) }} kg</td>
                     <td class="text-right">
                         @if($master->has_variants)
                             <span style="font-size: 7.5px; color: #64748b;">Rerata Rp {{ number_format($master->avg_sell_price, 0, ',', '.') }}</span>
@@ -274,7 +274,7 @@
                                     <span style="color: #64748b; font-size: 7px; font-style: italic;">({{ $vIt->notes }})</span>
                                 @endif
                             </td>
-                            <td class="text-right" style="color: #334155;">{{ number_format($vIt->weight, 2, ',', '.') }} kg</td>
+                            <td class="text-right" style="color: #334155;">{{ \App\Services\FormatHelper::weight($vIt->weight) }} kg</td>
                             <td class="text-right" style="color: #334155;">Rp {{ number_format($vIt->sell_price_per_kg, 0, ',', '.') }}</td>
                             <td class="text-right" style="font-weight: bold; color: #1e293b;">Rp {{ number_format($vIt->subtotal, 0, ',', '.') }}</td>
                         </tr>
@@ -289,7 +289,7 @@
         <table class="total-table">
             <tr>
                 <td style="color: #64748b;">Total Muatan:</td>
-                <td class="text-right" style="font-weight: bold;">{{ number_format($sale->total_weight, 2, ',', '.') }} kg</td>
+                <td class="text-right" style="font-weight: bold;">{{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg</td>
             </tr>
             @if($sale->discount_amount > 0)
                 <tr>

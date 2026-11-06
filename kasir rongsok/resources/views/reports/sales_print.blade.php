@@ -29,7 +29,7 @@
     <div class="grid grid-cols-3 gap-4 my-4 p-3 bg-slate-50 border border-slate-200 rounded font-sans">
         <div>
             <span class="text-slate-500 font-semibold block">Total Berat Terjual:</span>
-            <span class="text-sm font-bold text-slate-900">{{ number_format($totalWeight, 2) }} kg ({{ number_format($totalWeight / 1000, 2) }} Ton)</span>
+            <span class="text-sm font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($totalWeight) }} kg ({{ \App\Services\FormatHelper::weight($totalWeight / 1000) }} Ton)</span>
         </div>
         <div>
             <span class="text-slate-500 font-semibold block">Total Omzet Penjualan:</span>
