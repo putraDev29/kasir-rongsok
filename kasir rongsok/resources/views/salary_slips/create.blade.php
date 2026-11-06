@@ -34,8 +34,8 @@
                             class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500">
                         <option value="">-- Pilih User Sistem (Atau ketik manual di samping) --</option>
                         @foreach($users as $u)
-                            <option value="{{ $u->id }}" data-name="{{ $u->name }}">
-                                {{ $u->name }} ({{ ucfirst($u->role) }})
+                            <option value="{{ $u->id }}" data-name="{{ $u->name }}" data-bank="{{ $u->bankDisplay() }}">
+                                {{ $u->name }} ({{ ucfirst($u->role) }}) {{ $u->hasBankDetails() ? '— [' . $u->bank_name . ': ' . $u->bank_account_number . ']' : '' }}
                             </option>
                         @endforeach
                     </select>

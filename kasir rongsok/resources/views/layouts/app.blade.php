@@ -219,10 +219,17 @@
                     </div>
                     <div class="truncate">
                         <div class="text-xs font-semibold text-white truncate">{{ Auth::user()->name }}</div>
-                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium leading-none 
-                            {{ Auth::user()->isSuperAdmin() ? 'bg-purple-900/60 text-purple-300 border border-purple-700/50' : (Auth::user()->isAdmin() ? 'bg-blue-900/60 text-blue-300 border border-blue-700/50' : 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50') }}">
-                            {{ strtoupper(str_replace('_', ' ', Auth::user()->role)) }}
-                        </span>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-medium leading-none 
+                                {{ Auth::user()->isSuperAdmin() ? 'bg-purple-900/60 text-purple-300 border border-purple-700/50' : (Auth::user()->isAdmin() ? 'bg-blue-900/60 text-blue-300 border border-blue-700/50' : 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50') }}">
+                                {{ strtoupper(str_replace('_', ' ', Auth::user()->role)) }}
+                            </span>
+                            @if(Auth::user()->hasBankDetails())
+                                <span class="text-[9px] text-slate-400 font-mono truncate" title="{{ Auth::user()->bankDisplay() }}">
+                                    💳 {{ Auth::user()->bank_name }}
+                                </span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 

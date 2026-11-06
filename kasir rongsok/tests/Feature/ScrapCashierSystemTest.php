@@ -1350,5 +1350,56 @@ class ScrapCashierSystemTest extends TestCase
         $salePrintRes->assertSee('Nama Rekening:');
         $salePrintRes->assertSee('PT PENATA REKENING');
     }
+
+    public function test_user_management_supports_bank_details(): void
+    {
+        $uniqueEmail = 'operator.' . uniqid() . '@kasirrongsok.com';
+
+        // 1. Create User with Bank Details
+        $createRes = $this->actingAs($this->superAdmin)->post(route('users.store'), [
+            'name' => 'Operator Baru Bank',
+            'email' => $uniqueEmail,
+            'password' => 'rahasia123',
+            'role' => User::ROLE_KASIR,
+            'phone' => '089911223344',
+            'bank_name' => 'BCA',
+            'bank_account_number' => '7766554433',
+            'bank_account_name' => 'Operator Baru Bank',
+        ]);
+
+        $createRes->assertSessionHasNoErrors();
+        $createRes->assertRedirect();
+
+        $newUser = User::where('email', $uniqueEmail)->first();
+        $this->assertNotNull($newUser);
+        $this->assertEquals('BCA', $newUser->bank_name);
+        $this->assertEquals('7766554433', $newUser->bank_account_number);
+        $this->assertEquals('Operator Baru Bank', $newUser->bank_account_name);
+        $this->assertTrue($newUser->hasBankDetails());
+
+        // 2. View in Users Index
+        $indexRes = $this->actingAs($this->superAdmin)->get(route('users.index'));
+        $indexRes->assertOk();
+        $indexRes->assertSee('Operator Baru Bank');
+        $indexRes->assertSee('7766554433');
+        $indexRes->assertSee('BCA');
+
+        // 3. Update User Bank Details
+        $updateRes = $this->actingAs($this->superAdmin)->put(route('users.update', $newUser), [
+            'name' => 'Operator Baru Bank Updated',
+            'email' => $uniqueEmail,
+            'role' => User::ROLE_KASIR,
+            'phone' => '089911223344',
+            'bank_name' => 'Mandiri',
+            'bank_account_number' => '1370011223344',
+            'bank_account_name' => 'Operator Baru Updated',
+        ]);
+
+        $updateRes->assertSessionHasNoErrors();
+        $newUser->refresh();
+        $this->assertEquals('Mandiri', $newUser->bank_name);
+        $this->assertEquals('1370011223344', $newUser->bank_account_number);
+        $this->assertEquals('Operator Baru Updated', $newUser->bank_account_name);
+    }
 }
 

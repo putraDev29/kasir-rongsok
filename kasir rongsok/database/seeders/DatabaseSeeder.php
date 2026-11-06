@@ -56,24 +56,54 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password123'),
             'role' => User::ROLE_ADMIN,
             'phone' => '081233445566',
+            'bank_name' => 'Mandiri',
+            'bank_account_number' => '1370098765432',
+            'bank_account_name' => 'Dewi Safitri',
             'is_active' => true,
         ]);
+        if (empty($admin->bank_account_number)) {
+            $admin->update([
+                'bank_name' => 'Mandiri',
+                'bank_account_number' => '1370098765432',
+                'bank_account_name' => 'Dewi Safitri',
+            ]);
+        }
 
         $kasir1 = User::firstOrCreate(['email' => 'kasir1@kasirrongsok.com'], [
             'name' => 'Rian Pratama (Kasir 1)',
             'password' => Hash::make('password123'),
             'role' => User::ROLE_KASIR,
             'phone' => '081344556677',
+            'bank_name' => 'BRI',
+            'bank_account_number' => '012301054321508',
+            'bank_account_name' => 'Rian Pratama',
             'is_active' => true,
         ]);
+        if (empty($kasir1->bank_account_number)) {
+            $kasir1->update([
+                'bank_name' => 'BRI',
+                'bank_account_number' => '012301054321508',
+                'bank_account_name' => 'Rian Pratama',
+            ]);
+        }
 
         $kasir2 = User::firstOrCreate(['email' => 'kasir2@kasirrongsok.com'], [
             'name' => 'Agus Santoso (Kasir 2)',
             'password' => Hash::make('password123'),
             'role' => User::ROLE_KASIR,
             'phone' => '081455667788',
+            'bank_name' => 'BNI',
+            'bank_account_number' => '0876543210',
+            'bank_account_name' => 'Agus Santoso',
             'is_active' => true,
         ]);
+        if (empty($kasir2->bank_account_number)) {
+            $kasir2->update([
+                'bank_name' => 'BNI',
+                'bank_account_number' => '0876543210',
+                'bank_account_name' => 'Agus Santoso',
+            ]);
+        }
 
         // 2. Business Settings
         $settings = [

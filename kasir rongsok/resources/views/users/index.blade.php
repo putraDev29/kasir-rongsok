@@ -60,11 +60,16 @@
                             <td class="py-3 px-3 font-mono text-slate-600">{{ $u->phone ?? '-' }}</td>
                             <td class="py-3 px-3 font-sans">
                                 @if($u->hasBankDetails())
-                                    <div class="font-bold text-slate-800 text-[11px]">{{ $u->bank_name }}</div>
-                                    <div class="font-mono text-[10px] text-slate-600">{{ $u->bank_account_number }}</div>
-                                    <div class="text-[10px] text-slate-400">a/n {{ $u->bank_account_name ?: $u->name }}</div>
+                                    <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-blue-50 border border-blue-200">
+                                        <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-600 shrink-0"></i>
+                                        <div>
+                                            <div class="font-bold text-blue-900 text-[11px] leading-tight">{{ $u->bank_name }}</div>
+                                            <div class="font-mono text-[10px] text-blue-800 font-semibold">{{ $u->bank_account_number }}</div>
+                                            <div class="text-[9.5px] text-blue-600">a/n {{ $u->bank_account_name ?: $u->name }}</div>
+                                        </div>
+                                    </div>
                                 @else
-                                    <span class="text-slate-400 italic text-[11px]">-</span>
+                                    <span class="text-slate-400 italic text-[11px]">Belum diatur</span>
                                 @endif
                             </td>
                             <td class="py-3 px-3 text-right font-medium text-slate-800">
