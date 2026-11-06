@@ -50,3 +50,4 @@ class ItemPriceStock extends Model
         return FormatHelper::weight($this->current_stock) . ' kg';
     }
 }
+

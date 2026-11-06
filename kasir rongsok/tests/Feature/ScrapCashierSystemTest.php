@@ -279,9 +279,9 @@ class ScrapCashierSystemTest extends TestCase
     {
         $masterPrice = (float) $this->besiItem->buy_price_per_kg;
 
-        // Attempt 1: Price higher than master price -> MUST FAIL validation
-        $responseFail = $this->actingAs($this->kasir)->post('/purchases', [
-            'supplier_name' => 'Penjual Test Melebihi Harga',
+        // 1. Kasir: Harga melebihi master -> HARUS GAGAL validasi
+        $responseKasirFail = $this->actingAs($this->kasir)->post('/purchases', [
+            'supplier_name' => 'Penjual Test Kasir Melebihi',
             'payment_method_id' => $this->cashMethod->id,
             'items' => [
                 [
@@ -292,11 +292,40 @@ class ScrapCashierSystemTest extends TestCase
                 ]
             ]
         ]);
+        $responseKasirFail->assertSessionHasErrors(['items.0.price_per_kg']);
 
-        $responseFail->assertSessionHasErrors(['items.0.price_per_kg']);
+        // 2. Admin: Harga melebihi master -> JUGA HARUS GAGAL validasi
+        $responseAdminFail = $this->actingAs($this->admin)->post('/purchases', [
+            'supplier_name' => 'Penjual Test Admin Melebihi',
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 50,
+                    'tare_weight' => 0,
+                    'price_per_kg' => $masterPrice + 2000, // MELEBIHI HARGA MASTER
+                ]
+            ]
+        ]);
+        $responseAdminFail->assertSessionHasErrors(['items.0.price_per_kg']);
 
-        // Attempt 2: Price below or equal to master price -> MUST SUCCEED
-        $responseSuccess = $this->actingAs($this->kasir)->post('/purchases', [
+        // 3. Owner (Super Admin): Harga melebihi master -> HARUS BERHASIL (bisa edit berapapun)
+        $responseOwnerSuccess = $this->actingAs($this->superAdmin)->post('/purchases', [
+            'supplier_name' => 'Penjual Test Owner Bebas Edit',
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 50,
+                    'tare_weight' => 0,
+                    'price_per_kg' => $masterPrice + 2000, // OWNER BEBAS MELEBIHI
+                ]
+            ]
+        ]);
+        $responseOwnerSuccess->assertSessionHas('success');
+
+        // 4. Kasir/Admin: Harga di bawah atau sama dengan harga master -> HARUS BERHASIL
+        $responseKasirSuccess = $this->actingAs($this->kasir)->post('/purchases', [
             'supplier_name' => 'Penjual Test Harga Wajar',
             'payment_method_id' => $this->cashMethod->id,
             'items' => [
@@ -308,8 +337,7 @@ class ScrapCashierSystemTest extends TestCase
                 ]
             ]
         ]);
-
-        $responseSuccess->assertSessionHas('success');
+        $responseKasirSuccess->assertSessionHas('success');
     }
 
     public function test_debt_deduction_in_purchase_cashier(): void

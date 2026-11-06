@@ -101,14 +101,18 @@ class StorePurchaseRequest extends FormRequest
                     ? (float) $item['price_per_kg']
                     : null;
 
-                if ($scrapItemId && $scrapItemId !== '__new__' && is_numeric($scrapItemId) && $pricePerKg !== null && isset($scrapItems[$scrapItemId])) {
+                $user = $this->user();
+                $isOwner = $user && ($user->isOwner() || $user->isSuperAdmin());
+
+                if (!$isOwner && $scrapItemId && $scrapItemId !== '__new__' && is_numeric($scrapItemId) && $pricePerKg !== null && isset($scrapItems[$scrapItemId])) {
                     $masterItem = $scrapItems[$scrapItemId];
                     $masterBuyPrice = (float) $masterItem->buy_price_per_kg;
 
                     if ($masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
+                        $roleLabel = ($user && $user->role === \App\Models\User::ROLE_ADMIN) ? 'Admin' : 'Kasir';
                         $validator->errors()->add(
                             "items.{$index}.price_per_kg",
-                            "Harga beli untuk {$masterItem->name} (Rp " . number_format($pricePerKg, 0, ',', '.') . ") melebihi harga master (Rp " . number_format($masterBuyPrice, 0, ',', '.') . "). Anda hanya dapat menginput harga sama atau di bawahnya."
+                            "{$roleLabel} tidak diizinkan memasukkan harga beli untuk {$masterItem->name} (Rp " . number_format($pricePerKg, 0, ',', '.') . ") melebihi harga master (Rp " . number_format($masterBuyPrice, 0, ',', '.') . "). Hanya Owner yang dapat memasukkan harga di atas harga master. Anda hanya dapat menginput harga sama atau di bawahnya."
                         );
                     }
                 }

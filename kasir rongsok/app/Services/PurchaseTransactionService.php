@@ -189,9 +189,10 @@ class PurchaseTransactionService
                         : (float) $scrapItem->buy_price_per_kg;
 
                     $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                    $isOwnerOrAdmin = $user->isSuperAdmin() || $user->isAdmin();
-                    if (!$isOwnerOrAdmin && !$isNewlyCreated && $masterBuyPrice > 0 && $pricePerUnit > $masterBuyPrice) {
-                        throw new Exception("Kasir tidak diizinkan memasukkan harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerUnit) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . "). Hubungi Admin/Owner untuk penyesuaian harga.");
+                    $isOwner = $user->isOwner() || $user->isSuperAdmin();
+                    if (!$isOwner && !$isNewlyCreated && $masterBuyPrice > 0 && $pricePerUnit > $masterBuyPrice) {
+                        $roleLabel = ($user->role === User::ROLE_ADMIN) ? 'Admin' : 'Kasir';
+                        throw new Exception("{$roleLabel} tidak diizinkan memasukkan harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerUnit) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . "). Hanya Owner yang dapat memasukkan harga di atas harga master.");
                     }
 
                     $itemSubtotal = round($quantity * $pricePerUnit, 2);
@@ -211,9 +212,10 @@ class PurchaseTransactionService
                         : (float) $scrapItem->buy_price_per_kg;
 
                     $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                    $isOwnerOrAdmin = $user->isSuperAdmin() || $user->isAdmin();
-                    if (!$isOwnerOrAdmin && !$isNewlyCreated && $masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
-                        throw new Exception("Kasir tidak diizinkan memasukkan harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerKg) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . "). Hubungi Admin/Owner untuk penyesuaian harga.");
+                    $isOwner = $user->isOwner() || $user->isSuperAdmin();
+                    if (!$isOwner && !$isNewlyCreated && $masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
+                        $roleLabel = ($user->role === User::ROLE_ADMIN) ? 'Admin' : 'Kasir';
+                        throw new Exception("{$roleLabel} tidak diizinkan memasukkan harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerKg) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . "). Hanya Owner yang dapat memasukkan harga di atas harga master.");
                     }
 
                     $itemSubtotal = round($net * $pricePerKg, 2);
