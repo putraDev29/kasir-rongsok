@@ -150,6 +150,28 @@ class PurchaseTransactionController extends Controller
     }
 
     /**
+     * Preview / Download Single Purchase Receipt PDF formatted with invoice number and supplier name.
+     */
+    public function pdfReceipt(Request $request, PurchaseTransaction $purchase)
+    {
+        $purchase->load(['items.scrapItem', 'user', 'supplier.debts', 'paymentMethod', 'debtPayments.debt']);
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+
+        $cleanInv = str_replace(['/', '\\', ' '], '-', $purchase->invoice_number);
+        $cleanSup = trim(preg_replace('/_+/', '_', preg_replace('/[^a-zA-Z0-9_\-]/', '_', $purchase->supplier_name ?: 'Pemasok_Umum')), '_');
+        $filename = "Nota_{$cleanInv}_{$cleanSup}.pdf";
+
+        $pdf = Pdf::loadView('purchases.receipt_pdf', compact('purchase', 'settings', 'cleanInv', 'cleanSup'))
+            ->setPaper('a5', 'portrait');
+
+        if ($request->boolean('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
+    }
+
+    /**
      * Batch print all purchases matching current filter (Point A - Format 58mm Kertas HVS A4).
      */
     public function batchPrint(Request $request): View

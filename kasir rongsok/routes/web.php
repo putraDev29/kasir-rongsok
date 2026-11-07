@@ -127,6 +127,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/purchases/send-wa-global', [PurchaseTransactionController::class, 'sendWaGlobal'])->name('purchases.send-wa-global');
     Route::resource('purchases', PurchaseTransactionController::class)->only(['index', 'create', 'store', 'show']);
     Route::get('/purchases/{purchase}/print', [PurchaseTransactionController::class, 'printReceipt'])->name('purchases.print');
+    Route::get('/purchases/{purchase}/pdf', [PurchaseTransactionController::class, 'pdfReceipt'])->name('purchases.pdf');
     Route::post('/purchases/{purchase}/cancel', [PurchaseTransactionController::class, 'cancel'])
         ->name('purchases.cancel')
         ->middleware('role:super_admin');

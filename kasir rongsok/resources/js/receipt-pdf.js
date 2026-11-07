@@ -10,6 +10,15 @@ export function generatePurchaseReceiptPdf(data) {
         format: 'a5',
     });
 
+    const cleanInv = (data.invoiceNumber || 'Pembelian').replace(/[\/\\]/g, '-');
+    const cleanSup = (data.supplierName || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    const docTitle = data.filename ? data.filename.replace(/\.pdf$/i, '') : `Nota_${cleanInv}_${cleanSup}`;
+    doc.setProperties({
+        title: docTitle,
+        subject: `Nota Timbang Pembelian ${cleanInv}`,
+        author: data.companyName || 'UD. BERKAH RONGSOK MAKMUR'
+    });
+
     const pageWidth = 148;
     const margin = 10;
     const contentWidth = pageWidth - margin * 2; // 128 mm
@@ -307,6 +316,15 @@ export function generateSalesInvoicePdf(data) {
         format: 'a5',
     });
 
+    const cleanInv = (data.invoiceNumber || 'Penjualan').replace(/[\/\\]/g, '-');
+    const cleanCust = (data.customerName || 'Pembeli').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    const docTitle = data.filename ? data.filename.replace(/\.pdf$/i, '') : `Faktur_${cleanInv}_${cleanCust}`;
+    doc.setProperties({
+        title: docTitle,
+        subject: `Faktur Penjualan Partai ${cleanInv}`,
+        author: data.companyName || 'UD. BERKAH RONGSOK MAKMUR'
+    });
+
     const pageWidth = 148;
     const margin = 10;
     const contentWidth = pageWidth - margin * 2;
@@ -444,6 +462,15 @@ export function generateDebtPaymentPdf(data) {
         orientation: 'portrait',
         unit: 'mm',
         format: 'a5',
+    });
+
+    const cleanPay = (data.paymentNumber || 'Kasbon').replace(/[\/\\]/g, '-');
+    const cleanBorrower = (data.borrowerName || 'Peminjam').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    const docTitle = data.filename ? data.filename.replace(/\.pdf$/i, '') : `BuktiBayar_${cleanPay}_${cleanBorrower}`;
+    doc.setProperties({
+        title: docTitle,
+        subject: `Bukti Pembayaran Kasbon ${cleanPay}`,
+        author: data.companyName || 'UD. BERKAH RONGSOK MAKMUR'
     });
 
     const pageWidth = 148;

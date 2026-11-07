@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nota_{{ $purchase->invoice_number }}</title>
+    @php
+        $cleanPrintInv = str_replace(['/', '\\', ' '], '-', $purchase->invoice_number);
+        $cleanPrintSup = trim(preg_replace('/_+/', '_', preg_replace('/[^a-zA-Z0-9_\-]/', '_', $purchase->supplier_name ?: 'Pemasok_Umum')), '_');
+    @endphp
+    <title>Nota_{{ $cleanPrintInv }}_{{ $cleanPrintSup }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @media print {

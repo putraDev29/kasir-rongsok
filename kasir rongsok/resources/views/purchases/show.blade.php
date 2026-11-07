@@ -36,6 +36,20 @@
                 <span>Kirim Nota WA</span>
             </button>
 
+            @php
+                $cleanInv = str_replace(['/', '\\', ' '], '-', $purchase->invoice_number);
+                $cleanSup = trim(preg_replace('/_+/', '_', preg_replace('/[^a-zA-Z0-9_\-]/', '_', $purchase->supplier_name ?: 'Pemasok_Umum')), '_');
+                $purchasePdfFilename = "Nota_{$cleanInv}_{$cleanSup}.pdf";
+            @endphp
+
+            <button type="button"
+               @click="openPdfPreview('{{ route('purchases.pdf', $purchase) }}', 'Nota {{ $purchase->invoice_number }}', '{{ $purchasePdfFilename }}', 'Pemasok: {{ $purchase->supplier_name }} - Total: Rp {{ number_format($purchase->final_amount, 0, ',', '.') }}')"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm cursor-pointer"
+               title="Preview & Unduh Berkas PDF Nota Timbang (Format A5)">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-400"></i>
+                <span>Preview / Unduh PDF</span>
+            </button>
+
             <a href="{{ route('purchases.print', ['purchase' => $purchase, 'format' => 'thermal_58']) }}" target="_blank"
                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm">
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>

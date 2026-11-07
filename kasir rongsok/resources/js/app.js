@@ -289,6 +289,7 @@ Alpine.store('waGateway', {
                 }
                 this.receipt.formattedPhone = data.formatted_phone || '';
                 if (data.filename) this.receipt.filename = data.filename;
+                if (data.pdf_filename) this.receipt.filename = data.pdf_filename;
                 if (data.pdf_url) this.receipt.pdfUrl = data.pdf_url;
             } else {
                 this.receipt.sendError = 'Gagal memuat data pratinjau nota.';
@@ -404,14 +405,23 @@ Alpine.store('waGateway', {
             try {
                 let doc = null;
                 if (this.receipt.type === 'purchase') {
+                    const safeInv = (this.receipt.receiptData.invoiceNumber || 'Pembelian').replace(/[\/\\]/g, '-');
+                    const safeSup = (this.receipt.receiptData.supplierName || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                    filename = this.receipt.filename || `Nota_${safeInv}_${safeSup}.pdf`;
+                    this.receipt.receiptData.filename = filename;
                     doc = generatePurchaseReceiptPdf(this.receipt.receiptData);
-                    filename = `Nota_${this.receipt.receiptData.invoiceNumber || 'Pembelian'}.pdf`;
                 } else if (this.receipt.type === 'sale') {
+                    const safeInv = (this.receipt.receiptData.invoiceNumber || 'Penjualan').replace(/[\/\\]/g, '-');
+                    const safeCust = (this.receipt.receiptData.customerName || 'Pembeli').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                    filename = this.receipt.filename || `Faktur_${safeInv}_${safeCust}.pdf`;
+                    this.receipt.receiptData.filename = filename;
                     doc = generateSalesInvoicePdf(this.receipt.receiptData);
-                    filename = `Faktur_${this.receipt.receiptData.invoiceNumber || 'Penjualan'}.pdf`;
                 } else if (this.receipt.type === 'debt_payment') {
+                    const safePay = (this.receipt.receiptData.paymentNumber || 'Kasbon').replace(/[\/\\]/g, '-');
+                    const safeBorrower = (this.receipt.receiptData.borrowerName || 'Peminjam').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                    filename = this.receipt.filename || `BuktiBayar_${safePay}_${safeBorrower}.pdf`;
+                    this.receipt.receiptData.filename = filename;
                     doc = generateDebtPaymentPdf(this.receipt.receiptData);
-                    filename = `BuktiBayar_${this.receipt.receiptData.paymentNumber || 'Kasbon'}.pdf`;
                 }
 
                 if (doc) {
@@ -471,14 +481,19 @@ Alpine.store('waGateway', {
         }
     },
 
-    downloadPdf() {
-        if (this.receipt.pdfUrl) {
-            window.open(this.receipt.pdfUrl, '_blank');
+    downloadPdf(downloadDirectly = false) {
+        if (!this.receipt.receiptData && this.receipt.pdfUrl) {
+            if (downloadDirectly) {
+                const dlUrl = this.receipt.pdfUrl + (this.receipt.pdfUrl.includes('?') ? '&' : '?') + 'download=1';
+                window.location.href = dlUrl;
+            } else {
+                window.open(this.receipt.pdfUrl, '_blank');
+            }
             return;
         }
 
         if (!this.receipt.receiptData) {
-            alert('Data nota belum siap diunduh.');
+            alert('Data nota belum siap.');
             return;
         }
 
@@ -487,23 +502,35 @@ Alpine.store('waGateway', {
 
         try {
             if (this.receipt.type === 'purchase') {
+                const safeInv = (this.receipt.receiptData.invoiceNumber || 'Pembelian').replace(/[\/\\]/g, '-');
+                const safeSup = (this.receipt.receiptData.supplierName || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                filename = this.receipt.filename || `Nota_${safeInv}_${safeSup}.pdf`;
+                this.receipt.receiptData.filename = filename;
                 doc = generatePurchaseReceiptPdf(this.receipt.receiptData);
-                filename = `Nota_${this.receipt.receiptData.invoiceNumber || 'Pembelian'}.pdf`;
             } else if (this.receipt.type === 'sale') {
+                const safeInv = (this.receipt.receiptData.invoiceNumber || 'Penjualan').replace(/[\/\\]/g, '-');
+                const safeCust = (this.receipt.receiptData.customerName || 'Pembeli').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                filename = this.receipt.filename || `Faktur_${safeInv}_${safeCust}.pdf`;
+                this.receipt.receiptData.filename = filename;
                 doc = generateSalesInvoicePdf(this.receipt.receiptData);
-                filename = `Faktur_${this.receipt.receiptData.invoiceNumber || 'Penjualan'}.pdf`;
             } else if (this.receipt.type === 'debt_payment') {
+                const safePay = (this.receipt.receiptData.paymentNumber || 'Kasbon').replace(/[\/\\]/g, '-');
+                const safeBorrower = (this.receipt.receiptData.borrowerName || 'Peminjam').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                filename = this.receipt.filename || `BuktiBayar_${safePay}_${safeBorrower}.pdf`;
+                this.receipt.receiptData.filename = filename;
                 doc = generateDebtPaymentPdf(this.receipt.receiptData);
-                filename = `BuktiBayar_${this.receipt.receiptData.paymentNumber || 'Kasbon'}.pdf`;
             }
 
             if (doc) {
-                // Tampilkan preview PDF di tab browser terlebih dahulu
-                const blobUrl = doc.output('bloburl');
-                window.open(blobUrl, '_blank');
+                if (downloadDirectly) {
+                    doc.save(filename);
+                } else {
+                    const blobUrl = doc.output('bloburl');
+                    window.open(blobUrl, '_blank');
+                }
             }
         } catch (e) {
-            alert('Gagal mengunduh berkas PDF: ' + e.message);
+            alert('Gagal memproses berkas PDF: ' + e.message);
         }
     },
 

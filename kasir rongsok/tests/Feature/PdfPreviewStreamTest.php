@@ -96,10 +96,36 @@ class PdfPreviewStreamTest extends TestCase
         $res->assertStatus(200);
         $this->assertStringContainsString('inline', $res->headers->get('content-disposition'));
 
-        // 4. Purchase Batch PDF
+        // 4. Purchase Batch PDF & Single Purchase PDF
         $res = $this->actingAs($this->superAdmin)->get(route('purchases.batch-pdf'));
         $res->assertStatus(200);
         $this->assertStringContainsString('inline', $res->headers->get('content-disposition'));
+
+        $purchase = \App\Models\PurchaseTransaction::first();
+        if ($purchase) {
+            $cleanInv = str_replace(['/', '\\', ' '], '-', $purchase->invoice_number);
+            $cleanSup = trim(preg_replace('/_+/', '_', preg_replace('/[^a-zA-Z0-9_\-]/', '_', $purchase->supplier_name ?: 'Pemasok_Umum')), '_');
+            $expectedFilename = "Nota_{$cleanInv}_{$cleanSup}.pdf";
+
+            // 4a. Single Purchase PDF inline
+            $resSingle = $this->actingAs($this->superAdmin)->get(route('purchases.pdf', $purchase));
+            $resSingle->assertStatus(200);
+            $this->assertStringContainsString('application/pdf', $resSingle->headers->get('content-type'));
+            $this->assertStringContainsString('inline', $resSingle->headers->get('content-disposition'));
+            $this->assertStringContainsString($expectedFilename, $resSingle->headers->get('content-disposition'));
+
+            // 4b. Single Purchase PDF download
+            $resSingleDl = $this->actingAs($this->superAdmin)->get(route('purchases.pdf', [$purchase, 'download' => 1]));
+            $resSingleDl->assertStatus(200);
+            $this->assertStringContainsString('attachment', $resSingleDl->headers->get('content-disposition'));
+            $this->assertStringContainsString($expectedFilename, $resSingleDl->headers->get('content-disposition'));
+
+            // 4c. WhatsApp Preview JSON filename
+            $resWa = $this->actingAs($this->superAdmin)->get(route('whatsapp.purchases.preview', $purchase));
+            $resWa->assertStatus(200);
+            $this->assertEquals($expectedFilename, $resWa->json('filename'));
+            $this->assertEquals($expectedFilename, $resWa->json('pdf_filename'));
+        }
 
         // 5. Salary Slip Single & Batch PDF
         $slip = SalarySlip::first() ?: SalarySlip::create([

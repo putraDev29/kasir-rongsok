@@ -144,6 +144,11 @@ class WhatsAppGatewayController extends Controller
         $debtDeduction = min((float) ($purchase->debt_deduction_amount ?? 0), $activeFinal);
         $activeNetCash = max(0, $activeFinal - $debtDeduction);
 
+        $cleanInvoice = str_replace(['/', '\\', ' '], '-', $purchase->invoice_number);
+        $cleanSupplier = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $purchase->supplier_name ?: 'Pemasok_Umum');
+        $cleanSupplier = trim(preg_replace('/_+/', '_', $cleanSupplier), '_');
+        $filename = "Nota_{$cleanInvoice}_{$cleanSupplier}.pdf";
+
         $items = [];
         foreach ($activeItems as $it) {
             $isPcs = ($it->unit_type === 'pcs' || $it->unit_type === 'satuan');
@@ -166,6 +171,7 @@ class WhatsAppGatewayController extends Controller
         $receiptData = [
             'type' => 'purchase',
             'invoiceNumber' => $purchase->invoice_number,
+            'filename' => $filename,
             'transactionDate' => Carbon::parse($purchase->transaction_date)->translatedFormat('d F Y, H:i') . ' WIB',
             'cashierName' => $purchase->user?->name ?? 'Kasir Timbang',
             'supplierName' => $purchase->supplier_name ?: '-',
@@ -196,6 +202,9 @@ class WhatsAppGatewayController extends Controller
             'formatted_phone' => $this->gateway->formatPhone($phone),
             'message' => FormatHelper::cleanCaption($message),
             'invoice_number' => $purchase->invoice_number,
+            'filename' => $filename,
+            'pdf_filename' => $filename,
+            'pdf_url' => route('purchases.pdf', $purchase),
             'receipt_data' => $receiptData,
         ]);
     }
@@ -219,7 +228,11 @@ class WhatsAppGatewayController extends Controller
 
         $fileData = $request->input('file') ?? $request->input('fileBase64');
         $caption = FormatHelper::cleanCaption($request->input('caption') ?? $request->input('message') ?? "Terlampir Nota Pembelian PDF resmi {$purchase->invoice_number}.");
-        $filename = $request->input('filename') ?: "Nota_{$purchase->invoice_number}.pdf";
+        $cleanInvoice = str_replace(['/', '\\', ' '], '-', $purchase->invoice_number);
+        $cleanSupplier = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $purchase->supplier_name ?: 'Pemasok_Umum');
+        $cleanSupplier = trim(preg_replace('/_+/', '_', $cleanSupplier), '_');
+        $defaultFilename = "Nota_{$cleanInvoice}_{$cleanSupplier}.pdf";
+        $filename = $request->input('filename') ?: $defaultFilename;
 
         if ($fileData) {
             // Send as PDF Document

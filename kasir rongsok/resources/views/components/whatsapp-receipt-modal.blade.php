@@ -84,21 +84,21 @@
                     </div>
 
                     <!-- PDF Attachment Card -->
-                    <div class="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 flex items-center justify-between gap-3">
+                    <div class="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div class="flex items-center gap-3 min-w-0">
                             <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs font-bold text-xs">
                                 PDF
                             </div>
                             <div class="truncate">
                                 <div class="text-xs font-bold text-slate-900 truncate">
-                                    <span x-text="$store.waGateway.receipt.filename || (($store.waGateway.receipt.receiptData?.invoiceNumber || $store.waGateway.receipt.receiptData?.paymentNumber || 'Dokumen') + '.pdf')"></span>
+                                    <span x-text="$store.waGateway.receipt.filename || (($store.waGateway.receipt.receiptData?.invoiceNumber ? ('Nota_' + $store.waGateway.receipt.receiptData.invoiceNumber.replace(/[\/\\]/g, '-') + '_' + ($store.waGateway.receipt.receiptData.supplierName || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_')) : 'Nota') + '.pdf')"></span>
                                 </div>
                                 <div class="text-[11px] text-slate-500" x-text="$store.waGateway.receipt.fileDescription || 'Dokumen PDF Resmi Kasir Rongsok (Format A5)'"></div>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-2 shrink-0">
-                            <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer select-none">
+                            <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer select-none mr-1">
                                 <input type="checkbox" 
                                        x-model="$store.waGateway.receipt.sendAsPdf" 
                                        class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
@@ -106,11 +106,19 @@
                             </label>
 
                             <button type="button" 
-                                    @click="$store.waGateway.downloadPdf()"
-                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1 shadow-xs"
-                                    title="Tampilkan preview berkas PDF di tab baru sebelum unduh">
+                                    @click="$store.waGateway.downloadPdf(false)"
+                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                                    title="Tampilkan preview berkas PDF di tab baru">
                                 <i data-lucide="eye" class="w-3.5 h-3.5 text-slate-500"></i>
                                 <span>Preview PDF</span>
+                            </button>
+
+                            <button type="button" 
+                                    @click="$store.waGateway.downloadPdf(true)"
+                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                                    title="Simpan / Unduh berkas dokumen PDF ke perangkat">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span>Simpan PDF</span>
                             </button>
                         </div>
                     </div>
