@@ -1828,5 +1828,45 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertEquals('50', $res->json('receipt_data.totalGrossWeight'));
         $this->assertEquals('0', $res->json('receipt_data.totalTareWeight'));
     }
+
+    public function test_purchase_preview_pdf_data_contains_bank_info_for_bank_payments(): void
+    {
+        $cashier = User::factory()->create(['role' => 'cashier']);
+        $bankMethod = PaymentMethod::firstOrCreate(
+            ['code' => 'transfer_bca'],
+            [
+                'name' => 'Transfer Bank BCA',
+                'is_active' => true,
+                'bank_name' => 'BCA',
+            ]
+        );
+
+        $service = app(PurchaseTransactionService::class);
+        $trx = $service->createPurchase([
+            'supplier_name' => 'Totong Test',
+            'supplier_phone' => '0870707077777',
+            'payment_method_id' => $bankMethod->id,
+            'bank_info' => 'BCA - Rek: 777777777 - a/n Totong',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 35,
+                    'tare_weight' => 0,
+                    'price_per_kg' => (float) $this->besiItem->buy_price_per_kg,
+                ]
+            ]
+        ], $cashier);
+
+        $this->actingAs($cashier);
+        $res = $this->getJson(route('whatsapp.purchases.preview', $trx));
+        $res->assertOk();
+
+        $receiptData = $res->json('receipt_data');
+        $this->assertTrue($receiptData['isBankPayment']);
+        $this->assertEquals('777777777', $receiptData['bankAccountNumber']);
+        $this->assertEquals('Totong', $receiptData['bankAccountName']);
+        $this->assertEquals('BCA', $receiptData['bankName']);
+        $this->assertEquals('BCA - Rek: 777777777 - a/n Totong', $receiptData['bankInfo']);
+    }
 }
 

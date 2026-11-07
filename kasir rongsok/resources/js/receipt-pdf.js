@@ -59,11 +59,22 @@ export function generatePurchaseReceiptPdf(data) {
     doc.text('BUKTI PENERIMAAN / NOTA TIMBANG', margin, curY);
 
     curY += 5;
+
+    const hasBank = !!(data.isBankPayment && (data.bankAccountNumber || data.bankAccountName || data.bankInfo));
+    let bankLines = 0;
+    if (hasBank) {
+        if (data.bankAccountNumber) bankLines++;
+        if (data.bankAccountName) bankLines++;
+        if (!data.bankAccountNumber && !data.bankAccountName && data.bankInfo) bankLines++;
+    }
+
+    const boxHeight = 22 + (bankLines * 5.5);
+
     // Metadata 2-Column Box
     doc.setFillColor(248, 250, 252); // slate-50
     doc.setDrawColor(226, 232, 240); // slate-200
     doc.setLineWidth(0.3);
-    doc.roundedRect(margin, curY, contentWidth, 22, 2, 2, 'FD');
+    doc.roundedRect(margin, curY, contentWidth, boxHeight, 2, 2, 'FD');
 
     const col1X = margin + 3.5;
     const col2X = margin + contentWidth / 2 + 3.5;
@@ -115,7 +126,38 @@ export function generatePurchaseReceiptPdf(data) {
     doc.setTextColor(13, 148, 136);
     doc.text(data.paymentMethod || 'Tunai', col2X + 22, metaY + 11);
 
-    curY += 26;
+    if (hasBank) {
+        let bankY = metaY + 16.5;
+        if (data.bankAccountNumber) {
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 116, 139);
+            doc.text('No. Rekening:', col2X, bankY);
+            doc.setFont('courier', 'bold');
+            doc.setTextColor(15, 23, 42);
+            doc.text(String(data.bankAccountNumber), col2X + 22, bankY);
+            bankY += 5.5;
+        }
+        if (data.bankAccountName) {
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 116, 139);
+            doc.text('Nama Rekening:', col2X, bankY);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(15, 23, 42);
+            doc.text(String(data.bankAccountName), col2X + 22, bankY);
+            bankY += 5.5;
+        }
+        if (!data.bankAccountNumber && !data.bankAccountName && data.bankInfo) {
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 116, 139);
+            doc.text('Data Rekening:', col2X, bankY);
+            doc.setFont('courier', 'bold');
+            doc.setTextColor(15, 23, 42);
+            doc.text(String(data.bankInfo), col2X + 22, bankY);
+            bankY += 5.5;
+        }
+    }
+
+    curY += boxHeight + 4;
 
     // 3. Table Header
     const colW = {
@@ -223,7 +265,7 @@ export function generatePurchaseReceiptPdf(data) {
     doc.setLineWidth(0.4);
     doc.line(summaryX, curY - 1, margin + contentWidth, curY - 1);
 
-    addSummaryRow('TUNAI DIBAYARKAN:', data.netCashPaid || data.finalAmountFormatted || data.subtotalAmount, true, [16, 185, 129]);
+    addSummaryRow(data.isBankPayment ? 'TRANSFER DIBAYARKAN:' : 'TUNAI DIBAYARKAN:', data.netCashPaid || data.finalAmountFormatted || data.subtotalAmount, true, [16, 185, 129]);
 
     if (data.remainingDebtAfter && parseFloat(data.remainingDebtAfter) > 0) {
         addSummaryRow('Sisa Kasbon Pemasok:', `Rp ${data.remainingDebtAfter}`, false, [180, 83, 9]);
