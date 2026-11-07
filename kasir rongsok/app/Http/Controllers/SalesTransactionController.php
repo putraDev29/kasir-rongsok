@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSalesRequest;
+use App\Http\Requests\UpdateSalesRequest;
 use App\Models\BusinessSetting;
 use App\Models\Driver;
 use App\Models\PaymentMethod;
@@ -101,10 +102,59 @@ class SalesTransactionController extends Controller
                 Auth::user()
             );
 
+            if ($transaction->isDraft()) {
+                return redirect()->route('sales.index')
+                    ->with('success', "Draft penjualan {$transaction->invoice_number} berhasil dicatat! Menunggu Admin / Owner mengisi harga jual.");
+            }
+
             return redirect()->route('sales.show', $transaction)
                 ->with('success', "Penjualan rongsok {$transaction->invoice_number} berhasil dicatat!");
         } catch (Exception $e) {
             \Illuminate\Support\Facades\Log::error('Sales store failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
+    public function edit(SalesTransaction $sale): View|RedirectResponse
+    {
+        if (!$sale->isDraft()) {
+            return redirect()->route('sales.show', $sale)
+                ->with('error', 'Transaksi penjualan ini bukan berstatus draft atau sudah difinalisasi.');
+        }
+
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Hanya Admin atau Owner yang dapat mengedit dan mengisi harga jual draft penjualan.');
+        }
+
+        $sale->load(['items.scrapItem', 'user', 'paymentMethod']);
+        $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('name')->get();
+        $drivers = Driver::where('is_active', true)->orderBy('name')->get();
+
+        return view('sales.edit', compact('sale', 'paymentMethods', 'drivers'));
+    }
+
+    public function update(UpdateSalesRequest $request, SalesTransaction $sale): RedirectResponse
+    {
+        if (!$sale->isDraft()) {
+            return redirect()->route('sales.show', $sale)
+                ->with('error', 'Transaksi penjualan ini bukan berstatus draft atau sudah difinalisasi.');
+        }
+
+        if (!Auth::user()->isAdmin()) {
+            abort(403, 'Hanya Admin atau Owner yang dapat memfinalisasi penjualan.');
+        }
+
+        try {
+            $transaction = $this->salesService->updateDraftSale(
+                $sale,
+                $request->validated(),
+                Auth::user()
+            );
+
+            return redirect()->route('sales.show', $transaction)
+                ->with('success', "Penjualan {$transaction->invoice_number} berhasil difinalisasi dan harga jual telah disimpan!");
+        } catch (Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Sales update failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return back()->withInput()->with('error', $e->getMessage());
         }
     }

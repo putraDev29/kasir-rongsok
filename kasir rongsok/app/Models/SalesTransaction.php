@@ -12,6 +12,7 @@ class SalesTransaction extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const STATUS_DRAFT = 'draft';
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_PENDING_DELIVERY = 'pending_delivery';
     public const STATUS_CANCELLED = 'cancelled';
@@ -86,6 +87,11 @@ class SalesTransaction extends Model
     public function isCancelled(): bool
     {
         return $this->status === self::STATUS_CANCELLED;
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === self::STATUS_DRAFT;
     }
 
     public function isCompleted(): bool

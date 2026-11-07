@@ -245,23 +245,34 @@ class ScrapCashierSystemTest extends TestCase
 
     public function test_role_based_access_control(): void
     {
-        // 1. Kasir & Admin can access Dashboard, Timbang Kasir, and Riwayat Pembelian
-        $this->actingAs($this->kasir)->get('/dashboard')->assertStatus(200);
+        // 1. Kasir is redirected from /dashboard directly to /purchases/create
+        $this->actingAs($this->kasir)->get('/dashboard')->assertRedirect('/purchases/create');
         $this->actingAs($this->admin)->get('/dashboard')->assertStatus(200);
+        $this->actingAs($this->superAdmin)->get('/dashboard')->assertStatus(200);
 
+        // 2. Kasir and Admin can access Penerimaan Barang & Riwayat Pembelian
         $this->actingAs($this->kasir)->get('/purchases/create')->assertStatus(200);
         $this->actingAs($this->admin)->get('/purchases/create')->assertStatus(200);
 
         $this->actingAs($this->kasir)->get('/purchases')->assertStatus(200);
         $this->actingAs($this->admin)->get('/purchases')->assertStatus(200);
 
-        // 2. Kasir and Admin are forbidden (403) from accessing Owner-only modules
+        // 3. Kasir and Admin can access Penjualan Partai & Surat Jalan
+        $this->actingAs($this->kasir)->get('/sales')->assertStatus(200);
+        $this->actingAs($this->kasir)->get('/sales/create')->assertStatus(200);
+        $this->actingAs($this->admin)->get('/sales')->assertStatus(200);
+        $this->actingAs($this->admin)->get('/sales/create')->assertStatus(200);
+
+        $this->actingAs($this->kasir)->get('/delivery-orders')->assertStatus(200);
+        $this->actingAs($this->kasir)->get('/delivery-orders/create')->assertStatus(200);
+        $this->actingAs($this->admin)->get('/delivery-orders')->assertStatus(200);
+        $this->actingAs($this->admin)->get('/delivery-orders/create')->assertStatus(200);
+
+        // 4. Kasir and Admin are forbidden (403) from accessing Owner-only modules
         $restrictedUrls = [
             '/scrap-items',
             '/suppliers',
             '/debts',
-            '/sales',
-            '/delivery-orders',
             '/stock',
             '/expenses',
             '/salary-slips',
@@ -1130,6 +1141,72 @@ class ScrapCashierSystemTest extends TestCase
         $saleMarkRes->assertSessionHasNoErrors();
         $deliverySale2->refresh();
         $this->assertEquals('completed', $deliverySale2->status);
+    }
+
+    /**
+     * Test Kasir creates sales as draft with sell_price disabled/0,
+     * and Admin/Owner edits the draft to set sell_price and finalize.
+     */
+    public function test_kasir_creates_sale_as_draft_and_admin_finalizes_it(): void
+    {
+        // 1. Kasir creates sale without sell price (submitted as 0 or empty)
+        $kasirSaleRes = $this->actingAs($this->kasir)->post(route('sales.store'), [
+            'delivery_type' => 'pickup',
+            'buyer_name' => 'Pabrik Peleburan Kasir Draft',
+            'buyer_phone' => '081233445566',
+            'transaction_date' => now()->toDateString(),
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_type_name' => 'Besi Super',
+                    'weight' => 200,
+                    'sell_price_per_kg' => 0,
+                ],
+            ],
+        ]);
+
+        $kasirSaleRes->assertSessionHasNoErrors();
+        $kasirSaleRes->assertRedirect(route('sales.index'));
+
+        $draftSale = \App\Models\SalesTransaction::where('buyer_name', 'Pabrik Peleburan Kasir Draft')->first();
+        $this->assertNotNull($draftSale);
+        $this->assertEquals('draft', $draftSale->status);
+        $this->assertTrue($draftSale->isDraft());
+        $this->assertEquals(0, (float) $draftSale->final_amount);
+
+        // Kasir CANNOT access edit page
+        $this->actingAs($this->kasir)->get(route('sales.edit', $draftSale))->assertStatus(403);
+
+        // Admin CAN access edit page
+        $adminEditRes = $this->actingAs($this->admin)->get(route('sales.edit', $draftSale));
+        $adminEditRes->assertStatus(200);
+        $adminEditRes->assertSee('Form Penetapan Harga Jual');
+
+        // 2. Admin finalizes the draft sale by setting sell price
+        $draftItem = $draftSale->items->first();
+        $finalizeRes = $this->actingAs($this->admin)->put(route('sales.update', $draftSale), [
+            'items' => [
+                $draftItem->id => [
+                    'sell_price_per_kg' => 6000,
+                ],
+            ],
+        ]);
+
+        $finalizeRes->assertSessionHasNoErrors();
+        $finalizeRes->assertRedirect(route('sales.show', $draftSale));
+
+        $draftSale->refresh();
+        $this->assertEquals('completed', $draftSale->status); // pickup -> completed
+        $this->assertFalse($draftSale->isDraft());
+        $this->assertEquals(1200000, (float) $draftSale->final_amount); // 200kg * 6000
+
+        $draftItem->refresh();
+        $this->assertEquals(6000, (float) $draftItem->sell_price_per_kg);
+        $this->assertEquals(1200000, (float) $draftItem->subtotal);
+
+        // Once completed, accessing edit redirects to show with error
+        $this->actingAs($this->admin)->get(route('sales.edit', $draftSale))->assertRedirect(route('sales.show', $draftSale));
     }
 
     /**

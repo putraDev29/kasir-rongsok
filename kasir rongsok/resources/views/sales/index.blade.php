@@ -99,6 +99,7 @@
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Status Penjualan</label>
                 <select name="status" class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
                     <option value="">-- Semua Status --</option>
+                    <option value="draft" {{ $status === 'draft' ? 'selected' : '' }}>Draft (Menunggu Harga)</option>
                     <option value="completed" {{ $status === 'completed' ? 'selected' : '' }}>Selesai (Completed)</option>
                     <option value="pending_delivery" {{ $status === 'pending_delivery' ? 'selected' : '' }}>Menunggu Pengiriman</option>
                     <option value="cancelled" {{ $status === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
@@ -192,6 +193,10 @@
                                     <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">
                                         Dibatalkan
                                     </span>
+                                @elseif($sale->isDraft())
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                        Draft Kasir
+                                    </span>
                                 @elseif($sale->isPendingDelivery())
                                     <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
                                         Menunggu Kirim
@@ -204,6 +209,11 @@
                             </td>
                             <td class="py-3 px-3 text-center">
                                 <div class="inline-flex items-center gap-1.5">
+                                    @if($sale->isDraft() && (Auth::user()->isAdmin() || Auth::user()->isSuperAdmin()))
+                                        <a href="{{ route('sales.edit', $sale) }}" class="p-1 rounded text-amber-600 hover:text-amber-800 hover:bg-amber-50" title="Isi Harga Jual & Finalisasi">
+                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                        </a>
+                                    @endif
                                     @if($sale->isPendingDelivery())
                                         <form action="{{ route('sales.mark-delivered', $sale) }}" method="POST" class="inline" onsubmit="return confirm('Konfirmasi pengiriman penjualan ini telah selesai diterima pembeli?')">
                                             @csrf

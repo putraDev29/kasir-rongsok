@@ -29,6 +29,7 @@ class SalesTransactionService
     public function createSale(array $data, User $user): SalesTransaction
     {
         return DB::transaction(function () use ($data, $user) {
+            $isKasir = $user->isKasir() || !empty($data['is_draft']);
             $date = isset($data['transaction_date']) ? Carbon::parse($data['transaction_date']) : Carbon::now();
             $invoiceNumber = FormatHelper::generateSalesInvoiceNumber($date);
 
@@ -76,10 +77,13 @@ class SalesTransactionService
 
                     $sellPrice = isset($row['sell_price_per_kg']) && is_numeric($row['sell_price_per_kg'])
                         ? (float) $row['sell_price_per_kg']
-                        : (float) $scrapItem->sell_price_per_kg;
+                        : ($isKasir ? 0 : (float) $scrapItem->sell_price_per_kg);
 
-                    if ($sellPrice <= 0) {
+                    if (!$isKasir && $sellPrice <= 0) {
                         throw new Exception("Harga jual satuan untuk '{$scrapItem->name}' harus lebih dari Rp 0.");
+                    }
+                    if ($isKasir && $sellPrice < 0) {
+                        $sellPrice = 0;
                     }
 
                     $selectedBuyPrice = isset($row['buy_price_snapshot']) && is_numeric($row['buy_price_snapshot']) && (float) $row['buy_price_snapshot'] > 0
@@ -112,10 +116,13 @@ class SalesTransactionService
 
                     $sellPrice = isset($row['sell_price_per_kg']) && is_numeric($row['sell_price_per_kg'])
                         ? (float) $row['sell_price_per_kg']
-                        : (float) $scrapItem->sell_price_per_kg;
+                        : ($isKasir ? 0 : (float) $scrapItem->sell_price_per_kg);
 
-                    if ($sellPrice <= 0) {
+                    if (!$isKasir && $sellPrice <= 0) {
                         throw new Exception("Harga jual per kg untuk '{$scrapItem->name}' harus lebih dari Rp 0.");
+                    }
+                    if ($isKasir && $sellPrice < 0) {
+                        $sellPrice = 0;
                     }
 
                     $selectedBuyPrice = isset($row['buy_price_snapshot']) && is_numeric($row['buy_price_snapshot']) && (float) $row['buy_price_snapshot'] > 0
@@ -155,7 +162,7 @@ class SalesTransactionService
 
             $discountAmount = max(0, (float) ($data['discount_amount'] ?? 0));
             $finalAmount = max(0, $subtotalAmount - $discountAmount);
-            $estimatedProfit = round($finalAmount - $totalEstimatedCogs, 2);
+            $estimatedProfit = $isKasir ? 0 : round($finalAmount - $totalEstimatedCogs, 2);
 
             $bankInfo = $data['bank_info'] ?? null;
             $customBank = trim($data['custom_bank'] ?? '');
@@ -212,9 +219,12 @@ class SalesTransactionService
             $deliveryOrderId = $data['delivery_order_id'] ?? null;
 
             // Determine status:
+            // - Jika kasir, status disimpan sebagai DRAFT (tanpa harga jual).
             // - Diambil Sendiri: status langsung selesai (completed). Tanpa surat jalan.
             // - Perlu Pengiriman: status pending_delivery sampai pengiriman selesai.
-            if ($deliveryType === SalesTransaction::DELIVERY_TYPE_PICKUP) {
+            if ($isKasir) {
+                $status = SalesTransaction::STATUS_DRAFT;
+            } elseif ($deliveryType === SalesTransaction::DELIVERY_TYPE_PICKUP) {
                 $status = SalesTransaction::STATUS_COMPLETED;
                 $deliveryOrderId = null;
             } else {
@@ -245,7 +255,7 @@ class SalesTransactionService
                 'final_amount' => $finalAmount,
                 'estimated_cogs' => $totalEstimatedCogs,
                 'estimated_profit' => $estimatedProfit,
-                'payment_status' => $data['payment_status'] ?? 'paid',
+                'payment_status' => $isKasir ? 'draft' : ($data['payment_status'] ?? 'paid'),
                 'status' => $status,
                 'notes' => $data['notes'] ?? null,
             ]);
@@ -539,6 +549,140 @@ class SalesTransactionService
             );
 
             return true;
+        });
+    }
+
+    /**
+     * Update and finalize a draft sales transaction (fill in selling prices and set status based on delivery type).
+     *
+     * @throws Exception
+     */
+    public function updateDraftSale(SalesTransaction $transaction, array $data, User $user): SalesTransaction
+    {
+        return DB::transaction(function () use ($transaction, $data, $user) {
+            if (!$transaction->isDraft()) {
+                throw new Exception('Transaksi penjualan ini bukan berstatus draft atau sudah difinalisasi.');
+            }
+
+            if (!$user->isAdmin()) {
+                throw new Exception('Hanya Admin atau Owner yang memiliki hak akses untuk memfinalisasi harga jual.');
+            }
+
+            $transaction->load('items.scrapItem');
+
+            $itemsInput = $data['items'] ?? [];
+            $itemsMap = collect($itemsInput)->keyBy('id');
+
+            $subtotalAmount = 0;
+            $totalEstimatedCogs = 0;
+
+            foreach ($transaction->items as $idx => $item) {
+                $itemData = null;
+                if (isset($itemsInput[$item->id])) {
+                    $itemData = $itemsInput[$item->id];
+                } elseif (!empty($item->id) && $itemsMap->has($item->id)) {
+                    $itemData = $itemsMap->get($item->id);
+                } elseif (isset($itemsInput[$idx])) {
+                    $itemData = $itemsInput[$idx];
+                }
+
+                if (!$itemData) {
+                    throw new Exception("Data harga jual untuk barang '{$item->item_name_snapshot}' tidak ditemukan.");
+                }
+
+                $sellPrice = (float) ($itemData['sell_price_per_kg'] ?? 0);
+                if ($sellPrice <= 0) {
+                    throw new Exception("Harga jual untuk '{$item->item_name_snapshot}' harus lebih dari Rp 0.");
+                }
+
+                $qty = in_array(strtolower($item->unit_type ?? 'kg'), ['pcs', 'satuan', 'unit'])
+                    ? (float) ($item->quantity > 0 ? $item->quantity : 1)
+                    : (float) $item->weight;
+
+                $itemSubtotal = round($qty * $sellPrice, 2);
+                $itemCogs = round($qty * (float) $item->buy_price_snapshot, 2);
+                $itemProfit = round($itemSubtotal - $itemCogs, 2);
+
+                $item->update([
+                    'sell_price_per_kg' => $sellPrice,
+                    'subtotal' => $itemSubtotal,
+                    'cogs_subtotal' => $itemCogs,
+                    'profit_subtotal' => $itemProfit,
+                    'notes' => $itemData['notes'] ?? $item->notes,
+                ]);
+
+                // Also sync with DeliveryOrderItem price if linked
+                if ($transaction->delivery_order_id) {
+                    DeliveryOrderItem::where('delivery_order_id', $transaction->delivery_order_id)
+                        ->where('scrap_item_id', $item->scrap_item_id)
+                        ->update([
+                            'price_per_kg' => $sellPrice,
+                            'subtotal' => $itemSubtotal,
+                        ]);
+                }
+
+                $subtotalAmount += $itemSubtotal;
+                $totalEstimatedCogs += $itemCogs;
+            }
+
+            $discountAmount = max(0, (float) ($data['discount_amount'] ?? $transaction->discount_amount ?? 0));
+            $finalAmount = max(0, $subtotalAmount - $discountAmount);
+            $estimatedProfit = round($finalAmount - $totalEstimatedCogs, 2);
+
+            $deliveryType = $data['delivery_type'] ?? $transaction->delivery_type;
+            if ($deliveryType === SalesTransaction::DELIVERY_TYPE_PICKUP) {
+                $status = SalesTransaction::STATUS_COMPLETED;
+            } else {
+                if ($transaction->delivery_order_id) {
+                    $existingDo = DeliveryOrder::find($transaction->delivery_order_id);
+                    $status = ($existingDo && $existingDo->status === 'delivered')
+                        ? SalesTransaction::STATUS_COMPLETED
+                        : SalesTransaction::STATUS_PENDING_DELIVERY;
+                } else {
+                    $status = SalesTransaction::STATUS_PENDING_DELIVERY;
+                }
+            }
+
+            $bankInfo = $transaction->bank_info;
+            $customBank = trim($data['custom_bank'] ?? '');
+            $customAccountName = trim($data['custom_account_name'] ?? '');
+            $customAccountNo = trim($data['custom_account_no'] ?? '');
+
+            if (!empty($customAccountNo) || !empty($customAccountName) || !empty($customBank)) {
+                $parts = [];
+                if (!empty($customBank)) $parts[] = $customBank;
+                if (!empty($customAccountNo)) $parts[] = "Rek: {$customAccountNo}";
+                if (!empty($customAccountName)) $parts[] = "a/n {$customAccountName}";
+                $bankInfo = implode(' - ', $parts);
+            } elseif (!empty($data['bank_info'])) {
+                $bankInfo = $data['bank_info'];
+            }
+
+            $transaction->update([
+                'buyer_name' => $data['buyer_name'] ?? $transaction->buyer_name,
+                'buyer_phone' => $data['buyer_phone'] ?? $transaction->buyer_phone,
+                'buyer_address' => $data['buyer_address'] ?? $transaction->buyer_address,
+                'delivery_type' => $deliveryType,
+                'payment_method_id' => $data['payment_method_id'] ?? $transaction->payment_method_id,
+                'bank_info' => $bankInfo,
+                'subtotal_amount' => $subtotalAmount,
+                'discount_amount' => $discountAmount,
+                'final_amount' => $finalAmount,
+                'estimated_cogs' => $totalEstimatedCogs,
+                'estimated_profit' => $estimatedProfit,
+                'payment_status' => $data['payment_status'] ?? 'paid',
+                'status' => $status,
+                'notes' => $data['notes'] ?? $transaction->notes,
+            ]);
+
+            ActivityLog::record(
+                action: 'sale_finalized',
+                subject: $transaction,
+                description: "Penjualan draft {$transaction->invoice_number} difinalisasi oleh {$user->name}. Harga total: Rp " . number_format($finalAmount, 0, ',', '.'),
+                payload: ['final_amount' => $finalAmount, 'status' => $status]
+            );
+
+            return $transaction->fresh(['items.scrapItem', 'user', 'paymentMethod']);
         });
     }
 

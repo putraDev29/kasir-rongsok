@@ -18,6 +18,10 @@
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">
                         DIBATALKAN
                     </span>
+                @elseif($sale->isDraft())
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                        📝 DRAFT KASIR (MENUNGGU HARGA)
+                    </span>
                 @elseif($sale->isPendingDelivery())
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
                         🚚 MENUNGGU PENGIRIMAN
@@ -31,6 +35,13 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            @if($sale->isDraft() && (Auth::user()->isAdmin() || Auth::user()->isSuperAdmin()))
+                <a href="{{ route('sales.edit', $sale) }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition-colors">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                    <span>Isi Harga Jual & Finalisasi</span>
+                </a>
+            @endif
             @if($sale->isPendingDelivery())
                 <form action="{{ route('sales.mark-delivered', $sale) }}" method="POST" onsubmit="return confirm('Konfirmasi bahwa barang muatan telah selesai diantar/diterima pabrik? Transaksi akan resmi SELESAI.')">
                     @csrf
@@ -87,6 +98,25 @@
             @endif
         </div>
     </div>
+
+    @if($sale->isDraft())
+        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-1">
+                <div class="font-bold flex items-center gap-1.5 text-sm text-amber-900">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600"></i>
+                    <span>Penjualan Berstatus Draft (Dibuat oleh Kasir)</span>
+                </div>
+                <p class="text-amber-800">Harga jual pabrik belum diisi. Penjualan ini menunggu Admin atau Owner untuk menentukan harga jual per kg dan menyelesaikan transaksi.</p>
+            </div>
+            @if(Auth::user()->isAdmin() || Auth::user()->isSuperAdmin())
+                <a href="{{ route('sales.edit', $sale) }}"
+                   class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow transition-colors whitespace-nowrap">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                    <span>Isi Harga & Finalisasi</span>
+                </a>
+            @endif
+        </div>
+    @endif
 
     @if($sale->isCancelled())
         <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs space-y-1">

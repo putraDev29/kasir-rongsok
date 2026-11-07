@@ -88,12 +88,14 @@
 
             <!-- Navigation Links -->
             <nav class="flex-1 px-3 py-3 overflow-y-auto space-y-1 text-sm font-medium">
-                {{-- Dashboard: Dapat diakses oleh Owner, Admin, dan Kasir --}}
-                <a href="{{ route('dashboard') }}" 
-                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('dashboard') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4 {{ request()->routeIs('dashboard') ? 'text-white' : 'text-slate-400' }}"></i>
-                    <span>Dashboard</span>
-                </a>
+                {{-- Dashboard: Hanya untuk Owner dan Admin (Kasir fokus transaksi POS) --}}
+                @if(!Auth::user()->isKasir())
+                    <a href="{{ route('dashboard') }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('dashboard') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4 {{ request()->routeIs('dashboard') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Dashboard</span>
+                    </a>
+                @endif
 
                 <div class="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">1. Transaksi Kasir & Timbang</div>
 
@@ -111,22 +113,23 @@
                     <span>Riwayat Pembelian</span>
                 </a>
 
+                {{-- Penjualan & Ekspedisi (Dapat diakses Owner, Admin, dan Kasir) --}}
+                <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">2. Penjualan & Ekspedisi</div>
+
+                <a href="{{ route('sales.index') }}" 
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('sales.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                    <i data-lucide="truck" class="w-4 h-4 {{ request()->routeIs('sales.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                    <span>Penjualan Partai (Grosir)</span>
+                </a>
+
+                <a href="{{ route('delivery-orders.index') }}" 
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('delivery-orders.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                    <i data-lucide="clipboard-list" class="w-4 h-4 {{ request()->routeIs('delivery-orders.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                    <span>Surat Jalan Pengiriman</span>
+                </a>
+
                 {{-- FITUR OWNER / SUPER ADMIN --}}
                 @if(Auth::user()->isSuperAdmin())
-                    <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">2. Penjualan & Ekspedisi</div>
-
-                    <a href="{{ route('sales.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('sales.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
-                        <i data-lucide="truck" class="w-4 h-4 {{ request()->routeIs('sales.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Penjualan Partai (Grosir)</span>
-                    </a>
-
-                    <a href="{{ route('delivery-orders.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('delivery-orders.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
-                        <i data-lucide="clipboard-list" class="w-4 h-4 {{ request()->routeIs('delivery-orders.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Surat Jalan Pengiriman</span>
-                    </a>
-
                     <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">3. Keuangan & Kasbon</div>
 
                     <a href="{{ route('debts.index') }}" 

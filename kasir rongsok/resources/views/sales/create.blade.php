@@ -42,6 +42,20 @@
 
             <input type="hidden" name="delivery_order_id" x-model="deliveryOrderId">
 
+            @if(Auth::user()->isKasir())
+                <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center gap-3 shadow-xs">
+                    <div class="p-2 rounded-lg bg-amber-100 text-amber-700 shrink-0">
+                        <i data-lucide="file-clock" class="w-5 h-5"></i>
+                    </div>
+                    <div class="space-y-0.5">
+                        <div class="font-bold text-sm">Mode Kasir: Input Penjualan sebagai DRAFT</div>
+                        <p class="text-[11px] text-amber-800 leading-relaxed">
+                            Field harga jual dinonaktifkan. Anda hanya perlu mendata pembeli, jenis barang, dan berat/jumlah fisik yang dikeluarkan. <strong>Status penjualan akan tersimpan sebagai DRAFT</strong> dan Admin / Owner akan melengkapi harga jual resminya.
+                        </p>
+                    </div>
+                </div>
+            @endif
+
             <!-- Pilihan Metode Penyerahan / Pengiriman Barang -->
             <div class="p-4 rounded-xl border bg-slate-50/80 border-slate-200 space-y-3">
                 <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -423,12 +437,24 @@
                                         <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
                                             Harga Jual Pabrik (Rp) *
                                         </label>
-                                        <input type="number" step="100" min="0" 
-                                               :name="'items[' + idx + '][sell_price_per_kg]'" 
-                                               x-model.number="row.sell_price_per_kg" 
-                                               required
-                                               class="w-full py-2 px-2.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono font-bold text-slate-900 bg-white">
-                                        <span class="text-[10px] text-slate-400 font-medium block text-right mt-0.5">Harga per kg/pcs</span>
+                                        <template x-if="isKasir">
+                                            <div>
+                                                <input type="text" value="Ditentukan Owner/Admin" disabled
+                                                       class="w-full py-2 px-2.5 text-xs text-center rounded-lg border border-slate-300 font-bold text-amber-800 bg-amber-50/70 border-dashed cursor-not-allowed">
+                                                <input type="hidden" :name="'items[' + idx + '][sell_price_per_kg]'" value="0">
+                                                <span class="text-[10px] text-amber-700 font-semibold block text-right mt-0.5">🔒 Dinonaktifkan untuk Kasir</span>
+                                            </div>
+                                        </template>
+                                        <template x-if="!isKasir">
+                                            <div>
+                                                <input type="number" step="100" min="0" 
+                                                       :name="'items[' + idx + '][sell_price_per_kg]'" 
+                                                       x-model.number="row.sell_price_per_kg" 
+                                                       required
+                                                       class="w-full py-2 px-2.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono font-bold text-slate-900 bg-white">
+                                                <span class="text-[10px] text-slate-400 font-medium block text-right mt-0.5">Harga per kg/pcs</span>
+                                            </div>
+                                        </template>
                                     </div>
 
                                     <div>
@@ -436,10 +462,13 @@
                                             Subtotal (Rp)
                                         </label>
                                         <div class="py-2 px-3 text-xs text-right font-mono font-black rounded-lg bg-slate-900 text-white shadow-2xs border border-slate-800"
-                                             x-text="formatRp(rowSubtotal(row))">
+                                             x-text="isKasir ? 'Draft' : formatRp(rowSubtotal(row))">
                                             Rp 0
                                         </div>
-                                        <span class="text-[10px] text-slate-400 font-medium block text-right mt-0.5">Total Baris Ini</span>
+                                        <span class="text-[10px] text-slate-400 font-medium block text-right mt-0.5">
+                                            <span x-show="!isKasir">Total Baris Ini</span>
+                                            <span x-show="isKasir" class="text-amber-600 font-semibold">Menunggu Harga</span>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -490,9 +519,11 @@
                     Batal
                 </a>
                 <button type="submit" 
-                        :disabled="hasStockError() || rows.length === 0 || subtotalAmount() <= 0"
-                        class="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm">
-                    Simpan & Keluarkan Stok Rongsok
+                        :disabled="hasStockError() || rows.length === 0 || (!isKasir && subtotalAmount() <= 0)"
+                        class="px-6 py-2.5 rounded-lg text-white text-xs font-bold shadow-sm transition-all"
+                        :class="isKasir ? 'bg-amber-600 hover:bg-amber-700 disabled:opacity-50' : 'bg-blue-600 hover:bg-blue-700 disabled:opacity-50'">
+                    <span x-show="isKasir">Simpan Penjualan (Draft Kasir)</span>
+                    <span x-show="!isKasir">Simpan & Keluarkan Stok Rongsok</span>
                 </button>
             </div>
 
@@ -505,6 +536,7 @@
 <script>
 function salesPos() {
     return {
+        isKasir: {{ Auth::user()->isKasir() ? 'true' : 'false' }},
         masterItems: @json($scrapItems),
         paymentMethodsList: @json($paymentMethods),
         unbilledOrders: @json($unbilledDeliveryOrders ?? []),
@@ -625,7 +657,7 @@ function salesPos() {
             row.item_price_stock_id = item.item_price_stock_id || '';
             row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
             row.search_text = item.name + ' [Stok: ' + this.formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg') + ']';
-            row.sell_price_per_kg = parseFloat(item.sell_price_per_kg) || 0;
+            row.sell_price_per_kg = this.isKasir ? 0 : (parseFloat(item.sell_price_per_kg) || 0);
             row.buy_price_snapshot = parseFloat(item.buy_price_snapshot) || parseFloat(item.price_per_kg) || 0;
             row.avg_buy_price = row.buy_price_snapshot;
             row.maxStock = parseFloat(item.current_stock) || 0;

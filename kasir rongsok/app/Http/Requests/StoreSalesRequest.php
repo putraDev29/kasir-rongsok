@@ -13,6 +13,8 @@ class StoreSalesRequest extends FormRequest
 
     public function rules(): array
     {
+        $isKasir = $this->user()?->isKasir() || $this->boolean('is_draft');
+
         return [
             'buyer_name' => 'required|string|max:150',
             'buyer_phone' => 'nullable|string|max:30',
@@ -46,7 +48,7 @@ class StoreSalesRequest extends FormRequest
             'items.*.item_type_name' => 'nullable|string|max:150',
             'items.*.quantity' => 'nullable|numeric|min:0.01',
             'items.*.weight' => 'nullable|numeric|min:0',
-            'items.*.sell_price_per_kg' => 'required|numeric|gt:0',
+            'items.*.sell_price_per_kg' => $isKasir ? 'nullable|numeric|min:0' : 'required|numeric|gt:0',
             'items.*.notes' => 'nullable|string|max:255',
         ];
     }
