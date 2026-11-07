@@ -279,7 +279,7 @@
                 <th style="width: 55px;" class="text-right">Bruto</th>
                 <th style="width: 45px;" class="text-right">Tara</th>
                 <th style="width: 55px;" class="text-right">Netto</th>
-                <th style="width: 65px;" class="text-right">Harga/Satuan</th>
+                <th style="width: 65px;" class="text-right">Harga Beli</th>
                 <th style="width: 75px;" class="text-right">Subtotal</th>
             </tr>
         </thead>
@@ -397,3 +397,4 @@
 
 </body>
 </html>
+

@@ -163,6 +163,7 @@ class WhatsAppGatewayController extends Controller
                 'netto' => FormatHelper::weight($netQty),
                 'unit' => $unitStr,
                 'price' => number_format($it->price_per_kg, 0, ',', '.'),
+                'priceFormatted' => 'Rp ' . number_format($it->price_per_kg, 0, ',', '.'),
                 'subtotal' => number_format($it->subtotal, 0, ',', '.'),
                 'subtotalFormatted' => 'Rp ' . number_format($it->subtotal, 0, ',', '.'),
             ];

@@ -170,12 +170,13 @@ export function generatePurchaseReceiptPdf(data) {
 
     // 3. Table Header
     const colW = {
-        no: 7,
-        desc: 51,
-        bruto: 16,
-        tara: 16,
-        netto: 18,
-        total: 20
+        no: 6,
+        desc: 36,
+        bruto: 14,
+        tara: 13,
+        netto: 15,
+        price: 22,
+        total: 22
     };
     const thY = curY;
     const thH = 6;
@@ -188,17 +189,19 @@ export function generatePurchaseReceiptPdf(data) {
     doc.setTextColor(255, 255, 255);
 
     let curX = margin;
-    doc.text('No', curX + 2, thY + 4.2);
+    doc.text('No', curX + 1.5, thY + 4.2);
     curX += colW.no;
-    doc.text('Jenis Barang Rongsok', curX + 2, thY + 4.2);
+    doc.text('Jenis Barang Rongsok', curX + 1.5, thY + 4.2);
     curX += colW.desc;
-    doc.text('Kotor (kg)', curX + colW.bruto - 2, thY + 4.2, { align: 'right' });
+    doc.text('Kotor', curX + colW.bruto - 1.5, thY + 4.2, { align: 'right' });
     curX += colW.bruto;
-    doc.text('Pot (kg)', curX + colW.tara - 2, thY + 4.2, { align: 'right' });
+    doc.text('Pot', curX + colW.tara - 1.5, thY + 4.2, { align: 'right' });
     curX += colW.tara;
-    doc.text('Netto (kg)', curX + colW.netto - 2, thY + 4.2, { align: 'right' });
+    doc.text('Netto', curX + colW.netto - 1.5, thY + 4.2, { align: 'right' });
     curX += colW.netto;
-    doc.text('Subtotal', curX + colW.total - 2, thY + 4.2, { align: 'right' });
+    doc.text('Harga Beli', curX + colW.price - 1.5, thY + 4.2, { align: 'right' });
+    curX += colW.price;
+    doc.text('Subtotal', curX + colW.total - 1.5, thY + 4.2, { align: 'right' });
 
     curY += thH;
 
@@ -224,25 +227,31 @@ export function generatePurchaseReceiptPdf(data) {
 
         doc.setTextColor(51, 65, 85);
         let x = margin;
-        doc.text(String(idx + 1), x + 2, curY + 4.2);
+        doc.text(String(idx + 1), x + 1.5, curY + 4.2);
         x += colW.no;
 
-        const descText = doc.splitTextToSize(it.name || it.item_name_snapshot || '-', colW.desc - 4);
-        doc.text(descText[0] || it.name, x + 2, curY + 4.2);
+        const descText = doc.splitTextToSize(it.name || it.item_name_snapshot || '-', colW.desc - 3);
+        doc.text(descText[0] || it.name, x + 1.5, curY + 4.2);
         x += colW.desc;
 
-        doc.text(String(it.bruto || it.gross_weight || '0'), x + colW.bruto - 2, curY + 4.2, { align: 'right' });
+        doc.text(String(it.bruto || it.gross_weight || '0'), x + colW.bruto - 1.5, curY + 4.2, { align: 'right' });
         x += colW.bruto;
 
-        doc.text(String(it.tara || it.tare_weight || '0'), x + colW.tara - 2, curY + 4.2, { align: 'right' });
+        doc.text(String(it.tara || it.tare_weight || '0'), x + colW.tara - 1.5, curY + 4.2, { align: 'right' });
         x += colW.tara;
 
         doc.setFont('helvetica', 'bold');
-        doc.text(String(it.netto || it.net_weight || '0'), x + colW.netto - 2, curY + 4.2, { align: 'right' });
+        doc.text(String(it.netto || it.net_weight || '0'), x + colW.netto - 1.5, curY + 4.2, { align: 'right' });
         x += colW.netto;
 
+        doc.setFont('helvetica', 'normal');
+        const priceStr = it.priceFormatted || (it.price ? ('Rp ' + it.price) : ('Rp ' + (it.price_per_kg ? Number(it.price_per_kg).toLocaleString('id-ID') : '0')));
+        doc.text(priceStr, x + colW.price - 1.5, curY + 4.2, { align: 'right' });
+        x += colW.price;
+
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(15, 23, 42);
-        doc.text(it.subtotalFormatted || ('Rp ' + (it.subtotal || 0)), x + colW.total - 2, curY + 4.2, { align: 'right' });
+        doc.text(it.subtotalFormatted || ('Rp ' + (it.subtotal || 0)), x + colW.total - 1.5, curY + 4.2, { align: 'right' });
         doc.setFont('helvetica', 'normal');
 
         curY += rowH;
