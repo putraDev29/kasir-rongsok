@@ -126,11 +126,30 @@ class SalesTransactionController extends Controller
             abort(403, 'Hanya Admin atau Owner yang dapat mengedit dan mengisi harga jual draft penjualan.');
         }
 
-        $sale->load(['items.scrapItem', 'user', 'paymentMethod']);
+        $sale->load(['items.scrapItem', 'user', 'paymentMethod', 'deliveryOrder']);
+
+        $rawItems = ScrapItem::with(['stockBalance', 'priceStocks', 'category'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $scrapItems = [];
+        foreach ($rawItems as $item) {
+            foreach ($item->getPriceTierOptions(onlyWithStock: false) as $opt) {
+                $draftHoldQty = (float) $sale->items->where('scrap_item_id', $item->id)->sum(function ($it) {
+                    return in_array(strtolower($it->unit_type ?? 'kg'), ['pcs', 'satuan', 'unit'])
+                        ? ($it->quantity > 0 ? $it->quantity : 1)
+                        : $it->weight;
+                });
+                $opt['current_stock'] = (float) $opt['current_stock'] + $draftHoldQty;
+                $scrapItems[] = $opt;
+            }
+        }
+
         $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('name')->get();
         $drivers = Driver::where('is_active', true)->orderBy('name')->get();
 
-        return view('sales.edit', compact('sale', 'paymentMethods', 'drivers'));
+        return view('sales.edit', compact('sale', 'scrapItems', 'paymentMethods', 'drivers'));
     }
 
     public function update(UpdateSalesRequest $request, SalesTransaction $sale): RedirectResponse

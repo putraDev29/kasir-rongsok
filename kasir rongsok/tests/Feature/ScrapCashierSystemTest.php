@@ -1210,6 +1210,65 @@ class ScrapCashierSystemTest extends TestCase
     }
 
     /**
+     * Test Admin can add new items to the draft sale when editing.
+     */
+    public function test_admin_can_add_new_item_when_editing_draft_sale(): void
+    {
+        $kasirSaleRes = $this->actingAs($this->kasir)->post(route('sales.store'), [
+            'delivery_type' => 'pickup',
+            'buyer_name' => 'Pabrik Peleburan Tambah Item',
+            'transaction_date' => now()->toDateString(),
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'weight' => 50,
+                    'sell_price_per_kg' => 0,
+                ],
+            ],
+        ]);
+        $kasirSaleRes->assertSessionHasNoErrors();
+        $draftSale = \App\Models\SalesTransaction::where('buyer_name', 'Pabrik Peleburan Tambah Item')->first();
+
+        // Admin edits draft sale: fills price for Besi (50kg @ 6000) AND adds a second item
+        $secondItem = \App\Models\ScrapItem::where('id', '!=', $this->besiItem->id)->first();
+        // Ensure secondItem has stock
+        $secondStock = \App\Models\StockBalance::firstOrCreate(['scrap_item_id' => $secondItem->id], ['current_stock' => 100, 'total_in' => 100, 'total_out' => 0]);
+        if ($secondStock->current_stock < 50) {
+            $secondStock->update(['current_stock' => 100]);
+        }
+
+        $draftItem = $draftSale->items->first();
+        $updateRes = $this->actingAs($this->admin)->put(route('sales.update', $draftSale), [
+            'buyer_name' => 'Pabrik Peleburan Tambah Item',
+            'delivery_type' => 'pickup',
+            'items' => [
+                [
+                    'id' => $draftItem->id,
+                    'scrap_item_id' => $this->besiItem->id,
+                    'weight' => 50,
+                    'sell_price_per_kg' => 6000,
+                ],
+                [
+                    'id' => null, // NEW ITEM added by Admin
+                    'scrap_item_id' => $secondItem->id,
+                    'weight' => 10,
+                    'sell_price_per_kg' => 20000,
+                ],
+            ],
+        ]);
+
+        $updateRes->assertSessionHasNoErrors();
+        $draftSale->refresh();
+
+        $this->assertEquals('completed', $draftSale->status);
+        $this->assertCount(2, $draftSale->items);
+        // Besi 50*6000 = 300,000 + SecondItem 10*20000 = 200,000 = 500,000
+        $this->assertEquals(500000, (float) $draftSale->final_amount);
+        $this->assertEquals(60, (float) $draftSale->total_weight);
+    }
+
+    /**
      * Test Debt Detail page (/debts/{id}):
      * - PDF button points to debts.pdf (Debt History Statement reflecting current status, NOT agreement contract)
      * - debts.pdf reflects real-time status and payments ledger

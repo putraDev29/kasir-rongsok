@@ -553,7 +553,7 @@ class SalesTransactionService
     }
 
     /**
-     * Update and finalize a draft sales transaction (fill in selling prices and set status based on delivery type).
+     * Update and finalize a draft sales transaction (fill in selling prices, edit/add items, and set status based on delivery type).
      *
      * @throws Exception
      */
@@ -568,78 +568,362 @@ class SalesTransactionService
                 throw new Exception('Hanya Admin atau Owner yang memiliki hak akses untuk memfinalisasi harga jual.');
             }
 
-            $transaction->load('items.scrapItem');
+            $transaction->load(['items.scrapItem', 'deliveryOrder']);
 
+            // 1. Kembalikan stok lama transaksi draft agar stok kembali utuh sebelum dihitung ulang
+            foreach ($transaction->items as $oldItem) {
+                if (!$oldItem->scrap_item_id) {
+                    continue;
+                }
+
+                $oldStockBalance = StockBalance::where('scrap_item_id', $oldItem->scrap_item_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($oldStockBalance) {
+                    $restoreQty = in_array(strtolower($oldItem->unit_type ?? 'kg'), ['pcs', 'satuan', 'unit'])
+                        ? (float) ($oldItem->quantity > 0 ? $oldItem->quantity : $oldItem->weight)
+                        : (float) $oldItem->weight;
+
+                    $oldStockBalance->update([
+                        'current_stock' => (float) $oldStockBalance->current_stock + $restoreQty,
+                        'total_out' => max(0, (float) $oldStockBalance->total_out - $restoreQty),
+                    ]);
+
+                    // Restore price-tiered stock
+                    $oldPriceStock = null;
+                    if (!empty($oldItem->item_price_stock_id)) {
+                        $oldPriceStock = ItemPriceStock::find($oldItem->item_price_stock_id);
+                    }
+                    if (!$oldPriceStock) {
+                        $oldPriceStock = ItemPriceStock::where('scrap_item_id', $oldItem->scrap_item_id)
+                            ->where(function ($q) use ($oldItem) {
+                                $q->where('price_per_kg', $oldItem->buy_price_snapshot)
+                                  ->orWhereRaw('ABS(price_per_kg - ?) < 0.01', [$oldItem->buy_price_snapshot]);
+                            })
+                            ->first();
+                    }
+                    if (!$oldPriceStock) {
+                        $oldPriceStock = ItemPriceStock::where('scrap_item_id', $oldItem->scrap_item_id)->first();
+                    }
+                    if ($oldPriceStock) {
+                        $oldPriceStock->update([
+                            'current_stock' => (float) $oldPriceStock->current_stock + $restoreQty,
+                            'total_out' => max(0, (float) $oldPriceStock->total_out - $restoreQty),
+                        ]);
+                    }
+                }
+            }
+
+            // Hapus mutasi stok lama dari draft penjualan ini
+            StockMovement::where('reference_type', SalesTransaction::class)
+                ->where('reference_id', $transaction->id)
+                ->delete();
+
+            $oldItemsById = $transaction->items->keyBy('id');
             $itemsInput = $data['items'] ?? [];
-            $itemsMap = collect($itemsInput)->keyBy('id');
 
+            if (empty($itemsInput)) {
+                throw new Exception('Daftar barang penjualan tidak boleh kosong.');
+            }
+
+            $totalWeight = 0;
             $subtotalAmount = 0;
             $totalEstimatedCogs = 0;
+            $processedItems = [];
 
-            foreach ($transaction->items as $idx => $item) {
-                $itemData = null;
-                if (isset($itemsInput[$item->id])) {
-                    $itemData = $itemsInput[$item->id];
-                } elseif (!empty($item->id) && $itemsMap->has($item->id)) {
-                    $itemData = $itemsMap->get($item->id);
-                } elseif (isset($itemsInput[$idx])) {
-                    $itemData = $itemsInput[$idx];
+            foreach ($itemsInput as $idx => $row) {
+                $oldItem = null;
+                if (is_numeric($idx) && $oldItemsById->has($idx)) {
+                    $oldItem = $oldItemsById->get($idx);
+                }
+                if (!empty($row['id']) && $oldItemsById->has($row['id'])) {
+                    $oldItem = $oldItemsById->get($row['id']);
                 }
 
-                if (!$itemData) {
-                    throw new Exception("Data harga jual untuk barang '{$item->item_name_snapshot}' tidak ditemukan.");
+                $scrapItemId = $row['scrap_item_id'] ?? $oldItem?->scrap_item_id;
+                if (!$scrapItemId && isset($row['id']) && is_numeric($row['id']) && $oldItemsById->has($row['id'])) {
+                    $scrapItemId = $oldItemsById->get($row['id'])->scrap_item_id;
                 }
 
-                $sellPrice = (float) ($itemData['sell_price_per_kg'] ?? 0);
+                if (!$scrapItemId) {
+                    throw new Exception("Barang pada baris ke-" . ($idx + 1) . " belum dipilih dari master.");
+                }
+
+                /** @var ScrapItem|null $scrapItem */
+                $scrapItem = ScrapItem::with('stockBalance')->find($scrapItemId);
+                if (!$scrapItem) {
+                    throw new Exception("Barang rongsok ID {$scrapItemId} tidak ditemukan di master database.");
+                }
+
+                $unitType = $row['unit_type'] ?? $oldItem?->unit_type ?? $scrapItem->unit_type ?? 'kg';
+                $itemTypeName = $row['item_type_name'] ?? $oldItem?->item_type_name ?? null;
+                $isPcs = in_array(strtolower($unitType), ['pcs', 'satuan', 'unit']);
+
+                if ($isPcs) {
+                    $quantity = max(1, (float) ($row['quantity'] ?? $oldItem?->quantity ?? 1));
+                    $weight = 0;
+                    $stockQtyNeeded = $quantity;
+                } else {
+                    $weight = (float) ($row['weight'] ?? $oldItem?->weight ?? 0);
+                    $quantity = 1;
+                    $stockQtyNeeded = $weight;
+                    if ($weight <= 0) {
+                        throw new Exception("Berat jual untuk barang '{$scrapItem->name}' harus lebih dari 0 kg.");
+                    }
+                }
+
+                $sellPrice = (float) ($row['sell_price_per_kg'] ?? 0);
                 if ($sellPrice <= 0) {
-                    throw new Exception("Harga jual untuk '{$item->item_name_snapshot}' harus lebih dari Rp 0.");
+                    throw new Exception("Harga jual untuk '{$scrapItem->name}' harus lebih dari Rp 0.");
                 }
 
-                $qty = in_array(strtolower($item->unit_type ?? 'kg'), ['pcs', 'satuan', 'unit'])
-                    ? (float) ($item->quantity > 0 ? $item->quantity : 1)
-                    : (float) $item->weight;
+                $stockBalance = StockBalance::where('scrap_item_id', $scrapItem->id)->lockForUpdate()->first();
+                $availStock = (float) ($stockBalance?->current_stock ?? 0);
+                if ($stockQtyNeeded > $availStock) {
+                    throw new Exception("Stok untuk '{$scrapItem->name}' tidak mencukupi! Tersedia: " . number_format($availStock, 2, ',', '.') . " {$unitType}, diminta: " . number_format($stockQtyNeeded, 2, ',', '.'));
+                }
 
-                $itemSubtotal = round($qty * $sellPrice, 2);
-                $itemCogs = round($qty * (float) $item->buy_price_snapshot, 2);
+                $selectedBuyPrice = isset($row['buy_price_snapshot']) && is_numeric($row['buy_price_snapshot']) && (float) $row['buy_price_snapshot'] > 0
+                    ? (float) $row['buy_price_snapshot']
+                    : ($oldItem && (float) $oldItem->buy_price_snapshot > 0
+                        ? (float) $oldItem->buy_price_snapshot
+                        : (float) ($stockBalance?->average_buy_price ?? $scrapItem->buy_price_per_kg));
+
+                $qtyForCalc = $isPcs ? $quantity : $weight;
+                $itemSubtotal = round($qtyForCalc * $sellPrice, 2);
+                $itemCogs = round($qtyForCalc * $selectedBuyPrice, 2);
                 $itemProfit = round($itemSubtotal - $itemCogs, 2);
 
-                $item->update([
+                $totalWeight += $weight;
+                $subtotalAmount += $itemSubtotal;
+                $totalEstimatedCogs += $itemCogs;
+
+                $processedItems[] = [
+                    'id' => $row['id'] ?? (is_numeric($idx) && $oldItemsById->has($idx) ? $idx : null),
+                    'scrap_item' => $scrapItem,
+                    'stock_balance' => $stockBalance,
+                    'item_price_stock_id' => $row['item_price_stock_id'] ?? $oldItem?->item_price_stock_id,
+                    'unit_type' => $unitType,
+                    'item_type_name' => $itemTypeName,
+                    'quantity' => $quantity,
+                    'weight' => $weight,
+                    'stock_qty_needed' => $stockQtyNeeded,
                     'sell_price_per_kg' => $sellPrice,
+                    'buy_price_snapshot' => $selectedBuyPrice,
                     'subtotal' => $itemSubtotal,
                     'cogs_subtotal' => $itemCogs,
                     'profit_subtotal' => $itemProfit,
-                    'notes' => $itemData['notes'] ?? $item->notes,
-                ]);
+                    'package_qty' => (int) ($row['package_qty'] ?? 0),
+                    'notes' => $row['notes'] ?? $oldItem?->notes,
+                ];
+            }
 
-                // Also sync with DeliveryOrderItem price if linked
-                if ($transaction->delivery_order_id) {
-                    DeliveryOrderItem::where('delivery_order_id', $transaction->delivery_order_id)
-                        ->where('scrap_item_id', $item->scrap_item_id)
-                        ->update([
-                            'price_per_kg' => $sellPrice,
-                            'subtotal' => $itemSubtotal,
-                        ]);
+            // 2. Perbarui item yang sudah ada, buat item baru yang ditambah, dan hapus item yang di-remove
+            $keptItemIds = [];
+            $buyerName = $data['buyer_name'] ?? $transaction->buyer_name;
+
+            foreach ($processedItems as $item) {
+                /** @var ScrapItem $scrapItem */
+                $scrapItem = $item['scrap_item'];
+                /** @var StockBalance $stockBalance */
+                $stockBalance = $item['stock_balance'];
+
+                $itemModel = null;
+                if (!empty($item['id']) && $oldItemsById->has($item['id'])) {
+                    $itemModel = $oldItemsById->get($item['id']);
                 }
 
-                $subtotalAmount += $itemSubtotal;
-                $totalEstimatedCogs += $itemCogs;
+                if ($itemModel) {
+                    $itemModel->update([
+                        'scrap_item_id' => $scrapItem->id,
+                        'item_name_snapshot' => $scrapItem->name,
+                        'item_code_snapshot' => $scrapItem->code,
+                        'unit_type' => $item['unit_type'],
+                        'item_type_name' => $item['item_type_name'],
+                        'quantity' => $item['quantity'],
+                        'weight' => $item['weight'],
+                        'sell_price_per_kg' => $item['sell_price_per_kg'],
+                        'buy_price_snapshot' => $item['buy_price_snapshot'],
+                        'subtotal' => $item['subtotal'],
+                        'cogs_subtotal' => $item['cogs_subtotal'],
+                        'profit_subtotal' => $item['profit_subtotal'],
+                        'notes' => $item['notes'],
+                    ]);
+                    $keptItemIds[] = $itemModel->id;
+                } else {
+                    $createdItem = SalesTransactionItem::create([
+                        'sales_transaction_id' => $transaction->id,
+                        'scrap_item_id' => $scrapItem->id,
+                        'item_name_snapshot' => $scrapItem->name,
+                        'item_code_snapshot' => $scrapItem->code,
+                        'unit_type' => $item['unit_type'],
+                        'item_type_name' => $item['item_type_name'],
+                        'quantity' => $item['quantity'],
+                        'weight' => $item['weight'],
+                        'sell_price_per_kg' => $item['sell_price_per_kg'],
+                        'buy_price_snapshot' => $item['buy_price_snapshot'],
+                        'subtotal' => $item['subtotal'],
+                        'cogs_subtotal' => $item['cogs_subtotal'],
+                        'profit_subtotal' => $item['profit_subtotal'],
+                        'notes' => $item['notes'],
+                    ]);
+                    $keptItemIds[] = $createdItem->id;
+                }
+
+                // Potong stok gudang
+                $reductionQty = $item['stock_qty_needed'];
+                $newStock = max(0, (float) $stockBalance->current_stock - $reductionQty);
+                $newTotalOut = (float) $stockBalance->total_out + $reductionQty;
+
+                $stockBalance->update([
+                    'current_stock' => $newStock,
+                    'total_out' => $newTotalOut,
+                ]);
+
+                // Potong stok bertingkat
+                $priceStock = null;
+                if (!empty($item['item_price_stock_id'])) {
+                    $priceStock = ItemPriceStock::where('id', $item['item_price_stock_id'])
+                        ->where('scrap_item_id', $scrapItem->id)
+                        ->first();
+                }
+                if (!$priceStock) {
+                    $priceStock = ItemPriceStock::where('scrap_item_id', $scrapItem->id)
+                        ->where(function ($q) use ($item) {
+                            $q->where('price_per_kg', $item['buy_price_snapshot'])
+                              ->orWhereRaw('ABS(price_per_kg - ?) < 0.01', [$item['buy_price_snapshot']]);
+                        })
+                        ->first();
+                }
+                if (!$priceStock) {
+                    $priceStock = ItemPriceStock::where('scrap_item_id', $scrapItem->id)
+                        ->orderByDesc('current_stock')
+                        ->first();
+                }
+                if ($priceStock) {
+                    $priceStock->update([
+                        'current_stock' => max(0, (float) $priceStock->current_stock - $reductionQty),
+                        'total_out' => (float) $priceStock->total_out + $reductionQty,
+                    ]);
+                }
+
+                // Catat mutasi stok
+                StockMovement::create([
+                    'scrap_item_id' => $scrapItem->id,
+                    'user_id' => $user->id,
+                    'type' => StockMovement::TYPE_SALE,
+                    'reference_type' => SalesTransaction::class,
+                    'reference_id' => $transaction->id,
+                    'weight_qty' => -$reductionQty,
+                    'unit_price' => $item['sell_price_per_kg'],
+                    'balance_after' => $newStock,
+                    'notes' => "Finalisasi penjualan kepada {$buyerName} (Nota {$transaction->invoice_number})",
+                ]);
             }
+
+            // Hapus item lama yang tidak lagi ada di input (dihapus oleh admin)
+            $transaction->items()->whereNotIn('id', $keptItemIds)->delete();
 
             $discountAmount = max(0, (float) ($data['discount_amount'] ?? $transaction->discount_amount ?? 0));
             $finalAmount = max(0, $subtotalAmount - $discountAmount);
             $estimatedProfit = round($finalAmount - $totalEstimatedCogs, 2);
 
             $deliveryType = $data['delivery_type'] ?? $transaction->delivery_type;
+            $deliveryOrderId = $transaction->delivery_order_id;
+
             if ($deliveryType === SalesTransaction::DELIVERY_TYPE_PICKUP) {
                 $status = SalesTransaction::STATUS_COMPLETED;
             } else {
-                if ($transaction->delivery_order_id) {
-                    $existingDo = DeliveryOrder::find($transaction->delivery_order_id);
+                if ($deliveryOrderId) {
+                    $existingDo = DeliveryOrder::find($deliveryOrderId);
                     $status = ($existingDo && $existingDo->status === 'delivered')
                         ? SalesTransaction::STATUS_COMPLETED
                         : SalesTransaction::STATUS_PENDING_DELIVERY;
+
+                    // Sync DeliveryOrderItem with updated items
+                    $existingDo->items()->delete();
+                    $totalPackages = 0;
+                    foreach ($processedItems as $it) {
+                        $pQty = (int) ($it['package_qty'] ?? 0);
+                        $totalPackages += $pQty;
+                        DeliveryOrderItem::create([
+                            'delivery_order_id' => $existingDo->id,
+                            'scrap_item_id' => $it['scrap_item']->id,
+                            'item_name' => $it['scrap_item']->name,
+                            'unit_type' => $it['unit_type'],
+                            'item_type_name' => $it['item_type_name'],
+                            'quantity' => $it['quantity'],
+                            'weight' => $it['weight'],
+                            'package_qty' => $pQty,
+                            'price_per_kg' => $it['sell_price_per_kg'],
+                            'subtotal' => $it['subtotal'],
+                            'notes' => $it['notes'],
+                        ]);
+                    }
+                    $existingDo->update([
+                        'recipient_name' => $buyerName,
+                        'recipient_phone' => $data['buyer_phone'] ?? $transaction->buyer_phone,
+                        'recipient_address' => $data['buyer_address'] ?? $transaction->buyer_address,
+                        'total_weight' => $totalWeight,
+                        'total_packages' => $totalPackages,
+                        'driver_name' => $data['driver_name'] ?? $existingDo->driver_name,
+                        'driver_phone' => $data['driver_phone'] ?? $existingDo->driver_phone,
+                        'vehicle_number' => $data['vehicle_number'] ?? $existingDo->vehicle_number,
+                        'vehicle_type' => $data['vehicle_type'] ?? $existingDo->vehicle_type,
+                    ]);
                 } else {
                     $status = SalesTransaction::STATUS_PENDING_DELIVERY;
+
+                    // Create DO if driver details provided
+                    if (!empty($data['driver_name']) || !empty($data['vehicle_number'])) {
+                        $doDate = $transaction->transaction_date;
+                        $deliveryNumber = FormatHelper::generateDeliveryOrderNumber($doDate);
+                        $totalPackages = 0;
+                        foreach ($processedItems as $it) {
+                            $totalPackages += (int) ($it['package_qty'] ?? 0);
+                        }
+
+                        $driverId = $data['driver_id'] ?? null;
+                        $driverName = trim($data['driver_name'] ?? '');
+                        $driver = $driverId ? Driver::find($driverId) : ($driverName ? Driver::where('name', $driverName)->first() : null);
+
+                        $createdDo = DeliveryOrder::create([
+                            'delivery_number' => $deliveryNumber,
+                            'sales_transaction_id' => $transaction->id,
+                            'delivery_date' => $doDate,
+                            'recipient_name' => $buyerName,
+                            'recipient_phone' => $data['buyer_phone'] ?? null,
+                            'recipient_address' => $data['buyer_address'] ?? null,
+                            'driver_id' => $driver?->id,
+                            'driver_name' => $driver?->name ?? $driverName,
+                            'driver_phone' => $driver?->phone ?? ($data['driver_phone'] ?? null),
+                            'vehicle_number' => $data['vehicle_number'] ?? ($driver?->vehicle_number ?? null),
+                            'vehicle_type' => $data['vehicle_type'] ?? ($driver?->vehicle_type ?? 'Truk'),
+                            'total_weight' => $totalWeight,
+                            'total_packages' => $totalPackages,
+                            'status' => 'sent',
+                            'user_id' => $user->id,
+                        ]);
+
+                        foreach ($processedItems as $it) {
+                            DeliveryOrderItem::create([
+                                'delivery_order_id' => $createdDo->id,
+                                'scrap_item_id' => $it['scrap_item']->id,
+                                'item_name' => $it['scrap_item']->name,
+                                'unit_type' => $it['unit_type'],
+                                'item_type_name' => $it['item_type_name'],
+                                'quantity' => $it['quantity'],
+                                'weight' => $it['weight'],
+                                'package_qty' => (int) ($it['package_qty'] ?? 0),
+                                'price_per_kg' => $it['sell_price_per_kg'],
+                                'subtotal' => $it['subtotal'],
+                                'notes' => $it['notes'],
+                            ]);
+                        }
+
+                        $deliveryOrderId = $createdDo->id;
+                    }
                 }
             }
 
@@ -659,12 +943,14 @@ class SalesTransactionService
             }
 
             $transaction->update([
-                'buyer_name' => $data['buyer_name'] ?? $transaction->buyer_name,
+                'buyer_name' => $buyerName,
                 'buyer_phone' => $data['buyer_phone'] ?? $transaction->buyer_phone,
                 'buyer_address' => $data['buyer_address'] ?? $transaction->buyer_address,
                 'delivery_type' => $deliveryType,
+                'delivery_order_id' => $deliveryOrderId,
                 'payment_method_id' => $data['payment_method_id'] ?? $transaction->payment_method_id,
                 'bank_info' => $bankInfo,
+                'total_weight' => $totalWeight,
                 'subtotal_amount' => $subtotalAmount,
                 'discount_amount' => $discountAmount,
                 'final_amount' => $finalAmount,
@@ -679,7 +965,7 @@ class SalesTransactionService
                 action: 'sale_finalized',
                 subject: $transaction,
                 description: "Penjualan draft {$transaction->invoice_number} difinalisasi oleh {$user->name}. Harga total: Rp " . number_format($finalAmount, 0, ',', '.'),
-                payload: ['final_amount' => $finalAmount, 'status' => $status]
+                payload: ['final_amount' => $finalAmount, 'total_weight' => $totalWeight, 'status' => $status]
             );
 
             return $transaction->fresh(['items.scrapItem', 'user', 'paymentMethod']);
