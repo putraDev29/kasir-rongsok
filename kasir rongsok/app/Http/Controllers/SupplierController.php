@@ -196,7 +196,7 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'phone' => $supplier->phone ?? '',
-            'message' => $msg,
+            'message' => \App\Services\FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
             'file_description' => "Dokumen PDF Resmi Kartu Member ({$supplier->name} - {$tierName})",
@@ -210,7 +210,7 @@ class SupplierController extends Controller
     {
         $phone = $request->input('phone', $supplier->phone);
         $sendPdf = $request->boolean('send_pdf', true);
-        $caption = $request->input('caption') ?: $request->input('message');
+        $caption = \App\Services\FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
         $settings = BusinessSetting::pluck('value', 'key')->all();
         $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
         $companyPhone = $settings['company_phone'] ?? '';
@@ -235,6 +235,7 @@ class SupplierController extends Controller
             $caption .= "🎁 Hak Reward : _{$supplier->eligible_reward}_\n";
             $caption .= "📄 Terlampir berkas PDF resmi Kartu Member.";
         }
+        $caption = \App\Services\FormatHelper::cleanCaption($caption);
 
         $waService = app(WhatsAppGatewayService::class);
         $filename = "Kartu_Member_{$supplier->member_number}.pdf";

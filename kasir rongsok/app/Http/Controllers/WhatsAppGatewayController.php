@@ -6,6 +6,7 @@ use App\Models\BusinessSetting;
 use App\Models\DebtPayment;
 use App\Models\PurchaseTransaction;
 use App\Models\SalesTransaction;
+use App\Services\FormatHelper;
 use App\Services\WhatsAppGatewayService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -79,7 +80,7 @@ class WhatsAppGatewayController extends Controller
             'message' => 'required|string',
         ]);
 
-        $res = $this->gateway->sendMessage($request->input('phone'), $request->input('message'));
+        $res = $this->gateway->sendMessage($request->input('phone'), FormatHelper::cleanCaption($request->input('message')));
         return response()->json($res);
     }
 
@@ -106,7 +107,7 @@ class WhatsAppGatewayController extends Controller
             $request->input('phone'),
             $fileData,
             $request->input('filename', 'Nota.pdf'),
-            $request->input('caption', '')
+            FormatHelper::cleanCaption($request->input('caption', ''))
         );
 
         return response()->json($res);
@@ -152,9 +153,9 @@ class WhatsAppGatewayController extends Controller
 
             $items[] = [
                 'name' => $it->item_name_snapshot,
-                'bruto' => number_format($grossQty, 2, ',', '.'),
-                'tara' => number_format($it->tare_weight, 2, ',', '.'),
-                'netto' => number_format($netQty, 2, ',', '.'),
+                'bruto' => FormatHelper::weight($grossQty),
+                'tara' => FormatHelper::weight($it->tare_weight),
+                'netto' => FormatHelper::weight($netQty),
                 'unit' => $unitStr,
                 'price' => number_format($it->price_per_kg, 0, ',', '.'),
                 'subtotal' => number_format($it->subtotal, 0, ',', '.'),
@@ -175,9 +176,9 @@ class WhatsAppGatewayController extends Controller
             'companyPhone' => $companyPhone,
             'disclaimer' => $disclaimer,
             'footerText' => $footerText,
-            'totalNetWeight' => number_format($activeNet, 2, ',', '.'),
-            'totalGrossWeight' => number_format($activeGross, 2, ',', '.'),
-            'totalTareWeight' => number_format($activeTare, 2, ',', '.'),
+            'totalNetWeight' => FormatHelper::weight($activeNet),
+            'totalGrossWeight' => FormatHelper::weight($activeGross),
+            'totalTareWeight' => FormatHelper::weight($activeTare),
             'subtotalAmount' => 'Rp ' . number_format($activeFinal, 0, ',', '.'),
             'debtDeductionAmount' => $debtDeduction > 0 ? number_format($debtDeduction, 0, ',', '.') : null,
             'netCashPaid' => 'Rp ' . number_format($activeNetCash, 0, ',', '.'),
@@ -188,7 +189,7 @@ class WhatsAppGatewayController extends Controller
         return response()->json([
             'phone' => $phone ?? '',
             'formatted_phone' => $this->gateway->formatPhone($phone),
-            'message' => $message,
+            'message' => FormatHelper::cleanCaption($message),
             'invoice_number' => $purchase->invoice_number,
             'receipt_data' => $receiptData,
         ]);
@@ -212,7 +213,7 @@ class WhatsAppGatewayController extends Controller
         }
 
         $fileData = $request->input('file') ?? $request->input('fileBase64');
-        $caption = $request->input('caption') ?? $request->input('message') ?? "Terlampir Nota Pembelian PDF resmi {$purchase->invoice_number}.";
+        $caption = FormatHelper::cleanCaption($request->input('caption') ?? $request->input('message') ?? "Terlampir Nota Pembelian PDF resmi {$purchase->invoice_number}.");
         $filename = $request->input('filename') ?: "Nota_{$purchase->invoice_number}.pdf";
 
         if ($fileData) {
@@ -249,7 +250,7 @@ class WhatsAppGatewayController extends Controller
         foreach ($sale->items as $it) {
             $items[] = [
                 'name' => $it->item_name_snapshot,
-                'weight' => number_format($it->weight, 2, ',', '.'),
+                'weight' => FormatHelper::weight($it->weight),
                 'sellPrice' => number_format($it->sell_price_per_kg, 0, ',', '.'),
                 'subtotal' => number_format($it->subtotal, 0, ',', '.'),
                 'subtotalFormatted' => 'Rp ' . number_format($it->subtotal, 0, ',', '.'),
@@ -269,7 +270,7 @@ class WhatsAppGatewayController extends Controller
             'companyName' => $companyName,
             'companyAddress' => $companyAddress,
             'companyPhone' => $companyPhone,
-            'totalWeight' => number_format($sale->total_weight, 2, ',', '.'),
+            'totalWeight' => FormatHelper::weight($sale->total_weight),
             'finalAmount' => 'Rp ' . number_format($sale->final_amount, 0, ',', '.'),
             'items' => $items,
         ];
@@ -277,7 +278,7 @@ class WhatsAppGatewayController extends Controller
         return response()->json([
             'phone' => $phone ?? '',
             'formatted_phone' => $this->gateway->formatPhone($phone),
-            'message' => $message,
+            'message' => FormatHelper::cleanCaption($message),
             'invoice_number' => $sale->invoice_number,
             'filename' => $filename,
             'pdf_filename' => $filename,
@@ -300,7 +301,7 @@ class WhatsAppGatewayController extends Controller
         }
 
         $fileData = $request->input('file') ?? $request->input('fileBase64');
-        $caption = $request->input('caption') ?? $request->input('message') ?? "Terlampir Faktur Penjualan Partai PDF {$sale->invoice_number}.";
+        $caption = FormatHelper::cleanCaption($request->input('caption') ?? $request->input('message') ?? "Terlampir Faktur Penjualan Partai PDF {$sale->invoice_number}.");
         $filename = $request->input('filename') ?: "Faktur_{$sale->invoice_number}.pdf";
 
         if ($fileData) {
@@ -308,7 +309,7 @@ class WhatsAppGatewayController extends Controller
         } else {
             $customMessage = $request->input('message');
             if (!empty($customMessage)) {
-                $res = $this->gateway->sendMessage($targetPhone, $customMessage);
+                $res = $this->gateway->sendMessage($targetPhone, FormatHelper::cleanCaption($customMessage));
             } else {
                 $res = $this->gateway->sendSalesInvoice($sale, $targetPhone);
             }
@@ -347,7 +348,7 @@ class WhatsAppGatewayController extends Controller
         return response()->json([
             'phone' => $phone ?? '',
             'formatted_phone' => $this->gateway->formatPhone($phone),
-            'message' => $message,
+            'message' => FormatHelper::cleanCaption($message),
             'payment_number' => $payment->payment_number,
             'receipt_data' => $receiptData,
         ]);
@@ -367,7 +368,7 @@ class WhatsAppGatewayController extends Controller
         }
 
         $fileData = $request->input('file') ?? $request->input('fileBase64');
-        $caption = $request->input('caption') ?? $request->input('message') ?? "Terlampir Bukti Bayar Kasbon PDF {$payment->payment_number}.";
+        $caption = FormatHelper::cleanCaption($request->input('caption') ?? $request->input('message') ?? "Terlampir Bukti Bayar Kasbon PDF {$payment->payment_number}.");
         $filename = $request->input('filename') ?: "BuktiBayar_{$payment->payment_number}.pdf";
 
         if ($fileData) {

@@ -75,6 +75,11 @@ Alpine.store('waGateway', {
         sendError: null
     },
 
+    cleanCaption(text) {
+        if (!text || typeof text !== 'string') return text || '';
+        return text.replace(/(\d+),00(?!\d)/g, '$1').replace(/(\d+)\.00(?!\d)/g, '$1');
+    },
+
     init() {
         const isEnabled = document.querySelector('meta[name="wa-gateway-enabled"]')?.getAttribute('content') === '1';
         if (isEnabled) {
@@ -277,7 +282,7 @@ Alpine.store('waGateway', {
             });
             if (res.ok) {
                 const data = await res.json();
-                this.receipt.message = data.message || '';
+                this.receipt.message = this.cleanCaption(data.message || '');
                 this.receipt.receiptData = data.receipt_data || null;
                 if (data.phone) {
                     this.receipt.phone = data.phone;
@@ -309,7 +314,7 @@ Alpine.store('waGateway', {
         this.receipt.sendUrl = config.sendUrl || null;
         this.receipt.sendPayload = config.sendPayload || {};
         this.receipt.submitButtonText = config.submitButtonText || 'Kirim PDF via WA';
-        this.receipt.message = config.message || '';
+        this.receipt.message = this.cleanCaption(config.message || '');
         this.receipt.receiptData = null;
         this.receipt.sendAsPdf = true;
         this.receipt.isLoading = !!config.previewUrl;
@@ -325,7 +330,7 @@ Alpine.store('waGateway', {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.message) this.receipt.message = data.message;
+                    if (data.message) this.receipt.message = this.cleanCaption(data.message);
                     if (data.phone && !this.receipt.phone) this.receipt.phone = data.phone;
                     if (data.pdf_filename) this.receipt.filename = data.pdf_filename;
                     if (data.pdf_url) this.receipt.pdfUrl = data.pdf_url;
@@ -355,10 +360,11 @@ Alpine.store('waGateway', {
         if (this.receipt.sendUrl) {
             try {
                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const cleanMsg = this.cleanCaption(this.receipt.message);
                 const payload = {
                     phone: this.receipt.phone,
-                    message: this.receipt.message,
-                    caption: this.receipt.message,
+                    message: cleanMsg,
+                    caption: cleanMsg,
                     send_pdf: this.receipt.sendAsPdf,
                     filename: this.receipt.filename,
                     ...(this.receipt.sendPayload || {})
@@ -417,10 +423,11 @@ Alpine.store('waGateway', {
         }
 
         let sendUrl = '';
+        const cleanMsg = this.cleanCaption(this.receipt.message);
         let payload = {
             phone: this.receipt.phone,
-            message: this.receipt.message,
-            caption: this.receipt.message
+            message: cleanMsg,
+            caption: cleanMsg
         };
 
         if (pdfBase64) {
@@ -506,7 +513,7 @@ Alpine.store('waGateway', {
         if (formatted.startsWith('0')) formatted = '62' + formatted.slice(1);
         else if (!formatted.startsWith('62') && formatted.length > 0) formatted = '62' + formatted;
         
-        const url = `https://wa.me/${formatted}?text=${encodeURIComponent(this.receipt.message)}`;
+        const url = `https://wa.me/${formatted}?text=${encodeURIComponent(this.cleanCaption(this.receipt.message))}`;
         window.open(url, '_blank');
     }
 });

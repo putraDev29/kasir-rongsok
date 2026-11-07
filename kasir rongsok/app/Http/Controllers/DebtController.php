@@ -225,7 +225,7 @@ class DebtController extends Controller
         return response()->json([
             'success' => true,
             'phone' => $phone,
-            'message' => $msg,
+            'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
             'file_description' => "Dokumen PDF {$title} ({$debt->debt_number})",
@@ -244,7 +244,7 @@ class DebtController extends Controller
 
         $phone = $request->input('phone', $debt->borrower_phone);
         $sendPdf = $request->boolean('send_pdf', true);
-        $caption = $request->input('caption') ?: $request->input('message');
+        $caption = FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
         $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
 
         if (empty($phone)) {
@@ -267,6 +267,7 @@ class DebtController extends Controller
             $caption .= "💰 Nominal Dana  : *" . FormatHelper::rupiah($debt->initial_amount) . "*\n";
             $caption .= "📄 Terlampir berkas resmi {$title} (A4 - 2 Lembar Rangkap).";
         }
+        $caption = FormatHelper::cleanCaption($caption);
 
         $waService = app(WhatsAppGatewayService::class);
         $cleanNum = str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number);
@@ -368,7 +369,7 @@ class DebtController extends Controller
         return response()->json([
             'success' => true,
             'phone' => $phone,
-            'message' => $msg,
+            'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
             'file_description' => "Dokumen PDF Riwayat & Saldo Hutang ({$debt->debt_number})",
@@ -387,7 +388,7 @@ class DebtController extends Controller
 
         $phone = $request->input('phone', $debt->borrower_phone);
         $sendPdf = $request->boolean('send_pdf', true);
-        $caption = $request->input('caption') ?: $request->input('message');
+        $caption = FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
         $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
 
         if (empty($phone)) {
@@ -415,6 +416,7 @@ class DebtController extends Controller
             $caption .= "📌 Status        : *{$statusLabel}*\n";
             $caption .= "📄 Terlampir berkas PDF resmi Kartu Riwayat & Saldo Hutang.";
         }
+        $caption = FormatHelper::cleanCaption($caption);
 
         $waService = app(WhatsAppGatewayService::class);
         $borrowerClean = preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($debt->borrower_name ?: 'Peminjam'));
@@ -542,7 +544,7 @@ class DebtController extends Controller
             'success' => true,
             'count' => $count,
             'total_amount' => $totalRemaining,
-            'message' => $msg,
+            'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
             'file_description' => "Dokumen PDF Rekapitulasi Kasbon & Pinjaman ({$count} Data)",
@@ -559,7 +561,7 @@ class DebtController extends Controller
         $search = $request->input('search');
         $phone = $request->input('phone');
         $sendPdf = $request->boolean('send_pdf', true);
-        $caption = $request->input('caption') ?: $request->input('message');
+        $caption = FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
 
         if (empty($phone)) {
             if ($request->wantsJson()) {
@@ -592,6 +594,7 @@ class DebtController extends Controller
             $caption .= "🔖 Total: {$debts->count()} Pinjaman | Sisa Piutang: " . FormatHelper::rupiah($totalRemaining) . "\n";
             $caption .= "📄 Terlampir berkas PDF dokumen Buku Kasbon & Rekap Pinjaman Modal.";
         }
+        $caption = FormatHelper::cleanCaption($caption);
 
         $waService = app(WhatsAppGatewayService::class);
         $filename = "Rekap_Hutang_Modal_" . date('Ymd_His') . ".pdf";

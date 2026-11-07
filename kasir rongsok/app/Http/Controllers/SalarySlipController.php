@@ -204,7 +204,7 @@ class SalarySlipController extends Controller
         return response()->json([
             'success' => true,
             'phone' => $phone,
-            'message' => $msg,
+            'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
             'file_description' => "Dokumen PDF Resmi Slip Gaji ({$salarySlip->employee_name})",
@@ -221,7 +221,7 @@ class SalarySlipController extends Controller
 
         $phone = $request->input('phone', $salarySlip->employeeUser?->phone ?? $salarySlip->employee_phone);
         $sendPdf = $request->boolean('send_pdf', true);
-        $caption = $request->input('caption') ?: $request->input('message');
+        $caption = FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
         $companyName = $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur';
 
         if (empty($phone)) {
@@ -239,6 +239,7 @@ class SalarySlipController extends Controller
             $caption .= "💰 Gaji Bersih: *" . FormatHelper::rupiah($salarySlip->net_salary) . "*\n";
             $caption .= "📄 Terlampir berkas dokumen PDF resmi Slip Gaji.";
         }
+        $caption = FormatHelper::cleanCaption($caption);
 
         $waService = app(WhatsAppGatewayService::class);
         $filename = "Slip_Gaji_{$salarySlip->slip_number}.pdf";
@@ -347,7 +348,7 @@ class SalarySlipController extends Controller
             'success' => true,
             'count' => $count,
             'total_amount' => $totalNetSalary,
-            'message' => $msg,
+            'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
             'file_description' => "Dokumen PDF Rekapitulasi Gaji Karyawan ({$count} Slip)",
@@ -363,7 +364,7 @@ class SalarySlipController extends Controller
         $search = $request->input('search');
         $phone = $request->input('phone');
         $sendPdf = $request->boolean('send_pdf', true);
-        $caption = $request->input('caption') ?: $request->input('message');
+        $caption = FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
 
         if (empty($phone)) {
             if ($request->wantsJson()) {
@@ -393,6 +394,7 @@ class SalarySlipController extends Controller
             $caption .= "🔖 Total: {$slips->count()} Slip | Total Gaji: " . FormatHelper::rupiah($totalNetSalary) . "\n";
             $caption .= "📄 Terlampir berkas PDF dokumen rekapitulasi penggajian karyawan.";
         }
+        $caption = FormatHelper::cleanCaption($caption);
 
         $waService = app(WhatsAppGatewayService::class);
         $filename = "Rekap_Gaji_Karyawan_" . ($period ?: date('Y-m')) . ".pdf";

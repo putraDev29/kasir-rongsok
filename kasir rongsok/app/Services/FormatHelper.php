@@ -75,6 +75,25 @@ class FormatHelper
     }
 
     /**
+     * Clean WhatsApp caption numbers: strip unnecessary ,00 and .00 decimals from whole numbers.
+     * e.g. "10,00 kg" -> "10 kg", "Rp 50.000,00" -> "Rp 50.000", "Pot: 0,00 kg" -> "Pot: 0 kg"
+     */
+    public static function cleanCaption(mixed $text): string
+    {
+        if (empty($text) || !is_string($text)) {
+            return (string) $text;
+        }
+
+        // 1. Remove ,00 when preceded by digits and not followed by a digit
+        $cleaned = preg_replace('/(\d+),00(?!\d)/', '$1', $text);
+
+        // 2. Remove .00 when preceded by digits and not followed by a digit
+        $cleaned = preg_replace('/(\d+)\.00(?!\d)/', '$1', $cleaned);
+
+        return $cleaned;
+    }
+
+    /**
      * Generate Purchase Invoice Number: PPJ-[bulan_romawi]-[tahun_2_digit]-[0001]
      * Format: PPJ-XI-26-0001
      * Nomor urut reset setiap tahun.

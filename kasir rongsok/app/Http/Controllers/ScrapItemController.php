@@ -231,7 +231,7 @@ class ScrapItemController extends Controller
         $filename = 'Daftar_Harga_Beli_Rongsok_' . date('Ymd') . '.pdf';
 
         return response()->json([
-            'message' => $msg,
+            'message' => \App\Services\FormatHelper::cleanCaption($msg),
             'pdf_url' => route('scrap-items.pdf-price-list'),
             'pdf_filename' => $filename,
         ]);
@@ -274,7 +274,7 @@ class ScrapItemController extends Controller
         }
         $msg .= "_*Harga dapat berubah sewaktu-waktu mengikuti tren pasar daur ulang._";
 
-        $customCaption = $request->input('message') ?: $request->input('caption') ?: $msg;
+        $customCaption = \App\Services\FormatHelper::cleanCaption($request->input('message') ?: $request->input('caption') ?: $msg);
 
         if (!empty($phone)) {
             $waService = app(\App\Services\WhatsAppGatewayService::class);

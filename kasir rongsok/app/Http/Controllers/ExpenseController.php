@@ -244,7 +244,7 @@ class ExpenseController extends Controller
             'success' => true,
             'count' => $count,
             'total_amount' => $totalAmount,
-            'message' => $msg,
+            'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
             'file_description' => "Dokumen PDF Resmi Biaya Operasional ({$count} Transaksi)",
@@ -262,7 +262,7 @@ class ExpenseController extends Controller
         $categoryId = $request->input('category_id');
         $search = $request->input('search');
         $sendPdf = $request->boolean('send_pdf', true);
-        $caption = $request->input('caption') ?: $request->input('message');
+        $caption = FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
 
         if (empty($phone)) {
             if ($request->wantsJson()) {
@@ -303,6 +303,7 @@ class ExpenseController extends Controller
             $caption .= "💰 Total Biaya     : *" . FormatHelper::rupiah($totalAmount) . "*\n\n";
             $caption .= "📄 Terlampir berkas PDF dokumen rincian biaya operasional.";
         }
+        $caption = FormatHelper::cleanCaption($caption);
 
         $waService = app(WhatsAppGatewayService::class);
         $dateSuffix = ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd_His');

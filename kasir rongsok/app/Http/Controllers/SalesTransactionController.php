@@ -377,7 +377,7 @@ class SalesTransactionController extends Controller
             'count' => $count,
             'total_weight' => $totalWeight,
             'total_amount' => $totalSales,
-            'message' => $msg,
+            'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
             'file_description' => "Dokumen PDF Rekap Penjualan Partai ({$count} Faktur)",
@@ -395,7 +395,7 @@ class SalesTransactionController extends Controller
         $status = $request->input('status', 'completed');
         $phone = $request->input('phone');
         $sendPdf = $request->boolean('send_pdf', true);
-        $caption = $request->input('caption') ?: $request->input('message');
+        $caption = FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
 
         if (empty($phone)) {
             if ($request->wantsJson()) {
@@ -438,6 +438,7 @@ class SalesTransactionController extends Controller
             $caption .= "📈 Estimasi Laba  : *" . FormatHelper::rupiah($totalProfit) . "*\n\n";
             $caption .= "📄 Terlampir berkas dokumen PDF Rekap Penjualan Partai.";
         }
+        $caption = FormatHelper::cleanCaption($caption);
 
         $waService = app(WhatsAppGatewayService::class);
         $dateSuffix = ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd_His');

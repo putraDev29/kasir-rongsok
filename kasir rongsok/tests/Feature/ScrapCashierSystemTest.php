@@ -1783,5 +1783,50 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertStringContainsString('1029384756', $trx->bank_info);
         $this->assertStringContainsString('Depo Rongsok Jaya', $trx->bank_info);
     }
+
+    public function test_whatsapp_captions_strip_comma_zero_zero_for_whole_numbers(): void
+    {
+        // 1. Direct helper test
+        $raw = "Total: 10,00 kg (Kotor: 15,00 kg - Pot: 0,00 kg). Subtotal: Rp 50.000,00. Pcs: 5,00 pcs.";
+        $cleaned = \App\Services\FormatHelper::cleanCaption($raw);
+        $this->assertEquals("Total: 10 kg (Kotor: 15 kg - Pot: 0 kg). Subtotal: Rp 50.000. Pcs: 5 pcs.", $cleaned);
+
+        // Keep real decimals intact
+        $rawDecimal = "Berat: 12,5 kg dan 10,75 kg";
+        $this->assertEquals("Berat: 12,5 kg dan 10,75 kg", \App\Services\FormatHelper::cleanCaption($rawDecimal));
+
+        // 2. Test Purchase Receipt WhatsApp Message builder
+        $cashier = User::factory()->create(['role' => 'cashier']);
+        $service = app(PurchaseTransactionService::class);
+        $trx = $service->createPurchase([
+            'supplier_name' => 'Pak Budi Supplier',
+            'supplier_phone' => '08123456789',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 50,
+                    'tare_weight' => 0,
+                    'price_per_kg' => (float) $this->besiItem->buy_price_per_kg,
+                ]
+            ]
+        ], $cashier);
+
+        $waService = app(\App\Services\WhatsAppGatewayService::class);
+        $message = $waService->buildPurchaseReceiptMessage($trx);
+
+        // Ensure no ",00" or ".00" appears in the message
+        $this->assertStringNotContainsString(',00', $message);
+        $this->assertStringNotContainsString('.00 kg', $message);
+        $this->assertStringContainsString('50 kg', $message);
+
+        // 3. Test Preview endpoint
+        $this->actingAs($cashier);
+        $res = $this->getJson(route('whatsapp.purchases.preview', $trx));
+        $res->assertOk();
+        $this->assertStringNotContainsString(',00', $res->json('message'));
+        $this->assertEquals('50', $res->json('receipt_data.totalNetWeight'));
+        $this->assertEquals('50', $res->json('receipt_data.totalGrossWeight'));
+        $this->assertEquals('0', $res->json('receipt_data.totalTareWeight'));
+    }
 }
 

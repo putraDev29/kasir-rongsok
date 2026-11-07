@@ -527,10 +527,16 @@ async function sendMessageWithLidFallback(client, phone, message) {
   };
 }
 
+function cleanCaptionText(text) {
+  if (!text || typeof text !== 'string') return text || '';
+  return text.replace(/(\d+),00(?!\d)/g, '$1').replace(/(\d+)\.00(?!\d)/g, '$1');
+}
+
 /**
  * Send WhatsApp file (document, PDF, etc.) reliably to any phone number
  */
 async function sendFileWithFallback(client, phone, fileBase64, filename = 'Invoice.pdf', caption = '') {
+  caption = cleanCaptionText(caption);
   if (!client || connectionState !== 'CONNECTED') {
     throw new Error('WPPConnect belum terhubung ke WhatsApp. Silakan scan QR code terlebih dahulu.');
   }
@@ -1008,7 +1014,7 @@ app.post('/api/send-message', async (req, res) => {
       });
     }
 
-    const result = await sendMessageWithLidFallback(clientInstance, phone, message);
+    const result = await sendMessageWithLidFallback(clientInstance, phone, cleanCaptionText(message));
 
     res.json({
       success: true,
@@ -1049,7 +1055,7 @@ app.post('/api/send-file', async (req, res) => {
       });
     }
 
-    const result = await sendFileWithFallback(clientInstance, phone, fileBase64, filename, caption);
+    const result = await sendFileWithFallback(clientInstance, phone, fileBase64, filename, cleanCaptionText(caption));
 
     res.json({
       success: true,

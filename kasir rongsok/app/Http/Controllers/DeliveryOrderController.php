@@ -319,14 +319,14 @@ class DeliveryOrderController extends Controller
         $lines = [];
         $i = 1;
         foreach ($deliveryOrder->items as $it) {
-            $kg = number_format($it->weight, 2, ',', '.');
+            $kg = FormatHelper::weight($it->weight);
             $koli = $it->package_qty > 0 ? " ({$it->package_qty} koli)" : "";
             $lines[] = "{$i}. *{$it->item_name}* : *{$kg} kg*{$koli}";
             $i++;
         }
         $itemsStr = count($lines) > 0 ? implode("\n", $lines) : "-";
 
-        $totalKg = number_format($deliveryOrder->total_weight, 2, ',', '.');
+        $totalKg = FormatHelper::weight($deliveryOrder->total_weight);
         $dateStr = $deliveryOrder->delivery_date->format('d/m/Y');
 
         $msg = "*SURAT JALAN PENGIRIMAN *\n";
@@ -362,7 +362,7 @@ class DeliveryOrderController extends Controller
 
         return response()->json([
             'phone' => $targetPhone,
-            'message' => $msg,
+            'message' => FormatHelper::cleanCaption($msg),
             'delivery_number' => $deliveryOrder->delivery_number,
             'filename' => $filename,
             'pdf_filename' => $filename,
@@ -384,7 +384,7 @@ class DeliveryOrderController extends Controller
         $deliveryOrder->load(['user', 'salesTransaction', 'items.scrapItem']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
         $sendPdf = $request->boolean('send_pdf', true);
-        $caption = $request->input('message') ?: $request->input('caption') ?: "Terlampir Berkas Dokumen PDF Surat Jalan {$deliveryOrder->delivery_number} (2 Rangkap: Gudang & Supir).";
+        $caption = FormatHelper::cleanCaption($request->input('message') ?: $request->input('caption') ?: "Terlampir Berkas Dokumen PDF Surat Jalan {$deliveryOrder->delivery_number} (2 Rangkap: Gudang & Supir).");
         $filename = $request->input('filename') ?: ("Surat_Jalan_{$deliveryOrder->delivery_number}_2Rangkap.pdf");
 
         $waService = app(\App\Services\WhatsAppGatewayService::class);

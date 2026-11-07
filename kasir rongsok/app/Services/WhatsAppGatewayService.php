@@ -224,10 +224,12 @@ class WhatsAppGatewayService
             ];
         }
 
+        $cleanMessage = FormatHelper::cleanCaption($message);
+
         try {
             $response = $this->postJson('/api/send-message', [
                 'phone' => $targetPhone,
-                'message' => $message,
+                'message' => $cleanMessage,
             ], 30);
 
             if ($response->successful()) {
@@ -274,12 +276,14 @@ class WhatsAppGatewayService
             $fileBase64 = base64_encode($fileBase64);
         }
 
+        $cleanCaption = FormatHelper::cleanCaption($caption ?? '');
+
         try {
             $response = $this->postJson('/api/send-file', [
                 'phone' => $targetPhone,
                 'fileBase64' => $fileBase64,
                 'filename' => $filename ?: 'Dokumen.pdf',
-                'caption' => $caption ?? '',
+                'caption' => $cleanCaption,
             ], 45);
 
             if ($response->successful()) {
@@ -403,11 +407,11 @@ class WhatsAppGatewayService
             $subtotal = number_format($item->subtotal, 0, ',', '.');
 
             if ($unit === 'pcs' || $unit === 'satuan') {
-                $qty = number_format($item->quantity, 0, ',', '.');
+                $qty = FormatHelper::number($item->quantity);
                 if ($item->tare_weight > 0) {
                     $grossQty = $item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight);
-                    $bruto = number_format($grossQty, 0, ',', '.');
-                    $tara = number_format($item->tare_weight, 0, ',', '.');
+                    $bruto = FormatHelper::number($grossQty);
+                    $tara = FormatHelper::number($item->tare_weight);
                     $pct = FormatHelper::tarePercent($grossQty, $item->tare_weight);
                     $pctStr = $pct ? " [{$pct}]" : "";
                     $weightLine = "   📦 {$qty} {$unit} (Kotor: {$bruto} - Pot: {$tara}{$pctStr})";
@@ -415,9 +419,9 @@ class WhatsAppGatewayService
                     $weightLine = "   📦 {$qty} {$unit}";
                 }
             } else {
-                $bruto = number_format($item->gross_weight, 2, ',', '.');
-                $tara = number_format($item->tare_weight, 2, ',', '.');
-                $netto = number_format($item->net_weight, 2, ',', '.');
+                $bruto = FormatHelper::weight($item->gross_weight);
+                $tara = FormatHelper::weight($item->tare_weight);
+                $netto = FormatHelper::weight($item->net_weight);
                 if ($item->tare_weight > 0) {
                     $pct = FormatHelper::tarePercent($item->gross_weight, $item->tare_weight);
                     $pctStr = $pct ? " [{$pct}]" : "";
@@ -443,7 +447,7 @@ class WhatsAppGatewayService
                 $cTotW = $cGrp->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
                 $cU = $cGrp->first()->unit_type ?: 'kg';
                 $cTotS = number_format($cGrp->sum('subtotal'), 0, ',', '.');
-                $accumLines[] = "   • *{$cName}*: " . number_format($cTotW, 2, ',', '.') . " {$cU} (Rp {$cTotS})";
+                $accumLines[] = "   • *{$cName}*: " . FormatHelper::weight($cTotW) . " {$cU} (Rp {$cTotS})";
             }
             $itemsFormatted .= "\n\n📊 *Akumulasi Komoditas (Gabungan Semua Harga):*\n" . implode("\n", $accumLines);
         }
@@ -458,9 +462,9 @@ class WhatsAppGatewayService
         $debtDeduction = min((float) ($purchase->debt_deduction_amount ?? 0), $activeFinal);
         $activeNetCash = max(0, $activeFinal - $debtDeduction);
 
-        $totalNetto = number_format($activeNet, 2, ',', '.');
-        $totalGross = number_format($activeGross, 2, ',', '.');
-        $totalTare = number_format($activeTare, 2, ',', '.');
+        $totalNetto = FormatHelper::weight($activeNet);
+        $totalGross = FormatHelper::weight($activeGross);
+        $totalTare = FormatHelper::weight($activeTare);
 
         $finalAmountStr = number_format($activeFinal, 0, ',', '.');
         $debtDeductionStr = number_format($debtDeduction, 0, ',', '.');
@@ -509,7 +513,7 @@ class WhatsAppGatewayService
         }
         $msg .= "\n🙏 *Terima kasih atas kerja samanya!*";
 
-        return $msg;
+        return FormatHelper::cleanCaption($msg);
     }
 
     /**
@@ -549,7 +553,7 @@ class WhatsAppGatewayService
         $i = 1;
         foreach ($sale->items as $item) {
             $itemName = $item->item_name_snapshot;
-            $kg = number_format($item->weight, 2, ',', '.');
+            $kg = FormatHelper::weight($item->weight);
             $price = number_format($item->sell_price_per_kg, 0, ',', '.');
             $subtotal = number_format($item->subtotal, 0, ',', '.');
 
@@ -558,7 +562,7 @@ class WhatsAppGatewayService
         }
         $itemsStr = count($lines) > 0 ? implode("\n", $lines) : "-";
 
-        $totalWeight = number_format($sale->total_weight, 2, ',', '.');
+        $totalWeight = FormatHelper::weight($sale->total_weight);
         $grandTotal = number_format($sale->final_amount, 0, ',', '.');
 
         $msg = "*=============================*\n";
@@ -575,7 +579,7 @@ class WhatsAppGatewayService
         $msg .= "----------------------------------------\n";
         $msg .= "Terima kasih atas kerja sama dan kepercayaan Anda! 🙏";
 
-        return $msg;
+        return FormatHelper::cleanCaption($msg);
     }
 
     /**
@@ -622,7 +626,7 @@ class WhatsAppGatewayService
         $msg .= "✅ *Sisa Kasbon Kini:* *Rp {$remAfter}*\n\n";
         $msg .= "Bukti ini sah diterbitkan otomatis oleh sistem {$companyName}.";
 
-        return $msg;
+        return FormatHelper::cleanCaption($msg);
     }
 
     /**
