@@ -2,10 +2,12 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 import { createIcons, icons } from 'lucide';
 import { generatePurchaseReceiptPdf, generateSalesInvoicePdf, generateDebtPaymentPdf } from './receipt-pdf';
+import { ThermalBluetooth } from './thermal-bluetooth';
 
 window.Alpine = Alpine;
 window.createIcons = createIcons;
 window.lucideIcons = icons;
+window.ThermalBluetooth = ThermalBluetooth;
 window.lucide = {
     createIcons: (opt) => createIcons(opt || { icons })
 };

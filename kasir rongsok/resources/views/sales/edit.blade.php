@@ -171,7 +171,7 @@
 
                 <!-- Bank Info for Sales -->
                 <div class="sm:col-span-2" x-show="isTransferPayment()">
-                    <label class="block text-xs font-semibold text-blue-900 uppercase mb-1">Informasi Rekening Bank Tujuan Transfer (Dicetak di Faktur / Nota)</label>
+                    <label class="block text-xs font-semibold text-blue-900 uppercase mb-1">Informasi Rekening Bank Pemilik Gudang</label>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <input type="text" name="custom_bank" x-model="customBank" placeholder="Nama Bank (BCA / Mandiri / BRI)"
                                :disabled="!isTransferPayment()"

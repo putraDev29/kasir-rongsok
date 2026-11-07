@@ -95,33 +95,61 @@
 <body class="bg-slate-100 min-h-screen p-4 sm:p-8 flex flex-col items-center">
 
     <!-- Print Control Bar -->
-    <div class="no-print w-full max-w-xl mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-            <span class="text-xs font-semibold text-slate-600">Format Kertas:</span>
+    <div class="no-print w-full max-w-xl mb-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center gap-1.5 w-full sm:w-auto">
+            <span class="text-xs font-semibold text-slate-600 mr-1">Kertas:</span>
             <a href="{{ route('purchases.print', ['purchase' => $purchase, 'format' => 'thermal_58']) }}" 
                class="px-2.5 py-1 rounded text-xs font-medium {{ $format === 'thermal_58' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                Thermal 58mm
+                58mm
             </a>
             <a href="{{ route('purchases.print', ['purchase' => $purchase, 'format' => 'thermal_80']) }}" 
                class="px-2.5 py-1 rounded text-xs font-medium {{ $format === 'thermal_80' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                Thermal 80mm
+                80mm
             </a>
             <a href="{{ route('purchases.print', ['purchase' => $purchase, 'format' => 'a4']) }}" 
                class="px-2.5 py-1 rounded text-xs font-medium {{ $format === 'a4' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                A4 Standar
+                A4
             </a>
         </div>
 
-        <div class="flex items-center gap-2">
-            <button onclick="window.print()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
-                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                <span>Cetak Nota</span>
+        <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto justify-end">
+            <!-- Direct Bluetooth ESC/POS Print (No RawBT, 100% Free of Watermark) -->
+            <button type="button" 
+                    id="btnBluetoothPrint"
+                    onclick="handleBluetoothPrint()" 
+                    class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                    title="Cetak langsung ke printer Bluetooth via Web Bluetooth (100% Bebas Watermark RawBT)">
+                <i data-lucide="bluetooth" class="w-3.5 h-3.5"></i>
+                <span id="btnBluetoothText">Cetak Bluetooth</span>
             </button>
-            <a href="{{ route('purchases.show', $purchase) }}" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold">
+
+            <!-- Quick Printer Intent Button (For Android devices) -->
+            <button type="button" 
+                    id="btnQuickPrinter"
+                    onclick="handleQuickPrinter()" 
+                    class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold text-xs flex items-center gap-1 shadow-xs cursor-pointer"
+                    title="Cetak via Quick Printer Android (Gratis & Bebas Watermark)">
+                <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                <span>Quick Printer</span>
+            </button>
+
+            <!-- Standard Browser Print (Dialog Cetak Windows/USB/PDF) -->
+            <button type="button" 
+                    onclick="window.print()" 
+                    class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                    title="Cetak lewat dialog browser standar (Printer USB / Windows / PDF)">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <span>Cetak Biasa</span>
+            </button>
+
+            <a href="{{ route('purchases.show', $purchase) }}" class="px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold">
                 Kembali
             </a>
         </div>
     </div>
+
+    <!-- Status Alert for Bluetooth Printing -->
+    <div id="printStatusAlert" class="hidden no-print w-full max-w-xl mb-3 px-3.5 py-2.5 rounded-xl text-xs font-medium border flex items-center justify-between gap-2"></div>
 
     <!-- RECEIPT CONTAINER -->
     <div class="receipt-container bg-white text-slate-900 shadow-md border border-slate-200 
@@ -489,6 +517,101 @@
     </div>
 
     <script>
+        window.receiptData = {
+            companyName: @json($settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR'),
+            companyAddress: @json($settings['company_address'] ?? 'Jl. Industri Daur Ulang No. 88, Sentra Rongsok'),
+            companyPhone: @json($settings['company_phone'] ?? '0812-3456-7890'),
+            invoiceNumber: @json($purchase->invoice_number),
+            transactionDate: @json($purchase->transaction_date->format('d/m/Y H:i')),
+            supplierName: @json($purchase->supplier_name ?: 'Pemasok Umum'),
+            supplierPhone: @json($purchase->supplier_phone ?? ''),
+            cashierName: @json($purchase->user?->name ?? 'Kasir'),
+            paymentMethod: @json($purchase->paymentMethod?->name ?? 'Tunai'),
+            isBankPayment: @json($purchase->isBankPayment()),
+            bankAccountNumber: @json($purchase->getBankAccountNumber()),
+            bankAccountName: @json($purchase->getBankAccountName()),
+            bankInfo: @json($purchase->bank_info),
+            activeGross: @json(\App\Services\FormatHelper::weight($activeGross)),
+            activeTare: @json(\App\Services\FormatHelper::weight($activeTare)),
+            activeNet: @json(\App\Services\FormatHelper::weight($activeNet)),
+            activeSubtotal: @json(\App\Services\FormatHelper::rupiah($activeSubtotal)),
+            discount: @json($discount > 0 ? \App\Services\FormatHelper::rupiah($discount) : null),
+            rounding: @json($rounding != 0 ? \App\Services\FormatHelper::rupiah($rounding) : null),
+            activeFinal: @json(\App\Services\FormatHelper::rupiah($activeFinal)),
+            debtDeduction: @json($debtDeduction > 0 ? \App\Services\FormatHelper::rupiah($debtDeduction) : null),
+            remainingDebt: @json(($purchase->remaining_debt_after ?? 0) > 0 ? \App\Services\FormatHelper::rupiah($purchase->remaining_debt_after) : null),
+            activeNetCash: @json(\App\Services\FormatHelper::rupiah($activeNetCash)),
+            items: [
+                @foreach($activeItems as $item)
+                    @php
+                        $isPcs = ($item->unit_type === 'pcs' || $item->unit_type === 'satuan');
+                        $grossVal = $isPcs ? ($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) : $item->gross_weight;
+                        $netVal = $isPcs ? $item->quantity : $item->net_weight;
+                        $unit = $item->unit_type ?: 'kg';
+                    @endphp
+                    {
+                        name: @json($item->item_name_snapshot),
+                        subName: @json($item->item_type_name ?? ''),
+                        gross: @json(\App\Services\FormatHelper::weight($grossVal)),
+                        tare: @json(\App\Services\FormatHelper::weight($item->tare_weight)),
+                        net: @json(\App\Services\FormatHelper::weight($netVal)),
+                        unit: @json($unit),
+                        price: @json(\App\Services\FormatHelper::rupiah($item->price_per_kg)),
+                        subtotal: @json(\App\Services\FormatHelper::rupiah($item->subtotal))
+                    },
+                @endforeach
+            ],
+            disclaimer: @json($settings['receipt_disclaimer'] ?? 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI'),
+            footer: @json($settings['receipt_footer'] ?? 'Barang yang sudah ditimbang & dibayar tidak dapat ditarik kembali.')
+        };
+
+        const charWidth = {{ $format === 'thermal_80' ? 48 : 32 }};
+
+        function showStatus(msg, type = 'info') {
+            const el = document.getElementById('printStatusAlert');
+            if (!el) return;
+            el.className = 'no-print w-full max-w-xl mb-3 px-3.5 py-2.5 rounded-xl text-xs font-medium border flex items-center justify-between gap-2 ' +
+                (type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 
+                 type === 'error' ? 'bg-rose-50 text-rose-800 border-rose-200' : 
+                 'bg-blue-50 text-blue-800 border-blue-200');
+            el.innerHTML = `<span>${msg}</span><button type="button" onclick="this.parentElement.classList.add('hidden')" class="text-xs opacity-60 hover:opacity-100">&times;</button>`;
+            el.classList.remove('hidden');
+        }
+
+        async function handleBluetoothPrint() {
+            const btn = document.getElementById('btnBluetoothPrint');
+            const txt = document.getElementById('btnBluetoothText');
+            if (!window.ThermalBluetooth || !window.ThermalBluetooth.isSupported()) {
+                showStatus('Browser ini belum mendukung Web Bluetooth. Untuk cetak langsung tanpa RawBT, gunakan Google Chrome di Android atau PC.', 'error');
+                return;
+            }
+
+            try {
+                if (btn) btn.disabled = true;
+                await window.ThermalBluetooth.printBluetooth(window.receiptData, parseInt(charWidth), (step) => {
+                    if (txt) txt.textContent = step;
+                    showStatus(step, 'info');
+                });
+                showStatus('Nota berhasil dicetak langsung via Bluetooth (100% bebas dari watermark RawBT)!', 'success');
+            } catch (err) {
+                console.error(err);
+                if (err.name === 'NotFoundError') {
+                    showStatus('Pencarian printer dibatalkan.', 'info');
+                } else {
+                    showStatus('Gagal mencetak Bluetooth: ' + err.message + '. Anda juga dapat menekan tombol Quick Printer atau Cetak Biasa.', 'error');
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+                if (txt) txt.textContent = 'Cetak Bluetooth';
+            }
+        }
+
+        function handleQuickPrinter() {
+            if (window.ThermalBluetooth) {
+                window.ThermalBluetooth.printQuickPrinter(window.receiptData, parseInt(charWidth));
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             if (window.createIcons && window.lucideIcons) {
                 window.createIcons({ icons: window.lucideIcons });
