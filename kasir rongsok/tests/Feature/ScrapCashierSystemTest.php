@@ -2108,5 +2108,59 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertStringContainsString('9988776655', $bankPdfHtml);
         $this->assertStringContainsString('PT Penata Prima', $bankPdfHtml);
     }
+
+    public function test_cashier_and_admin_can_preview_and_send_member_card_wa(): void
+    {
+        $supplier = Supplier::create([
+            'code' => 'SUP-MBR-01',
+            'member_number' => 'MBR-2026-001',
+            'name' => 'Pak Budi Pemasok',
+            'phone' => '081234567890',
+            'is_active' => true,
+        ]);
+
+        $cashier = User::factory()->create([
+            'role' => User::ROLE_KASIR,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($cashier);
+
+        // 1. Cek halaman penerimaan barang memiliki tombol cetak & kirim wa kartu member
+        $createRes = $this->get(route('purchases.create'));
+        $createRes->assertOk();
+        $createRes->assertSee('openMemberCardWa()', false);
+        $createRes->assertSee('Cetak Kartu');
+
+        // 2. Kasir dapat mengakses tampilan kartu member
+        $cardRes = $this->get(route('suppliers.member-card', $supplier));
+        $cardRes->assertOk();
+        $cardRes->assertSee('MBR-2026-001');
+        $cardRes->assertSee('Pak Budi Pemasok');
+
+        // 3. Kasir dapat mengakses PDF kartu member
+        $pdfRes = $this->get(route('suppliers.member-card-pdf', $supplier));
+        $pdfRes->assertOk();
+
+        // 4. Kasir dapat mengakses preview WhatsApp kartu member (JSON)
+        $previewRes = $this->getJson(route('suppliers.member-card-wa-preview', $supplier));
+        $previewRes->assertOk();
+        $previewRes->assertJsonFragment([
+            'phone' => '081234567890',
+        ]);
+        $this->assertStringContainsString('MBR-2026-001', $previewRes->json('message'));
+
+        // 5. GET ke member-card-wa redirect dengan aman ke kartu member
+        $getWaRes = $this->get(route('suppliers.member-card-wa', $supplier));
+        $getWaRes->assertRedirect(route('suppliers.member-card', $supplier));
+
+        // 6. Kasir dapat mengirim kartu member via WhatsApp (JSON POST)
+        $postWaRes = $this->postJson(route('suppliers.member-card-wa', $supplier), [
+            'phone' => '081234567890',
+            'send_pdf' => false,
+            'message' => 'Halo ini kartu member Anda',
+        ]);
+        $postWaRes->assertOk();
+    }
 }
 

@@ -208,6 +208,10 @@ class SupplierController extends Controller
      */
     public function sendMemberCardWa(Request $request, Supplier $supplier)
     {
+        if ($request->isMethod('get') && !$request->wantsJson()) {
+            return redirect()->route('suppliers.member-card', $supplier);
+        }
+
         $phone = $request->input('phone', $supplier->phone);
         $sendPdf = $request->boolean('send_pdf', true);
         $caption = \App\Services\FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
@@ -240,7 +244,8 @@ class SupplierController extends Controller
         $waService = app(WhatsAppGatewayService::class);
         $filename = "Kartu_Member_{$supplier->member_number}.pdf";
 
-        if ($sendPdf) {
+        $fileBase64 = $request->input('file') ?? $request->input('fileBase64');
+        if ($sendPdf && empty($fileBase64)) {
             $recentRewards = collect();
             try {
                 $recentRewards = $supplier->rewards()->latest('awarded_date')->take(5)->get();
@@ -249,7 +254,9 @@ class SupplierController extends Controller
             $pdf = Pdf::loadView('suppliers.member_card_pdf', compact('supplier', 'settings', 'recentRewards'))
                 ->setPaper('a4', 'portrait');
             $fileBase64 = base64_encode($pdf->output());
+        }
 
+        if ($sendPdf && $fileBase64) {
             $res = $waService->sendFile($phone, $fileBase64, $filename, $caption);
         } else {
             $res = $waService->sendMessage($phone, $caption);

@@ -764,16 +764,17 @@
 
                         <!-- Action Links: View Card & WhatsApp -->
                         <div class="grid grid-cols-2 gap-2">
-                            <a :href="'/suppliers/' + activeSupplier()?.id + '/member-card'" target="_blank"
+                            <a :href="activeSupplier()?.id ? ('/suppliers/' + activeSupplier().id + '/member-card') : '#'" target="_blank"
                                class="inline-flex items-center justify-center gap-1.5 py-1.5 px-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[11px] font-semibold border border-white/15 transition-colors text-center">
                                 <i data-lucide="credit-card" class="w-3.5 h-3.5 text-emerald-400"></i>
                                 <span>Cetak Kartu</span>
                             </a>
-                            <a :href="'/suppliers/' + activeSupplier()?.id + '/member-card-wa'"
-                               class="inline-flex items-center justify-center gap-1.5 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-semibold shadow-sm transition-colors text-center">
-                                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                            <button type="button"
+                                    @click="openMemberCardWa()"
+                                    class="inline-flex items-center justify-center gap-1.5 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-semibold shadow-sm transition-colors text-center cursor-pointer">
+                                <x-whatsapp-icon class="w-3.5 h-3.5" />
                                 <span>Kirim WA</span>
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1552,6 +1553,43 @@ function cashierPos() {
                 return null;
             }
             return this.suppliersList.find(s => s.id == this.selectedSupplierId) || null;
+        },
+
+        openMemberCardWa() {
+            const sup = this.activeSupplier();
+            if (!sup || !sup.id) {
+                alert('Silakan pilih pemasok terlebih dahulu.');
+                return;
+            }
+            if (!sup.phone) {
+                alert('Pemasok "' + sup.name + '" belum memiliki nomor telepon / WhatsApp.');
+                return;
+            }
+            if (typeof window.openWaPdfModal === 'function') {
+                window.openWaPdfModal({
+                    title: 'Kirim Kartu Member Pemasok PDF',
+                    subtitle: 'Kirim berkas dokumen PDF resmi kartu member & loyalitas ke nomor WhatsApp pemasok',
+                    phone: sup.phone || '',
+                    filename: 'Kartu_Member_' + (sup.member_number || sup.name || 'Pemasok') + '.pdf',
+                    fileDescription: 'Dokumen PDF Resmi Kartu Member & Hak Reward Pemasok',
+                    pdfUrl: '/suppliers/' + sup.id + '/member-card-pdf',
+                    previewUrl: '/suppliers/' + sup.id + '/member-card-wa-preview',
+                    sendUrl: '/suppliers/' + sup.id + '/member-card-wa',
+                    submitButtonText: 'Kirim Kartu Member via WA'
+                });
+            } else if (window.Alpine && window.Alpine.store('waGateway')) {
+                window.Alpine.store('waGateway').openPdfModal({
+                    title: 'Kirim Kartu Member Pemasok PDF',
+                    subtitle: 'Kirim berkas dokumen PDF resmi kartu member & loyalitas ke nomor WhatsApp pemasok',
+                    phone: sup.phone || '',
+                    filename: 'Kartu_Member_' + (sup.member_number || sup.name || 'Pemasok') + '.pdf',
+                    fileDescription: 'Dokumen PDF Resmi Kartu Member & Hak Reward Pemasok',
+                    pdfUrl: '/suppliers/' + sup.id + '/member-card-pdf',
+                    previewUrl: '/suppliers/' + sup.id + '/member-card-wa-preview',
+                    sendUrl: '/suppliers/' + sup.id + '/member-card-wa',
+                    submitButtonText: 'Kirim Kartu Member via WA'
+                });
+            }
         },
 
         getItemName(scrapItemId) {

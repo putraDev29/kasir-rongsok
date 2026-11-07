@@ -156,19 +156,19 @@ Route::middleware('auth')->group(function () {
         ->name('scrap-items.quick-price')
         ->middleware('role:super_admin');
 
-    // Suppliers (Pemasok) & Kartu Member / Reward - Hanya Owner
+    // Suppliers (Pemasok) & Kartu Member / Reward - Kartu Member bisa diakses Kasir & Admin
     Route::get('/suppliers/{supplier}/member-card', [SupplierController::class, 'memberCard'])
         ->name('suppliers.member-card')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin,kasir');
     Route::get('/suppliers/{supplier}/member-card-pdf', [SupplierController::class, 'memberCardPdf'])
         ->name('suppliers.member-card-pdf')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin,kasir');
     Route::get('/suppliers/{supplier}/member-card-wa-preview', [SupplierController::class, 'previewMemberCardWa'])
         ->name('suppliers.member-card-wa-preview')
-        ->middleware('role:super_admin');
-    Route::post('/suppliers/{supplier}/member-card-wa', [SupplierController::class, 'sendMemberCardWa'])
+        ->middleware('role:super_admin,admin,kasir');
+    Route::match(['get', 'post'], '/suppliers/{supplier}/member-card-wa', [SupplierController::class, 'sendMemberCardWa'])
         ->name('suppliers.member-card-wa')
-        ->middleware('role:super_admin');
+        ->middleware('role:super_admin,admin,kasir');
     Route::post('/suppliers/{supplier}/reward', [SupplierController::class, 'storeReward'])
         ->name('suppliers.store-reward')
         ->middleware('role:super_admin');

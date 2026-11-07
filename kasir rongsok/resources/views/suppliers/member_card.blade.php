@@ -17,9 +17,9 @@
 
     <!-- Top Action Bar -->
     <div class="no-print w-full max-w-2xl mb-6 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        <a href="{{ route('suppliers.index') }}" class="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+        <a href="{{ Auth::user()->isKasir() ? route('purchases.create') : route('suppliers.index') }}" class="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
             <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            <span>Kembali ke Data Pemasok</span>
+            <span>{{ Auth::user()->isKasir() ? 'Kembali ke Penerimaan Barang' : 'Kembali ke Data Pemasok' }}</span>
         </a>
 
         <div class="flex items-center gap-2">
