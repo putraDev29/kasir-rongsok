@@ -153,6 +153,9 @@ class SalesTransactionController extends Controller
         foreach ($sale->items as $it) {
             $scrapItem = $it->scrapItem;
             $stockVal = (float) ($scrapItem?->stockBalance?->current_stock ?? 0) + (float) ($it->weight > 0 ? $it->weight : $it->quantity);
+            $masterPrice = (float) ($scrapItem?->sell_price_per_kg ?? 0);
+            $sellPrice = (float) $it->sell_price_per_kg > 0 ? (float) $it->sell_price_per_kg : ($masterPrice > 0 ? $masterPrice : '');
+
             $initialRows[] = [
                 'uid' => $it->id,
                 'id' => $it->id,
@@ -166,7 +169,7 @@ class SalesTransactionController extends Controller
                 'unit_type' => $it->unit_type ?? 'kg',
                 'quantity' => (float) ($it->quantity ?: 1),
                 'weight' => (float) $it->weight,
-                'sell_price_per_kg' => (float) $it->sell_price_per_kg > 0 ? (float) $it->sell_price_per_kg : '',
+                'sell_price_per_kg' => $sellPrice,
                 'buy_price_snapshot' => (float) $it->buy_price_snapshot,
                 'avg_buy_price' => (float) $it->buy_price_snapshot,
                 'maxStock' => $stockVal,

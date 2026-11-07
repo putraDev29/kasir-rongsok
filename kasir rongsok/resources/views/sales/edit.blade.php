@@ -364,20 +364,15 @@
                                     </div>
 
                                     <div>
-                                        <label class="block text-[11px] font-bold text-blue-900 uppercase tracking-wide mb-1 flex items-center justify-between">
-                                            <span>Harga Jual Pabrik (Rp) *</span>
-                                            <span class="text-[10px] text-blue-600 font-normal">Wajib diisi</span>
+                                        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
+                                            Harga Jual Pabrik (Rp) *
                                         </label>
-                                        <div class="relative">
-                                            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
-                                            <input type="number" step="100" min="1" 
-                                                   :name="'items[' + idx + '][sell_price_per_kg]'" 
-                                                   x-model.number="row.sell_price_per_kg" 
-                                                   required
-                                                   placeholder="Ketik harga jual per kg/pcs..."
-                                                   class="w-full pl-8 pr-3 py-2 text-sm text-right rounded-lg border-2 border-blue-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-500 font-mono font-black text-slate-900 bg-blue-50/30 shadow-xs">
-                                        </div>
-                                        <span class="text-[10px] text-slate-500 font-medium block text-right mt-0.5" x-text="'Dihitung per ' + (row.unit_type || 'kg')"></span>
+                                        <input type="number" step="100" min="0" 
+                                               :name="'items[' + idx + '][sell_price_per_kg]'" 
+                                               x-model.number="row.sell_price_per_kg" 
+                                               required
+                                               class="w-full py-2 px-2.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono font-bold text-slate-900 bg-white">
+                                        <span class="text-[10px] text-slate-400 font-medium block text-right mt-0.5">Harga per kg/pcs</span>
                                     </div>
 
                                     <div>
