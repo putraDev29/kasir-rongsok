@@ -90,9 +90,9 @@
                 <span>Cetak Biasa</span>
             </button>
 
-            <a href="{{ route('delivery-orders.pdf', [$deliveryOrder, 'copy' => $copy, 'download' => 1]) }}" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
-                <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                <span>Unduh PDF</span>
+            <a href="{{ route('delivery-orders.pdf', [$deliveryOrder, 'copy' => $copy]) }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>Preview / Unduh PDF</span>
             </a>
             <a href="{{ route('delivery-orders.show', $deliveryOrder) }}" class="px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold">
                 Kembali
@@ -157,20 +157,14 @@
                     @endif
                 </div>
 
-                <!-- Right: Vehicle & Driver -->
+                <!-- Right: Vehicle -->
                 <div class="p-1.5 bg-slate-50/80 rounded border border-slate-200">
-                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Armada & Pengemudi:</div>
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Armada Pengiriman:</div>
                     <div class="flex items-center justify-between mt-0.5">
                         <span class="font-mono font-black text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-300">
                             {{ $deliveryOrder->vehicle_number }}
                         </span>
                         <span class="text-[9px] text-slate-500 font-medium">({{ $deliveryOrder->vehicle_type ?? 'Truk' }})</span>
-                    </div>
-                    <div class="text-[9px] text-slate-700 mt-1">
-                        Sopir: <strong class="uppercase">{{ $deliveryOrder->driver_name }}</strong>
-                        @if($deliveryOrder->driver_phone)
-                            <span class="font-mono text-slate-500">({{ $deliveryOrder->driver_phone }})</span>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -266,18 +260,6 @@
             @if($deliveryOrder->notes)
                 <div class="text-[9px] text-slate-600 italic">
                     Instruksi Pengiriman: {{ $deliveryOrder->notes }}
-                </div>
-            @endif
-
-            {{-- Biaya Operasional Pengiriman (Khusus Lembar 1 Owner/Gudang - Task 10) --}}
-            @if(($deliveryOrder->shipping_cost ?? 0) > 0 || ($deliveryOrder->loading_cost ?? 0) > 0)
-                <div class="mt-2 py-1 px-2.5 bg-blue-50 border border-blue-200 rounded text-[9px] flex items-center justify-between text-blue-900">
-                    <span class="font-bold">💰 Biaya Operasional Pengiriman (Arsip Owner/Gudang):</span>
-                    <div class="flex items-center gap-3">
-                        <span>Ongkos Armada: <strong>Rp {{ \App\Services\FormatHelper::number($deliveryOrder->shipping_cost ?? 0) }}</strong></span>
-                        <span>Bongkar Muat: <strong>Rp {{ \App\Services\FormatHelper::number($deliveryOrder->loading_cost ?? 0) }}</strong></span>
-                        <span class="font-black text-emerald-800">Total: Rp {{ \App\Services\FormatHelper::number(($deliveryOrder->shipping_cost ?? 0) + ($deliveryOrder->loading_cost ?? 0)) }}</span>
-                    </div>
                 </div>
             @endif
 
@@ -386,20 +368,14 @@
                     @endif
                 </div>
 
-                <!-- Right: Vehicle & Driver -->
+                <!-- Right: Vehicle -->
                 <div class="p-1.5 bg-slate-50/80 rounded border border-slate-200">
-                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Armada & Pengemudi:</div>
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Armada Pengiriman:</div>
                     <div class="flex items-center justify-between mt-0.5">
                         <span class="font-mono font-black text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-300">
                             {{ $deliveryOrder->vehicle_number }}
                         </span>
                         <span class="text-[9px] text-slate-500 font-medium">({{ $deliveryOrder->vehicle_type ?? 'Truk' }})</span>
-                    </div>
-                    <div class="text-[9px] text-slate-700 mt-1">
-                        Sopir: <strong class="uppercase">{{ $deliveryOrder->driver_name }}</strong>
-                        @if($deliveryOrder->driver_phone)
-                            <span class="font-mono text-slate-500">({{ $deliveryOrder->driver_phone }})</span>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -495,18 +471,6 @@
             @if($deliveryOrder->notes)
                 <div class="text-[9px] text-slate-600 italic">
                     Instruksi Pengiriman: {{ $deliveryOrder->notes }}
-                </div>
-            @endif
-
-            {{-- Biaya Operasional Pengiriman (Khusus Lembar 1 Owner/Gudang - Task 10) --}}
-            @if(($deliveryOrder->shipping_cost ?? 0) > 0 || ($deliveryOrder->loading_cost ?? 0) > 0)
-                <div class="mt-2 py-1 px-2.5 bg-blue-50 border border-blue-200 rounded text-[9px] flex items-center justify-between text-blue-900">
-                    <span class="font-bold">💰 Biaya Operasional Pengiriman (Arsip Owner/Gudang):</span>
-                    <div class="flex items-center gap-3">
-                        <span>Ongkos Armada: <strong>Rp {{ \App\Services\FormatHelper::number($deliveryOrder->shipping_cost ?? 0) }}</strong></span>
-                        <span>Bongkar Muat: <strong>Rp {{ \App\Services\FormatHelper::number($deliveryOrder->loading_cost ?? 0) }}</strong></span>
-                        <span class="font-black text-emerald-800">Total: Rp {{ \App\Services\FormatHelper::number(($deliveryOrder->shipping_cost ?? 0) + ($deliveryOrder->loading_cost ?? 0)) }}</span>
-                    </div>
                 </div>
             @endif
 

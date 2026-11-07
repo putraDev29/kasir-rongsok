@@ -161,12 +161,87 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Metode Pembayaran</label>
-                    <select name="payment_method_id" x-model="paymentMethodId" class="w-full py-2 px-2 text-xs rounded-lg border border-slate-300 focus:ring-blue-500 font-medium">
-                        @foreach($paymentMethods as $pm)
-                            <option value="{{ $pm->id }}" {{ $sale->payment_method_id == $pm->id ? 'selected' : '' }}>{{ $pm->name }}</option>
-                        @endforeach
-                    </select>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-semibold text-slate-700 uppercase">Metode Pembayaran *</label>
+                        <button type="button" @click="togglePaymentMethodMode()" 
+                                class="text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:underline">
+                            <span x-text="isManualPaymentMethod ? '← Pilih dari Daftar' : '+ Tambah Metode Baru'"></span>
+                        </button>
+                    </div>
+
+                    <!-- Mode 1: Searchable Dropdown -->
+                    <div x-show="!isManualPaymentMethod" class="relative" @click.outside="closePaymentMethodDropdown()">
+                        <input type="hidden" name="payment_method_id" :value="paymentMethodId" :disabled="isManualPaymentMethod">
+
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                                <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                            </span>
+
+                            <input type="text"
+                                   x-ref="paymentMethodInput"
+                                   x-model="paymentMethodSearchQuery"
+                                   @focus="paymentMethodDropdownOpen = true; $event.target.select()"
+                                   @click="paymentMethodDropdownOpen = true"
+                                   @input="paymentMethodDropdownOpen = true"
+                                   placeholder="Cari metode pembayaran..."
+                                   class="w-full pl-8 pr-12 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-slate-900 bg-white shadow-2xs">
+
+                            <div class="absolute inset-y-0 right-0 pr-1.5 flex items-center gap-0.5">
+                                <button type="button" 
+                                        x-show="paymentMethodSearchQuery"
+                                        @click="paymentMethodSearchQuery = ''; paymentMethodDropdownOpen = true; $refs.paymentMethodInput?.focus()" 
+                                        class="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                                        title="Reset Pencarian">
+                                    <i data-lucide="x" class="w-3 h-3"></i>
+                                </button>
+                                <button type="button" 
+                                        @click="paymentMethodDropdownOpen = !paymentMethodDropdownOpen"
+                                        class="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer">
+                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': paymentMethodDropdownOpen }"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Floating Filtered List -->
+                        <div x-show="paymentMethodDropdownOpen"
+                             x-transition
+                             class="absolute z-50 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white rounded-xl border border-slate-200 shadow-xl divide-y divide-slate-100"
+                             style="display: none;">
+                            
+                            <template x-for="pm in filteredPaymentMethods()" :key="pm.id">
+                                <button type="button" 
+                                        @click="selectPaymentMethod(pm)"
+                                        class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center justify-between transition-colors cursor-pointer"
+                                        :class="{ 'bg-blue-50 font-bold text-blue-950': paymentMethodId == pm.id }">
+                                    <span class="text-xs text-slate-900" x-text="pm.name"></span>
+                                    <span x-show="paymentMethodId == pm.id" class="text-blue-600 font-bold text-xs">✓</span>
+                                </button>
+                            </template>
+
+                            <template x-if="filteredPaymentMethods().length === 0">
+                                <div class="p-3 text-center space-y-2">
+                                    <p class="text-xs text-slate-500">Tidak ada metode "<span class="font-bold text-slate-800" x-text="paymentMethodSearchQuery"></span>"</p>
+                                    <button type="button" 
+                                            @click="isManualPaymentMethod = true; newPaymentMethodName = paymentMethodSearchQuery; paymentMethodDropdownOpen = false;"
+                                            class="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xs inline-flex items-center gap-1 cursor-pointer">
+                                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                        <span x-text="'+ Tambah &quot;' + paymentMethodSearchQuery + '&quot; sebagai Metode Baru'"></span>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Mode 2: Input Manual Metode Baru -->
+                    <div x-show="isManualPaymentMethod" style="display: none;" class="space-y-1">
+                        <input type="text" name="new_payment_method_name" x-model="newPaymentMethodName"
+                               placeholder="Ketik metode pembayaran baru (contoh: QRIS Bank BCA, Mandiri Transfer, Giro)..."
+                               :required="isManualPaymentMethod"
+                               class="w-full py-2 px-3 text-xs rounded-lg border border-blue-500 focus:ring-2 focus:ring-blue-500 font-semibold text-slate-900 bg-blue-50/30">
+                        <p class="text-[10px] text-blue-600 font-medium">✨ Metode pembayaran baru otomatis tersimpan ke master database saat transaksi disimpan.</p>
+                        <input type="hidden" name="payment_method_id" value="__new__" :disabled="!isManualPaymentMethod">
+                    </div>
                 </div>
 
                 <!-- Bank Info for Sales -->
@@ -339,43 +414,48 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1"
-                                               x-text="isPcsUnit(row) ? 'Jumlah Dijual (Pcs/Satuan) *' : 'Berat Dijual (kg) *'"></label>
+                                               x-text="isPcsUnit(row) ? 'Jumlah Dijual (Pcs/Satuan)' : 'Berat Dijual (kg)'"></label>
                                         <template x-if="isPcsUnit(row)">
                                             <div>
-                                                <input type="number" step="1" min="1" 
+                                                <input type="number" step="1" min="0" 
                                                        :name="'items[' + idx + '][quantity]'" 
                                                        x-model.number="row.quantity" 
-                                                       placeholder="Jumlah"
-                                                       required
+                                                       placeholder="0"
                                                        class="w-full py-2 px-2.5 text-xs text-right rounded-lg border border-amber-300 bg-amber-50/70 focus:ring-2 focus:ring-amber-500 font-mono font-bold text-amber-950">
                                                 <input type="hidden" :name="'items[' + idx + '][weight]'" value="0">
-                                                <span class="text-[10px] text-amber-700 font-medium block text-right mt-0.5">Jumlah Satuan Fisik</span>
+                                                <span class="text-[10px] text-amber-700 font-medium block text-right mt-0.5">Bisa dikosongi</span>
                                             </div>
                                         </template>
                                         <template x-if="!isPcsUnit(row)">
                                             <div>
-                                                <input type="number" step="0.01" min="0.01" 
+                                                <input type="number" step="0.01" min="0" 
                                                        :name="'items[' + idx + '][weight]'" 
                                                        x-model.number="row.weight" 
-                                                       required
+                                                       placeholder="0"
                                                        class="w-full py-2 px-2.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono font-bold text-slate-900 bg-white"
                                                        :class="row.weight > row.maxStock ? 'border-red-500 bg-red-50 text-red-700' : ''">
                                                 <input type="hidden" :name="'items[' + idx + '][quantity]'" value="1">
-                                                <span class="text-[10px] text-slate-400 font-medium block text-right mt-0.5">Berat Bersih Kirim</span>
+                                                <span class="text-[10px] text-slate-400 font-medium block text-right mt-0.5">Bisa dikosongi</span>
                                             </div>
                                         </template>
                                     </div>
 
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
-                                            Harga Jual Pabrik (Rp) *
+                                            Harga Jual Pabrik (Rp)
                                         </label>
-                                        <input type="number" step="100" min="0" 
-                                               :name="'items[' + idx + '][sell_price_per_kg]'" 
-                                               x-model.number="row.sell_price_per_kg" 
-                                               required
-                                               class="w-full py-2 px-2.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono font-bold text-slate-900 bg-white">
-                                        <span class="text-[10px] text-slate-400 font-medium block text-right mt-0.5">Harga per kg/pcs</span>
+                                        <div class="relative">
+                                            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
+                                            <input type="number" step="100" min="0" 
+                                                   :name="'items[' + idx + '][sell_price_per_kg]'" 
+                                                   x-model.number="row.sell_price_per_kg" 
+                                                   placeholder="0"
+                                                   class="w-full py-2 pl-9 pr-2.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono font-bold text-slate-900 bg-white">
+                                        </div>
+                                        <div class="flex items-center justify-between text-[10px] mt-0.5">
+                                            <span class="text-blue-600 font-mono font-bold" x-text="formatRp(row.sell_price_per_kg || 0)"></span>
+                                            <span class="text-slate-400 font-medium">Bisa dikosongi</span>
+                                        </div>
                                     </div>
 
                                     <div>
@@ -416,8 +496,11 @@
 
                     <div class="flex justify-between items-center text-xs text-slate-600">
                         <span>Potongan / Diskon (Rp):</span>
-                        <input type="number" step="100" min="0" name="discount_amount" x-model.number="discountAmount"
-                               class="w-32 py-1 px-2 text-xs text-right rounded border border-slate-300 font-mono">
+                        <div class="relative w-36">
+                            <span class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
+                            <input type="number" step="100" min="0" name="discount_amount" x-model.number="discountAmount"
+                                   class="w-full py-1 pl-7 pr-2 text-xs text-right rounded border border-slate-300 font-mono">
+                        </div>
                     </div>
 
                     <div class="pt-2 border-t border-slate-200 flex justify-between items-baseline">
@@ -437,7 +520,7 @@
                     Batal
                 </a>
                 <button type="submit" 
-                        :disabled="hasStockError() || rows.length === 0 || subtotalAmount() <= 0"
+                        :disabled="hasStockError() || rows.length === 0"
                         class="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition-all">
                     Simpan & Finalisasi Penjualan
                 </button>
@@ -464,7 +547,53 @@ function editSalesPos() {
         buyerName: @json(old('buyer_name', $sale->buyer_name ?? '')),
         buyerPhone: @json(old('buyer_phone', $sale->buyer_phone ?? '')),
         buyerAddress: @json(old('buyer_address', $sale->buyer_address ?? '')),
+        paymentMethodsList: @json($paymentMethods ?? []),
         paymentMethodId: @json(old('payment_method_id', $sale->payment_method_id ?? 1)),
+        paymentMethodSearchQuery: @json($sale->paymentMethod?->name ?? 'Tunai'),
+        paymentMethodDropdownOpen: false,
+        isManualPaymentMethod: false,
+        newPaymentMethodName: '',
+
+        togglePaymentMethodMode() {
+            this.isManualPaymentMethod = !this.isManualPaymentMethod;
+            if (this.isManualPaymentMethod) {
+                this.paymentMethodDropdownOpen = false;
+                this.newPaymentMethodName = this.paymentMethodSearchQuery || '';
+            } else {
+                const pm = this.paymentMethodsList.find(p => p.id == this.paymentMethodId) || this.paymentMethodsList[0];
+                if (pm) {
+                    this.paymentMethodId = pm.id;
+                    this.paymentMethodSearchQuery = pm.name;
+                }
+            }
+        },
+
+        filteredPaymentMethods() {
+            if (!this.paymentMethodSearchQuery) return this.paymentMethodsList;
+            const q = this.paymentMethodSearchQuery.toLowerCase();
+            return this.paymentMethodsList.filter(pm => (pm.name || '').toLowerCase().includes(q));
+        },
+
+        selectPaymentMethod(pm) {
+            this.paymentMethodId = pm.id;
+            this.paymentMethodSearchQuery = pm.name;
+            this.paymentMethodDropdownOpen = false;
+            this.isManualPaymentMethod = false;
+            this.newPaymentMethodName = '';
+            if (pm.bank_name && !this.customBank) {
+                this.customBank = pm.bank_name;
+            }
+        },
+
+        closePaymentMethodDropdown() {
+            this.paymentMethodDropdownOpen = false;
+            if (!this.isManualPaymentMethod) {
+                const pm = this.paymentMethodsList.find(p => p.id == this.paymentMethodId);
+                if (pm) {
+                    this.paymentMethodSearchQuery = pm.name;
+                }
+            }
+        },
         customBank: @json(old('custom_bank', $sale->getBankName() ?? '')),
         customAccountNo: @json(old('custom_account_no', $sale->getBankAccountNumber() ?? '')),
         customAccountName: @json(old('custom_account_name', $sale->getBankAccountName() ?? '')),
@@ -493,7 +622,16 @@ function editSalesPos() {
         },
 
         isTransferPayment() {
-            return true;
+            if (this.isManualPaymentMethod) {
+                const name = (this.newPaymentMethodName || '').toLowerCase();
+                return name.includes('transfer') || name.includes('bank') || name.includes('bca') || name.includes('bri') || name.includes('mandiri') || name.includes('bni');
+            }
+            const method = this.paymentMethodsList.find(m => m.id == this.paymentMethodId);
+            if (!method) return false;
+            const name = (method.name || '').toLowerCase();
+            const code = (method.code || '').toLowerCase();
+            if (code === 'cash' || name.includes('tunai') || name.includes('cash')) return false;
+            return name.includes('transfer') || name.includes('bank') || name.includes('bca') || name.includes('bri') || name.includes('mandiri') || name.includes('bni') || code.includes('transfer');
         },
 
         filteredMasterItems(searchText) {

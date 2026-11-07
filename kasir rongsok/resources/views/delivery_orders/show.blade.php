@@ -179,7 +179,7 @@
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
             <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center gap-2">
                 <i data-lucide="truck" class="w-4 h-4 text-emerald-600"></i>
-                <span>Armada Ekspedisi & Driver</span>
+                <span>Armada Ekspedisi</span>
             </h3>
 
             <div class="space-y-2 text-xs">
@@ -192,25 +192,6 @@
                 </div>
 
                 <div>
-                    <span class="text-slate-400 block text-[11px]">Nama Pengemudi:</span>
-                    <span class="font-bold text-slate-800 text-sm">{{ $deliveryOrder->driver_name }}</span>
-                </div>
-
-                <div>
-                    <span class="text-slate-400 block text-[11px]">Kontak Pengemudi:</span>
-                    <span class="font-mono text-slate-800">{{ $deliveryOrder->driver_phone ?: '-' }}</span>
-                </div>
-
-                @if($deliveryOrder->hasDriverBankDetails())
-                    <div>
-                        <span class="text-slate-400 block text-[11px]">Rekening Bank Sopir (Pencairan Ongkos):</span>
-                        <span class="font-mono text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block font-semibold text-xs">
-                            {{ $deliveryOrder->driverBankDisplay() }}
-                        </span>
-                    </div>
-                @endif
-
-                <div>
                     <span class="text-slate-400 block text-[11px]">Catatan / Instruksi:</span>
                     <p class="text-slate-600 italic">{{ $deliveryOrder->notes ?: 'Tidak ada instruksi khusus.' }}</p>
                 </div>
@@ -218,33 +199,6 @@
         </div>
 
     </div>
-
-    @if(($deliveryOrder->shipping_cost ?? 0) > 0 || ($deliveryOrder->loading_cost ?? 0) > 0)
-        <!-- Biaya Operasional Pengiriman (Task 10) -->
-        <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-4 shadow-xs">
-            <div class="flex items-center justify-between pb-2 border-b border-blue-200/80 mb-3">
-                <span class="text-xs font-bold text-blue-950 uppercase flex items-center gap-1.5">
-                    <i data-lucide="banknote" class="w-4 h-4 text-blue-600"></i>
-                    <span>Biaya Operasional Pengiriman (Tercatat di Kas Operasional)</span>
-                </span>
-                <span class="text-[10px] text-blue-700 bg-blue-100 font-semibold px-2 py-0.5 rounded">Khusus Arsip Gudang & Owner</span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                <div class="p-3 bg-white rounded-lg border border-blue-100">
-                    <span class="text-slate-500 block text-[11px] mb-0.5">Biaya Ongkos Armada / Driver:</span>
-                    <span class="font-mono font-bold text-slate-900 text-sm">Rp {{ \App\Services\FormatHelper::number($deliveryOrder->shipping_cost ?? 0) }}</span>
-                </div>
-                <div class="p-3 bg-white rounded-lg border border-blue-100">
-                    <span class="text-slate-500 block text-[11px] mb-0.5">Biaya Bongkar Muat / Tenaga Angkut:</span>
-                    <span class="font-mono font-bold text-slate-900 text-sm">Rp {{ \App\Services\FormatHelper::number($deliveryOrder->loading_cost ?? 0) }}</span>
-                </div>
-                <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                    <span class="text-emerald-800 block text-[11px] mb-0.5 font-semibold">Total Biaya Operasional:</span>
-                    <span class="font-mono font-black text-emerald-700 text-sm">Rp {{ \App\Services\FormatHelper::number(($deliveryOrder->shipping_cost ?? 0) + ($deliveryOrder->loading_cost ?? 0)) }}</span>
-                </div>
-            </div>
-        </div>
-    @endif
 
     <!-- Items Table Card -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

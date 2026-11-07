@@ -292,37 +292,37 @@ class ScrapCashierSystemTest extends TestCase
     {
         $masterPrice = (float) $this->besiItem->buy_price_per_kg;
 
-        // 1. Kasir: Harga melebihi master -> HARUS GAGAL validasi
-        $responseKasirFail = $this->actingAs($this->kasir)->post('/purchases', [
-            'supplier_name' => 'Penjual Test Kasir Melebihi',
+        // 1. Kasir: Bebas edit harga beli berapapun (di atas master) -> BERHASIL
+        $responseKasir = $this->actingAs($this->kasir)->post('/purchases', [
+            'supplier_name' => 'Penjual Test Kasir Bebas Edit',
             'payment_method_id' => $this->cashMethod->id,
             'items' => [
                 [
                     'scrap_item_id' => $this->besiItem->id,
                     'gross_weight' => 50,
                     'tare_weight' => 0,
-                    'price_per_kg' => $masterPrice + 2000, // MELEBIHI HARGA MASTER
+                    'price_per_kg' => $masterPrice + 2000, // BEBAS EDIT MELEBIHI HARGA MASTER
                 ]
             ]
         ]);
-        $responseKasirFail->assertSessionHasErrors(['items.0.price_per_kg']);
+        $responseKasir->assertSessionHas('success');
 
-        // 2. Admin: Harga melebihi master -> JUGA HARUS GAGAL validasi
-        $responseAdminFail = $this->actingAs($this->admin)->post('/purchases', [
-            'supplier_name' => 'Penjual Test Admin Melebihi',
+        // 2. Admin: Bebas edit harga beli berapapun -> BERHASIL
+        $responseAdmin = $this->actingAs($this->admin)->post('/purchases', [
+            'supplier_name' => 'Penjual Test Admin Bebas Edit',
             'payment_method_id' => $this->cashMethod->id,
             'items' => [
                 [
                     'scrap_item_id' => $this->besiItem->id,
                     'gross_weight' => 50,
                     'tare_weight' => 0,
-                    'price_per_kg' => $masterPrice + 2000, // MELEBIHI HARGA MASTER
+                    'price_per_kg' => $masterPrice + 2000, // BEBAS EDIT MELEBIHI HARGA MASTER
                 ]
             ]
         ]);
-        $responseAdminFail->assertSessionHasErrors(['items.0.price_per_kg']);
+        $responseAdmin->assertSessionHas('success');
 
-        // 3. Owner (Super Admin): Harga melebihi master -> HARUS BERHASIL (bisa edit berapapun)
+        // 3. Owner (Super Admin): Harga melebihi master -> BERHASIL
         $responseOwnerSuccess = $this->actingAs($this->superAdmin)->post('/purchases', [
             'supplier_name' => 'Penjual Test Owner Bebas Edit',
             'payment_method_id' => $this->cashMethod->id,
@@ -331,7 +331,7 @@ class ScrapCashierSystemTest extends TestCase
                     'scrap_item_id' => $this->besiItem->id,
                     'gross_weight' => 50,
                     'tare_weight' => 0,
-                    'price_per_kg' => $masterPrice + 2000, // OWNER BEBAS MELEBIHI
+                    'price_per_kg' => $masterPrice + 2000,
                 ]
             ]
         ]);
@@ -2161,6 +2161,115 @@ class ScrapCashierSystemTest extends TestCase
             'message' => 'Halo ini kartu member Anda',
         ]);
         $postWaRes->assertOk();
+    }
+
+    public function test_operational_costs_can_be_zero_or_dash_and_weight_or_price_can_be_empty(): void
+    {
+        // 1. Buat stock awal besi
+        $this->besiItem->stockBalance->update(['current_stock' => 100]);
+
+        // 2. Sales dengan shipping_cost = '-', loading_cost = '0', weight kosong, sell_price_per_kg kosong
+        $salesRes = $this->actingAs($this->kasir)->post('/sales', [
+            'buyer_name' => 'PT. Pabrik Mitra Test',
+            'delivery_type' => 'delivery',
+            'shipping_cost' => '-',
+            'loading_cost' => '0',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'unit_type' => 'kg',
+                    'weight' => null,
+                    'sell_price_per_kg' => null,
+                ]
+            ]
+        ]);
+        $salesRes->assertSessionHas('success');
+
+        $sale = \App\Models\SalesTransaction::latest()->first();
+        $this->assertNotNull($sale);
+        $this->assertEquals(0, (float) ($sale->deliveryOrder?->shipping_cost ?? 0));
+        $this->assertEquals(0, (float) ($sale->deliveryOrder?->loading_cost ?? 0));
+
+        // 3. Delivery Order dengan shipping_cost = '-', weight = null
+        $doRes = $this->actingAs($this->admin)->post('/delivery-orders', [
+            'delivery_date' => now()->toDateString(),
+            'recipient_name' => 'PT. Logam Nusantara Jaya',
+            'driver_name' => 'Sopir Budi',
+            'vehicle_number' => 'B 9999 XYZ',
+            'shipping_cost' => '-',
+            'loading_cost' => '-',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_name' => $this->besiItem->name,
+                    'unit_type' => 'kg',
+                    'weight' => null,
+                    'package_qty' => 5,
+                ]
+            ]
+        ]);
+        $doRes->assertSessionHas('success');
+        $do = \App\Models\DeliveryOrder::latest()->first();
+        $this->assertEquals(0, (float) $do->shipping_cost);
+        $this->assertEquals(0, (float) $do->loading_cost);
+    }
+
+    public function test_delivery_order_views_exclude_costs_and_sales_views_include_driver_and_costs(): void
+    {
+        $this->besiItem->stockBalance->update(['current_stock' => 500]);
+
+        // Buat DO dengan ongkos
+        $do = \App\Models\DeliveryOrder::create([
+            'delivery_number' => 'SJ-TEST-001',
+            'delivery_date' => now(),
+            'recipient_name' => 'PT. Pabrik Besi Baja',
+            'driver_name' => 'Pak Supir Anto',
+            'driver_phone' => '08987654321',
+            'driver_bank_account_number' => '1122334455',
+            'vehicle_number' => 'B 1111 AAA',
+            'vehicle_type' => 'Truk Fuso',
+            'shipping_cost' => 350000,
+            'loading_cost' => 150000,
+            'total_weight' => 200,
+            'total_packages' => 2,
+            'status' => 'delivered',
+            'user_id' => $this->admin->id,
+        ]);
+
+        $sale = \App\Models\SalesTransaction::create([
+            'invoice_number' => 'PPJ-JL-XI-26-0099',
+            'buyer_name' => 'PT. Pabrik Besi Baja',
+            'delivery_type' => 'delivery',
+            'delivery_order_id' => $do->id,
+            'user_id' => $this->kasir->id,
+            'payment_method_id' => $this->cashMethod->id,
+            'transaction_date' => now(),
+            'total_weight' => 200,
+            'subtotal_amount' => 1000000,
+            'final_amount' => 1000000,
+            'status' => 'completed',
+        ]);
+
+        // 1. Sales detail view: Menampilkan detail supir dan ongkos armada
+        $saleRes = $this->actingAs($this->admin)->get(route('sales.show', $sale));
+        $saleRes->assertOk();
+        $saleRes->assertSee('Pak Supir Anto');
+        $saleRes->assertSee('350.000');
+        $saleRes->assertSee('150.000');
+
+        // 2. Sales PDF view: Menampilkan detail supir dan biaya kirim
+        $salePdfRes = $this->actingAs($this->admin)->get(route('sales.pdf', $sale));
+        $salePdfRes->assertOk();
+
+        // 3. Delivery Order show & print views: HAPUS biaya operasional & rekening supir
+        $doRes = $this->actingAs($this->admin)->get(route('delivery-orders.show', $do));
+        $doRes->assertOk();
+        $doRes->assertDontSee('Biaya Operasional Pengiriman (Tercatat di Kas Operasional)');
+        $doRes->assertDontSee('Rekening Bank Sopir (Pencairan Ongkos):');
+
+        $doPrintRes = $this->actingAs($this->admin)->get(route('delivery-orders.print', $do));
+        $doPrintRes->assertOk();
+        $doPrintRes->assertDontSee('Biaya Operasional Pengiriman (Arsip Owner/Gudang):');
     }
 }
 

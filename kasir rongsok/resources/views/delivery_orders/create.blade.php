@@ -43,9 +43,7 @@
 
     <form action="{{ route('delivery-orders.store') }}" method="POST" class="space-y-6">
         @csrf
-        @if($salesTx)
-            <input type="hidden" name="sales_transaction_id" value="{{ $salesTx->id }}">
-        @endif
+        <input type="hidden" name="sales_transaction_id" :value="salesTransactionId">
 
         <!-- Card 1: Tujuan Pabrik & Armada Transportasi -->
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
@@ -53,6 +51,30 @@
                 <i data-lucide="truck" class="w-4 h-4 text-emerald-600"></i>
                 <span>1. Data Pabrik Penerima & Armada Ekspedisi</span>
             </h3>
+
+            <!-- Tarik Data dari Penjualan Pengiriman (Task 6) -->
+            <div class="p-3.5 bg-blue-50/80 rounded-xl border border-blue-200 space-y-1.5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <label class="block text-xs font-bold text-blue-900 uppercase flex items-center gap-1.5">
+                        <i data-lucide="package-check" class="w-4 h-4 text-blue-600"></i>
+                        <span>Pilih Data dari Penjualan Tipe Pengiriman (Belum Terbit Surat Jalan)</span>
+                    </label>
+                    <span class="text-[10px] text-blue-700 bg-blue-100 font-semibold px-2 py-0.5 rounded self-start sm:self-auto">Tarik Otomatis</span>
+                </div>
+                <select x-model="selectedSalesId" @change="onSelectSale($event.target.value)"
+                        class="w-full text-xs p-2.5 rounded-lg border border-blue-300 focus:ring-blue-500 bg-white font-medium text-slate-800">
+                    <option value="">-- Ketik Pengiriman Bebas Manual / Atau Pilih dari Penjualan --</option>
+                    @foreach($recentSales as $rs)
+                        <option value="{{ $rs->id }}" {{ ($salesTx && $salesTx->id == $rs->id) ? 'selected' : '' }}>
+                            {{ $rs->invoice_number }} - {{ $rs->buyer_name }} ({{ \App\Services\FormatHelper::weight($rs->total_weight) }} kg) - {{ $rs->transaction_date?->format('d/m/Y') }}
+                        </option>
+                    @endforeach
+                </select>
+                <div x-show="selectedSalesId" class="text-[11px] text-emerald-700 font-medium flex items-center gap-1 pt-0.5">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    <span>Data pabrik penerima dan muatan material terisi otomatis dari Nota Penjualan terpilih.</span>
+                </div>
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
@@ -177,27 +199,33 @@
 
             </div>
 
-            <!-- Biaya Operasional Pengiriman (Task 10) -->
+            <!-- Biaya Operasional Pengiriman (Task 4 & Task 10) -->
             <div class="pt-3 border-t border-slate-100 bg-blue-50/50 p-4 rounded-xl border border-blue-200/80 space-y-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-bold text-blue-900 uppercase flex items-center gap-1.5">
                         <i data-lucide="banknote" class="w-4 h-4 text-blue-600"></i>
-                        <span>Biaya Operasional Pengiriman (Masuk Operasional & Tampil di PDF Owner)</span>
+                        <span>Biaya Operasional Pengiriman</span>
                     </span>
-                    <span class="text-[10px] text-blue-700 font-semibold bg-blue-100 px-2 py-0.5 rounded">Opsional</span>
+                    <span class="text-[10px] text-blue-700 font-semibold bg-blue-100 px-2 py-0.5 rounded">Bisa 0 atau -</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Biaya Ongkos Armada / Supir (Rp)</label>
-                        <input type="number" name="shipping_cost" min="0" step="1000" placeholder="0"
-                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white">
-                        <span class="text-[10px] text-slate-400">Dicatat ke pengeluaran 'Biaya Transportasi & Armada' & Lembar 1 PDF Owner.</span>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
+                            <input type="text" name="shipping_cost" placeholder="0 atau -"
+                                   class="w-full text-xs py-2 pl-8 pr-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white">
+                        </div>
+                        <span class="text-[10px] text-slate-400">Dicatat ke pengeluaran 'Biaya Transportasi & Armada' (bisa 0 atau -).</span>
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Biaya Bongkar Muat / Tenaga Angkut (Rp)</label>
-                        <input type="number" name="loading_cost" min="0" step="1000" placeholder="0"
-                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white">
-                        <span class="text-[10px] text-slate-400">Dicatat ke pengeluaran 'Biaya Bongkar Muat' & Lembar 1 PDF Owner.</span>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
+                            <input type="text" name="loading_cost" placeholder="0 atau -"
+                                   class="w-full text-xs py-2 pl-8 pr-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white">
+                        </div>
+                        <span class="text-[10px] text-slate-400">Dicatat ke pengeluaran 'Biaya Bongkar Muat' (bisa 0 atau -).</span>
                     </div>
                 </div>
             </div>
@@ -350,14 +378,13 @@
                                 </select>
                             </div>
 
-                            <!-- 2. Berat / Qty -->
+                            <!-- 2. Berat / Qty (Bisa dikosongi - Task 5) -->
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 whitespace-nowrap"
-                                       x-text="row.unit_type === 'pcs' ? 'Qty Satuan *' : 'Berat Muatan (kg) *'"></label>
-                                <input type="number" step="0.01" min="0.01" 
+                                       x-text="row.unit_type === 'pcs' ? 'Qty Satuan' : 'Berat Muatan (kg)'"></label>
+                                <input type="number" step="0.01" min="0" 
                                        :name="'items['+idx+'][weight]'" 
                                        x-model.number="row.weight" 
-                                       required 
                                        placeholder="0"
                                        class="w-full py-1.5 px-2 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
                             </div>
@@ -434,6 +461,9 @@ function deliveryOrderForm() {
     return {
         masterItems: @json($scrapItems),
         salesTx: @json($salesTx),
+        recentSalesList: @json($recentSales),
+        salesTransactionId: '{{ $salesTx ? $salesTx->id : '' }}',
+        selectedSalesId: '{{ $salesTx ? $salesTx->id : '' }}',
         recipientName: '{{ $salesTx ? $salesTx->buyer_name : '' }}',
         recipientPhone: '{{ $salesTx ? $salesTx->buyer_phone : '' }}',
         driverId: '',
@@ -445,6 +475,58 @@ function deliveryOrderForm() {
         driverBankAccountNumber: '',
         driverBankAccountName: '',
         saveToDriverBank: true,
+
+        onSelectSale(saleId) {
+            if (!saleId) {
+                this.salesTransactionId = '';
+                this.selectedSalesId = '';
+                return;
+            }
+            const sale = this.recentSalesList.find(s => s.id == saleId);
+            if (!sale) return;
+
+            this.salesTransactionId = sale.id;
+            this.selectedSalesId = sale.id;
+            this.recipientName = sale.buyer_name || '';
+            this.recipientPhone = sale.buyer_phone || '';
+            const addrInput = document.querySelector('input[name="recipient_address"]');
+            if (addrInput && sale.buyer_address) {
+                addrInput.value = sale.buyer_address;
+            }
+
+            if (sale.driver_id) {
+                this.driverId = sale.driver_id;
+                const driver = sale.driver;
+                if (driver) {
+                    this.driverName = driver.name || '';
+                    this.driverPhone = driver.phone || '';
+                    if (driver.vehicle_number) this.vehicleNumber = driver.vehicle_number;
+                    if (driver.vehicle_type) this.vehicleType = driver.vehicle_type;
+                }
+            }
+
+            if (sale.items && sale.items.length > 0) {
+                this.rows = sale.items.map((si, idx) => ({
+                    uid: idx + 1,
+                    scrap_item_id: si.scrap_item_id || '',
+                    search_text: si.item_name_snapshot || (si.scrap_item ? si.scrap_item.name : ''),
+                    dropdown_open: false,
+                    item_name: si.item_name_snapshot || (si.scrap_item ? si.scrap_item.name : ''),
+                    item_type_name: si.item_type_name || '',
+                    unit_type: si.unit_type || 'kg',
+                    weight: parseFloat(si.weight ?? si.quantity ?? 0) || '',
+                    price_per_kg: parseFloat(si.sell_price_per_kg ?? 0) || 0,
+                    subtotal: parseFloat(si.subtotal ?? 0) || 0,
+                    package_qty: '',
+                    notes: ''
+                }));
+            }
+            this.$nextTick(() => {
+                if (window.createIcons && window.lucideIcons) {
+                    window.createIcons({ icons: window.lucideIcons });
+                }
+            });
+        },
 
         onDriverSelect(e) {
             const opt = e.target.selectedOptions[0];

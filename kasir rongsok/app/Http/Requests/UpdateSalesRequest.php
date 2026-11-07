@@ -28,7 +28,8 @@ class UpdateSalesRequest extends FormRequest
             'save_to_driver_bank' => 'nullable|boolean',
             'vehicle_number' => 'nullable|string|max:20',
             'vehicle_type' => 'nullable|string|max:50',
-            'payment_method_id' => 'nullable|exists:payment_methods,id',
+            'payment_method_id' => 'nullable',
+            'new_payment_method_name' => 'nullable|string|max:100',
             'bank_info' => 'nullable|string|max:255',
             'custom_bank' => 'nullable|string|max:100',
             'custom_account_name' => 'nullable|string|max:150',
@@ -46,12 +47,33 @@ class UpdateSalesRequest extends FormRequest
             'items.*.buy_price_snapshot' => 'nullable|numeric|min:0',
             'items.*.unit_type' => 'nullable|string|in:kg,pcs,satuan,unit',
             'items.*.item_type_name' => 'nullable|string|max:150',
-            'items.*.quantity' => 'nullable|numeric|min:0.01',
+            'items.*.quantity' => 'nullable|numeric|min:0',
             'items.*.weight' => 'nullable|numeric|min:0',
-            'items.*.sell_price_per_kg' => 'required|numeric|gt:0',
+            'items.*.sell_price_per_kg' => 'nullable|numeric|min:0',
             'items.*.package_qty' => 'nullable|integer|min:0',
             'items.*.notes' => 'nullable|string|max:255',
+            'shipping_cost' => 'nullable',
+            'loading_cost' => 'nullable',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $sanitizeCost = function ($val) {
+            if ($val === '-' || $val === '' || is_null($val)) return 0;
+            return (float) preg_replace('/[^\d.]/', '', (string) $val);
+        };
+
+        $merge = [];
+        if ($this->has('shipping_cost')) {
+            $merge['shipping_cost'] = $sanitizeCost($this->shipping_cost);
+        }
+        if ($this->has('loading_cost')) {
+            $merge['loading_cost'] = $sanitizeCost($this->loading_cost);
+        }
+        if (!empty($merge)) {
+            $this->merge($merge);
+        }
     }
 
     public function messages(): array
@@ -59,8 +81,6 @@ class UpdateSalesRequest extends FormRequest
         return [
             'buyer_name.required' => 'Nama pembeli / pabrik rongsok wajib diisi.',
             'items.required' => 'Daftar barang penjualan wajib ada.',
-            'items.*.sell_price_per_kg.required' => 'Harga jual per kg / satuan wajib diisi.',
-            'items.*.sell_price_per_kg.gt' => 'Harga jual per kg / satuan harus lebih dari Rp 0.',
         ];
     }
 }

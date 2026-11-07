@@ -30,7 +30,8 @@ class StoreSalesRequest extends FormRequest
             'save_to_driver_bank' => 'nullable|boolean',
             'vehicle_number' => 'nullable|string|max:20',
             'vehicle_type' => 'nullable|string|max:50',
-            'payment_method_id' => 'nullable|exists:payment_methods,id',
+            'payment_method_id' => 'nullable',
+            'new_payment_method_name' => 'nullable|string|max:100',
             'bank_info' => 'nullable|string|max:255',
             'custom_bank' => 'nullable|string|max:100',
             'custom_account_name' => 'nullable|string|max:150',
@@ -46,36 +47,37 @@ class StoreSalesRequest extends FormRequest
             'items.*.buy_price_snapshot' => 'nullable|numeric|min:0',
             'items.*.unit_type' => 'nullable|string|in:kg,pcs,satuan,unit',
             'items.*.item_type_name' => 'nullable|string|max:150',
-            'items.*.quantity' => 'nullable|numeric|min:0.01',
+            'items.*.quantity' => 'nullable|numeric|min:0',
             'items.*.weight' => 'nullable|numeric|min:0',
-            'items.*.sell_price_per_kg' => $isKasir ? 'nullable|numeric|min:0' : 'required|numeric|gt:0',
+            'items.*.sell_price_per_kg' => 'nullable|numeric|min:0',
             'items.*.notes' => 'nullable|string|max:255',
+            'shipping_cost' => 'nullable',
+            'loading_cost' => 'nullable',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $sanitizeCost = function ($val) {
+            if ($val === '-' || $val === '' || is_null($val)) return 0;
+            return (float) preg_replace('/[^\d.]/', '', (string) $val);
+        };
+
+        $merge = [];
+        if ($this->has('shipping_cost')) {
+            $merge['shipping_cost'] = $sanitizeCost($this->shipping_cost);
+        }
+        if ($this->has('loading_cost')) {
+            $merge['loading_cost'] = $sanitizeCost($this->loading_cost);
+        }
+        if (!empty($merge)) {
+            $this->merge($merge);
+        }
     }
 
     public function withValidator($validator): void
     {
-        $validator->after(function ($validator) {
-            $items = $this->input('items', []);
-            if (!is_array($items) || empty($items)) {
-                return;
-            }
-
-            foreach ($items as $index => $item) {
-                $unitType = strtolower($item['unit_type'] ?? 'kg');
-                if (in_array($unitType, ['pcs', 'satuan', 'unit'])) {
-                    $qty = (float) ($item['quantity'] ?? 0);
-                    if ($qty <= 0) {
-                        $validator->errors()->add("items.{$index}.quantity", "Jumlah barang jual (pcs/satuan) harus lebih dari 0.");
-                    }
-                } else {
-                    $weight = (float) ($item['weight'] ?? 0);
-                    if ($weight <= 0) {
-                        $validator->errors()->add("items.{$index}.weight", "Berat barang yang dijual harus lebih dari 0 kg.");
-                    }
-                }
-            }
-        });
+        // Items weight and sell_price can be empty / 0 as per user requirement
     }
 
     public function messages(): array

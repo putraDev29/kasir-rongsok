@@ -40,7 +40,7 @@
 
         <!-- Catatan Akuntansi Kasir Rongsok -->
         <div class="p-2.5 rounded border border-slate-300 bg-slate-50 text-[10px] text-slate-700 leading-relaxed">
-            <strong>Catatan Akuntansi Stok Depo:</strong> Pembelian rongsok masuk pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ number_format($totalPurchasesWeight, 1) }} kg) dicatat sebagai <strong>Penambahan Aset Persediaan Gudang</strong> (bukan pengurang laba/beban kerugian). Uang kas terkonversi menjadi fisik rongsok bernilai estimasi jual pabrik <strong>Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</strong> (Potensi Margin Stok: <strong>+Rp {{ number_format($totalPotentialInventoryProfit, 0, ',', '.') }}</strong>).
+            <strong>Catatan Akuntansi Stok Depo:</strong> Pembelian rongsok masuk pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg) dicatat sebagai <strong>Penambahan Aset Persediaan Gudang</strong> (bukan pengurang laba/beban kerugian). Uang kas terkonversi menjadi fisik rongsok bernilai estimasi jual pabrik <strong>Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</strong> (Potensi Margin Stok: <strong>+Rp {{ number_format($totalPotentialInventoryProfit, 0, ',', '.') }}</strong>).
         </div>
 
         <!-- 1. IKHTISAR KEUANGAN LABA RUGI -->
@@ -50,7 +50,7 @@
             </div>
 
             <div class="flex justify-between border-b border-slate-200 pb-1">
-                <span>1. PENDAPATAN PENJUALAN RONGSOK ({{ number_format($totalSalesWeight, 1) }} kg)</span>
+                <span>1. PENDAPATAN PENJUALAN RONGSOK ({{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg)</span>
                 <span class="font-bold">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
             </div>
 
@@ -101,7 +101,7 @@
             <div class="border border-slate-300 rounded p-2.5">
                 <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
                     <span>II.A. BARANG MASUK (ASET PERSEDIAAN)</span>
-                    <span class="font-mono">{{ number_format($totalPurchasesWeight, 1) }} kg</span>
+                    <span class="font-mono">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg</span>
                 </div>
                 <table class="w-full text-left text-[9px] mt-1.5 font-mono">
                     <thead>
@@ -116,7 +116,7 @@
                         @foreach($incomingItems as $in)
                             <tr>
                                 <td class="py-0.5 font-sans">{{ $in->item_name }}</td>
-                                <td class="py-0.5 text-right">{{ number_format($in->total_weight, 1) }}</td>
+                                <td class="py-0.5 text-right">{{ \App\Services\FormatHelper::weight($in->total_weight) }}</td>
                                 <td class="py-0.5 text-right">Rp {{ number_format($in->total_amount, 0, ',', '.') }}</td>
                                 <td class="py-0.5 text-right text-blue-800">Rp {{ number_format($in->estimated_sales_value, 0, ',', '.') }}</td>
                             </tr>
@@ -125,7 +125,7 @@
                     <tfoot class="border-t border-slate-300 font-bold">
                         <tr>
                             <td class="pt-1">Total</td>
-                            <td class="pt-1 text-right">{{ number_format($totalPurchasesWeight, 1) }} kg</td>
+                            <td class="pt-1 text-right">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg</td>
                             <td class="pt-1 text-right">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</td>
                             <td class="pt-1 text-right text-blue-800">Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</td>
                         </tr>
@@ -137,7 +137,7 @@
             <div class="border border-slate-300 rounded p-2.5">
                 <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
                     <span>II.B. BARANG KELUAR (PENJUALAN PABRIK)</span>
-                    <span class="font-mono">{{ number_format($totalSalesWeight, 1) }} kg</span>
+                    <span class="font-mono">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg</span>
                 </div>
                 <table class="w-full text-left text-[9px] mt-1.5 font-mono">
                     <thead>
@@ -151,7 +151,7 @@
                         @forelse($outgoingItems as $out)
                             <tr>
                                 <td class="py-0.5 font-sans">{{ $out->item_name }}</td>
-                                <td class="py-0.5 text-right">{{ number_format($out->total_weight, 1) }}</td>
+                                <td class="py-0.5 text-right">{{ \App\Services\FormatHelper::weight($out->total_weight) }}</td>
                                 <td class="py-0.5 text-right">Rp {{ number_format($out->total_amount, 0, ',', '.') }}</td>
                             </tr>
                         @empty
@@ -163,7 +163,7 @@
                     <tfoot class="border-t border-slate-300 font-bold">
                         <tr>
                             <td class="pt-1">Total</td>
-                            <td class="pt-1 text-right">{{ number_format($totalSalesWeight, 1) }} kg</td>
+                            <td class="pt-1 text-right">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg</td>
                             <td class="pt-1 text-right">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
                         </tr>
                     </tfoot>

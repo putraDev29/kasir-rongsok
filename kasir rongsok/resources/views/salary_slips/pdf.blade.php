@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <title>Slip_Gaji_{{ $salarySlip->slip_number }}</title>
     <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #1e293b; margin: 0; padding: 20px; }
-        .border-box { border: 1.5px solid #0f172a; padding: 15px; border-radius: 6px; }
+        @page { size: A4 portrait; margin: 12mm 15mm; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #1e293b; margin: 0; padding: 0; }
+        .border-box { border: 1.5px solid #0f172a; padding: 15px; border-radius: 6px; page-break-inside: avoid; }
         .header { text-align: center; border-bottom: 1.5px solid #0f172a; padding-bottom: 8px; margin-bottom: 12px; }
         .company-name { font-size: 15px; font-weight: bold; text-transform: uppercase; }
         .title { font-size: 12px; font-weight: bold; margin-top: 3px; color: #047857; text-transform: uppercase; }

@@ -114,7 +114,7 @@
             vertical-align: top;
         }
         .meta-label {
-            width: 58px;
+            width: 70px;
             white-space: nowrap;
             color: #1e293b;
         }

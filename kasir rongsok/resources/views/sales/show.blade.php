@@ -186,6 +186,45 @@
             </div>
         </div>
 
+        @if($sale->isDelivery() && $sale->deliveryOrder)
+            <!-- Detail Armada, Supir & Ongkos Pengiriman (Task 7) -->
+            <div class="p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-xs space-y-2">
+                <div class="flex items-center justify-between pb-2 border-b border-blue-200">
+                    <span class="font-bold text-blue-950 uppercase flex items-center gap-1.5 text-xs">
+                        <i data-lucide="truck" class="w-4 h-4 text-blue-600"></i>
+                        <span>Informasi Armada Pengiriman & Detail Supir</span>
+                    </span>
+                    <a href="{{ route('delivery-orders.show', $sale->deliveryOrder) }}" class="text-blue-700 font-mono font-bold hover:underline text-[11px]">
+                        Surat Jalan: {{ $sale->deliveryOrder->delivery_number }} →
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="bg-white p-2.5 rounded-lg border border-blue-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Nama Supir / Driver</span>
+                        <span class="font-bold text-slate-800 text-sm">{{ $sale->deliveryOrder->driver_name }}</span>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-lg border border-blue-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">Kontak HP Supir</span>
+                        <span class="font-mono text-slate-800 text-sm">{{ $sale->deliveryOrder->driver_phone ?: '-' }}</span>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-lg border border-blue-100">
+                        <span class="text-slate-400 block text-[10px] uppercase font-bold">No. Polisi Armada</span>
+                        <span class="font-mono font-black text-slate-900 text-sm bg-slate-100 px-2 py-0.5 rounded border border-slate-200 inline-block">
+                            {{ $sale->deliveryOrder->vehicle_number }}
+                        </span>
+                        <span class="text-slate-500 text-[11px] ml-1">({{ $sale->deliveryOrder->vehicle_type ?? 'Truk' }})</span>
+                    </div>
+                    <div class="bg-blue-100/60 p-2.5 rounded-lg border border-blue-200">
+                        <span class="text-blue-900 block text-[10px] uppercase font-bold">Biaya Ongkos & Bongkar</span>
+                        <div class="text-[11px] text-blue-950 font-mono mt-0.5 space-y-0.5">
+                            <div>Ongkos: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost ?? 0) }}</strong></div>
+                            <div>Bongkar: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost ?? 0) }}</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div>
             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Rincian Barang yang Dijual</h3>
             <div class="overflow-x-auto border border-slate-200 rounded-lg">

@@ -7,24 +7,28 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @page {
-            size: 210mm 148mm landscape; /* HVS Landscape Bagi 2 / Half Folio */
-            margin: 5mm;
+            size: A4 portrait;
+            margin: 12mm 15mm;
         }
         @media print {
             .no-print { display: none !important; }
-            body { 
-                margin: 0; 
-                padding: 0; 
-                background: #fff;
-                font-size: 10.5px;
+            html, body { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                background: #fff !important;
+                font-size: 11px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
             .slip-card {
                 box-shadow: none !important;
-                border: 1px solid #334155 !important;
+                border: 1.5px solid #0f172a !important;
                 width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 !important;
-                padding: 6mm !important;
+                max-width: 180mm !important;
+                margin: 0 auto !important;
+                padding: 8mm 10mm !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
         }
     </style>
@@ -36,7 +40,7 @@
         <div class="flex items-center gap-2">
             <span class="text-xs font-bold text-slate-700">Format:</span>
             <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                HVS Landscape Bagi 2 (210mm × 148mm)
+                Standar A4 1 Lembar Pas (Tanpa Terpotong)
             </span>
         </div>
 

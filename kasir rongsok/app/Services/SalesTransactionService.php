@@ -78,11 +78,7 @@ class SalesTransactionService
                     $sellPrice = isset($row['sell_price_per_kg']) && is_numeric($row['sell_price_per_kg'])
                         ? (float) $row['sell_price_per_kg']
                         : ($isKasir ? 0 : (float) $scrapItem->sell_price_per_kg);
-
-                    if (!$isKasir && $sellPrice <= 0) {
-                        throw new Exception("Harga jual satuan untuk '{$scrapItem->name}' harus lebih dari Rp 0.");
-                    }
-                    if ($isKasir && $sellPrice < 0) {
+                    if ($sellPrice < 0) {
                         $sellPrice = 0;
                     }
 
@@ -101,12 +97,8 @@ class SalesTransactionService
                     $quantity = 1;
                     $stockQtyNeeded = $weight;
 
-                    if ($weight <= 0) {
-                        throw new Exception("Berat jual untuk item '{$scrapItem->name}' harus lebih dari 0 kg.");
-                    }
-
                     // Prevent negative stock
-                    if ($weight > $currentStock) {
+                    if ($weight > 0 && $weight > $currentStock) {
                         throw new Exception(
                             "Stok barang '{$scrapItem->name}' tidak mencukupi! Tersedia: " .
                             FormatHelper::weight($currentStock) . " kg, ingin dijual: " .
@@ -117,11 +109,7 @@ class SalesTransactionService
                     $sellPrice = isset($row['sell_price_per_kg']) && is_numeric($row['sell_price_per_kg'])
                         ? (float) $row['sell_price_per_kg']
                         : ($isKasir ? 0 : (float) $scrapItem->sell_price_per_kg);
-
-                    if (!$isKasir && $sellPrice <= 0) {
-                        throw new Exception("Harga jual per kg untuk '{$scrapItem->name}' harus lebih dari Rp 0.");
-                    }
-                    if ($isKasir && $sellPrice < 0) {
+                    if ($sellPrice < 0) {
                         $sellPrice = 0;
                     }
 
@@ -164,7 +152,37 @@ class SalesTransactionService
             $finalAmount = max(0, $subtotalAmount - $discountAmount);
             $estimatedProfit = $isKasir ? 0 : round($finalAmount - $totalEstimatedCogs, 2);
 
+            $customBank = trim($data['custom_bank'] ?? '');
+            $customAccountName = trim($data['custom_account_name'] ?? '');
+            $customAccountNo = trim($data['custom_account_no'] ?? '');
+
             $paymentMethodId = $data['payment_method_id'] ?? null;
+            $newPaymentMethodName = trim($data['new_payment_method_name'] ?? '');
+
+            if ($paymentMethodId === '__new__' || !empty($newPaymentMethodName)) {
+                $targetName = !empty($newPaymentMethodName) ? $newPaymentMethodName : 'Metode Pembayaran Baru';
+                $pm = PaymentMethod::firstOrCreate(
+                    ['name' => $targetName],
+                    [
+                        'code' => strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $targetName), 0, 6)) ?: 'PM',
+                        'bank_name' => $customBank ?: null,
+                        'account_number' => $customAccountNo ?: null,
+                        'account_holder' => $customAccountName ?: null,
+                        'is_active' => true,
+                    ]
+                );
+                if (!empty($customBank) || !empty($customAccountNo) || !empty($customAccountName)) {
+                    $pm->update(array_filter([
+                        'bank_name' => $customBank ?: $pm->bank_name,
+                        'account_number' => $customAccountNo ?: $pm->account_number,
+                        'account_holder' => $customAccountName ?: $pm->account_holder,
+                    ], fn($val) => !is_null($val) && $val !== ''));
+                }
+                $paymentMethodId = $pm->id;
+            } elseif (is_numeric($paymentMethodId)) {
+                $paymentMethodId = (int) $paymentMethodId;
+            }
+
             $pm = $paymentMethodId ? PaymentMethod::find($paymentMethodId) : null;
             $isBank = false;
             if ($pm) {
@@ -179,10 +197,6 @@ class SalesTransactionService
                     !empty($pm->bank_name)
                 );
             }
-
-            $customBank = trim($data['custom_bank'] ?? '');
-            $customAccountName = trim($data['custom_account_name'] ?? '');
-            $customAccountNo = trim($data['custom_account_no'] ?? '');
 
             // Sync bank account to current Cashier/Operator User profile if requested (Task 10)
             if (!empty($data['save_to_user_bank']) && (!empty($customBank) || !empty($customAccountNo) || !empty($customAccountName))) {
@@ -680,15 +694,9 @@ class SalesTransactionService
                     $weight = (float) ($row['weight'] ?? $oldItem?->weight ?? 0);
                     $quantity = 1;
                     $stockQtyNeeded = $weight;
-                    if ($weight <= 0) {
-                        throw new Exception("Berat jual untuk barang '{$scrapItem->name}' harus lebih dari 0 kg.");
-                    }
                 }
 
-                $sellPrice = (float) ($row['sell_price_per_kg'] ?? 0);
-                if ($sellPrice <= 0) {
-                    throw new Exception("Harga jual untuk '{$scrapItem->name}' harus lebih dari Rp 0.");
-                }
+                $sellPrice = max(0, (float) ($row['sell_price_per_kg'] ?? $oldItem?->sell_price_per_kg ?? 0));
 
                 $stockBalance = StockBalance::where('scrap_item_id', $scrapItem->id)->lockForUpdate()->first();
                 $availStock = (float) ($stockBalance?->current_stock ?? 0);
@@ -939,7 +947,37 @@ class SalesTransactionService
                 }
             }
 
+            $customBank = trim($data['custom_bank'] ?? '');
+            $customAccountName = trim($data['custom_account_name'] ?? '');
+            $customAccountNo = trim($data['custom_account_no'] ?? '');
+
             $targetPaymentMethodId = $data['payment_method_id'] ?? $transaction->payment_method_id;
+            $newPaymentMethodName = trim($data['new_payment_method_name'] ?? '');
+
+            if ($targetPaymentMethodId === '__new__' || !empty($newPaymentMethodName)) {
+                $targetName = !empty($newPaymentMethodName) ? $newPaymentMethodName : 'Metode Pembayaran Baru';
+                $pm = PaymentMethod::firstOrCreate(
+                    ['name' => $targetName],
+                    [
+                        'code' => strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $targetName), 0, 6)) ?: 'PM',
+                        'bank_name' => $customBank ?: null,
+                        'account_number' => $customAccountNo ?: null,
+                        'account_holder' => $customAccountName ?: null,
+                        'is_active' => true,
+                    ]
+                );
+                if (!empty($customBank) || !empty($customAccountNo) || !empty($customAccountName)) {
+                    $pm->update(array_filter([
+                        'bank_name' => $customBank ?: $pm->bank_name,
+                        'account_number' => $customAccountNo ?: $pm->account_number,
+                        'account_holder' => $customAccountName ?: $pm->account_holder,
+                    ], fn($val) => !is_null($val) && $val !== ''));
+                }
+                $targetPaymentMethodId = $pm->id;
+            } elseif (is_numeric($targetPaymentMethodId)) {
+                $targetPaymentMethodId = (int) $targetPaymentMethodId;
+            }
+
             $pm = $targetPaymentMethodId ? PaymentMethod::find($targetPaymentMethodId) : null;
             $isBank = false;
             if ($pm) {
@@ -958,9 +996,6 @@ class SalesTransactionService
             $bankInfo = null;
             if ($isBank) {
                 $bankInfo = $transaction->bank_info;
-                $customBank = trim($data['custom_bank'] ?? '');
-                $customAccountName = trim($data['custom_account_name'] ?? '');
-                $customAccountNo = trim($data['custom_account_no'] ?? '');
 
                 if (!empty($customAccountNo) || !empty($customAccountName) || !empty($customBank)) {
                     $parts = [];

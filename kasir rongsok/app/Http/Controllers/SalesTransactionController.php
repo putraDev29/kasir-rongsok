@@ -228,7 +228,7 @@ class SalesTransactionController extends Controller
 
     public function show(SalesTransaction $sale): View
     {
-        $sale->load(['items.scrapItem', 'user', 'paymentMethod', 'cancelledByUser']);
+        $sale->load(['items.scrapItem', 'user', 'paymentMethod', 'cancelledByUser', 'deliveryOrder.driver']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
         return view('sales.show', compact('sale', 'settings'));
@@ -236,7 +236,7 @@ class SalesTransactionController extends Controller
 
     public function printInvoice(Request $request, SalesTransaction $sale): View
     {
-        $sale->load(['items.scrapItem', 'user', 'paymentMethod']);
+        $sale->load(['items.scrapItem', 'user', 'paymentMethod', 'deliveryOrder.driver']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
         return view('sales.print', compact('sale', 'settings'));
@@ -244,7 +244,7 @@ class SalesTransactionController extends Controller
 
     public function pdfInvoice(Request $request, SalesTransaction $sale)
     {
-        $sale->load(['items.scrapItem', 'user', 'paymentMethod']);
+        $sale->load(['items.scrapItem', 'user', 'paymentMethod', 'deliveryOrder.driver']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('sales.invoice_pdf', compact('sale', 'settings'))

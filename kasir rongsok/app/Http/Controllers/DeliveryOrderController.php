@@ -57,7 +57,7 @@ class DeliveryOrderController extends Controller
         $salesTxId = $request->query('sales_transaction_id');
         $salesTx = null;
         if ($salesTxId) {
-            $salesTx = SalesTransaction::with('items.scrapItem')->find($salesTxId);
+            $salesTx = SalesTransaction::with(['items.scrapItem', 'driver'])->find($salesTxId);
         }
 
         $rawItems = ScrapItem::with(['stockBalance', 'priceStocks', 'category'])
@@ -71,11 +71,11 @@ class DeliveryOrderController extends Controller
                 $scrapItems[] = $opt;
             }
         }
-        $recentSales = SalesTransaction::where('delivery_type', SalesTransaction::DELIVERY_TYPE_DELIVERY)
+        $recentSales = SalesTransaction::with(['items.scrapItem', 'driver'])
+            ->where('delivery_type', SalesTransaction::DELIVERY_TYPE_DELIVERY)
             ->whereNull('delivery_order_id')
             ->where('status', '!=', SalesTransaction::STATUS_CANCELLED)
             ->latest()
-            ->take(15)
             ->get();
 
         $drivers = Driver::where('is_active', true)->orderBy('name')->get();
@@ -85,6 +85,15 @@ class DeliveryOrderController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $sanitizeCost = function ($val) {
+            if ($val === '-' || $val === '' || is_null($val)) return 0;
+            return (float) preg_replace('/[^\d.]/', '', (string) $val);
+        };
+        $request->merge([
+            'shipping_cost' => $sanitizeCost($request->input('shipping_cost')),
+            'loading_cost' => $sanitizeCost($request->input('loading_cost')),
+        ]);
+
         $validated = $request->validate([
             'sales_transaction_id' => 'nullable|exists:sales_transactions,id',
             'delivery_date' => 'required|date',

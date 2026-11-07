@@ -443,23 +443,19 @@
                                                 </span>
                                             </template>
                                         </div>
-                                        <input type="number" step="100" min="0" 
-                                               :max="!isOwner && getMasterPrice(row) > 0 ? getMasterPrice(row) : null"
-                                               :name="'items[' + index + '][price_per_kg]'" 
-                                               x-model.number="row.price_per_kg" 
-                                               @input="validatePrice(row)"
-                                               @change="validatePrice(row)"
-                                               required
-                                               class="w-full py-1.5 px-1.5 text-xs text-right rounded-lg border font-mono font-bold transition-colors"
-                                               :class="!isOwner && getMasterPrice(row) > 0 && row.price_per_kg > getMasterPrice(row) 
-                                                   ? 'border-red-500 bg-red-50 text-red-700' 
-                                                   : 'border-slate-300 focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white'">
-                                        <template x-if="!isOwner && getMasterPrice(row) > 0">
-                                            <p class="text-[9px] text-amber-600 mt-0.5 leading-tight font-medium">Maks: <span x-text="formatRp(getMasterPrice(row))"></span></p>
-                                        </template>
-                                        <template x-if="isOwner">
-                                            <p class="text-[9px] text-emerald-600 mt-0.5 leading-tight font-medium">Bebas edit (Owner)</p>
-                                        </template>
+                                        <div class="relative">
+                                            <span class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
+                                            <input type="number" step="100" min="0" 
+                                                   :name="'items[' + index + '][price_per_kg]'" 
+                                                   x-model.number="row.price_per_kg" 
+                                                   required
+                                                   placeholder="0"
+                                                   class="w-full py-1.5 pl-7 pr-1.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
+                                        </div>
+                                        <div class="flex items-center justify-between text-[9px] mt-0.5 text-emerald-600 font-medium leading-tight">
+                                            <span x-text="formatRp(row.price_per_kg || 0)"></span>
+                                            <span class="text-slate-400">Bebas edit</span>
+                                        </div>
                                     </div>
 
                                     <!-- 6. Subtotal (Rp) -->
@@ -983,11 +979,14 @@
 
                             <div class="flex items-center justify-between gap-2 text-xs">
                                 <label class="text-amber-800 font-medium">Potong Hutang:</label>
-                                <div class="flex items-center gap-1.5 w-36">
-                                    <input type="number" step="500" min="0" :max="Math.min(supplierDebt, finalAmount())" 
-                                           name="debt_deduction_amount" x-model.number="debtDeductionAmount"
-                                           placeholder="0"
-                                           class="w-full py-1 px-2 text-xs text-right rounded border border-amber-300 focus:ring-amber-500 font-mono font-bold bg-white text-amber-900">
+                                <div class="flex items-center gap-1.5 w-44">
+                                    <div class="relative w-full">
+                                        <span class="absolute inset-y-0 left-0 pl-1.5 flex items-center pointer-events-none text-amber-500 font-bold text-[10px]">Rp</span>
+                                        <input type="number" step="500" min="0" :max="Math.min(supplierDebt, finalAmount())" 
+                                               name="debt_deduction_amount" x-model.number="debtDeductionAmount"
+                                               placeholder="0"
+                                               class="w-full py-1 pl-6 pr-1.5 text-xs text-right rounded border border-amber-300 focus:ring-amber-500 font-mono font-bold bg-white text-amber-900">
+                                    </div>
                                     <button type="button" @click="autoDeductMaxDebt()" title="Potong Maksimal"
                                             class="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[10px] font-bold shrink-0">
                                         Max
@@ -1736,14 +1735,7 @@ function cashierPos() {
         },
 
         validatePrice(row) {
-            if (this.isOwner) return;
-            if (row.is_new || row.scrap_item_id === '__new__') return;
-            const max = this.getMasterPrice(row);
-            if (max > 0 && parseFloat(row.price_per_kg) > max) {
-                const roleName = this.userRole === 'admin' ? 'Admin' : 'Kasir';
-                alert(roleName + ' tidak boleh memasukkan harga beli melebihi harga master (' + this.formatRp(max) + ')! Harga otomatis disesuaikan ke batas maksimum. Hanya Owner yang dapat memasukkan harga di atas harga master.');
-                row.price_per_kg = max;
-            }
+            // Bebas edit harga beli untuk kasir maupun user lainnya
         },
 
         getRowBaseName(row) {
@@ -1899,20 +1891,6 @@ function cashierPos() {
                     alert('Harga beli per satuan pada baris ke-' + (i + 1) + ' harus lebih dari Rp 0.');
                     this.isSubmitting = false;
                     return;
-                }
-
-                if (!this.isOwner && !row.is_new && row.scrap_item_id !== '__new__') {
-                    const max = this.getMasterPrice(row);
-                    if (max > 0 && currentPrice > max) {
-                        e.preventDefault();
-                        const found = this.masterItems.find(it => (it.scrap_item_id == row.scrap_item_id || it.id == row.scrap_item_id));
-                        const itemName = found ? (found.base_name || found.name) : 'Baris ' + (i + 1);
-                        const roleName = this.userRole === 'admin' ? 'Admin' : 'Kasir';
-                        alert(roleName + ' tidak diizinkan memasukkan harga beli untuk "' + itemName + '" (Rp ' + currentPrice.toLocaleString('id-ID') + ') melebihi harga master (' + this.formatRp(max) + ').\nSilakan input harga sama atau di bawahnya. Hanya Owner yang dapat memasukkan harga di atas harga master.');
-                        row.price_per_kg = max;
-                        this.isSubmitting = false;
-                        return;
-                    }
                 }
             }
 

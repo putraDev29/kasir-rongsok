@@ -79,7 +79,8 @@
         }
         .meta-label {
             color: #64748b;
-            width: 75px;
+            width: 85px;
+            white-space: nowrap;
         }
         .meta-val {
             font-weight: bold;

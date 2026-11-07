@@ -207,14 +207,22 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Beli Baru per kg (Rp)</label>
-                    <input type="number" name="buy_price_per_kg" x-model="activeItem.buy" required step="50" min="0"
-                           class="w-full text-sm font-mono p-2 rounded-lg border border-slate-300 focus:ring-emerald-500">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" name="buy_price_per_kg" x-model.number="activeItem.buy" required step="50" min="0"
+                               class="w-full text-sm font-mono py-2 pl-9 pr-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-bold text-emerald-700">
+                    </div>
+                    <div class="text-[11px] text-emerald-600 font-mono font-bold mt-1" x-text="'Rp ' + Number(activeItem.buy || 0).toLocaleString('id-ID')"></div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Jual Baru per kg (Rp)</label>
-                    <input type="number" name="sell_price_per_kg" x-model="activeItem.sell" step="50" min="0"
-                           class="w-full text-sm font-mono p-2 rounded-lg border border-slate-300 focus:ring-emerald-500">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" name="sell_price_per_kg" x-model.number="activeItem.sell" step="50" min="0"
+                               class="w-full text-sm font-mono py-2 pl-9 pr-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-bold text-blue-700">
+                    </div>
+                    <div class="text-[11px] text-blue-600 font-mono font-bold mt-1" x-text="'Rp ' + Number(activeItem.sell || 0).toLocaleString('id-ID')"></div>
                 </div>
 
                 <div>

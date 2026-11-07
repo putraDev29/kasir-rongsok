@@ -270,10 +270,10 @@
 
                 <td style="width: 2%;"></td>
 
-                <!-- Kolom 2: Armada Kendaraan & Pengemudi (Supir) -->
+                <!-- Kolom 2: Armada Kendaraan -->
                 <td style="width: 49%; vertical-align: top;">
                     <div class="info-card">
-                        <div class="info-title">🚛 DATA ARMADA KENDARAAN & PENGEMUDI (SOPIR):</div>
+                        <div class="info-title">🚛 DATA ARMADA PENGIRIMAN (EKSPEDISI):</div>
                         <div class="info-row">
                             <span class="label">No. Polisi:</span>
                             <span class="val-bold" style="font-family: monospace; background: #e2e8f0; padding: 0.5px 3px; border-radius: 2px;">
@@ -281,20 +281,6 @@
                             </span>
                             <span style="color: #64748b; font-size: 7.5px; margin-left: 3px;">({{ $deliveryOrder->vehicle_type ?: 'Truk Angkutan' }})</span>
                         </div>
-                        <div class="info-row">
-                            <span class="label">Nama Sopir:</span>
-                            <span class="val-bold">{{ strtoupper($deliveryOrder->driver_name) }}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">No. HP Sopir:</span>
-                            <span style="font-family: monospace;">{{ $deliveryOrder->driver_phone ?: '-' }}</span>
-                        </div>
-                        @if($deliveryOrder->hasDriverBankDetails())
-                        <div class="info-row">
-                            <span class="label">Rek. Sopir:</span>
-                            <span style="font-family: monospace; color: #1e40af; font-weight: bold;">{{ $deliveryOrder->driverBankDisplay() }}</span>
-                        </div>
-                        @endif
                     </div>
                 </td>
             </tr>
@@ -389,33 +375,6 @@
         @if($deliveryOrder->notes)
             <div class="instructions">
                 <strong>Instruksi Pengiriman:</strong> {{ $deliveryOrder->notes }}
-            </div>
-        @endif
-
-        {{-- Biaya Operasional Pengiriman (Khusus Lembar 1 Owner/Gudang - Task 10) --}}
-        @if($copyNum === 1 && (($deliveryOrder->shipping_cost ?? 0) > 0 || ($deliveryOrder->loading_cost ?? 0) > 0))
-            <div style="margin-top: 3px; border: 1px solid #93c5fd; background-color: #eff6ff; padding: 3px 6px; border-radius: 3px; font-size: 7.5px;">
-                <table style="width: 100%; border: none;">
-                    <tr>
-                        <td style="width: 38%; border: none; padding: 0; font-weight: bold; color: #1e40af;">
-                            💰 BIAYA OPERASIONAL PENGIRIMAN (LEMBAR 1 OWNER):
-                        </td>
-                        <td style="width: 20%; border: none; padding: 0; text-align: right; color: #1e3a8a;">
-                            Ongkos: <strong>Rp {{ \App\Services\FormatHelper::number($deliveryOrder->shipping_cost ?? 0) }}</strong>
-                        </td>
-                        <td style="width: 22%; border: none; padding: 0; text-align: right; color: #1e3a8a;">
-                            Bongkar Muat: <strong>Rp {{ \App\Services\FormatHelper::number($deliveryOrder->loading_cost ?? 0) }}</strong>
-                        </td>
-                        <td style="width: 20%; border: none; padding: 0; text-align: right; font-weight: bold; color: #047857;">
-                            Total: Rp {{ \App\Services\FormatHelper::number(($deliveryOrder->shipping_cost ?? 0) + ($deliveryOrder->loading_cost ?? 0)) }}
-                        </td>
-                    </tr>
-                </table>
-                @if($deliveryOrder->hasDriverBankDetails())
-                    <div style="margin-top: 2px; font-size: 7px; color: #1e40af;">
-                        Pencairan Ongkos Transfer ke Rek. Sopir: <strong>{{ $deliveryOrder->driverBankDisplay() }}</strong>
-                    </div>
-                @endif
             </div>
         @endif
 

@@ -46,9 +46,9 @@
                 <span>Cetak Invoice</span>
             </button>
 
-            <a href="{{ route('sales.pdf', [$sale, 'download' => 1]) }}" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
-                <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                <span>Unduh PDF</span>
+            <a href="{{ route('sales.pdf', $sale) }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>Preview / Unduh PDF</span>
             </a>
             <a href="{{ route('sales.show', $sale) }}" class="px-2.5 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-300">
                 Kembali
@@ -136,6 +136,16 @@
                         {{ $sale->notes ?? 'Pengiriman armada darat' }}
                     @endif
                 </div>
+
+                @if($sale->isDelivery() && $sale->deliveryOrder)
+                    <div class="mt-2 p-2 bg-blue-50/70 rounded border border-blue-200 text-[11px] text-blue-950 space-y-0.5">
+                        <div><strong>Supir / Armada:</strong> {{ $sale->deliveryOrder->driver_name }} ({{ $sale->deliveryOrder->vehicle_number }}{{ $sale->deliveryOrder->driver_phone ? ' - Telp: '.$sale->deliveryOrder->driver_phone : '' }})</div>
+                        <div class="font-mono text-[10px] text-blue-900">
+                            Ongkos Armada: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost ?? 0) }}</strong> | 
+                            Bongkar: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost ?? 0) }}</strong>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
 

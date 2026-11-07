@@ -119,38 +119,32 @@
                     : 'display: grid; grid-template-columns: 130px 12px 1fr; align-items: center;');
         @endphp
 
-        <!-- Meta Info (Colons aligned, values left-aligned strictly 1 line) -->
-        <div class="py-1.5 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-[10px]' }} space-y-0.5 border-b border-dashed border-slate-400 font-mono">
-            <div style="{{ $debtMetaGrid }}">
-                <span class="whitespace-nowrap">No. Bukti</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->payment_number }}</span>
-            </div>
-            <div style="{{ $debtMetaGrid }}">
-                <span class="whitespace-nowrap">Tanggal</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 whitespace-nowrap">{{ $payment->payment_date->format('d/m/Y H:i') }}</span>
-            </div>
-            <div style="{{ $debtMetaGrid }}">
-                <span class="whitespace-nowrap">Peminjam</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->debt->borrower_name }}</span>
-            </div>
-            <div style="{{ $debtMetaGrid }}">
-                <span class="whitespace-nowrap">Ref. Pinjam</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->debt->debt_number }}</span>
-            </div>
-            <div style="{{ $debtMetaGrid }}">
-                <span class="whitespace-nowrap">Metode Bayar</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->paymentMethod?->name ?? 'Tunai' }}</span>
-            </div>
-            <div style="{{ $debtMetaGrid }}">
-                <span class="whitespace-nowrap">Kasir</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->user?->name ?? 'Kasir' }}</span>
-            </div>
+        <!-- Meta Info (Colons vertically aligned, dynamic width never overlapping text) -->
+        <div class="py-1.5 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-[10px]' }} border-b border-dashed border-slate-400 font-mono"
+             style="display: grid; grid-template-columns: max-content {{ $format === 'thermal_58' ? '6px' : '8px' }} 1fr; column-gap: {{ $format === 'thermal_58' ? '3px' : '4px' }}; row-gap: 2px; align-items: baseline;">
+            <span class="whitespace-nowrap text-slate-700">No. Bukti</span>
+            <span class="text-center">:</span>
+            <span class="text-left font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->payment_number }}</span>
+
+            <span class="whitespace-nowrap text-slate-700">Tanggal</span>
+            <span class="text-center">:</span>
+            <span class="text-left whitespace-nowrap">{{ $payment->payment_date->format('d/m/Y H:i') }}</span>
+
+            <span class="whitespace-nowrap text-slate-700">Peminjam</span>
+            <span class="text-center">:</span>
+            <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->debt->borrower_name }}</span>
+
+            <span class="whitespace-nowrap text-slate-700">Ref. Pinjam</span>
+            <span class="text-center">:</span>
+            <span class="text-left whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->debt->debt_number }}</span>
+
+            <span class="whitespace-nowrap text-slate-700">Metode Bayar</span>
+            <span class="text-center">:</span>
+            <span class="text-left whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->paymentMethod?->name ?? 'Tunai' }}</span>
+
+            <span class="whitespace-nowrap text-slate-700">Kasir</span>
+            <span class="text-center">:</span>
+            <span class="text-left whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->user?->name ?? 'Kasir' }}</span>
         </div>
 
         <!-- Financial Breakdown -->

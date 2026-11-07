@@ -220,6 +220,23 @@
                     @endif
                 </td>
             </tr>
+            @if($sale->isDelivery() && $sale->deliveryOrder)
+            <tr>
+                <td class="meta-label">Supir & Armada</td>
+                <td style="width: 5px;">:</td>
+                <td class="meta-val">
+                    <strong>{{ $sale->deliveryOrder->driver_name }}</strong> [{{ $sale->deliveryOrder->vehicle_number }}]
+                    @if($sale->deliveryOrder->driver_phone)
+                        <span style="color: #64748b;">(HP: {{ $sale->deliveryOrder->driver_phone }})</span>
+                    @endif
+                </td>
+                <td class="meta-label">Biaya Kirim</td>
+                <td style="width: 5px;">:</td>
+                <td class="meta-val">
+                    Ongkos: Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost ?? 0) }} | Bongkar: Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost ?? 0) }}
+                </td>
+            </tr>
+            @endif
         </table>
     </div>
 

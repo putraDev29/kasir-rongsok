@@ -146,61 +146,50 @@
                                     </div>
                                 </div>
 
-                                <!-- Meta Info (Colons vertically aligned, values strictly left-aligned) -->
-                                <div class="py-1.5 text-[9.5px] space-y-0.5 border-b border-dashed border-slate-400 font-mono">
-                                    <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                        <span class="whitespace-nowrap text-slate-700">No. Nota</span>
-                                        <span class="text-center">:</span>
-                                        <span class="text-left pl-1 font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->invoice_number }}</span>
-                                    </div>
-                                    <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                        <span class="whitespace-nowrap text-slate-700">Tanggal</span>
-                                        <span class="text-center">:</span>
-                                        <span class="text-left pl-1 whitespace-nowrap">{{ $purchase->transaction_date->format('d/m/Y H:i') }}</span>
-                                    </div>
-                                    <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                        <span class="whitespace-nowrap text-slate-700">Pemasok</span>
-                                        <span class="text-center">:</span>
-                                        <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name ?: '-' }}</span>
-                                    </div>
+                                <!-- Meta Info (Colons vertically aligned, dynamic width never overlapping text) -->
+                                <div class="py-1.5 text-[9.5px] border-b border-dashed border-slate-400 font-mono"
+                                     style="display: grid; grid-template-columns: max-content 6px 1fr; column-gap: 3px; row-gap: 2px; align-items: baseline;">
+                                    <span class="whitespace-nowrap text-slate-700">No. Nota</span>
+                                    <span class="text-center">:</span>
+                                    <span class="text-left font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->invoice_number }}</span>
+
+                                    <span class="whitespace-nowrap text-slate-700">Tanggal</span>
+                                    <span class="text-center">:</span>
+                                    <span class="text-left whitespace-nowrap">{{ $purchase->transaction_date->format('d/m/Y H:i') }}</span>
+
+                                    <span class="whitespace-nowrap text-slate-700">Pemasok</span>
+                                    <span class="text-center">:</span>
+                                    <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name ?: '-' }}</span>
+
                                     @if($purchase->supplier_phone)
-                                        <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                            <span class="whitespace-nowrap text-slate-700">HP Pemasok</span>
-                                            <span class="text-center">:</span>
-                                            <span class="text-left pl-1 whitespace-nowrap">{{ $purchase->supplier_phone }}</span>
-                                        </div>
+                                        <span class="whitespace-nowrap text-slate-700">HP Pemasok</span>
+                                        <span class="text-center">:</span>
+                                        <span class="text-left font-mono whitespace-nowrap">{{ $purchase->supplier_phone }}</span>
                                     @endif
-                                    <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                        <span class="whitespace-nowrap text-slate-700">Kasir</span>
-                                        <span class="text-center">:</span>
-                                        <span class="text-left pl-1 whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->user?->name }}</span>
-                                    </div>
-                                    <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                        <span class="whitespace-nowrap text-slate-700">Metode Bayar</span>
-                                        <span class="text-center">:</span>
-                                        <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
-                                    </div>
+
+                                    <span class="whitespace-nowrap text-slate-700">Kasir</span>
+                                    <span class="text-center">:</span>
+                                    <span class="text-left whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->user?->name }}</span>
+
+                                    <span class="whitespace-nowrap text-slate-700">Metode Bayar</span>
+                                    <span class="text-center">:</span>
+                                    <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
+
                                     @if($purchase->isBankPayment())
                                         @if($purchase->getBankAccountNumber())
-                                            <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                                <span class="whitespace-nowrap text-slate-700">No. Rekening</span>
-                                                <span class="text-center">:</span>
-                                                <span class="text-left pl-1 font-mono font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountNumber() }}</span>
-                                            </div>
+                                            <span class="whitespace-nowrap text-slate-700">No. Rekening</span>
+                                            <span class="text-center">:</span>
+                                            <span class="text-left font-mono font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountNumber() }}</span>
                                         @endif
                                         @if($purchase->getBankAccountName())
-                                            <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                                <span class="whitespace-nowrap text-slate-700">Nama Rekening</span>
-                                                <span class="text-center">:</span>
-                                                <span class="text-left pl-1 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountName() }}</span>
-                                            </div>
+                                            <span class="whitespace-nowrap text-slate-700">Nama Rekening</span>
+                                            <span class="text-center">:</span>
+                                            <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountName() }}</span>
                                         @endif
                                         @if(!$purchase->getBankAccountNumber() && !$purchase->getBankAccountName() && !empty($purchase->bank_info))
-                                            <div style="display: grid; grid-template-columns: 62px 6px 1fr; align-items: center;">
-                                                <span class="whitespace-nowrap text-slate-700">Data Rekening</span>
-                                                <span class="text-center">:</span>
-                                                <span class="text-left pl-1 text-[8px] font-bold whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
-                                            </div>
+                                            <span class="whitespace-nowrap text-slate-700">Data Rekening</span>
+                                            <span class="text-center">:</span>
+                                            <span class="text-left text-[8px] font-bold whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
                                         @endif
                                     @endif
                                 </div>

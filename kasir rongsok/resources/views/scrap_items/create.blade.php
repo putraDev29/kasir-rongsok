@@ -16,7 +16,8 @@
             <p class="text-xs text-slate-500">Tambahkan jenis logam, kertas, atau plastik baru ke sistem kasir</p>
         </div>
 
-        <form action="{{ route('scrap-items.store') }}" method="POST" class="space-y-4">
+        <form action="{{ route('scrap-items.store') }}" method="POST" class="space-y-4"
+              x-data="{ buyPrice: {{ old('buy_price_per_kg', 0) }}, sellPrice: {{ old('sell_price_per_kg', 0) }}, formatRp(v) { return 'Rp ' + Number(v || 0).toLocaleString('id-ID'); } }">
             @csrf
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -54,14 +55,22 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Beli Standar / kg (Rp) *</label>
-                    <input type="number" step="50" min="0" name="buy_price_per_kg" value="{{ old('buy_price_per_kg', 0) }}" required
-                           class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono font-bold text-emerald-700">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" step="50" min="0" name="buy_price_per_kg" x-model.number="buyPrice" value="{{ old('buy_price_per_kg', 0) }}" required
+                               class="w-full py-2 pl-9 pr-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono font-bold text-emerald-700">
+                    </div>
+                    <div class="text-[11px] text-emerald-600 font-mono font-bold mt-1" x-text="formatRp(buyPrice)"></div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Jual / kg (Rp)</label>
-                    <input type="number" step="50" min="0" name="sell_price_per_kg" value="{{ old('sell_price_per_kg', 0) }}"
-                           class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono font-semibold">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" step="50" min="0" name="sell_price_per_kg" x-model.number="sellPrice" value="{{ old('sell_price_per_kg', 0) }}"
+                               class="w-full py-2 pl-9 pr-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono font-semibold">
+                    </div>
+                    <div class="text-[11px] text-blue-600 font-mono font-bold mt-1" x-text="formatRp(sellPrice)"></div>
                 </div>
 
                 <div>

@@ -187,61 +187,50 @@
                     : 'display: grid; grid-template-columns: 140px 12px 1fr; align-items: center;');
         @endphp
 
-        <!-- Meta Info (Colons vertically aligned right after longest label, values left-aligned strictly 1 line) -->
-        <div class="py-1.5 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-[10px]' }} space-y-0.5 border-b border-dashed border-slate-400 font-mono">
-            <div style="{{ $metaGrid }}">
-                <span class="whitespace-nowrap">No. Nota</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->invoice_number }}</span>
-            </div>
-            <div style="{{ $metaGrid }}">
-                <span class="whitespace-nowrap">Tanggal</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 whitespace-nowrap">{{ $purchase->transaction_date->format('d/m/Y H:i') }}</span>
-            </div>
-            <div style="{{ $metaGrid }}">
-                <span class="whitespace-nowrap">Pemasok</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name ?: '-' }}</span>
-            </div>
+        <!-- Meta Info (Colons vertically aligned right after longest label, dynamic width never overlapping text) -->
+        <div class="py-1.5 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-[10px]' }} border-b border-dashed border-slate-400 font-mono"
+             style="display: grid; grid-template-columns: max-content {{ $format === 'thermal_58' ? '6px' : '8px' }} 1fr; column-gap: {{ $format === 'thermal_58' ? '3px' : '4px' }}; row-gap: 2px; align-items: baseline;">
+            <span class="whitespace-nowrap text-slate-700">No. Nota</span>
+            <span class="text-center">:</span>
+            <span class="text-left font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->invoice_number }}</span>
+
+            <span class="whitespace-nowrap text-slate-700">Tanggal</span>
+            <span class="text-center">:</span>
+            <span class="text-left whitespace-nowrap">{{ $purchase->transaction_date->format('d/m/Y H:i') }}</span>
+
+            <span class="whitespace-nowrap text-slate-700">Pemasok</span>
+            <span class="text-center">:</span>
+            <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name ?: '-' }}</span>
+
             @if($purchase->supplier_phone)
-                <div style="{{ $metaGrid }}">
-                    <span class="whitespace-nowrap">HP Pemasok</span>
-                    <span class="text-center">:</span>
-                    <span class="text-left pl-1.5 font-mono whitespace-nowrap">{{ $purchase->supplier_phone }}</span>
-                </div>
+                <span class="whitespace-nowrap text-slate-700">HP Pemasok</span>
+                <span class="text-center">:</span>
+                <span class="text-left font-mono whitespace-nowrap">{{ $purchase->supplier_phone }}</span>
             @endif
-            <div style="{{ $metaGrid }}">
-                <span class="whitespace-nowrap">Kasir</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->user?->name }}</span>
-            </div>
-            <div style="{{ $metaGrid }}">
-                <span class="whitespace-nowrap">Metode Bayar</span>
-                <span class="text-center">:</span>
-                <span class="text-left pl-1.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
-            </div>
+
+            <span class="whitespace-nowrap text-slate-700">Kasir</span>
+            <span class="text-center">:</span>
+            <span class="text-left whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->user?->name }}</span>
+
+            <span class="whitespace-nowrap text-slate-700">Metode Bayar</span>
+            <span class="text-center">:</span>
+            <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
+
             @if($purchase->isBankPayment())
                 @if($purchase->getBankAccountNumber())
-                    <div style="{{ $metaGrid }}">
-                        <span class="whitespace-nowrap">No. Rekening</span>
-                        <span class="text-center">:</span>
-                        <span class="text-left pl-1.5 font-mono font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountNumber() }}</span>
-                    </div>
+                    <span class="whitespace-nowrap text-slate-700">No. Rekening</span>
+                    <span class="text-center">:</span>
+                    <span class="text-left font-mono font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountNumber() }}</span>
                 @endif
                 @if($purchase->getBankAccountName())
-                    <div style="{{ $metaGrid }}">
-                        <span class="whitespace-nowrap">Nama Rekening</span>
-                        <span class="text-center">:</span>
-                        <span class="text-left pl-1.5 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountName() }}</span>
-                    </div>
+                    <span class="whitespace-nowrap text-slate-700">Nama Rekening</span>
+                    <span class="text-center">:</span>
+                    <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountName() }}</span>
                 @endif
                 @if(!$purchase->getBankAccountNumber() && !$purchase->getBankAccountName() && !empty($purchase->bank_info))
-                    <div style="{{ $metaGrid }}">
-                        <span class="whitespace-nowrap">Data Rekening</span>
-                        <span class="text-center">:</span>
-                        <span class="text-left pl-1.5 font-mono text-[8.5px] font-bold whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
-                    </div>
+                    <span class="whitespace-nowrap text-slate-700">Data Rekening</span>
+                    <span class="text-center">:</span>
+                    <span class="text-left font-mono text-[8.5px] font-bold whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
                 @endif
             @endif
         </div>

@@ -78,7 +78,7 @@
                 <span class="text-[10px] bg-blue-100 text-blue-800 font-semibold px-2 py-0.5 rounded-full">Aset Gudang</span>
             </div>
             <div class="text-xl font-black text-slate-900 mt-1 font-mono">
-                {{ number_format($totalPurchasesWeight, 1) }} kg
+                {{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg
             </div>
             <div class="text-xs font-bold text-slate-700 font-mono mt-0.5">
                 Modal Beli: Rp {{ number_format($totalPurchases, 0, ',', '.') }}
@@ -93,7 +93,7 @@
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Barang Keluar (Jual Pabrik)</span>
             <div class="text-xl font-black text-slate-900 mt-1 font-mono">
-                {{ number_format($totalSalesWeight, 1) }} kg
+                {{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg
             </div>
             <div class="text-xs font-bold text-emerald-600 font-mono mt-0.5">
                 Omzet: Rp {{ number_format($totalSales, 0, ',', '.') }}
@@ -145,7 +145,7 @@
             <div class="space-y-1">
                 <span class="font-bold text-blue-950 block">Prinsip Akuntansi Kasir Rongsok (Stok & Persediaan):</span>
                 <p class="text-[11px] text-blue-800 leading-relaxed">
-                    Pembelian rongsok dari masyarakat/pengepul pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ number_format($totalPurchasesWeight, 1) }} kg) dicatat sebagai <strong>Penambahan Aset Persediaan Fisik Gudang</strong> dan <strong>bukan beban yang mengurangi laba</strong>. Modal kas terkonversi menjadi fisik rongsok bernilai tinggi dengan estimasi nilai jual pabrik sebesar <strong>Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</strong> (Potensi Laba Margin Stok: <strong>+Rp {{ number_format($totalPotentialInventoryProfit, 0, ',', '.') }}</strong> saat nanti dikirim ke pabrik peleburan).
+                    Pembelian rongsok dari masyarakat/pengepul pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg) dicatat sebagai <strong>Penambahan Aset Persediaan Fisik Gudang</strong> dan <strong>bukan beban yang mengurangi laba</strong>. Modal kas terkonversi menjadi fisik rongsok bernilai tinggi dengan estimasi nilai jual pabrik sebesar <strong>Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</strong> (Potensi Laba Margin Stok: <strong>+Rp {{ number_format($totalPotentialInventoryProfit, 0, ',', '.') }}</strong> saat nanti dikirim ke pabrik peleburan).
                 </p>
             </div>
         </div>
@@ -159,7 +159,7 @@
                     <span class="font-mono text-sm">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between text-xs text-slate-600 pl-4">
-                    <span>Penjualan Material Scrap & Daur Ulang Partai Grosir / Kirim ke Pabrik ({{ number_format($totalSalesWeight, 1) }} kg)</span>
+                    <span>Penjualan Material Scrap & Daur Ulang Partai Grosir / Kirim ke Pabrik ({{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg)</span>
                     <span class="font-mono font-medium">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
                 </div>
                 @if($totalSales == 0)
@@ -258,7 +258,7 @@
                     </div>
                 </div>
                 <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-mono text-xs font-bold">
-                    {{ number_format($totalPurchasesWeight, 1) }} kg
+                    {{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg
                 </span>
             </div>
 

@@ -220,13 +220,6 @@ class PurchaseTransactionService
                         ? (float) $row['price_per_kg']
                         : (float) $scrapItem->buy_price_per_kg;
 
-                    $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                    $isOwner = $user->isOwner() || $user->isSuperAdmin();
-                    if (!$isOwner && !$isNewlyCreated && $masterBuyPrice > 0 && $pricePerUnit > $masterBuyPrice) {
-                        $roleLabel = ($user->role === User::ROLE_ADMIN) ? 'Admin' : 'Kasir';
-                        throw new Exception("{$roleLabel} tidak diizinkan memasukkan harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerUnit) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . "). Hanya Owner yang dapat memasukkan harga di atas harga master.");
-                    }
-
                     $itemSubtotal = round($quantity * $pricePerUnit, 2);
                     $pricePerKg = $pricePerUnit;
                 } else {
@@ -242,13 +235,6 @@ class PurchaseTransactionService
                     $pricePerKg = isset($row['price_per_kg']) && is_numeric($row['price_per_kg'])
                         ? (float) $row['price_per_kg']
                         : (float) $scrapItem->buy_price_per_kg;
-
-                    $masterBuyPrice = (float) $scrapItem->buy_price_per_kg;
-                    $isOwner = $user->isOwner() || $user->isSuperAdmin();
-                    if (!$isOwner && !$isNewlyCreated && $masterBuyPrice > 0 && $pricePerKg > $masterBuyPrice) {
-                        $roleLabel = ($user->role === User::ROLE_ADMIN) ? 'Admin' : 'Kasir';
-                        throw new Exception("{$roleLabel} tidak diizinkan memasukkan harga beli untuk '{$scrapItem->name}' (" . FormatHelper::rupiah($pricePerKg) . ") melebihi harga master (" . FormatHelper::rupiah($masterBuyPrice) . "). Hanya Owner yang dapat memasukkan harga di atas harga master.");
-                    }
 
                     $itemSubtotal = round($net * $pricePerKg, 2);
                 }
