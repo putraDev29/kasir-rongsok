@@ -43,14 +43,26 @@
             </div>
         </div>
 
-        <div>
+        <div x-data="{ showPassword: false }">
             <label for="password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Kata Sandi</label>
             <div class="relative">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 pointer-events-none">
                     <i data-lucide="lock" class="w-4 h-4"></i>
                 </span>
-                <input type="password" id="password" name="password" value="password123" required
-                       class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+                <input :type="showPassword ? 'text' : 'password'" id="password" name="password" value="password123" required
+                       class="w-full pl-9 pr-10 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+                <button type="button" 
+                        @click="showPassword = !showPassword" 
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors cursor-pointer"
+                        tabindex="-1"
+                        :title="showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'">
+                    <span x-show="!showPassword" class="flex items-center">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </span>
+                    <span x-show="showPassword" x-cloak class="flex items-center">
+                        <i data-lucide="eye-off" class="w-4 h-4"></i>
+                    </span>
+                </button>
             </div>
         </div>
 
