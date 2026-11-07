@@ -591,9 +591,13 @@ class PurchaseTransactionService
                 $newSubtotal = 0;
 
                 foreach ($activeItems as $actItem) {
-                    $newTotalGross += (float) $actItem->gross_weight;
+                    $isPcs = ($actItem->unit_type === 'pcs' || $actItem->unit_type === 'satuan');
+                    $grossVal = $isPcs ? ($actItem->gross_weight > 0 ? $actItem->gross_weight : ($actItem->quantity + $actItem->tare_weight)) : $actItem->gross_weight;
+                    $netVal = $isPcs ? ($actItem->net_weight > 0 ? $actItem->net_weight : $actItem->quantity) : $actItem->net_weight;
+
+                    $newTotalGross += (float) $grossVal;
                     $newTotalTare += (float) $actItem->tare_weight;
-                    $newTotalNet += (float) $actItem->net_weight;
+                    $newTotalNet += (float) $netVal;
                     $newSubtotal += (float) $actItem->subtotal;
                 }
 

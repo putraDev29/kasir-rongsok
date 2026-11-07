@@ -37,10 +37,20 @@ if (-not $bePort) {
 # 3. Jalankan WhatsApp Gateway (Port 21465)
 $waPort = Get-NetTCPConnection -State Listen -LocalPort 21465 -ErrorAction SilentlyContinue
 if (-not $waPort) {
-    Write-Host "[3/3] Menjalankan WhatsApp Gateway di port 21465..." -ForegroundColor White
+    Write-Host "[3/4] Menjalankan WhatsApp Gateway di port 21465..." -ForegroundColor White
     Start-Process -FilePath "cmd.exe" -ArgumentList "/c node server.js" -WorkingDirectory $waDir -WindowStyle Minimized
 } else {
-    Write-Host "[3/3] WhatsApp Gateway sudah berjalan di port 21465." -ForegroundColor Green
+    Write-Host "[3/4] WhatsApp Gateway sudah berjalan di port 21465." -ForegroundColor Green
+}
+
+# 4. Jalankan Landing Page Website (Port 3000)
+$landingDir = Join-Path $baseDir "landing-page"
+$landingPort = Get-NetTCPConnection -State Listen -LocalPort 3000 -ErrorAction SilentlyContinue
+if (-not $landingPort -and (Test-Path $landingDir)) {
+    Write-Host "[4/4] Menjalankan Landing Page Website di port 3000..." -ForegroundColor White
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c npm start -- -p 3000" -WorkingDirectory $landingDir -WindowStyle Minimized
+} else {
+    Write-Host "[4/4] Landing Page Website sudah berjalan di port 3000." -ForegroundColor Green
 }
 
 # 4. Tunggu sampai server merespon (maks 15 detik)
@@ -68,6 +78,7 @@ if ($lanIp) {
     Write-Host "    (Gunakan Google Chrome di Tablet dengan Wi-Fi yang sama)" -ForegroundColor DarkGray
 }
 Write-Host "  - WA Gateway REST API       : http://127.0.0.1:21465" -ForegroundColor Cyan
+Write-Host "  - Landing Page Website      : http://127.0.0.1:3000" -ForegroundColor Cyan
 Write-Host "================================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Membuka browser ke $targetUrl ..." -ForegroundColor Yellow

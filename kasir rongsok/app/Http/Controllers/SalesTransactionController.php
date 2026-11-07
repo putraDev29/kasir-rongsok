@@ -133,7 +133,7 @@ class SalesTransactionController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('sales.invoice_pdf', compact('sale', 'settings'))
             ->setPaper('a5', 'portrait');
 
-        $filename = "Faktur_{$sale->invoice_number}.pdf";
+        $filename = "Invoice_{$sale->invoice_number}.pdf";
 
         if ($request->boolean('download')) {
             return $pdf->download($filename);

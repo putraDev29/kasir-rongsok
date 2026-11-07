@@ -22,6 +22,7 @@ function Kill-PortProcess($port, $name) {
 
 Kill-PortProcess 8000 "Aplikasi Kasir Rongsok"
 Kill-PortProcess 21465 "WhatsApp Gateway"
+Kill-PortProcess 3000 "Landing Page Website Next.js"
 
 # Tutup window cmd terkait jika ada
 Get-Process cmd -ErrorAction SilentlyContinue | Where-Object {

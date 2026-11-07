@@ -231,14 +231,18 @@
                     </div>
                 </td>
                 <td style="text-align: right; vertical-align: top; width: 220px;">
+                    @php
+                        $batchPdfTotalNet = $purchases->sum(fn($p) => $p->items->where('is_cancelled', false)->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight));
+                        $batchPdfTotalAmount = $purchases->sum(fn($p) => max(0, $p->items->where('is_cancelled', false)->sum('subtotal') - min((float)($p->discount_amount ?? 0), $p->items->where('is_cancelled', false)->sum('subtotal')) + (float)($p->rounding_amount ?? 0)));
+                    @endphp
                     <div style="font-size: 8px; color: #475569;">
                         Total Nota: <strong style="color: #0f172a; font-size: 9px;">{{ $purchases->count() }} Nota</strong>
                     </div>
                     <div style="font-size: 8px; color: #475569;">
-                        Total Bersih: <strong style="color: #0f172a; font-size: 9px;">{{ \App\Services\FormatHelper::weight($totalWeight ?? $purchases->sum('total_net_weight')) }} kg</strong>
+                        Total Bersih: <strong style="color: #0f172a; font-size: 9px;">{{ \App\Services\FormatHelper::weight($batchPdfTotalNet) }} kg</strong>
                     </div>
                     <div style="font-size: 8.5px; color: #047857; font-weight: bold; margin-top: 1px;">
-                        Total Nilai: {{ \App\Services\FormatHelper::rupiah($totalAmount ?? $purchases->sum('final_amount')) }}
+                        Total Nilai: {{ \App\Services\FormatHelper::rupiah($batchPdfTotalAmount) }}
                     </div>
                 </td>
             </tr>
@@ -321,47 +325,65 @@
 
                             <!-- Items Section -->
                             <div class="items-section">
-                                @foreach($purchase->items as $item)
-                                    <div class="item-row">
-                                        <div class="item-title">
-                                            {{ $item->item_name_snapshot }}
-                                            @if($item->item_type_name)
-                                                <span class="item-sub">({{ $item->item_type_name }})</span>
-                                            @endif
-                                        </div>
-                                        <table class="item-grid">
-                                            @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
-                                                <tr>
-                                                    <td>
-                                                        @if($item->tare_weight > 0)
-                                                            {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }} - {{ \App\Services\FormatHelper::number($item->tare_weight) }} pcs
-                                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                                @php
+                                    $activeItems = $purchase->items->where('is_cancelled', false);
+                                    $activeGross = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? ($i->gross_weight > 0 ? $i->gross_weight : ($i->quantity + $i->tare_weight)) : $i->gross_weight);
+                                    $activeTare = $activeItems->sum('tare_weight');
+                                    $activeNet = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+                                    $activeSubtotal = $activeItems->sum('subtotal');
+                                    $discount = min((float) ($purchase->discount_amount ?? 0), $activeSubtotal);
+                                    $rounding = (float) ($purchase->rounding_amount ?? 0);
+                                    $activeFinal = max(0, $activeSubtotal - $discount + $rounding);
+                                    $debtDeduction = min((float) ($purchase->debt_deduction_amount ?? 0), $activeFinal);
+                                    $activeNetCash = max(0, $activeFinal - $debtDeduction);
+                                @endphp
+                                @if($activeItems->isEmpty())
+                                    <div style="text-align: center; color: #dc2626; font-weight: bold; padding: 4px 0; font-size: 7px;">
+                                        (Semua Barang Dibatalkan)
+                                    </div>
+                                @else
+                                    @foreach($activeItems as $item)
+                                        <div class="item-row">
+                                            <div class="item-title">
+                                                {{ $item->item_name_snapshot }}
+                                                @if($item->item_type_name)
+                                                    <span class="item-sub">({{ $item->item_type_name }})</span>
+                                                @endif
+                                            </div>
+                                            <table class="item-grid">
+                                                @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                                    <tr>
+                                                        <td>
+                                                            @if($item->tare_weight > 0)
+                                                                {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }} - {{ \App\Services\FormatHelper::number($item->tare_weight) }} pcs
+                                                                @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                                                                    ({{ $pct }})
+                                                                @endif
+                                                            @else
+                                                                Satuan
+                                                            @endif
+                                                        </td>
+                                                        <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}</td>
+                                                    </tr>
+                                                @else
+                                                    <tr>
+                                                        <td>
+                                                            {{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg
+                                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
                                                                 ({{ $pct }})
                                                             @endif
-                                                        @else
-                                                            Satuan
-                                                        @endif
-                                                    </td>
-                                                    <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}</td>
-                                                </tr>
-                                            @else
+                                                        </td>
+                                                        <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</td>
+                                                    </tr>
+                                                @endif
                                                 <tr>
-                                                    <td>
-                                                        {{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg
-                                                        @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
-                                                            ({{ $pct }})
-                                                        @endif
-                                                    </td>
-                                                    <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</td>
+                                                    <td>@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</td>
+                                                    <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</td>
                                                 </tr>
-                                            @endif
-                                            <tr>
-                                                <td>@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</td>
-                                                <td style="text-align: right; font-weight: bold; color: #0f172a;">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                @endforeach
+                                            </table>
+                                        </div>
+                                    @endforeach
+                                @endif
                             </div>
 
                             <!-- Calculation Totals -->
@@ -369,57 +391,57 @@
                                 <tr>
                                     <td class="calc-label">Berat Kotor</td>
                                     <td class="calc-colon">:</td>
-                                    <td class="calc-value">{{ \App\Services\FormatHelper::weight($purchase->total_gross_weight) }} kg</td>
+                                    <td class="calc-value">{{ \App\Services\FormatHelper::weight($activeGross) }} kg</td>
                                 </tr>
                                 <tr>
                                     <td class="calc-label">Pot./Tara</td>
                                     <td class="calc-colon">:</td>
-                                    <td class="calc-value">{{ \App\Services\FormatHelper::weight($purchase->total_tare_weight) }} kg</td>
+                                    <td class="calc-value">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</td>
                                 </tr>
                                 <tr style="font-weight: bold;">
                                     <td class="calc-label">BERAT BERSIH</td>
                                     <td class="calc-colon">:</td>
-                                    <td class="calc-value">{{ \App\Services\FormatHelper::weight($purchase->total_net_weight) }} kg</td>
+                                    <td class="calc-value">{{ \App\Services\FormatHelper::weight($activeNet) }} kg</td>
                                 </tr>
                                 
                                 <tr>
                                     <td class="calc-label calc-divider">Subtotal</td>
                                     <td class="calc-colon calc-divider">:</td>
-                                    <td class="calc-value calc-divider">{{ \App\Services\FormatHelper::rupiah($purchase->subtotal_amount) }}</td>
+                                    <td class="calc-value calc-divider">{{ \App\Services\FormatHelper::rupiah($activeSubtotal) }}</td>
                                 </tr>
-                                @if($purchase->discount_amount > 0)
+                                @if($discount > 0)
                                     <tr>
                                         <td class="calc-label" style="color: #64748b;">Potongan</td>
                                         <td class="calc-colon" style="color: #64748b;">:</td>
-                                        <td class="calc-value" style="color: #64748b;">- {{ \App\Services\FormatHelper::rupiah($purchase->discount_amount) }}</td>
+                                        <td class="calc-value" style="color: #64748b;">- {{ \App\Services\FormatHelper::rupiah($discount) }}</td>
                                     </tr>
                                 @endif
-                                @if($purchase->rounding_amount != 0)
+                                @if($rounding != 0)
                                     <tr>
                                         <td class="calc-label" style="color: #64748b;">Pembulatan</td>
                                         <td class="calc-colon" style="color: #64748b;">:</td>
-                                        <td class="calc-value" style="color: #64748b;">{{ \App\Services\FormatHelper::rupiah($purchase->rounding_amount) }}</td>
+                                        <td class="calc-value" style="color: #64748b;">{{ \App\Services\FormatHelper::rupiah($rounding) }}</td>
                                     </tr>
                                 @endif
 
                                 <tr style="font-weight: bold;">
                                     <td class="calc-label calc-divider-solid" style="padding-top: 2px;">TOTAL NOTA</td>
                                     <td class="calc-colon calc-divider-solid" style="padding-top: 2px;">:</td>
-                                    <td class="calc-value calc-divider-solid" style="padding-top: 2px;">{{ \App\Services\FormatHelper::rupiah($purchase->final_amount) }}</td>
+                                    <td class="calc-value calc-divider-solid" style="padding-top: 2px;">{{ \App\Services\FormatHelper::rupiah($activeFinal) }}</td>
                                 </tr>
 
-                                @if($purchase->debt_deduction_amount > 0)
+                                @if($debtDeduction > 0)
                                     <tr style="color: #047857; font-weight: bold;">
                                         <td class="calc-label">Potong Hutang</td>
                                         <td class="calc-colon">:</td>
-                                        <td class="calc-value">- {{ \App\Services\FormatHelper::rupiah($purchase->debt_deduction_amount) }}</td>
+                                        <td class="calc-value">- {{ \App\Services\FormatHelper::rupiah($debtDeduction) }}</td>
                                     </tr>
                                 @endif
 
                                 <tr style="font-weight: bold; font-size: 8px;">
                                     <td class="calc-label calc-divider-solid" style="padding-top: 2px;">UANG DITERIMA</td>
                                     <td class="calc-colon calc-divider-solid" style="padding-top: 2px;">:</td>
-                                    <td class="calc-value calc-divider-solid" style="padding-top: 2px;">{{ \App\Services\FormatHelper::rupiah($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0))) }}</td>
+                                    <td class="calc-value calc-divider-solid" style="padding-top: 2px;">{{ \App\Services\FormatHelper::rupiah($activeNetCash) }}</td>
                                 </tr>
                             </table>
 

@@ -257,47 +257,60 @@
                 </div>
             </div>
 
+            @php
+                $activeItems = $purchase->items->where('is_cancelled', false);
+                $activeGross = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? ($i->gross_weight > 0 ? $i->gross_weight : ($i->quantity + $i->tare_weight)) : $i->gross_weight);
+                $activeTare = $activeItems->sum('tare_weight');
+                $activeNet = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+                $activeSubtotal = $activeItems->sum('subtotal');
+                $discount = min((float) ($purchase->discount_amount ?? 0), $activeSubtotal);
+                $rounding = (float) ($purchase->rounding_amount ?? 0);
+                $activeFinal = max(0, $activeSubtotal - $discount + $rounding);
+                $debtDeduction = min((float) ($purchase->debt_deduction_amount ?? 0), $activeFinal);
+                $activeNetCash = max(0, $activeFinal - $debtDeduction);
+            @endphp
+
             <div class="w-full sm:w-80 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
                 <div class="flex justify-between text-slate-600">
                     <span>Total Berat Kotor:</span>
-                    <span class="font-mono">{{ \App\Services\FormatHelper::weight($purchase->total_gross_weight) }} kg</span>
+                    <span class="font-mono">{{ \App\Services\FormatHelper::weight($activeGross) }} kg</span>
                 </div>
                 <div class="flex justify-between text-slate-600">
                     <span>Total Potongan Tara:</span>
-                    <span class="font-mono">{{ \App\Services\FormatHelper::weight($purchase->total_tare_weight) }} kg</span>
+                    <span class="font-mono">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</span>
                 </div>
                 <div class="flex justify-between font-bold text-slate-800 pb-1 border-b border-slate-200">
                     <span>Total Berat Bersih:</span>
-                    <span class="font-mono text-emerald-700">{{ \App\Services\FormatHelper::weight($purchase->total_net_weight) }} kg</span>
+                    <span class="font-mono text-emerald-700">{{ \App\Services\FormatHelper::weight($activeNet) }} kg</span>
                 </div>
 
                 <div class="flex justify-between text-slate-600 pt-1">
                     <span>Subtotal:</span>
-                    <span class="font-mono font-semibold">{{ \App\Services\FormatHelper::rupiah($purchase->subtotal_amount) }}</span>
+                    <span class="font-mono font-semibold">{{ \App\Services\FormatHelper::rupiah($activeSubtotal) }}</span>
                 </div>
-                @if($purchase->discount_amount > 0)
+                @if($discount > 0)
                     <div class="flex justify-between text-slate-600">
                         <span>Potongan Diskon:</span>
-                        <span class="font-mono text-red-600">- {{ \App\Services\FormatHelper::rupiah($purchase->discount_amount) }}</span>
+                        <span class="font-mono text-red-600">- {{ \App\Services\FormatHelper::rupiah($discount) }}</span>
                     </div>
                 @endif
-                @if($purchase->rounding_amount != 0)
+                @if($rounding != 0)
                     <div class="flex justify-between text-slate-600">
                         <span>Pembulatan:</span>
-                        <span class="font-mono">{{ \App\Services\FormatHelper::rupiah($purchase->rounding_amount) }}</span>
+                        <span class="font-mono">{{ \App\Services\FormatHelper::rupiah($rounding) }}</span>
                     </div>
                 @endif
 
                 <div class="pt-2 border-t border-slate-200 flex justify-between items-center text-xs font-bold text-slate-800">
                     <span>Total Harga Barang:</span>
                     <span class="font-mono text-sm font-bold text-slate-900">
-                        {{ \App\Services\FormatHelper::rupiah($purchase->final_amount) }}
+                        {{ \App\Services\FormatHelper::rupiah($activeFinal) }}
                     </span>
                 </div>
 
                 @php
-                    $hasDebtInfo = ($purchase->debt_deduction_amount > 0) || (($purchase->remaining_debt_after ?? 0) > 0) || ($purchase->supplier && $purchase->supplier->debts->where('remaining_amount', '>', 0)->count() > 0);
-                    $debtBefore = ($purchase->remaining_debt_after ?? 0) + ($purchase->debt_deduction_amount ?? 0);
+                    $hasDebtInfo = ($debtDeduction > 0) || (($purchase->remaining_debt_after ?? 0) > 0) || ($purchase->supplier && $purchase->supplier->debts->where('remaining_amount', '>', 0)->count() > 0);
+                    $debtBefore = ($purchase->remaining_debt_after ?? 0) + $debtDeduction;
                     $debtAfter = $purchase->remaining_debt_after ?? ($purchase->supplier ? $purchase->supplier->debts->sum('remaining_amount') : 0);
                 @endphp
 
@@ -316,7 +329,7 @@
                         </div>
                         <div class="flex justify-between text-emerald-800 font-semibold">
                             <span>Potongan Hutang Transaksi Ini:</span>
-                            <span>- {{ \App\Services\FormatHelper::rupiah($purchase->debt_deduction_amount ?? 0) }}</span>
+                            <span>- {{ \App\Services\FormatHelper::rupiah($debtDeduction) }}</span>
                         </div>
                         <div class="flex justify-between font-bold text-amber-900 pt-1 border-t border-amber-200">
                             <span>Sisa Saldo Hutang:</span>
@@ -331,7 +344,7 @@
                         <span class="text-[10px] font-normal text-slate-500 font-sans">Net tunai setelah potong hutang</span>
                     </div>
                     <span class="font-mono text-xl font-black text-emerald-600">
-                        {{ \App\Services\FormatHelper::rupiah($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0))) }}
+                        {{ \App\Services\FormatHelper::rupiah($activeNetCash) }}
                     </span>
                 </div>
             </div>

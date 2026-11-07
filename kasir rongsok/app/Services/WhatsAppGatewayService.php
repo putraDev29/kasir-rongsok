@@ -390,9 +390,13 @@ class WhatsAppGatewayService
             $items = $purchase->items;
         }
 
+        $activeItems = $items instanceof \Illuminate\Database\Eloquent\Collection
+            ? $items->where('is_cancelled', false)
+            : collect($items)->where('is_cancelled', false);
+
         $itemLines = [];
         $i = 1;
-        foreach ($items as $item) {
+        foreach ($activeItems as $item) {
             $itemName = $item->item_name_snapshot;
             $unit = $item->unit_type ?: 'kg';
             $price = number_format($item->price_per_kg, 0, ',', '.');
@@ -430,9 +434,9 @@ class WhatsAppGatewayService
             $i++;
         }
 
-        $itemsFormatted = count($itemLines) > 0 ? implode("\n\n", $itemLines) : "- (Tidak ada rincian barang)";
+        $itemsFormatted = count($itemLines) > 0 ? implode("\n\n", $itemLines) : "- (Semua barang dibatalkan)";
 
-        $grouped = $items->groupBy('item_name_snapshot');
+        $grouped = $activeItems->groupBy('item_name_snapshot');
         if ($grouped->contains(fn($grp) => $grp->count() > 1)) {
             $accumLines = [];
             foreach ($grouped as $cName => $cGrp) {
@@ -444,13 +448,23 @@ class WhatsAppGatewayService
             $itemsFormatted .= "\n\n📊 *Akumulasi Komoditas (Gabungan Semua Harga):*\n" . implode("\n", $accumLines);
         }
 
-        $totalNetto = number_format($purchase->total_net_weight, 2, ',', '.');
-        $totalGross = number_format($purchase->total_gross_weight, 2, ',', '.');
-        $totalTare = number_format($purchase->total_tare_weight, 2, ',', '.');
+        $activeGross = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? ($i->gross_weight > 0 ? $i->gross_weight : ($i->quantity + $i->tare_weight)) : $i->gross_weight);
+        $activeTare = $activeItems->sum('tare_weight');
+        $activeNet = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+        $activeSubtotal = $activeItems->sum('subtotal');
+        $discount = min((float) ($purchase->discount_amount ?? 0), $activeSubtotal);
+        $rounding = (float) ($purchase->rounding_amount ?? 0);
+        $activeFinal = max(0, $activeSubtotal - $discount + $rounding);
+        $debtDeduction = min((float) ($purchase->debt_deduction_amount ?? 0), $activeFinal);
+        $activeNetCash = max(0, $activeFinal - $debtDeduction);
 
-        $finalAmount = number_format($purchase->final_amount, 0, ',', '.');
-        $debtDeduction = number_format($purchase->debt_deduction_amount, 0, ',', '.');
-        $netCashPaid = number_format($purchase->net_cash_paid, 0, ',', '.');
+        $totalNetto = number_format($activeNet, 2, ',', '.');
+        $totalGross = number_format($activeGross, 2, ',', '.');
+        $totalTare = number_format($activeTare, 2, ',', '.');
+
+        $finalAmountStr = number_format($activeFinal, 0, ',', '.');
+        $debtDeductionStr = number_format($debtDeduction, 0, ',', '.');
+        $netCashPaidStr = number_format($activeNetCash, 0, ',', '.');
 
         $msg = "*=============================*\n";
         $msg .= "♻️ *{$companyName}*\n";
@@ -474,18 +488,18 @@ class WhatsAppGatewayService
         $msg .= "✂️ *Total Potongan Tara:* {$totalTare} kg\n";
         $msg .= "✅ *Total Berat Bersih :* *{$totalNetto} kg*\n";
         $msg .= "----------------------------------------\n";
-        $msg .= "💰 *TOTAL NILAI NOTA :* *Rp {$finalAmount}*\n";
+        $msg .= "💰 *TOTAL NILAI NOTA :* *Rp {$finalAmountStr}*\n";
 
-        if ($purchase->debt_deduction_amount > 0) {
-            $msg .= "✂️ *Potongan Kasbon/Hutang:* -Rp {$debtDeduction}\n";
-            $msg .= "💵 *TUNAI DIBAYARKAN :* *Rp {$netCashPaid}*\n";
+        if ($debtDeduction > 0) {
+            $msg .= "✂️ *Potongan Kasbon/Hutang:* -Rp {$debtDeductionStr}\n";
+            $msg .= "💵 *TUNAI DIBAYARKAN :* *Rp {$netCashPaidStr}*\n";
             
             if ($purchase->remaining_debt_after > 0) {
                 $remDebt = number_format($purchase->remaining_debt_after, 0, ',', '.');
                 $msg .= "⚠️ *Sisa Pinjaman Modal:* Rp {$remDebt}\n";
             }
         } else {
-            $msg .= "💵 *TUNAI DIBAYARKAN :* *Rp {$finalAmount}*\n";
+            $msg .= "💵 *TUNAI DIBAYARKAN :* *Rp {$finalAmountStr}*\n";
         }
 
         $msg .= "\n----------------------------------------\n";
@@ -549,9 +563,9 @@ class WhatsAppGatewayService
 
         $msg = "*=============================*\n";
         $msg .= "🚛 *{$companyName}*\n";
-        $msg .= "🧾 *FAKTUR PENJUALAN PARTAI (GROSIR)*\n";
+        $msg .= "🧾 *INVOICE PENJUALAN*\n";
         $msg .= "*=============================*\n\n";
-        $msg .= "🔖 No. Faktur : *{$sale->invoice_number}*\n";
+        $msg .= "🔖 No. Invoice : *{$sale->invoice_number}*\n";
         $msg .= "🗓️ Tanggal    : {$dateStr}\n";
         $msg .= "🏭 Pembeli    : *{$customerName}*\n\n";
         $msg .= "📦 *RINCIAN PENGIRIMAN:*\n{$itemsStr}\n\n";

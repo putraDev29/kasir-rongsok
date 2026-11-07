@@ -43,7 +43,8 @@
                 @php 
                     $sumWeight += $p->total_net_weight; 
                     $sumAmount += $p->final_amount; 
-                    $itemNames = $p->items->map(fn($it) => $it->item_name_snapshot . ($it->item_type_name ? ' ('.$it->item_type_name.')' : '') . ': ' . ($it->unit_type == 'pcs' ? $it->quantity.' pcs' : $it->net_weight.' kg'))->implode('; ');
+                    $activeItems = $p->items->where('is_cancelled', false);
+                    $itemNames = $activeItems->map(fn($it) => $it->item_name_snapshot . ($it->item_type_name ? ' ('.$it->item_type_name.')' : '') . ': ' . ($it->unit_type == 'pcs' ? $it->quantity.' pcs' : $it->net_weight.' kg'))->implode('; ');
                 @endphp
                 <tr>
                     <td align="center">{{ $idx + 1 }}</td>

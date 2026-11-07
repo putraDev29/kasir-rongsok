@@ -8,7 +8,8 @@ Sistem Manajemen POS Kasir Timbangan Pengepul & Depo Rongsokan terintegrasi deng
 
 ```
 app rongsok/
-├── kasir rongsok/           # Aplikasi Web Utama (Laravel 11, Tailwind, Alpine.js)
+├── kasir rongsok/           # Aplikasi Web Kasir & POS Backend (Laravel 11, MySQL, API)
+├── landing-page/            # Modern Responsive Landing Page (Next.js 16, Tailwind CSS, Framer Motion)
 ├── wa_gateway/              # Server WhatsApp Gateway Lokal (Node.js, WPPConnect, Port 21465)
 ├── SETUP_PC_BARU.bat        # Installer 1-Klik Otomatis untuk PC Baru / Client
 ├── START_KASIR_RONGSOK.bat  # Launcher satu-klik (Silent, auto start MySQL, App, & WA Gateway)

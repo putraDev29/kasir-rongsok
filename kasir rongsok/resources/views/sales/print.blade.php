@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SuratJalan_{{ $sale->invoice_number }}</title>
+    <title>Invoice_{{ $sale->invoice_number }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @media print {
@@ -15,11 +15,11 @@
 <body class="bg-slate-100 min-h-screen p-4 sm:p-8 flex flex-col items-center">
 
     <div class="no-print w-full max-w-2xl mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-        <span class="text-xs font-semibold text-slate-700">Preview Faktur & Surat Jalan Penjualan Rongsok</span>
+        <span class="text-xs font-semibold text-slate-700">Preview Invoice Penjualan Rongsok</span>
         <div class="flex items-center gap-2">
             <button onclick="window.print()" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                <span>Cetak Dokumen</span>
+                <span>Cetak Invoice</span>
             </button>
             <a href="{{ route('sales.pdf', [$sale, 'download' => 1]) }}" class="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
                 <i data-lucide="download" class="w-3.5 h-3.5"></i>
@@ -50,8 +50,8 @@
                 </div>
             </div>
             <div class="text-right">
-                <span class="text-sm font-bold {{ $sale->isPickup() ? 'text-emerald-700' : 'text-blue-700' }} uppercase">
-                    {{ $sale->isPickup() ? 'FAKTUR PENJUALAN (DIAMBIL SENDIRI)' : 'SURAT JALAN & INVOICE' }}
+                <span class="text-sm font-bold text-slate-900 uppercase">
+                    INVOICE
                 </span>
                 <div class="font-mono font-bold text-slate-800 text-sm mt-1">{{ $sale->invoice_number }}</div>
                 <div class="text-[11px] text-slate-500">{{ $sale->transaction_date->format('d/m/Y H:i') }}</div>
@@ -181,29 +181,6 @@
                     <span>TOTAL TAGIHAN:</span>
                     <span class="font-mono text-base">Rp {{ \App\Services\FormatHelper::number($sale->final_amount) }}</span>
                 </div>
-                <div class="pt-1 flex justify-between text-slate-700 text-xs">
-                    <span>Metode Bayar:</span>
-                    <span class="font-bold text-slate-900">{{ $sale->paymentMethod?->name ?? 'Tunai' }}</span>
-                </div>
-                @if($sale->isBankPayment())
-                    @if($sale->getBankAccountNumber())
-                        <div class="flex justify-between text-blue-900 font-mono text-xs">
-                            <span>No. Rekening:</span>
-                            <span class="font-bold">{{ $sale->getBankAccountNumber() }}</span>
-                        </div>
-                    @endif
-                    @if($sale->getBankAccountName())
-                        <div class="flex justify-between text-blue-900 text-xs">
-                            <span>Nama Rekening:</span>
-                            <span class="font-semibold">{{ $sale->getBankAccountName() }}</span>
-                        </div>
-                    @endif
-                    @if(!$sale->getBankAccountNumber() && !$sale->getBankAccountName() && !empty($sale->bank_info))
-                        <div class="text-[10px] text-blue-900 font-bold pt-1 text-right font-mono">
-                            Rek. Transfer: {{ $sale->bank_info }}
-                        </div>
-                    @endif
-                @endif
             </div>
         </div>
 

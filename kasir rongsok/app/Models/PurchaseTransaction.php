@@ -90,6 +90,11 @@ class PurchaseTransaction extends Model
         return $this->hasMany(PurchaseTransactionItem::class);
     }
 
+    public function activeItems(): HasMany
+    {
+        return $this->hasMany(PurchaseTransactionItem::class)->where('is_cancelled', false);
+    }
+
     public function debtPayments(): HasMany
     {
         return $this->hasMany(DebtPayment::class);

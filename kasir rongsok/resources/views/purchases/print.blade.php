@@ -214,49 +214,68 @@
             @endif
         </div>
 
+        @php
+            $activeItems = $purchase->items->where('is_cancelled', false);
+            $activeGross = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? ($i->gross_weight > 0 ? $i->gross_weight : ($i->quantity + $i->tare_weight)) : $i->gross_weight);
+            $activeTare = $activeItems->sum('tare_weight');
+            $activeNet = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+            $activeSubtotal = $activeItems->sum('subtotal');
+            $discount = min((float) ($purchase->discount_amount ?? 0), $activeSubtotal);
+            $rounding = (float) ($purchase->rounding_amount ?? 0);
+            $activeFinal = max(0, $activeSubtotal - $discount + $rounding);
+            $debtDeduction = min((float) ($purchase->debt_deduction_amount ?? 0), $activeFinal);
+            $activeNetCash = max(0, $activeFinal - $debtDeduction);
+        @endphp
+
         <!-- Items Breakdown -->
         @if($format === 'thermal_58')
             <!-- Layout Khusus Kertas 58mm (Pas 32 karakter, rapi tanpa terpotong untuk Eppos/Iware) -->
             <div class="py-1 border-b border-dashed border-slate-400 font-mono text-[9px]">
-                @foreach($purchase->items as $item)
-                    <div class="py-1 {{ !$loop->last ? 'border-b border-dotted border-slate-300' : '' }}">
-                        <div class="font-bold text-[10px] uppercase text-slate-900 leading-tight">
-                            {{ $item->item_name_snapshot }}
-                            @if($item->item_type_name)
-                                <span class="font-normal text-[9px] text-slate-700">({{ $item->item_type_name }})</span>
-                            @endif
-                        </div>
-                        @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
-                            <div class="flex justify-between text-[9px] text-slate-600">
-                                <span>
-                                    @if($item->tare_weight > 0)
-                                        {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }} - {{ \App\Services\FormatHelper::number($item->tare_weight) }} pcs
-                                        @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                @if($activeItems->isEmpty())
+                    <div class="py-2 text-center text-[9px] text-red-600 font-bold uppercase tracking-wider">
+                        (Semua Barang Dibatalkan)
+                    </div>
+                @else
+                    @foreach($activeItems as $item)
+                        <div class="py-1 {{ !$loop->last ? 'border-b border-dotted border-slate-300' : '' }}">
+                            <div class="font-bold text-[10px] uppercase text-slate-900 leading-tight">
+                                {{ $item->item_name_snapshot }}
+                                @if($item->item_type_name)
+                                    <span class="font-normal text-[9px] text-slate-700">({{ $item->item_type_name }})</span>
+                                @endif
+                            </div>
+                            @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                <div class="flex justify-between text-[9px] text-slate-600">
+                                    <span>
+                                        @if($item->tare_weight > 0)
+                                            {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }} - {{ \App\Services\FormatHelper::number($item->tare_weight) }} pcs
+                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                                                ({{ $pct }})
+                                            @endif
+                                        @else
+                                            Jumlah Satuan
+                                        @endif
+                                    </span>
+                                    <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}</span>
+                                </div>
+                            @else
+                                <div class="flex justify-between text-[9px] text-slate-600">
+                                    <span>
+                                        {{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg
+                                        @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
                                             ({{ $pct }})
                                         @endif
-                                    @else
-                                        Jumlah Satuan
-                                    @endif
-                                </span>
-                                <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}</span>
+                                    </span>
+                                    <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</span>
+                                </div>
+                            @endif
+                            <div class="flex justify-between text-[9px] pt-0.5">
+                                <span class="text-slate-600">@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</span>
+                                <span class="font-black text-slate-900">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</span>
                             </div>
-                        @else
-                            <div class="flex justify-between text-[9px] text-slate-600">
-                                <span>
-                                    {{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg
-                                    @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
-                                        ({{ $pct }})
-                                    @endif
-                                </span>
-                                <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</span>
-                            </div>
-                        @endif
-                        <div class="flex justify-between text-[9px] pt-0.5">
-                            <span class="text-slate-600">@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</span>
-                            <span class="font-black text-slate-900">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</span>
                         </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                @endif
             </div>
         @else
             <!-- Layout Tabel Lebar (80mm & A4) -->
@@ -272,52 +291,60 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-dotted divide-slate-200 text-[10px]">
-                        @foreach($purchase->items as $item)
+                        @if($activeItems->isEmpty())
                             <tr>
-                                <td class="py-1 pr-1 font-semibold" colspan="5">
-                                    {{ $item->item_name_snapshot }}
-                                    @if($item->item_type_name)
-                                        <span class="font-normal text-[9px] text-slate-600">- {{ $item->item_type_name }}</span>
-                                    @endif
+                                <td colspan="5" class="py-3 text-center text-xs text-red-600 font-bold uppercase tracking-wider">
+                                    (Semua Barang Pada Transaksi Ini Telah Dibatalkan)
                                 </td>
                             </tr>
-                            <tr class="text-slate-600 text-[9px]">
-                                <td class="pb-1 pl-2 text-slate-400">↳</td>
-                                <td class="pb-1 text-right">
-                                    @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
-                                        @if($item->tare_weight > 0)
-                                            {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }}-{{ \App\Services\FormatHelper::number($item->tare_weight) }}
-                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
-                                                <span class="text-[8px] text-slate-500">({{ $pct }})</span>
+                        @else
+                            @foreach($activeItems as $item)
+                                <tr>
+                                    <td class="py-1 pr-1 font-semibold" colspan="5">
+                                        {{ $item->item_name_snapshot }}
+                                        @if($item->item_type_name)
+                                            <span class="font-normal text-[9px] text-slate-600">- {{ $item->item_type_name }}</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr class="text-slate-600 text-[9px]">
+                                    <td class="pb-1 pl-2 text-slate-400">↳</td>
+                                    <td class="pb-1 text-right">
+                                        @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                            @if($item->tare_weight > 0)
+                                                {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }}-{{ \App\Services\FormatHelper::number($item->tare_weight) }}
+                                                @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight), $item->tare_weight))
+                                                    <span class="text-[8px] text-slate-500">({{ $pct }})</span>
+                                                @endif
+                                            @else
+                                                {{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}
                                             @endif
                                         @else
-                                            {{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}
+                                            {{ \App\Services\FormatHelper::weight($item->gross_weight) }}-{{ \App\Services\FormatHelper::weight($item->tare_weight) }}
+                                            @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
+                                                <span class="text-[8px] text-slate-500">({{ $pct }})</span>
+                                            @endif
                                         @endif
-                                    @else
-                                        {{ \App\Services\FormatHelper::weight($item->gross_weight) }}-{{ \App\Services\FormatHelper::weight($item->tare_weight) }}
-                                        @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
-                                            <span class="text-[8px] text-slate-500">({{ $pct }})</span>
+                                    </td>
+                                    <td class="pb-1 text-right font-bold text-slate-900">
+                                        @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
+                                            {{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} pcs
+                                        @else
+                                            {{ \App\Services\FormatHelper::weight($item->net_weight) }} kg
                                         @endif
-                                    @endif
-                                </td>
-                                <td class="pb-1 text-right font-bold text-slate-900">
-                                    @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
-                                        {{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} pcs
-                                    @else
-                                        {{ \App\Services\FormatHelper::weight($item->net_weight) }} kg
-                                    @endif
-                                </td>
-                                <td class="pb-1 text-right">@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</td>
-                                <td class="pb-1 text-right font-bold text-slate-900">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</td>
-                            </tr>
-                        @endforeach
+                                    </td>
+                                    <td class="pb-1 text-right">@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</td>
+                                    <td class="pb-1 text-right font-bold text-slate-900">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</td>
+                                </tr>
+                            @endforeach
+                        @endif
                     </tbody>
                 </table>
             </div>
         @endif
 
         @php
-            $groupedPrintCommodities = $purchase->items->groupBy('item_name_snapshot');
+            $groupedPrintCommodities = $activeItems->groupBy('item_name_snapshot');
             $hasPrintMultiPrice = $groupedPrintCommodities->contains(fn($grp) => $grp->count() > 1);
         @endphp
 
@@ -343,48 +370,48 @@
             <div style="{{ $calcGrid }}">
                 <span class="whitespace-nowrap">Berat Kotor</span>
                 <span class="text-center">:</span>
-                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_gross_weight) }} kg</span>
+                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeGross) }} kg</span>
             </div>
             <div style="{{ $calcGrid }}">
                 <span class="whitespace-nowrap">Pot./Tara</span>
                 <span class="text-center">:</span>
-                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_tare_weight) }} kg</span>
+                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</span>
             </div>
             <div style="{{ $calcGrid }}" class="font-bold text-slate-900">
                 <span class="whitespace-nowrap">BERAT BERSIH</span>
                 <span class="text-center">:</span>
-                <span class="text-right font-bold whitespace-nowrap">{{ \App\Services\FormatHelper::weight($purchase->total_net_weight) }} kg</span>
+                <span class="text-right font-bold whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeNet) }} kg</span>
             </div>
             
             <div class="pt-1 border-t border-dotted border-slate-300" style="{{ $calcGrid }}">
                 <span class="whitespace-nowrap">Subtotal</span>
                 <span class="text-center">:</span>
-                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->subtotal_amount) }}</span>
+                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($activeSubtotal) }}</span>
             </div>
-            @if($purchase->discount_amount > 0)
+            @if($discount > 0)
                 <div class="text-slate-600" style="{{ $calcGrid }}">
                     <span class="whitespace-nowrap">Potongan</span>
                     <span class="text-center">:</span>
-                    <span class="text-right whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($purchase->discount_amount) }}</span>
+                    <span class="text-right whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($discount) }}</span>
                 </div>
             @endif
-            @if($purchase->rounding_amount != 0)
+            @if($rounding != 0)
                 <div class="text-slate-600" style="{{ $calcGrid }}">
                     <span class="whitespace-nowrap">Pembulatan</span>
                     <span class="text-center">:</span>
-                    <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($purchase->rounding_amount) }}</span>
+                    <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($rounding) }}</span>
                 </div>
             @endif
 
             <div class="pt-1 border-t border-slate-900 {{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }} font-bold" style="{{ $calcGrid }}">
                 <span class="whitespace-nowrap thermal-total-label">TOTAL HARGA</span>
                 <span class="text-center">:</span>
-                <span class="text-right {{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }} font-bold whitespace-nowrap thermal-total-val">{{ \App\Services\FormatHelper::rupiah($purchase->final_amount) }}</span>
+                <span class="text-right {{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }} font-bold whitespace-nowrap thermal-total-val">{{ \App\Services\FormatHelper::rupiah($activeFinal) }}</span>
             </div>
 
             @php
-                $hasDebtInfo = ($purchase->debt_deduction_amount > 0) || (($purchase->remaining_debt_after ?? 0) > 0) || ($purchase->supplier && $purchase->supplier->debts->where('remaining_amount', '>', 0)->count() > 0);
-                $debtBefore = ($purchase->remaining_debt_after ?? 0) + ($purchase->debt_deduction_amount ?? 0);
+                $hasDebtInfo = ($debtDeduction > 0) || (($purchase->remaining_debt_after ?? 0) > 0) || ($purchase->supplier && $purchase->supplier->debts->where('remaining_amount', '>', 0)->count() > 0);
+                $debtBefore = ($purchase->remaining_debt_after ?? 0) + $debtDeduction;
                 $debtAfter = $purchase->remaining_debt_after ?? ($purchase->supplier ? $purchase->supplier->debts->sum('remaining_amount') : 0);
             @endphp
 
@@ -401,7 +428,7 @@
                     <div class="text-slate-800 font-semibold" style="{{ $calcGrid }}">
                         <span class="whitespace-nowrap">Potong Hutang</span>
                         <span class="text-center">:</span>
-                        <span class="text-right text-emerald-700 whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($purchase->debt_deduction_amount ?? 0) }}</span>
+                        <span class="text-right text-emerald-700 whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($debtDeduction) }}</span>
                     </div>
                     <div class="font-bold text-amber-800 pt-0.5 border-t border-dotted border-slate-300" style="{{ $calcGrid }}">
                         <span class="whitespace-nowrap">SISA HUTANG</span>
@@ -414,7 +441,7 @@
             <div class="pt-1.5 border-t border-slate-900 {{ $format === 'thermal_58' ? 'text-[10px]' : 'text-xs' }} font-bold" style="{{ $calcGrid }}">
                 <span class="whitespace-nowrap thermal-cash-label">UANG DITERIMA</span>
                 <span class="text-center">:</span>
-                <span class="text-right {{ $format === 'thermal_58' ? 'text-[10.5px]' : 'text-sm' }} font-bold whitespace-nowrap thermal-cash-val">{{ \App\Services\FormatHelper::rupiah($purchase->net_cash_paid ?? ($purchase->final_amount - ($purchase->debt_deduction_amount ?? 0))) }}</span>
+                <span class="text-right {{ $format === 'thermal_58' ? 'text-[10.5px]' : 'text-sm' }} font-bold whitespace-nowrap thermal-cash-val">{{ \App\Services\FormatHelper::rupiah($activeNetCash) }}</span>
             </div>
         </div>
 

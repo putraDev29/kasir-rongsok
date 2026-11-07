@@ -926,7 +926,7 @@ class ScrapCashierSystemTest extends TestCase
         $printRes->assertSee('Besi Super Tebal');
         $printRes->assertSee('Besi Campur Tipis');
         $printRes->assertSee('Unduh PDF');
-        $printRes->assertSee('Cetak Dokumen');
+        $printRes->assertSee('Cetak Invoice');
 
         // 4. Test Sales PDF preview (inline stream)
         $pdfRes = $this->actingAs($this->superAdmin)->get(route('sales.pdf', $sale));
@@ -1047,7 +1047,7 @@ class ScrapCashierSystemTest extends TestCase
         // Check print page for pickup sale
         $pickupPrint = $this->actingAs($this->superAdmin)->get(route('sales.print', $pickupSale));
         $pickupPrint->assertStatus(200);
-        $pickupPrint->assertSee('FAKTUR PENJUALAN (DIAMBIL SENDIRI)');
+        $pickupPrint->assertSee('INVOICE');
         $pickupPrint->assertSee('Diambil Langsung Pembeli');
         $pickupPrint->assertDontSee('Sopir / Ekspedisi');
 
@@ -1346,10 +1346,9 @@ class ScrapCashierSystemTest extends TestCase
 
         $salePrintRes = $this->actingAs($this->superAdmin)->get("/sales/{$sale->id}/print");
         $salePrintRes->assertOk();
-        $salePrintRes->assertSee('No. Rekening:');
-        $salePrintRes->assertSee('1122334455');
-        $salePrintRes->assertSee('Nama Rekening:');
-        $salePrintRes->assertSee('PT PENATA REKENING');
+        $salePrintRes->assertSee('INVOICE');
+        $salePrintRes->assertDontSee('Metode Bayar');
+        $salePrintRes->assertDontSee('No. Rekening');
     }
 
     public function test_user_management_supports_bank_details(): void

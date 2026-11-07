@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Faktur_{{ $sale->invoice_number }}</title>
+    <title>Invoice_{{ $sale->invoice_number }}</title>
     <style>
         @page {
             size: a5 portrait;
@@ -169,7 +169,7 @@
             </td>
             <td style="vertical-align: middle; text-align: right;">
                 <div class="doc-title">
-                    <div class="main">{{ $sale->isPickup() ? 'FAKTUR PENJUALAN (DIAMBIL SENDIRI)' : 'FAKTUR PENJUALAN PARTAI' }}</div>
+                    <div class="main">INVOICE</div>
                     <div class="num">{{ $sale->invoice_number }}</div>
                     <div style="font-size: 8px; color: {{ $sale->isPickup() ? '#047857' : '#1d4ed8' }}; font-weight: bold; margin-top: 2px;">
                         {{ $sale->isPickup() ? 'DIAMBIL SENDIRI DI TEMPAT' : 'PENGIRIMAN ARMADA PERUSAHAAN' }}
@@ -199,30 +199,14 @@
                 <td class="meta-val">{{ $sale->buyer_phone ?: '-' }}</td>
             </tr>
             <tr>
-                <td class="meta-label">Metode Bayar</td>
-                <td>:</td>
-                <td class="meta-val">
-                    <strong>{{ $sale->paymentMethod?->name ?? 'Transfer Bank' }}</strong>
-                    @if($sale->isBankPayment())
-                        @if($sale->getBankAccountNumber() || $sale->getBankAccountName())
-                            <div style="font-size: 7.5px; color: #1e40af; margin-top: 1px;">
-                                @if($sale->getBankAccountNumber())
-                                    <div><strong>No. Rek:</strong> {{ $sale->getBankAccountNumber() }}</div>
-                                @endif
-                                @if($sale->getBankAccountName())
-                                    <div><strong>a/n:</strong> {{ $sale->getBankAccountName() }}</div>
-                                @endif
-                            </div>
-                        @elseif(!empty($sale->bank_info))
-                            <div style="font-size: 7.5px; color: #1e40af; font-weight: bold; margin-top: 1px;">
-                                {{ $sale->bank_info }}
-                            </div>
-                        @endif
+                <td class="meta-label">{{ $sale->isPickup() ? 'Metode Serah' : 'Alamat Kirim' }}</td>
+                <td style="width: 5px;">:</td>
+                <td class="meta-val" colspan="4">
+                    {{ $sale->isPickup() ? 'Diambil Sendiri di Depo/Gudang' : ($sale->buyer_address ?: '-') }}
+                    @if($sale->notes)
+                        <span style="font-weight: normal; color: #64748b; font-size: 8px;">({{ $sale->notes }})</span>
                     @endif
                 </td>
-                <td class="meta-label">{{ $sale->isPickup() ? 'Metode Serah' : 'Alamat Kirim' }}</td>
-                <td>:</td>
-                <td class="meta-val">{{ $sale->isPickup() ? 'Diambil Sendiri di Depo/Gudang' : ($sale->buyer_address ?: '-') }}</td>
             </tr>
         </table>
     </div>
@@ -323,7 +307,7 @@
     </div>
 
     <div class="footer-note">
-        {{ $sale->isPickup() ? '*Faktur ini merupakan bukti resmi transaksi penjualan barang yang diambil langsung oleh pembeli di tempat/depo.' : '*Faktur ini merupakan bukti resmi pengiriman muatan rongsok partai besar. Dokumen sah terbitan sistem otomatis.' }}
+        {{ $sale->isPickup() ? '*Invoice ini merupakan bukti resmi transaksi penjualan barang yang diambil langsung oleh pembeli di tempat/depo.' : '*Invoice ini merupakan bukti resmi pengiriman muatan rongsok partai besar. Dokumen sah terbitan sistem otomatis.' }}
     </div>
 
 </body>

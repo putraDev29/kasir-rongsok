@@ -219,15 +219,15 @@
                                         <x-whatsapp-icon class="w-4 h-4" />
                                     </button>
                                     <button type="button"
-                                            @click="openPdfPreview('{{ route('sales.pdf', $sale) }}', 'Faktur Penjualan {{ $sale->invoice_number }}', 'Faktur_{{ str_replace(['/', ' '], '_', $sale->invoice_number) }}.pdf', 'Pembeli: {{ $sale->buyer_name }}')"
-                                            class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 cursor-pointer" title="Preview Faktur PDF">
+                                            @click="openPdfPreview('{{ route('sales.pdf', $sale) }}', 'Invoice {{ $sale->invoice_number }}', 'Invoice_{{ str_replace(['/', ' '], '_', $sale->invoice_number) }}.pdf', 'Pembeli: {{ $sale->buyer_name }}')"
+                                            class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 cursor-pointer" title="Preview Invoice PDF">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
                                     </button>
                                     <a href="{{ route('sales.show', $sale) }}" title="Lihat Rincian"
                                        class="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </a>
-                                    <a href="{{ route('sales.print', $sale) }}" target="_blank" title="Preview & Cetak Faktur"
+                                    <a href="{{ route('sales.print', $sale) }}" target="_blank" title="Preview & Cetak Invoice"
                                        class="p-1 rounded text-blue-600 hover:text-blue-800 hover:bg-blue-50">
                                         <i data-lucide="printer" class="w-4 h-4"></i>
                                     </a>

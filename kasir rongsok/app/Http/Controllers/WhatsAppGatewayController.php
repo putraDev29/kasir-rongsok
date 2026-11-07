@@ -132,13 +132,30 @@ class WhatsAppGatewayController extends Controller
         $disclaimer = BusinessSetting::get('receipt_disclaimer', 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI');
         $footerText = BusinessSetting::get('receipt_footer', 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali.');
 
+        $activeItems = $purchase->items->where('is_cancelled', false);
+        $activeGross = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? ($i->gross_weight > 0 ? $i->gross_weight : ($i->quantity + $i->tare_weight)) : $i->gross_weight);
+        $activeTare = $activeItems->sum('tare_weight');
+        $activeNet = $activeItems->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
+        $activeSubtotal = $activeItems->sum('subtotal');
+        $discount = min((float) ($purchase->discount_amount ?? 0), $activeSubtotal);
+        $rounding = (float) ($purchase->rounding_amount ?? 0);
+        $activeFinal = max(0, $activeSubtotal - $discount + $rounding);
+        $debtDeduction = min((float) ($purchase->debt_deduction_amount ?? 0), $activeFinal);
+        $activeNetCash = max(0, $activeFinal - $debtDeduction);
+
         $items = [];
-        foreach ($purchase->items as $it) {
+        foreach ($activeItems as $it) {
+            $isPcs = ($it->unit_type === 'pcs' || $it->unit_type === 'satuan');
+            $grossQty = $isPcs ? ($it->gross_weight > 0 ? $it->gross_weight : ($it->quantity + $it->tare_weight)) : $it->gross_weight;
+            $netQty = $isPcs ? $it->quantity : $it->net_weight;
+            $unitStr = $it->unit_type ?: 'kg';
+
             $items[] = [
                 'name' => $it->item_name_snapshot,
-                'bruto' => number_format($it->gross_weight, 2, ',', '.'),
+                'bruto' => number_format($grossQty, 2, ',', '.'),
                 'tara' => number_format($it->tare_weight, 2, ',', '.'),
-                'netto' => number_format($it->net_weight, 2, ',', '.'),
+                'netto' => number_format($netQty, 2, ',', '.'),
+                'unit' => $unitStr,
                 'price' => number_format($it->price_per_kg, 0, ',', '.'),
                 'subtotal' => number_format($it->subtotal, 0, ',', '.'),
                 'subtotalFormatted' => 'Rp ' . number_format($it->subtotal, 0, ',', '.'),
@@ -158,12 +175,12 @@ class WhatsAppGatewayController extends Controller
             'companyPhone' => $companyPhone,
             'disclaimer' => $disclaimer,
             'footerText' => $footerText,
-            'totalNetWeight' => number_format($purchase->total_net_weight, 2, ',', '.'),
-            'totalGrossWeight' => number_format($purchase->total_gross_weight, 2, ',', '.'),
-            'totalTareWeight' => number_format($purchase->total_tare_weight, 2, ',', '.'),
-            'subtotalAmount' => 'Rp ' . number_format($purchase->final_amount, 0, ',', '.'),
-            'debtDeductionAmount' => $purchase->debt_deduction_amount > 0 ? number_format($purchase->debt_deduction_amount, 0, ',', '.') : null,
-            'netCashPaid' => 'Rp ' . number_format($purchase->net_cash_paid, 0, ',', '.'),
+            'totalNetWeight' => number_format($activeNet, 2, ',', '.'),
+            'totalGrossWeight' => number_format($activeGross, 2, ',', '.'),
+            'totalTareWeight' => number_format($activeTare, 2, ',', '.'),
+            'subtotalAmount' => 'Rp ' . number_format($activeFinal, 0, ',', '.'),
+            'debtDeductionAmount' => $debtDeduction > 0 ? number_format($debtDeduction, 0, ',', '.') : null,
+            'netCashPaid' => 'Rp ' . number_format($activeNetCash, 0, ',', '.'),
             'remainingDebtAfter' => $purchase->remaining_debt_after > 0 ? number_format($purchase->remaining_debt_after, 0, ',', '.') : null,
             'items' => $items,
         ];
@@ -241,7 +258,7 @@ class WhatsAppGatewayController extends Controller
 
         $customerName = $sale->buyer_name ?: $sale->customer_name ?: 'Pabrik / Pembeli';
         $customerPhone = $sale->buyer_phone ?: $sale->customer_phone ?: '-';
-        $filename = "Faktur_{$sale->invoice_number}.pdf";
+        $filename = "Invoice_{$sale->invoice_number}.pdf";
 
         $receiptData = [
             'type' => 'sale',
