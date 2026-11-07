@@ -872,7 +872,7 @@
                                     <div class="p-3 text-center space-y-2">
                                         <p class="text-xs text-slate-500">Tidak ada metode pembayaran "<span class="font-bold text-slate-800" x-text="paymentMethodSearchQuery"></span>"</p>
                                         <button type="button" 
-                                                @click="isManualPaymentMethod = true; newPaymentMethodName = paymentMethodSearchQuery; paymentMethodDropdownOpen = false;"
+                                                @click="isManualPaymentMethod = true; newPaymentMethodName = paymentMethodSearchQuery; paymentMethodDropdownOpen = false; refreshIcons();"
                                                 class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs inline-flex items-center gap-1 cursor-pointer">
                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -931,6 +931,11 @@
                                     <input type="checkbox" name="save_to_user_bank" value="1" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
                                     <span>Simpan ke profil user kasir saya</span>
                                 </label>
+                                <template x-if="isManualPaymentMethod">
+                                    <span class="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-semibold bg-emerald-100/70 px-2 py-0.5 rounded border border-emerald-300">
+                                        ✨ Otomatis tersimpan ke metode pembayaran baru
+                                    </span>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -1132,6 +1137,12 @@ function cashierPos() {
             if (pm.bank_name && !this.customBank) {
                 this.customBank = pm.bank_name;
             }
+            if (pm.account_number && !this.customAccountNo) {
+                this.customAccountNo = pm.account_number;
+            }
+            if (pm.account_holder && !this.customAccountName) {
+                this.customAccountName = pm.account_holder;
+            }
             this.refreshIcons();
         },
 
@@ -1149,7 +1160,7 @@ function cashierPos() {
             if (!pm || !pm.name) return 'Tunai';
             const name = pm.name.toLowerCase();
             const code = (pm.code || '').toLowerCase();
-            if (name.includes('transfer') || code.includes('transfer') || name.includes('bank')) return 'Transfer';
+            if (name.includes('transfer') || code.includes('transfer') || name.includes('bank') || Boolean(pm.bank_name || pm.account_number)) return 'Transfer';
             if (name.includes('qris') || code.includes('qris')) return 'QRIS';
             return 'Tunai';
         },
@@ -1165,13 +1176,12 @@ function cashierPos() {
             if (!pm || !pm.name) return false;
             const name = pm.name.toLowerCase();
             const code = (pm.code || '').toLowerCase();
-            return name.includes('transfer') || name.includes('bank') || code.includes('transfer');
+            return name.includes('transfer') || name.includes('bank') || code.includes('transfer') || Boolean(pm.bank_name || pm.account_number);
         },
 
         isTransferPayment() {
             if (this.isManualPaymentMethod) {
-                const name = (this.newPaymentMethodName || '').toLowerCase();
-                return name.includes('transfer') || name.includes('bank');
+                return true;
             }
             const method = this.paymentMethodsList.find(m => m.id == this.paymentMethodId);
             if (!method) {
@@ -1180,7 +1190,7 @@ function cashierPos() {
             }
             const name = (method.name || '').toLowerCase();
             const code = (method.code || '').toLowerCase();
-            return name.includes('transfer') || name.includes('bank') || code.includes('transfer');
+            return name.includes('transfer') || name.includes('bank') || code.includes('transfer') || Boolean(method.bank_name || method.account_number);
         },
 
         togglePaymentMethodMode() {
@@ -1195,6 +1205,7 @@ function cashierPos() {
                 this.newPaymentMethodName = '';
             }
             this.paymentMethodDropdownOpen = false;
+            this.refreshIcons();
         },
 
         filteredSuppliers() {

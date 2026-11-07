@@ -330,8 +330,21 @@ class PurchaseTransactionService
                 $targetName = !empty($newPaymentMethodName) ? $newPaymentMethodName : 'Metode Pembayaran Baru';
                 $pm = PaymentMethod::firstOrCreate(
                     ['name' => $targetName],
-                    ['code' => strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $targetName), 0, 6)) ?: 'PM', 'is_active' => true]
+                    [
+                        'code' => strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $targetName), 0, 6)) ?: 'PM',
+                        'bank_name' => $customBank ?: null,
+                        'account_number' => $customAccountNo ?: null,
+                        'account_holder' => $customAccountName ?: null,
+                        'is_active' => true,
+                    ]
                 );
+                if (!empty($customBank) || !empty($customAccountNo) || !empty($customAccountName)) {
+                    $pm->update(array_filter([
+                        'bank_name' => $customBank ?: $pm->bank_name,
+                        'account_number' => $customAccountNo ?: $pm->account_number,
+                        'account_holder' => $customAccountName ?: $pm->account_holder,
+                    ], fn($val) => !is_null($val) && $val !== ''));
+                }
                 $paymentMethodId = $pm->id;
             } elseif (is_numeric($paymentMethodId)) {
                 $paymentMethodId = (int) $paymentMethodId;
@@ -343,6 +356,8 @@ class PurchaseTransactionService
             if (empty($bankInfo) && $paymentMethodId) {
                 $pm = PaymentMethod::find($paymentMethodId);
                 $isBank = $pm && (
+                    !empty($pm->bank_name) ||
+                    !empty($pm->account_number) ||
                     str_contains(strtolower($pm->name), 'bank') ||
                     str_contains(strtolower($pm->name), 'transfer') ||
                     str_contains(strtolower($pm->code ?? ''), 'transfer')

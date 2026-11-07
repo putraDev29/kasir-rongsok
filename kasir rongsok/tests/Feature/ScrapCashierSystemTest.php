@@ -1748,5 +1748,40 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertFalse($driverNoBank->hasBankDetails());
         $this->assertNull($driverNoBank->bankDisplay());
     }
+
+    public function test_create_purchase_with_new_payment_method_and_bank_details(): void
+    {
+        $cashier = User::factory()->create(['role' => 'cashier']);
+        $service = app(PurchaseTransactionService::class);
+
+        // Test creating purchase with a completely new payment method and bank details
+        $trx = $service->createPurchase([
+            'supplier_name' => 'Supplier Baru Testing',
+            'payment_method_id' => '__new__',
+            'new_payment_method_name' => 'QRIS Bank Jago',
+            'custom_bank' => 'Bank Jago',
+            'custom_account_no' => '1029384756',
+            'custom_account_name' => 'Depo Rongsok Jaya',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'gross_weight' => 20,
+                    'tare_weight' => 0,
+                    'price_per_kg' => (float) $this->besiItem->buy_price_per_kg,
+                ]
+            ]
+        ], $cashier);
+
+        // Verify that PaymentMethod was created in the database with bank fields
+        $pm = PaymentMethod::where('name', 'QRIS Bank Jago')->first();
+        $this->assertNotNull($pm);
+        $this->assertEquals('Bank Jago', $pm->bank_name);
+        $this->assertEquals('1029384756', $pm->account_number);
+        $this->assertEquals('Depo Rongsok Jaya', $pm->account_holder);
+        $this->assertEquals($pm->id, $trx->payment_method_id);
+        $this->assertStringContainsString('Bank Jago', $trx->bank_info);
+        $this->assertStringContainsString('1029384756', $trx->bank_info);
+        $this->assertStringContainsString('Depo Rongsok Jaya', $trx->bank_info);
+    }
 }
 
