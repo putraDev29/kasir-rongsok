@@ -456,45 +456,24 @@ function editSalesPos() {
     return {
         masterItems: @json($scrapItems ?? []),
         driversList: @json($drivers ?? []),
-        deliveryType: '{{ old('delivery_type', $sale->delivery_type ?? 'pickup') }}',
-        driverId: '{{ old('driver_id', $sale->deliveryOrder?->driver_id ?? '') }}',
-        driverName: '{{ old('driver_name', $sale->deliveryOrder?->driver_name ?? '') }}',
-        driverPhone: '{{ old('driver_phone', $sale->deliveryOrder?->driver_phone ?? '') }}',
-        vehicleNumber: '{{ old('vehicle_number', $sale->deliveryOrder?->vehicle_number ?? '') }}',
-        vehicleType: '{{ old('vehicle_type', $sale->deliveryOrder?->vehicle_type ?? 'Truk') }}',
-        transactionDate: '{{ old('transaction_date', $sale->transaction_date->format('Y-m-d\TH:i')) }}',
-        buyerName: '{{ old('buyer_name', addslashes($sale->buyer_name ?? '')) }}',
-        buyerPhone: '{{ old('buyer_phone', addslashes($sale->buyer_phone ?? '')) }}',
-        buyerAddress: '{{ old('buyer_address', addslashes($sale->buyer_address ?? '')) }}',
-        paymentMethodId: '{{ old('payment_method_id', $sale->payment_method_id ?? 1) }}',
-        customBank: '{{ old('custom_bank', addslashes($sale->getBankName() ?? '')) }}',
-        customAccountNo: '{{ old('custom_account_no', addslashes($sale->getBankAccountNumber() ?? '')) }}',
-        customAccountName: '{{ old('custom_account_name', addslashes($sale->getBankAccountName() ?? '')) }}',
-        discountAmount: {{ old('discount_amount', (float) $sale->discount_amount) }},
-        notes: '{{ old('notes', addslashes($sale->notes ?? '')) }}',
+        deliveryType: @json(old('delivery_type', $sale->delivery_type ?? 'pickup')),
+        driverId: @json(old('driver_id', $sale->deliveryOrder?->driver_id ?? '')),
+        driverName: @json(old('driver_name', $sale->deliveryOrder?->driver_name ?? '')),
+        driverPhone: @json(old('driver_phone', $sale->deliveryOrder?->driver_phone ?? '')),
+        vehicleNumber: @json(old('vehicle_number', $sale->deliveryOrder?->vehicle_number ?? '')),
+        vehicleType: @json(old('vehicle_type', $sale->deliveryOrder?->vehicle_type ?? 'Truk')),
+        transactionDate: @json(old('transaction_date', $sale->transaction_date->format('Y-m-d\TH:i'))),
+        buyerName: @json(old('buyer_name', $sale->buyer_name ?? '')),
+        buyerPhone: @json(old('buyer_phone', $sale->buyer_phone ?? '')),
+        buyerAddress: @json(old('buyer_address', $sale->buyer_address ?? '')),
+        paymentMethodId: @json(old('payment_method_id', $sale->payment_method_id ?? 1)),
+        customBank: @json(old('custom_bank', $sale->getBankName() ?? '')),
+        customAccountNo: @json(old('custom_account_no', $sale->getBankAccountNumber() ?? '')),
+        customAccountName: @json(old('custom_account_name', $sale->getBankAccountName() ?? '')),
+        discountAmount: {{ (float) old('discount_amount', $sale->discount_amount ?? 0) }},
+        notes: @json(old('notes', $sale->notes ?? '')),
 
-        rows: [
-            @foreach($sale->items as $it)
-            {
-                uid: {{ $it->id }},
-                id: {{ $it->id }},
-                scrap_item_id: '{{ $it->scrap_item_id }}',
-                item_price_stock_id: '{{ $it->item_price_stock_id ?? '' }}',
-                tier_id: '{{ $it->tier_id ?? ($it->scrap_item_id . '_' . $it->buy_price_snapshot) }}',
-                search_text: '{{ addslashes($it->scrapItem?->name ?? $it->item_name_snapshot) }} [Stok: ' + ({{ (float) ($it->scrapItem?->stockBalance?->current_stock ?? 0) }} + {{ (float) ($it->weight > 0 ? $it->weight : $it->quantity) }}) + ' {{ $it->unit_type ?? 'kg' }}]',
-                dropdown_open: false,
-                name: '{{ addslashes($it->scrapItem?->name ?? $it->item_name_snapshot) }}',
-                item_type_name: '{{ addslashes($it->item_type_name ?? '') }}',
-                unit_type: '{{ $it->unit_type ?? 'kg' }}',
-                quantity: {{ (float) ($it->quantity ?: 1) }},
-                weight: {{ (float) $it->weight }},
-                sell_price_per_kg: {{ (float) $it->sell_price_per_kg > 0 ? (float) $it->sell_price_per_kg : "''" }},
-                buy_price_snapshot: {{ (float) $it->buy_price_snapshot }},
-                avg_buy_price: {{ (float) $it->buy_price_snapshot }},
-                maxStock: {{ (float) ($it->scrapItem?->stockBalance?->current_stock ?? 0) + (float) ($it->weight > 0 ? $it->weight : $it->quantity) }}
-            },
-            @endforeach
-        ],
+        rows: @json($initialRows ?? []),
 
         refreshIcons() {
             this.$nextTick(() => {
@@ -632,6 +611,7 @@ function editSalesPos() {
 
         hasStockError() {
             return this.rows.some(r => {
+                if (!r.scrap_item_id) return false;
                 const qty = this.rowStockQuantity(r);
                 return qty > r.maxStock;
             });

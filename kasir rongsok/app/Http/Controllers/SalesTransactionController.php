@@ -149,7 +149,52 @@ class SalesTransactionController extends Controller
         $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('name')->get();
         $drivers = Driver::where('is_active', true)->orderBy('name')->get();
 
-        return view('sales.edit', compact('sale', 'scrapItems', 'paymentMethods', 'drivers'));
+        $initialRows = [];
+        foreach ($sale->items as $it) {
+            $scrapItem = $it->scrapItem;
+            $stockVal = (float) ($scrapItem?->stockBalance?->current_stock ?? 0) + (float) ($it->weight > 0 ? $it->weight : $it->quantity);
+            $initialRows[] = [
+                'uid' => $it->id,
+                'id' => $it->id,
+                'scrap_item_id' => $it->scrap_item_id,
+                'item_price_stock_id' => $it->item_price_stock_id ?? '',
+                'tier_id' => $it->tier_id ?? ($it->scrap_item_id . '_' . $it->buy_price_snapshot),
+                'search_text' => ($scrapItem?->name ?? $it->item_name_snapshot) . ' [Stok: ' . \App\Services\FormatHelper::number($stockVal) . ' ' . ($it->unit_type ?? 'kg') . ']',
+                'dropdown_open' => false,
+                'name' => $scrapItem?->name ?? $it->item_name_snapshot,
+                'item_type_name' => $it->item_type_name ?? '',
+                'unit_type' => $it->unit_type ?? 'kg',
+                'quantity' => (float) ($it->quantity ?: 1),
+                'weight' => (float) $it->weight,
+                'sell_price_per_kg' => (float) $it->sell_price_per_kg > 0 ? (float) $it->sell_price_per_kg : '',
+                'buy_price_snapshot' => (float) $it->buy_price_snapshot,
+                'avg_buy_price' => (float) $it->buy_price_snapshot,
+                'maxStock' => $stockVal,
+            ];
+        }
+
+        if (empty($initialRows)) {
+            $initialRows[] = [
+                'uid' => time(),
+                'id' => null,
+                'scrap_item_id' => '',
+                'item_price_stock_id' => '',
+                'tier_id' => '',
+                'search_text' => '',
+                'dropdown_open' => false,
+                'name' => '',
+                'item_type_name' => '',
+                'unit_type' => 'kg',
+                'quantity' => 1,
+                'weight' => '',
+                'sell_price_per_kg' => '',
+                'buy_price_snapshot' => 0,
+                'avg_buy_price' => 0,
+                'maxStock' => 0,
+            ];
+        }
+
+        return view('sales.edit', compact('sale', 'scrapItems', 'paymentMethods', 'drivers', 'initialRows'));
     }
 
     public function update(UpdateSalesRequest $request, SalesTransaction $sale): RedirectResponse
