@@ -59,7 +59,7 @@
                     <td class="num">{{ $s->cogs_amount }}</td>
                     <td class="num">{{ $s->final_amount }}</td>
                     <td class="num">{{ $s->estimated_profit }}</td>
-                    <td>{{ $s->paymentMethod?->name ?? 'Tunai' }} {{ $s->bank_info ? '('.$s->bank_info.')' : '' }}</td>
+                    <td>{{ $s->paymentMethod?->name ?? 'Tunai' }} {{ ($s->isBankPayment() && $s->bank_info) ? '('.$s->bank_info.')' : '' }}</td>
                     <td align="center">{{ $s->isCancelled() ? 'DIBATALKAN' : 'SELESAI' }}</td>
                     <td>{{ $s->user?->name ?? '-' }}</td>
                 </tr>

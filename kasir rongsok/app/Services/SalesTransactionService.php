@@ -164,24 +164,25 @@ class SalesTransactionService
             $finalAmount = max(0, $subtotalAmount - $discountAmount);
             $estimatedProfit = $isKasir ? 0 : round($finalAmount - $totalEstimatedCogs, 2);
 
-            $bankInfo = $data['bank_info'] ?? null;
+            $paymentMethodId = $data['payment_method_id'] ?? null;
+            $pm = $paymentMethodId ? PaymentMethod::find($paymentMethodId) : null;
+            $isBank = false;
+            if ($pm) {
+                $mName = strtolower($pm->name);
+                $mCode = strtolower($pm->code ?? '');
+                $isCash = $mCode === 'cash' || str_contains($mName, 'tunai') || str_contains($mName, 'cash');
+                $isBank = !$isCash && (
+                    str_contains($mName, 'bank') ||
+                    str_contains($mName, 'transfer') ||
+                    str_contains($mCode, 'transfer') ||
+                    str_contains($mCode, 'bank') ||
+                    !empty($pm->bank_name)
+                );
+            }
+
             $customBank = trim($data['custom_bank'] ?? '');
             $customAccountName = trim($data['custom_account_name'] ?? '');
             $customAccountNo = trim($data['custom_account_no'] ?? '');
-
-            if (!empty($customAccountNo) || !empty($customAccountName) || !empty($customBank)) {
-                $parts = [];
-                if (!empty($customBank)) {
-                    $parts[] = $customBank;
-                }
-                if (!empty($customAccountNo)) {
-                    $parts[] = "Rek: {$customAccountNo}";
-                }
-                if (!empty($customAccountName)) {
-                    $parts[] = "a/n {$customAccountName}";
-                }
-                $bankInfo = implode(' - ', $parts);
-            }
 
             // Sync bank account to current Cashier/Operator User profile if requested (Task 10)
             if (!empty($data['save_to_user_bank']) && (!empty($customBank) || !empty($customAccountNo) || !empty($customAccountName))) {
@@ -192,15 +193,26 @@ class SalesTransactionService
                 ], fn($val) => !is_null($val) && $val !== ''));
             }
 
-            // Auto-fallback bankInfo if empty and payment method is bank/transfer
-            if (empty($bankInfo) && !empty($data['payment_method_id'])) {
-                $pm = PaymentMethod::find($data['payment_method_id']);
-                $isBank = $pm && (
-                    str_contains(strtolower($pm->name), 'bank') ||
-                    str_contains(strtolower($pm->name), 'transfer') ||
-                    str_contains(strtolower($pm->code ?? ''), 'transfer')
-                );
-                if ($isBank) {
+            $bankInfo = null;
+            if ($isBank) {
+                $bankInfo = $data['bank_info'] ?? null;
+
+                if (!empty($customAccountNo) || !empty($customAccountName) || !empty($customBank)) {
+                    $parts = [];
+                    if (!empty($customBank)) {
+                        $parts[] = $customBank;
+                    }
+                    if (!empty($customAccountNo)) {
+                        $parts[] = "Rek: {$customAccountNo}";
+                    }
+                    if (!empty($customAccountName)) {
+                        $parts[] = "a/n {$customAccountName}";
+                    }
+                    $bankInfo = implode(' - ', $parts);
+                }
+
+                // Auto-fallback bankInfo if empty and payment method is bank/transfer
+                if (empty($bankInfo) && $pm) {
                     $accNo = $pm->account_number ?: ($user->bank_account_number ?? null);
                     $accName = $pm->account_holder ?: ($user->bank_account_name ?? null);
                     $bName = $pm->bank_name ?: ($user->bank_name ?? null);
@@ -927,19 +939,38 @@ class SalesTransactionService
                 }
             }
 
-            $bankInfo = $transaction->bank_info;
-            $customBank = trim($data['custom_bank'] ?? '');
-            $customAccountName = trim($data['custom_account_name'] ?? '');
-            $customAccountNo = trim($data['custom_account_no'] ?? '');
+            $targetPaymentMethodId = $data['payment_method_id'] ?? $transaction->payment_method_id;
+            $pm = $targetPaymentMethodId ? PaymentMethod::find($targetPaymentMethodId) : null;
+            $isBank = false;
+            if ($pm) {
+                $mName = strtolower($pm->name);
+                $mCode = strtolower($pm->code ?? '');
+                $isCash = $mCode === 'cash' || str_contains($mName, 'tunai') || str_contains($mName, 'cash');
+                $isBank = !$isCash && (
+                    str_contains($mName, 'bank') ||
+                    str_contains($mName, 'transfer') ||
+                    str_contains($mCode, 'transfer') ||
+                    str_contains($mCode, 'bank') ||
+                    !empty($pm->bank_name)
+                );
+            }
 
-            if (!empty($customAccountNo) || !empty($customAccountName) || !empty($customBank)) {
-                $parts = [];
-                if (!empty($customBank)) $parts[] = $customBank;
-                if (!empty($customAccountNo)) $parts[] = "Rek: {$customAccountNo}";
-                if (!empty($customAccountName)) $parts[] = "a/n {$customAccountName}";
-                $bankInfo = implode(' - ', $parts);
-            } elseif (!empty($data['bank_info'])) {
-                $bankInfo = $data['bank_info'];
+            $bankInfo = null;
+            if ($isBank) {
+                $bankInfo = $transaction->bank_info;
+                $customBank = trim($data['custom_bank'] ?? '');
+                $customAccountName = trim($data['custom_account_name'] ?? '');
+                $customAccountNo = trim($data['custom_account_no'] ?? '');
+
+                if (!empty($customAccountNo) || !empty($customAccountName) || !empty($customBank)) {
+                    $parts = [];
+                    if (!empty($customBank)) $parts[] = $customBank;
+                    if (!empty($customAccountNo)) $parts[] = "Rek: {$customAccountNo}";
+                    if (!empty($customAccountName)) $parts[] = "a/n {$customAccountName}";
+                    $bankInfo = implode(' - ', $parts);
+                } elseif (!empty($data['bank_info'])) {
+                    $bankInfo = $data['bank_info'];
+                }
             }
 
             $transaction->update([

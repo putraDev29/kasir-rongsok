@@ -162,24 +162,44 @@ class SalesTransaction extends Model
 
     public function isBankPayment(): bool
     {
+        $pm = $this->paymentMethod;
+        if ($pm) {
+            $methodName = strtolower($pm->name ?? '');
+            $methodCode = strtolower($pm->code ?? '');
+
+            // Explicit cash or tunai check
+            if ($methodCode === 'cash' || str_contains($methodName, 'tunai') || str_contains($methodName, 'cash')) {
+                return false;
+            }
+
+            return str_contains($methodName, 'bank') ||
+                   str_contains($methodName, 'transfer') ||
+                   str_contains($methodName, 'bca') ||
+                   str_contains($methodName, 'bri') ||
+                   str_contains($methodName, 'mandiri') ||
+                   str_contains($methodName, 'bni') ||
+                   str_contains($methodCode, 'transfer') ||
+                   str_contains($methodCode, 'bank') ||
+                   !empty($pm->bank_name);
+        }
+
         if (!empty($this->bank_info)) {
+            $info = strtolower($this->bank_info);
+            if (str_contains($info, 'tunai') || str_contains($info, 'cash')) {
+                return false;
+            }
             return true;
         }
 
-        $methodName = strtolower($this->paymentMethod?->name ?? '');
-        $methodCode = strtolower($this->paymentMethod?->code ?? '');
-
-        return str_contains($methodName, 'bank') ||
-               str_contains($methodName, 'transfer') ||
-               str_contains($methodName, 'bca') ||
-               str_contains($methodName, 'bri') ||
-               str_contains($methodName, 'mandiri') ||
-               str_contains($methodName, 'bni') ||
-               str_contains($methodCode, 'transfer');
+        return false;
     }
 
     public function getBankAccountNumber(): ?string
     {
+        if (!$this->isBankPayment()) {
+            return null;
+        }
+
         if (!empty($this->bank_info)) {
             if (preg_match('/(?:Rek|No\.?\s*Rek)\s*:\s*([^-\/]+)/i', $this->bank_info, $matches)) {
                 $val = trim($matches[1]);
@@ -198,6 +218,10 @@ class SalesTransaction extends Model
 
     public function getBankAccountName(): ?string
     {
+        if (!$this->isBankPayment()) {
+            return null;
+        }
+
         if (!empty($this->bank_info)) {
             if (preg_match('/(?:a\/?n\.?)\s*:?\s*([^-\/]+)/i', $this->bank_info, $matches)) {
                 $val = trim($matches[1]);
@@ -216,6 +240,10 @@ class SalesTransaction extends Model
 
     public function getBankName(): ?string
     {
+        if (!$this->isBankPayment()) {
+            return null;
+        }
+
         if (!empty($this->bank_info)) {
             $parts = explode('-', $this->bank_info);
             $first = trim($parts[0] ?? '');

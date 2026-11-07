@@ -79,9 +79,29 @@
             </div>
             <div>
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    Metode Pembayaran:
+                </span>
+                <div class="font-bold text-slate-900 text-xs">
+                    {{ $sale->paymentMethod?->name ?? 'Tunai' }}
+                </div>
+                @if($sale->isBankPayment())
+                    <div class="text-slate-600 font-mono text-[11px] mt-0.5">
+                        @if($sale->getBankAccountNumber())
+                            No. Rek: <span class="font-bold">{{ $sale->getBankAccountNumber() }}</span>
+                        @endif
+                        @if($sale->getBankAccountName())
+                            (a/n {{ $sale->getBankAccountName() }})
+                        @endif
+                        @if(!$sale->getBankAccountNumber() && !$sale->getBankAccountName() && !empty($sale->bank_info))
+                            {{ $sale->bank_info }}
+                        @endif
+                    </div>
+                @endif
+
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mt-2 mb-1">
                     {{ $sale->isPickup() ? 'Metode Pengambilan:' : 'Catatan Transportasi:' }}
                 </span>
-                <div class="text-slate-700 bg-slate-50 p-2.5 rounded border border-slate-200 text-[11px]">
+                <div class="text-slate-700 bg-slate-50 p-2 rounded border border-slate-200 text-[11px]">
                     @if($sale->isPickup())
                         {{ $sale->notes ?? 'Diambil langsung oleh pembeli di gudang/depo (Tanpa kendaraan perusahaan)' }}
                     @else

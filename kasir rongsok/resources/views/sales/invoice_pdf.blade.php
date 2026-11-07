@@ -199,9 +199,21 @@
                 <td class="meta-val">{{ $sale->buyer_phone ?: '-' }}</td>
             </tr>
             <tr>
+                <td class="meta-label">Metode Bayar</td>
+                <td style="width: 5px;">:</td>
+                <td class="meta-val">
+                    {{ $sale->paymentMethod?->name ?? 'Tunai' }}
+                    @if($sale->isBankPayment())
+                        @if($sale->getBankAccountNumber())
+                            <span style="font-family: monospace; font-weight: bold; margin-left: 4px;">({{ $sale->getBankAccountNumber() }}{{ $sale->getBankAccountName() ? ' a/n '.$sale->getBankAccountName() : '' }})</span>
+                        @elseif(!empty($sale->bank_info))
+                            <span style="margin-left: 4px;">({{ $sale->bank_info }})</span>
+                        @endif
+                    @endif
+                </td>
                 <td class="meta-label">{{ $sale->isPickup() ? 'Metode Serah' : 'Alamat Kirim' }}</td>
                 <td style="width: 5px;">:</td>
-                <td class="meta-val" colspan="4">
+                <td class="meta-val">
                     {{ $sale->isPickup() ? 'Diambil Sendiri di Depo/Gudang' : ($sale->buyer_address ?: '-') }}
                     @if($sale->notes)
                         <span style="font-weight: normal; color: #64748b; font-size: 8px;">({{ $sale->notes }})</span>

@@ -2004,5 +2004,109 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertEquals('BCA', $receiptData['bankName']);
         $this->assertEquals('BCA - Rek: 777777777 - a/n Totong', $receiptData['bankInfo']);
     }
+
+    public function test_non_bank_sales_does_not_show_bank_account_in_detail_pdf_and_nota(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+            'is_active' => true,
+        ]);
+
+        $item = ScrapItem::first();
+
+        // 1. Buat Penjualan dengan Metode Tunai (Cash) tapi terisi data rekening di form request
+        $salesService = app(SalesTransactionService::class);
+        $cashSale = $salesService->createSale([
+            'delivery_type' => 'pickup',
+            'buyer_name' => 'PT. Pabrik Logam Tunai',
+            'buyer_phone' => '081234567890',
+            'payment_method_id' => $this->cashMethod->id,
+            'custom_bank' => 'BRI',
+            'custom_account_no' => '012301054321508',
+            'custom_account_name' => 'Rian Pratama',
+            'items' => [
+                [
+                    'scrap_item_id' => $item->id,
+                    'weight' => 20,
+                    'sell_price_per_kg' => 15000,
+                ]
+            ],
+        ], $admin);
+
+        // Pastikan model sales mendeteksi bukan bank payment
+        $this->assertFalse($cashSale->isBankPayment());
+        $this->assertNull($cashSale->getBankAccountNumber());
+        $this->assertNull($cashSale->getBankAccountName());
+        $this->assertNull($cashSale->bank_info);
+
+        $this->actingAs($admin);
+
+        // Cek halaman preview detail (sales.show): tidak ada info rekening bank
+        $detailRes = $this->get(route('sales.show', $cashSale));
+        $detailRes->assertOk();
+        $detailRes->assertDontSee('012301054321508');
+        $detailRes->assertDontSee('Rian Pratama');
+        $detailRes->assertDontSee('No. Rek:');
+
+        // Cek halaman cetak nota (sales.print): tidak ada info rekening bank
+        $printRes = $this->get(route('sales.print', $cashSale));
+        $printRes->assertOk();
+        $printRes->assertDontSee('012301054321508');
+        $printRes->assertDontSee('Rian Pratama');
+        $printRes->assertDontSee('No. Rek:');
+
+        // Cek preview PDF invoice (sales.pdf): tidak ada info rekening bank
+        $pdfHtml = view('sales.invoice_pdf', [
+            'sale' => $cashSale,
+            'settings' => [],
+        ])->render();
+        $this->assertStringNotContainsString('012301054321508', $pdfHtml);
+        $this->assertStringNotContainsString('Rian Pratama', $pdfHtml);
+        $this->assertStringNotContainsString('No. Rek', $pdfHtml);
+
+        // 2. Bandingkan dengan Penjualan Metode Bank Transfer
+        $bankMethod = PaymentMethod::where('code', 'transfer_bca')->first() ?? PaymentMethod::firstOrCreate(
+            ['code' => 'transfer_bca'],
+            ['name' => 'Transfer Bank BCA', 'bank_name' => 'BCA', 'account_number' => '8830123456', 'account_holder' => 'PT PENATA PRIMA JAYA', 'is_active' => true]
+        );
+
+        $bankSale = $salesService->createSale([
+            'delivery_type' => 'pickup',
+            'buyer_name' => 'PT. Pabrik Transfer Bank',
+            'buyer_phone' => '081234567891',
+            'payment_method_id' => $bankMethod->id,
+            'custom_bank' => 'BCA',
+            'custom_account_no' => '9988776655',
+            'custom_account_name' => 'PT Penata Prima',
+            'items' => [
+                [
+                    'scrap_item_id' => $item->id,
+                    'weight' => 25,
+                    'sell_price_per_kg' => 15000,
+                ]
+            ],
+        ], $admin);
+
+        $this->assertTrue($bankSale->isBankPayment());
+        $this->assertEquals('9988776655', $bankSale->getBankAccountNumber());
+        $this->assertEquals('PT Penata Prima', $bankSale->getBankAccountName());
+
+        $bankDetailRes = $this->get(route('sales.show', $bankSale));
+        $bankDetailRes->assertOk();
+        $bankDetailRes->assertSee('9988776655');
+        $bankDetailRes->assertSee('PT Penata Prima');
+
+        $bankPrintRes = $this->get(route('sales.print', $bankSale));
+        $bankPrintRes->assertOk();
+        $bankPrintRes->assertSee('9988776655');
+        $bankPrintRes->assertSee('PT Penata Prima');
+
+        $bankPdfHtml = view('sales.invoice_pdf', [
+            'sale' => $bankSale,
+            'settings' => [],
+        ])->render();
+        $this->assertStringContainsString('9988776655', $bankPdfHtml);
+        $this->assertStringContainsString('PT Penata Prima', $bankPdfHtml);
+    }
 }
 
