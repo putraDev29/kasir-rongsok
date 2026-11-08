@@ -141,7 +141,7 @@ class SalarySlipController extends Controller
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
         $pdf = Pdf::loadView('salary_slips.pdf', compact('salarySlip', 'settings'))
-            ->setPaper('a5', 'landscape');
+            ->setPaper('a4', 'portrait');
 
         $filename = "Slip_Gaji_{$salarySlip->slip_number}_{$salarySlip->employee_name}.pdf";
 

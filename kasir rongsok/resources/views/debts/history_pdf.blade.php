@@ -173,12 +173,15 @@
         table.ledger-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
             margin-bottom: 12px;
         }
         table.ledger-table th, table.ledger-table td {
             border: 1px solid #cbd5e1;
-            padding: 4.5px 6px;
+            padding: 4.5px 5px;
             font-size: 8.5px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         table.ledger-table th {
             background-color: #0f172a;
@@ -385,13 +388,13 @@
     <table class="ledger-table">
         <thead>
             <tr>
-                <th class="text-center" style="width: 20px;">No</th>
-                <th style="width: 85px;">No. Bukti Bayar</th>
-                <th style="width: 75px;">Tanggal</th>
-                <th>Sumber Dana / Metode Pembayaran</th>
-                <th class="text-right" style="width: 85px;">Nominal Bayar</th>
-                <th class="text-right" style="width: 85px;">Sisa Hutang</th>
-                <th style="width: 75px;">Kasir</th>
+                <th class="text-center" style="width: 4%;">No</th>
+                <th style="width: 17%;">No. Bukti Bayar</th>
+                <th style="width: 13%;">Tanggal</th>
+                <th style="width: 25%;">Sumber Dana / Metode</th>
+                <th class="text-right" style="width: 14%;">Nominal Bayar</th>
+                <th class="text-right" style="width: 14%;">Sisa Hutang</th>
+                <th style="width: 13%;">Kasir</th>
             </tr>
         </thead>
         <tbody>
