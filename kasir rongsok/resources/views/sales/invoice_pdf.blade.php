@@ -6,150 +6,231 @@
     <style>
         @page {
             size: a5 portrait;
-            margin: 8mm;
+            margin: 8mm 10mm;
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 10px;
+            font-size: 8.5px;
             color: #0f172a;
             margin: 0;
             padding: 0;
-            line-height: 1.3;
+            line-height: 1.25;
+            background: #ffffff;
         }
-        .header {
-            border-bottom: 2px solid #2563eb;
+        .mono {
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-bottom: 1.5px solid #cbd5e1;
             padding-bottom: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .company-name {
             font-size: 13px;
             font-weight: bold;
             color: #0f172a;
             text-transform: uppercase;
+            line-height: 1.2;
         }
         .company-sub {
-            font-size: 8.5px;
+            font-size: 8px;
             color: #64748b;
             margin-top: 2px;
+            line-height: 1.25;
         }
         .doc-title {
             text-align: right;
+            vertical-align: top;
+            width: 140px;
         }
-        .doc-title .main {
-            font-size: 11px;
+        .doc-main {
+            font-size: 12px;
             font-weight: bold;
-            color: #2563eb;
+            color: #0f172a;
             text-transform: uppercase;
         }
-        .doc-title .num {
+        .doc-num {
             font-family: 'Courier New', Courier, monospace;
             font-size: 11px;
             font-weight: bold;
-            color: #0f172a;
+            color: #1e293b;
             margin-top: 2px;
         }
-        .meta-box {
+        .doc-date {
+            font-size: 8px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .status-badge {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 7.5px;
+            font-weight: bold;
+        }
+        .badge-pickup {
+            color: #047857;
+            background-color: #ecfdf5;
+            border: 1px solid #a7f3d0;
+        }
+        .badge-delivery {
+            color: #1d4ed8;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-size: 7.5px;
+            font-weight: bold;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        .buyer-name {
+            font-size: 11px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .buyer-sub {
+            font-size: 8.5px;
+            color: #475569;
+            margin-top: 1px;
+        }
+        .buyer-phone {
+            font-size: 8.5px;
+            color: #475569;
+            font-family: 'Courier New', Courier, monospace;
+            margin-top: 1px;
+        }
+        .payment-method {
+            font-size: 9px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .payment-bank {
+            font-size: 8px;
+            color: #475569;
+            font-family: 'Courier New', Courier, monospace;
+            margin-top: 1px;
+        }
+        .notes-box {
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 4px;
-            padding: 8px;
-            margin-bottom: 10px;
-        }
-        .meta-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .meta-table td {
-            padding: 2px 4px;
-            font-size: 9px;
-            vertical-align: top;
-        }
-        .meta-label {
-            color: #64748b;
-            width: 80px;
-        }
-        .meta-val {
-            font-weight: bold;
-            color: #0f172a;
-        }
-        table.items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 5px;
-        }
-        table.items-table th, table.items-table td {
-            border: 1px solid #cbd5e1;
-            padding: 5px 6px;
-            font-size: 9px;
-        }
-        table.items-table th {
-            background-color: #0f172a;
-            color: #ffffff;
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 8px;
-        }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .master-row {
-            background-color: #f1f5f9;
-        }
-        .variant-row td {
-            background-color: #f8fafc;
+            padding: 4px 6px;
             font-size: 8px;
             color: #334155;
-            padding: 3px 6px;
-            border-top: 1px dashed #cbd5e1;
+            line-height: 1.25;
+            margin-top: 2px;
         }
-        .variant-badge {
-            background-color: #e0f2fe;
-            color: #0369a1;
-            padding: 1px 4px;
-            border-radius: 2px;
-            font-weight: bold;
+        .delivery-box {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 4px;
+            padding: 4px 6px;
             font-size: 7.5px;
+            color: #1e3a8a;
+            line-height: 1.25;
+            margin-top: 4px;
         }
-        .total-box {
-            margin-top: 10px;
-            float: right;
-            width: 210px;
-        }
-        .total-table {
+
+        .items-table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 6px;
+            margin-bottom: 6px;
         }
-        .total-table td {
-            padding: 3px 6px;
-            font-size: 9.5px;
-        }
-        .grand-total {
-            background-color: #eff6ff;
-            border-top: 2px solid #2563eb;
-            border-bottom: 2px solid #2563eb;
+        .items-table th {
+            padding: 5px 4px;
+            font-size: 7.5px;
             font-weight: bold;
-            font-size: 11px;
-            color: #1e3a8a;
+            color: #475569;
+            text-transform: uppercase;
+            border-bottom: 1.5px solid #cbd5e1;
         }
-        .signatures {
-            margin-top: 35px;
+        .items-table td {
+            padding: 5px 4px;
+            font-size: 8.5px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .variant-badge {
+            font-size: 7px;
+            color: #1d4ed8;
+            background-color: #eff6ff;
+            border: 1px solid #dbeafe;
+            padding: 1px 4px;
+            border-radius: 2px;
+            margin-left: 3px;
+            display: inline-block;
+        }
+        .variant-subrow td {
+            padding: 3px 4px;
+            font-size: 8px;
+            background-color: #fbfcfe;
+            border-bottom: 1px solid #f8fafc;
+        }
+
+        .summary-wrapper {
             width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
+            border-top: 1px solid #cbd5e1;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 8.5px;
+        }
+        .summary-table td {
+            padding: 2px 0;
+        }
+        .total-row td {
+            border-top: 2px solid #0f172a;
+            padding-top: 4px;
+            padding-bottom: 2px;
+        }
+
+        .signatures-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 22px;
             clear: both;
         }
         .sig-col {
-            float: left;
-            width: 48%;
+            width: 50%;
             text-align: center;
-            font-size: 8.5px;
+            vertical-align: top;
+            font-size: 8px;
+            color: #475569;
         }
         .sig-space {
-            height: 45px;
+            height: 40px;
         }
+        .sig-name {
+            font-weight: bold;
+            color: #0f172a;
+            text-decoration: underline;
+        }
+
         .footer-note {
-            margin-top: 20px;
+            margin-top: 15px;
             border-top: 1px dashed #cbd5e1;
-            padding-top: 6px;
-            font-size: 8px;
-            color: #64748b;
+            padding-top: 5px;
+            font-size: 7.5px;
+            color: #94a3b8;
             text-align: center;
             clear: both;
         }
@@ -157,139 +238,149 @@
 </head>
 <body>
 
-    <!-- Header -->
-    <table style="width: 100%; border-collapse: collapse;" class="header">
+    <!-- Header Section (Matching Image 2 / sales.print) -->
+    <table class="header-table">
         <tr>
-            <td style="vertical-align: middle;">
+            @if(\App\Models\BusinessSetting::hasLogo())
+                <td style="width: 52px; vertical-align: top; padding-right: 8px;">
+                    <img src="{{ \App\Models\BusinessSetting::logoBase64() }}" alt="Logo" style="max-height: 45px; max-width: 52px; object-fit: contain;">
+                </td>
+            @endif
+            <td style="vertical-align: top;">
                 <div class="company-name">{{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}</div>
                 <div class="company-sub">
-                    {{ $settings['company_address'] ?? 'Sentra Daur Ulang Logam & Rongsok' }}<br>
-                    Telp/WhatsApp: {{ $settings['company_phone'] ?? '0812-3456-7890' }}
+                    {{ $settings['company_address'] ?? 'Jl. Industri Daur Ulang No. 88, Sentra Rongsok' }}<br>
+                    Telp: {{ $settings['company_phone'] ?? '0812-3456-7890' }}
                 </div>
             </td>
-            <td style="vertical-align: middle; text-align: right;">
-                <div class="doc-title">
-                    <div class="main">INVOICE</div>
-                    <div class="num">{{ $sale->invoice_number }}</div>
-                    <div style="font-size: 8px; color: {{ $sale->isPickup() ? '#047857' : '#1d4ed8' }}; font-weight: bold; margin-top: 2px;">
-                        {{ $sale->isPickup() ? 'DIAMBIL SENDIRI DI TEMPAT' : 'PENGIRIMAN ARMADA PERUSAHAAN' }}
-                    </div>
+            <td class="doc-title">
+                <div class="doc-main">INVOICE</div>
+                <div class="doc-num">{{ $sale->invoice_number }}</div>
+                <div class="doc-date">{{ $sale->transaction_date->format('d/m/Y H:i') }}</div>
+                <div>
+                    @if($sale->isPickup())
+                        <span class="status-badge badge-pickup">Diambil Langsung Pembeli</span>
+                    @else
+                        <span class="status-badge badge-delivery">Pengiriman Armada Gudang</span>
+                    @endif
                 </div>
             </td>
         </tr>
     </table>
 
-    <!-- Metadata Info Box -->
-    <div class="meta-box">
-        <table class="meta-table">
-            <tr>
-                <td class="meta-label">Tanggal Transaksi</td>
-                <td style="width: 5px;">:</td>
-                <td class="meta-val">{{ \Carbon\Carbon::parse($sale->transaction_date)->format('d/m/Y H:i') }} WIB</td>
-                <td class="meta-label">Pembeli / Pabrik</td>
-                <td style="width: 5px;">:</td>
-                <td class="meta-val">{{ $sale->buyer_name }}</td>
-            </tr>
-            <tr>
-                <td class="meta-label">Operator Kasir</td>
-                <td>:</td>
-                <td class="meta-val">{{ $sale->user?->name ?? 'Kasir Depo' }}</td>
-                <td class="meta-label">Kontak Pembeli</td>
-                <td>:</td>
-                <td class="meta-val">{{ $sale->buyer_phone ?: '-' }}</td>
-            </tr>
-            <tr>
-                <td class="meta-label">Metode Bayar</td>
-                <td style="width: 5px;">:</td>
-                <td class="meta-val">
-                    {{ $sale->paymentMethod?->name ?? 'Tunai' }}
-                    @if($sale->isBankPayment())
-                        @if($sale->getBankAccountNumber())
-                            <span style="font-family: monospace; font-weight: bold; margin-left: 4px;">({{ $sale->getBankAccountNumber() }}{{ $sale->getBankAccountName() ? ' a/n '.$sale->getBankAccountName() : '' }})</span>
-                        @elseif(!empty($sale->bank_info))
-                            <span style="margin-left: 4px;">({{ $sale->bank_info }})</span>
-                        @endif
-                    @endif
-                </td>
-                <td class="meta-label">{{ $sale->isPickup() ? 'Metode Serah' : 'Alamat Kirim' }}</td>
-                <td style="width: 5px;">:</td>
-                <td class="meta-val">
-                    {{ $sale->isPickup() ? 'Diambil Sendiri di Depo/Gudang' : ($sale->buyer_address ?: '-') }}
-                    @if($sale->notes)
-                        <span style="font-weight: normal; color: #64748b; font-size: 8px;">({{ $sale->notes }})</span>
-                    @endif
-                </td>
-            </tr>
-            @if($sale->isDelivery() && $sale->deliveryOrder)
-            <tr>
-                <td class="meta-label">Supir & Armada</td>
-                <td style="width: 5px;">:</td>
-                <td class="meta-val">
-                    <strong>{{ $sale->deliveryOrder->driver_name }}</strong> [{{ $sale->deliveryOrder->vehicle_number }}]
-                    @if($sale->deliveryOrder->driver_phone)
-                        <span style="color: #64748b;">(HP: {{ $sale->deliveryOrder->driver_phone }})</span>
-                    @endif
-                </td>
-                <td class="meta-label">Biaya Kirim</td>
-                <td style="width: 5px;">:</td>
-                <td class="meta-val">
-                    Ongkos: Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost ?? 0) }} | Bongkar: Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost ?? 0) }}
-                </td>
-            </tr>
-            @endif
-        </table>
-    </div>
+    <!-- Buyer & Shipping/Payment Info (Matching Image 2) -->
+    <table class="info-table">
+        <tr>
+            <!-- Left Column: Pembeli -->
+            <td style="width: 48%; vertical-align: top; padding-right: 10px;">
+                <div class="info-label">
+                    {{ $sale->isPickup() ? 'PEMBELI (DIAMBIL LANGSUNG):' : 'TUJUAN PENGIRIMAN (PEMBELI):' }}
+                </div>
+                <div class="buyer-name">{{ $sale->buyer_name }}</div>
+                <div class="buyer-sub">{{ $sale->buyer_address ?? '-' }}</div>
+                <div class="buyer-phone">Telp: {{ $sale->buyer_phone ?? '-' }}</div>
+            </td>
 
-    <!-- Items Table -->
+            <!-- Right Column: Metode Pembayaran & Pengambilan -->
+            <td style="width: 52%; vertical-align: top; padding-left: 10px;">
+                <div class="info-label">METODE PEMBAYARAN:</div>
+                <div class="payment-method">{{ $sale->paymentMethod?->name ?? 'Tunai' }}</div>
+                @if($sale->isBankPayment())
+                    <div class="payment-bank">
+                        @if($sale->getBankAccountNumber())
+                            No. Rek: <strong style="color: #0f172a;">{{ $sale->getBankAccountNumber() }}</strong>
+                        @endif
+                        @if($sale->getBankAccountName())
+                            (a/n {{ $sale->getBankAccountName() }})
+                        @endif
+                        @if(!$sale->getBankAccountNumber() && !$sale->getBankAccountName() && !empty($sale->bank_info))
+                            {{ $sale->bank_info }}
+                        @endif
+                    </div>
+                @endif
+
+                <div class="info-label" style="margin-top: 5px;">
+                    {{ $sale->isPickup() ? 'METODE PENGAMBILAN:' : 'CATATAN TRANSPORTASI:' }}
+                </div>
+                <div class="notes-box">
+                    @if($sale->isPickup())
+                        {{ $sale->notes ?? 'Diambil langsung oleh pembeli di gudang/depo (Tanpa kendaraan perusahaan)' }}
+                    @else
+                        {{ $sale->notes ?? 'Pengiriman armada darat' }}
+                    @endif
+                </div>
+
+                @if($sale->isDelivery() && $sale->deliveryOrder)
+                    <div class="delivery-box">
+                        <div><strong>Supir / Armada:</strong> {{ $sale->deliveryOrder->driver_name }} ({{ $sale->deliveryOrder->vehicle_number }}{{ $sale->deliveryOrder->driver_phone ? ' - Telp: '.$sale->deliveryOrder->driver_phone : '' }})</div>
+                        <div class="mono" style="margin-top: 1px; color: #1e40af;">
+                            Ongkos Armada: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost ?? 0) }}</strong> | 
+                            Bongkar: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost ?? 0) }}</strong>
+                        </div>
+                    </div>
+                @endif
+            </td>
+        </tr>
+    </table>
+
+    <!-- Items Table (Matching Image 2 columns and style) -->
     <table class="items-table">
         <thead>
             <tr>
-                <th class="text-center" style="width: 20px;">No</th>
-                <th style="width: 60px;">Kode</th>
-                <th>Nama Material Scrap & Daur Ulang</th>
-                <th class="text-right" style="width: 65px;">Berat (kg)</th>
-                <th class="text-right" style="width: 70px;">Harga Jual/kg</th>
-                <th class="text-right" style="width: 85px;">Subtotal (Rp)</th>
+                <th style="width: 20px; text-align: left;">#</th>
+                <th style="text-align: left;">NAMA MATERIAL SCRAP &amp; DAUR ULANG</th>
+                <th style="width: 65px; text-align: right;">BERAT (KG)</th>
+                <th style="width: 85px; text-align: right;">HARGA SATUAN/KG</th>
+                <th style="width: 85px; text-align: right;">TOTAL NILAI</th>
             </tr>
         </thead>
         <tbody>
             @foreach($sale->grouped_master_items as $idx => $master)
-                <!-- Master Item (Total Akumulasi Master) -->
-                <tr class="{{ $master->has_variants ? 'master-row' : ($idx % 2 === 1 ? 'bg-alt' : '') }}">
-                    <td class="text-center">{{ $idx + 1 }}</td>
-                    <td><code>{{ $master->item_code }}</code></td>
+                <tr style="{{ $master->has_variants ? 'background-color: #f8fafc;' : '' }}">
+                    <td class="mono" style="color: #64748b;">{{ $idx + 1 }}</td>
                     <td>
-                        <strong>{{ $master->item_name }}</strong>
+                        <span style="font-weight: bold; color: #0f172a;">{{ $master->item_name }}</span>
+                        <span class="mono" style="color: #94a3b8; font-size: 7.5px;">({{ $master->item_code }})</span>
                         @if($master->has_variants)
-                            <span style="font-size: 7.5px; color: #2563eb; font-weight: normal; margin-left: 3px;">[Total Master: {{ $master->items->count() }} Varian]</span>
+                            <span class="variant-badge">
+                                Total Master ({{ $master->items->count() }} Varian)
+                            </span>
                         @endif
                     </td>
-                    <td class="text-right" style="font-weight: bold;">{{ \App\Services\FormatHelper::weight($master->total_weight) }} kg</td>
-                    <td class="text-right">
+                    <td class="mono" style="text-align: right; font-weight: bold; color: #0f172a;">
+                        {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
+                    </td>
+                    <td class="mono" style="text-align: right; color: #334155;">
                         @if($master->has_variants)
-                            <span style="font-size: 7.5px; color: #64748b;">Rerata Rp {{ number_format($master->avg_sell_price, 0, ',', '.') }}</span>
+                            <span style="color: #64748b; font-size: 7.5px; font-style: italic;">Rerata Rp {{ \App\Services\FormatHelper::number($master->avg_sell_price) }}</span>
                         @else
-                            Rp {{ number_format($master->items->first()->sell_price_per_kg, 0, ',', '.') }}
+                            Rp {{ \App\Services\FormatHelper::number($master->items->first()->sell_price_per_kg) }}
                         @endif
                     </td>
-                    <td class="text-right" style="font-weight: bold;">Rp {{ number_format($master->total_subtotal, 0, ',', '.') }}</td>
+                    <td class="mono" style="text-align: right; font-weight: bold; color: #0f172a;">
+                        Rp {{ \App\Services\FormatHelper::number($master->total_subtotal) }}
+                    </td>
                 </tr>
 
-                <!-- Rincian Jenis Varian (Bila Ada Varian) -->
                 @if($master->has_variants)
-                    @foreach($master->items as $vIt)
-                        <tr class="variant-row">
-                            <td class="text-center" style="color: #64748b;">↳</td>
-                            <td style="color: #94a3b8; font-size: 7.5px;">{{ $vIt->item_code_snapshot ?: '-' }}</td>
+                    @foreach($master->items as $vItem)
+                        <tr class="variant-subrow">
+                            <td class="mono" style="text-align: center; color: #93c5fd; font-size: 7.5px;">↳</td>
                             <td style="padding-left: 14px;">
-                                <span class="variant-badge">Varian: {{ $vIt->item_type_name ?: 'Standar' }}</span>
-                                @if($vIt->notes)
-                                    <span style="color: #64748b; font-size: 7px; font-style: italic;">({{ $vIt->notes }})</span>
+                                <span style="font-weight: 600; color: #1e40af;">• Varian: {{ $vItem->item_type_name ?: 'Standar' }}</span>
+                                @if($vItem->notes)
+                                    <span style="color: #94a3b8; font-style: italic; font-size: 7px;">({{ $vItem->notes }})</span>
                                 @endif
                             </td>
-                            <td class="text-right" style="color: #334155;">{{ \App\Services\FormatHelper::weight($vIt->weight) }} kg</td>
-                            <td class="text-right" style="color: #334155;">Rp {{ number_format($vIt->sell_price_per_kg, 0, ',', '.') }}</td>
-                            <td class="text-right" style="font-weight: bold; color: #1e293b;">Rp {{ number_format($vIt->subtotal, 0, ',', '.') }}</td>
+                            <td class="mono" style="text-align: right; color: #475569;">
+                                {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
+                            </td>
+                            <td class="mono" style="text-align: right; color: #475569;">
+                                Rp {{ \App\Services\FormatHelper::number($vItem->sell_price_per_kg) }}
+                            </td>
+                            <td class="mono" style="text-align: right; font-weight: bold; color: #334155;">
+                                Rp {{ \App\Services\FormatHelper::number($vItem->subtotal) }}
+                            </td>
                         </tr>
                     @endforeach
                 @endif
@@ -297,48 +388,69 @@
         </tbody>
     </table>
 
-    <!-- Totals Table -->
-    <div class="total-box">
-        <table class="total-table">
-            <tr>
-                <td style="color: #64748b;">Total Muatan:</td>
-                <td class="text-right" style="font-weight: bold;">{{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg</td>
-            </tr>
-            @if($sale->discount_amount > 0)
-                <tr>
-                    <td style="color: #dc2626;">Potongan:</td>
-                    <td class="text-right" style="color: #dc2626; font-weight: bold;">- Rp {{ number_format($sale->discount_amount, 0, ',', '.') }}</td>
-                </tr>
-            @endif
-            <tr class="grand-total">
-                <td>TOTAL TAGIHAN:</td>
-                <td class="text-right">Rp {{ number_format($sale->final_amount, 0, ',', '.') }}</td>
-            </tr>
-        </table>
-    </div>
+    <!-- Summary Section (Right-aligned, matching Image 2) -->
+    <table class="summary-wrapper">
+        <tr>
+            <td></td>
+            <td style="width: 210px; padding-top: 4px;">
+                <table class="summary-table">
+                    <tr>
+                        <td style="color: #475569;">Total Berat:</td>
+                        <td class="mono" style="text-align: right; font-weight: bold; color: #0f172a;">
+                            {{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="color: #475569;">Subtotal:</td>
+                        <td class="mono" style="text-align: right; color: #0f172a;">
+                            Rp {{ \App\Services\FormatHelper::number($sale->subtotal_amount) }}
+                        </td>
+                    </tr>
+                    @if($sale->discount_amount > 0)
+                        <tr>
+                            <td style="color: #dc2626;">Diskon:</td>
+                            <td class="mono" style="text-align: right; color: #dc2626; font-weight: bold;">
+                                - Rp {{ \App\Services\FormatHelper::number($sale->discount_amount) }}
+                            </td>
+                        </tr>
+                    @endif
+                    <tr class="total-row">
+                        <td style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 9px; font-weight: bold; color: #0f172a;">
+                            TOTAL TAGIHAN:
+                        </td>
+                        <td class="mono" style="text-align: right; font-size: 11px; font-weight: bold; color: #0f172a;">
+                            Rp {{ \App\Services\FormatHelper::number($sale->final_amount) }}
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 
-    <!-- Signatures -->
-    <div class="signatures">
-        <div class="sig-col">
-            Diterima Oleh (Pembeli/Pabrik),<br>
-            <div class="sig-space"></div>
-            <strong>( {{ $sale->buyer_name }} )</strong>
-        </div>
-        <div class="sig-col" style="float: right;">
-            Hormat Kami ({{ $sale->isPickup() ? 'Kasir / Pengelola' : 'Depo Pengirim' }}),<br>
-            <div class="sig-space" style="text-align: center;">
-                @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                    <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 42px; max-height: 44px; width: auto; max-width: 140px; margin: 0 auto; display: block;">
-                @endif
-            </div>
-            <strong>( {{ $sale->user?->name ?? 'Admin / Kasir' }} )</strong>
-        </div>
-    </div>
+    <!-- Signatures Section -->
+    <table class="signatures-table">
+        <tr>
+            <td class="sig-col">
+                Diterima Oleh (Pembeli),
+                <div class="sig-space"></div>
+                <div class="sig-name">( {{ $sale->buyer_name }} )</div>
+            </td>
+            <td class="sig-col">
+                Hormat Kami ({{ $sale->isPickup() ? 'Kasir Depo' : 'Depo Pengirim' }}),
+                <div class="sig-space" style="text-align: center;">
+                    @if(\App\Models\BusinessSetting::hasOwnerSignature())
+                        <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 38px; max-height: 40px; width: auto; max-width: 130px; margin: 0 auto; display: block;">
+                    @endif
+                </div>
+                <div class="sig-name">( {{ $sale->user?->name ?? 'Admin / Kasir' }} )</div>
+            </td>
+        </tr>
+    </table>
 
+    <!-- Footer Note -->
     <div class="footer-note">
         {{ $sale->isPickup() ? '*Invoice ini merupakan bukti resmi transaksi penjualan barang yang diambil langsung oleh pembeli di tempat/depo.' : '*Invoice ini merupakan bukti resmi pengiriman muatan rongsok partai besar. Dokumen sah terbitan sistem otomatis.' }}
     </div>
 
 </body>
 </html>
-

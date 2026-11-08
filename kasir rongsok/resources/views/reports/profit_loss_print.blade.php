@@ -50,12 +50,12 @@
             </div>
 
             <div class="flex justify-between border-b border-slate-200 pb-1">
-                <span>1. PENDAPATAN PENJUALAN RONGSOK ({{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg)</span>
+                <span>1. OMZET PENJUALAN ({{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg)</span>
                 <span class="font-bold">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
             </div>
 
             <div class="flex justify-between border-b border-slate-200 pb-1 text-red-700">
-                <span>2. HARGA POKOK PENJUALAN (HPP TIMBANGAN TERJUAL)</span>
+                <span>2. PEMBELIAN (HPP TIMBANGAN TERJUAL)</span>
                 <span class="font-bold">(Rp {{ number_format($totalCogs, 0, ',', '.') }})</span>
             </div>
 

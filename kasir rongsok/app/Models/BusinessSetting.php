@@ -69,6 +69,35 @@ class BusinessSetting extends Model
     }
 
     /**
+     * Get Base64 data URI of the app logo for reliable DomPDF rendering.
+     */
+    public static function logoBase64(): ?string
+    {
+        $logo = static::get('app_logo');
+        if (empty($logo)) {
+            return null;
+        }
+
+        $candidates = [
+            public_path($logo),
+            base_path('../' . $logo),
+            base_path('public/' . $logo),
+        ];
+
+        foreach ($candidates as $path) {
+            if (file_exists($path) && is_file($path)) {
+                $mime = @mime_content_type($path) ?: 'image/png';
+                $content = @file_get_contents($path);
+                if ($content !== false) {
+                    return 'data:' . $mime . ';base64,' . base64_encode($content);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Determine if an owner signature image is configured and exists on disk.
      */
     public static function hasOwnerSignature(): bool

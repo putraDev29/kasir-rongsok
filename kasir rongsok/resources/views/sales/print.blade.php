@@ -242,54 +242,6 @@
             </div>
         </div>
 
-        @if(!empty($settings['delivery_order_notes']))
-            <div class="mt-4 pt-2 border-t border-dashed border-slate-300 text-center text-[10px] text-slate-500 italic">
-                {{ $settings['delivery_order_notes'] }}
-            </div>
-        @endif
-
-        <!-- Signatures -->
-        @if($sale->isPickup())
-            <div class="grid grid-cols-2 gap-12 pt-10 text-center font-sans text-xs text-slate-600 max-w-lg mx-auto">
-                <div>
-                    <p class="font-medium text-slate-700">Hormat Kami (Gudang/Kasir)</p>
-                    <div class="h-16 flex items-center justify-center">
-                        @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" class="h-14 max-w-[140px] object-contain mx-auto">
-                        @endif
-                    </div>
-                    <p class="font-bold border-t border-slate-300 pt-1">({{ $sale->user?->name ?? 'Kasir / Pengelola' }})</p>
-                </div>
-                <div>
-                    <p class="font-medium text-slate-700">Penerima / Pembeli</p>
-                    <div class="h-16"></div>
-                    <p class="font-bold border-t border-slate-300 pt-1">({{ $sale->buyer_name }})</p>
-                </div>
-            </div>
-        @else
-            <div class="grid grid-cols-3 gap-6 pt-10 text-center font-sans text-xs text-slate-600">
-                <div>
-                    <p class="font-medium text-slate-700">Pengirim (Gudang)</p>
-                    <div class="h-16 flex items-center justify-center">
-                        @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" class="h-14 max-w-[140px] object-contain mx-auto">
-                        @endif
-                    </div>
-                    <p class="font-bold border-t border-slate-300 pt-1">({{ $sale->user?->name ?? 'Gudang' }})</p>
-                </div>
-                <div>
-                    <p class="font-medium text-slate-700">Sopir / Ekspedisi</p>
-                    <div class="h-16"></div>
-                    <p class="font-bold border-t border-slate-300 pt-1">(....................................)</p>
-                </div>
-                <div>
-                    <p class="font-medium text-slate-700">Penerima (Pabrik / Pembeli)</p>
-                    <div class="h-16"></div>
-                    <p class="font-bold border-t border-slate-300 pt-1">({{ $sale->buyer_name }})</p>
-                </div>
-            </div>
-        @endif
-
     </div>
 
     <script>

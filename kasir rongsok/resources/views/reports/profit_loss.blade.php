@@ -172,7 +172,7 @@
             <!-- 2. HPP -->
             <div class="space-y-2">
                 <div class="flex justify-between items-center font-bold text-slate-900 border-b border-slate-200 pb-1 uppercase tracking-wider text-xs">
-                    <span>2. Pembelian (HPP TIMBANGAN TERJUAL)</span>
+                    <span>2. PEMBELIAN (HPP TIMBANGAN TERJUAL)</span>
                     <span class="font-mono text-sm text-red-600">(Rp {{ number_format($totalCogs, 0, ',', '.') }})</span>
                 </div>
                 <div class="flex justify-between text-xs text-slate-600 pl-4">
