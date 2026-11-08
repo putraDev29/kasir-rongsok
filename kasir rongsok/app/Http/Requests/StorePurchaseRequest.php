@@ -61,6 +61,39 @@ class StorePurchaseRequest extends FormRequest
         ];
     }
 
+    protected function prepareForValidation(): void
+    {
+        $cleanNum = function ($val) {
+            if ($val === '-' || $val === '' || is_null($val)) return 0;
+            return (float) preg_replace('/[^\d]/', '', (string) $val);
+        };
+
+        $merge = [];
+        if ($this->has('discount_amount')) {
+            $merge['discount_amount'] = $cleanNum($this->discount_amount);
+        }
+        if ($this->has('rounding_amount')) {
+            $merge['rounding_amount'] = $cleanNum($this->rounding_amount);
+        }
+        if ($this->has('debt_deduction_amount')) {
+            $merge['debt_deduction_amount'] = $cleanNum($this->debt_deduction_amount);
+        }
+
+        $items = $this->input('items', []);
+        if (is_array($items)) {
+            foreach ($items as $idx => $it) {
+                if (isset($it['price_per_kg'])) {
+                    $items[$idx]['price_per_kg'] = $cleanNum($it['price_per_kg']);
+                }
+            }
+            $merge['items'] = $items;
+        }
+
+        if (!empty($merge)) {
+            $this->merge($merge);
+        }
+    }
+
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {

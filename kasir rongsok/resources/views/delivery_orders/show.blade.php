@@ -30,14 +30,38 @@
 
         <div class="flex flex-wrap items-center gap-2.5">
             @if($deliveryOrder->status !== 'delivered')
-                <form action="{{ route('delivery-orders.mark-delivered', $deliveryOrder) }}" method="POST" onsubmit="return confirm('Konfirmasi bahwa surat jalan ini telah sampai di pabrik tujuan dan muatan selesai dibongkar? Status transaksi penjualan terkait otomatis menjadi SELESAI.')">
-                    @csrf
-                    <button type="submit" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
-                            title="Konfirmasi Pengiriman Selesai / Sampai di Tujuan">
+                @if($deliveryOrder->salesTransaction)
+                    <button type="button" 
+                            @click="openCompleteDeliveryModal({
+                                invoiceNumber: '{{ $deliveryOrder->salesTransaction->invoice_number }}',
+                                buyerName: '{{ addslashes($deliveryOrder->recipient_name) }}',
+                                actionUrl: '{{ route('delivery-orders.mark-delivered', $deliveryOrder) }}',
+                                notes: '{{ addslashes($deliveryOrder->notes ?? '') }}',
+                                items: {{ json_encode($deliveryOrder->salesTransaction->items->map(fn($it) => [
+                                    'id' => $it->id,
+                                    'scrap_item_id' => $it->scrap_item_id,
+                                    'name' => $it->item_name_snapshot,
+                                    'type' => $it->item_type_name,
+                                    'unit' => $it->unit_type ?: 'kg',
+                                    'weight' => (float)$it->weight,
+                                    'price' => (float)$it->sell_price_per_kg,
+                                ])) }}
+                            })"
+                            class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                            title="Input Hasil Timbang Pabrik & Selesaikan Pengiriman">
                         <i data-lucide="check-circle" class="w-4 h-4"></i>
                         <span>Konfirmasi Sampai di Tujuan</span>
                     </button>
-                </form>
+                @else
+                    <form action="{{ route('delivery-orders.mark-delivered', $deliveryOrder) }}" method="POST" onsubmit="return confirm('Konfirmasi bahwa surat jalan ini telah sampai di pabrik tujuan dan muatan selesai dibongkar? Status transaksi penjualan terkait otomatis menjadi SELESAI.')">
+                        @csrf
+                        <button type="submit" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+                                title="Konfirmasi Pengiriman Selesai / Sampai di Tujuan">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                            <span>Konfirmasi Sampai di Tujuan</span>
+                        </button>
+                    </form>
+                @endif
             @endif
 
             <button type="button" 

@@ -49,7 +49,18 @@ class DeliveryOrderController extends Controller
 
         $orders = $query->paginate(15)->withQueryString();
 
-        return view('delivery_orders.index', compact('orders', 'search', 'startDate', 'endDate', 'status'));
+        $pendingSales = SalesTransaction::where('delivery_type', SalesTransaction::DELIVERY_TYPE_DELIVERY)
+            ->whereNull('delivery_order_id')
+            ->where('status', '!=', SalesTransaction::STATUS_CANCELLED)
+            ->latest()
+            ->take(5)
+            ->get();
+        $pendingSalesCount = SalesTransaction::where('delivery_type', SalesTransaction::DELIVERY_TYPE_DELIVERY)
+            ->whereNull('delivery_order_id')
+            ->where('status', '!=', SalesTransaction::STATUS_CANCELLED)
+            ->count();
+
+        return view('delivery_orders.index', compact('orders', 'search', 'startDate', 'endDate', 'status', 'pendingSales', 'pendingSalesCount'));
     }
 
     public function create(Request $request): View
@@ -57,7 +68,7 @@ class DeliveryOrderController extends Controller
         $salesTxId = $request->query('sales_transaction_id');
         $salesTx = null;
         if ($salesTxId) {
-            $salesTx = SalesTransaction::with(['items.scrapItem', 'driver'])->find($salesTxId);
+            $salesTx = SalesTransaction::with(['items.scrapItem'])->find($salesTxId);
         }
 
         $rawItems = ScrapItem::with(['stockBalance', 'priceStocks', 'category'])
@@ -71,7 +82,7 @@ class DeliveryOrderController extends Controller
                 $scrapItems[] = $opt;
             }
         }
-        $recentSales = SalesTransaction::with(['items.scrapItem', 'driver'])
+        $recentSales = SalesTransaction::with(['items.scrapItem'])
             ->where('delivery_type', SalesTransaction::DELIVERY_TYPE_DELIVERY)
             ->whereNull('delivery_order_id')
             ->where('status', '!=', SalesTransaction::STATUS_CANCELLED)
@@ -418,13 +429,43 @@ class DeliveryOrderController extends Controller
 
     public function markDelivered(Request $request, DeliveryOrder $deliveryOrder): RedirectResponse
     {
-        $deliveryOrder->update(['status' => 'delivered']);
+        $deliveryOrder->loadMissing(['salesTransaction.items.scrapItem', 'items']);
 
         if ($deliveryOrder->salesTransaction) {
-            $deliveryOrder->salesTransaction->update([
+            $sale = $deliveryOrder->salesTransaction;
+
+            // Jika ada items yang dikirim dari modal
+            if ($request->has('items') && is_array($request->input('items'))) {
+                try {
+                    app(\App\Services\SalesTransactionService::class)->completeDeliverySale(
+                        $sale,
+                        $request->input('items'),
+                        $request->input('notes'),
+                        \Illuminate\Support\Facades\Auth::user()
+                    );
+
+                    return back()->with('success', "Surat Jalan {$deliveryOrder->delivery_number} dan penjualan {$sale->invoice_number} berhasil diselesaikan dengan rincian timbang dan harga jual!");
+                } catch (\Exception $e) {
+                    return back()->withInput()->with('error', $e->getMessage());
+                }
+            }
+
+            // Jika item belum lengkap harga atau beratnya
+            $hasEmptyWeightOrPrice = $sale->items->contains(function ($item) {
+                return (float) $item->weight <= 0 || (float) $item->sell_price_per_kg <= 0;
+            });
+
+            if ($hasEmptyWeightOrPrice) {
+                return back()->with('error', "Surat Jalan {$deliveryOrder->delivery_number} terkait penjualan {$sale->invoice_number} ini belum memiliki rincian berat timbang pabrik dan harga jual. Harap lengkapi rincian berat dan harga jual terlebih dahulu sebelum menyelesaikan status!");
+            }
+
+            $sale->update([
                 'status' => SalesTransaction::STATUS_COMPLETED,
+                'payment_status' => 'paid',
             ]);
         }
+
+        $deliveryOrder->update(['status' => 'delivered']);
 
         ActivityLog::record(
             action: 'delivery_order_delivered',

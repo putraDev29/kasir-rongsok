@@ -445,9 +445,10 @@
                                         </div>
                                         <div class="relative">
                                             <span class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
-                                            <input type="number" step="100" min="0" 
+                                            <input type="text" 
+                                                   inputmode="numeric"
                                                    :name="'items[' + index + '][price_per_kg]'" 
-                                                   x-model.number="row.price_per_kg" 
+                                                   x-rupiah="row.price_per_kg" 
                                                    required
                                                    placeholder="0"
                                                    class="w-full py-1.5 pl-7 pr-1.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
@@ -947,7 +948,7 @@
                         <div class="flex items-center justify-between text-slate-600">
                             <span>Potongan Khusus:</span>
                             <div class="w-32">
-                                <input type="number" step="100" min="0" name="discount_amount" x-model.number="discountAmount"
+                                <input type="text" inputmode="numeric" name="discount_amount" x-rupiah="discountAmount"
                                        placeholder="Rp 0"
                                        class="w-full py-1 px-2 text-xs text-right rounded border border-slate-300 focus:ring-emerald-500 font-mono">
                             </div>
@@ -956,7 +957,7 @@
                         <div class="flex items-center justify-between text-slate-600">
                             <span>Pembulatan:</span>
                             <div class="w-32">
-                                <input type="number" step="100" name="rounding_amount" x-model.number="roundingAmount"
+                                <input type="text" inputmode="numeric" name="rounding_amount" x-rupiah="roundingAmount"
                                        placeholder="Rp 0"
                                        class="w-full py-1 px-2 text-xs text-right rounded border border-slate-300 focus:ring-emerald-500 font-mono">
                             </div>
@@ -982,8 +983,8 @@
                                 <div class="flex items-center gap-1.5 w-44">
                                     <div class="relative w-full">
                                         <span class="absolute inset-y-0 left-0 pl-1.5 flex items-center pointer-events-none text-amber-500 font-bold text-[10px]">Rp</span>
-                                        <input type="number" step="500" min="0" :max="Math.min(supplierDebt, finalAmount())" 
-                                               name="debt_deduction_amount" x-model.number="debtDeductionAmount"
+                                        <input type="text" inputmode="numeric"
+                                               name="debt_deduction_amount" x-rupiah="debtDeductionAmount"
                                                placeholder="0"
                                                class="w-full py-1 pl-6 pr-1.5 text-xs text-right rounded border border-amber-300 focus:ring-amber-500 font-mono font-bold bg-white text-amber-900">
                                     </div>

@@ -286,115 +286,8 @@ class SalesTransactionService
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            // Bila dengan pengiriman dan data armada / supir diisi langsung di form, otomatis buat Surat Jalan
-            if ($deliveryType === SalesTransaction::DELIVERY_TYPE_DELIVERY && !$deliveryOrderId && (!empty($data['driver_name']) || !empty($data['vehicle_number']))) {
-                $doDate = $date;
-                $deliveryNumber = FormatHelper::generateDeliveryOrderNumber($doDate);
-                $totalPackages = 0;
-                foreach ($data['items'] as $it) {
-                    $totalPackages += (int) ($it['package_qty'] ?? 0);
-                }
-
-                $driverId = $data['driver_id'] ?? null;
-                $driverName = trim($data['driver_name'] ?? '');
-                $driverPhone = $data['driver_phone'] ?? null;
-                $vehicleNumber = strtoupper(trim($data['vehicle_number'] ?? ''));
-                $vehicleType = $data['vehicle_type'] ?? 'Truk';
-                $driverBankName = trim($data['driver_bank_name'] ?? '');
-                $driverBankAccNo = trim($data['driver_bank_account_number'] ?? '');
-                $driverBankAccName = trim($data['driver_bank_account_name'] ?? '');
-
-                $driver = null;
-                if ($driverId) {
-                    $driver = Driver::find($driverId);
-                } elseif (!empty($driverName)) {
-                    $driver = Driver::where('name', $driverName)->first();
-                    if (!$driver) {
-                        $latestId = Driver::max('id') ?? 0;
-                        $code = 'DRV-' . str_pad((string) ($latestId + 1), 3, '0', STR_PAD_LEFT);
-                        while (Driver::where('code', $code)->exists()) {
-                            $code = 'DRV-' . strtoupper(substr(uniqid(), -5));
-                        }
-                        $driver = Driver::create([
-                            'code' => $code,
-                            'name' => $driverName,
-                            'phone' => $driverPhone,
-                            'vehicle_number' => $vehicleNumber ?: null,
-                            'vehicle_type' => $vehicleType ?: null,
-                            'bank_name' => $driverBankName ?: null,
-                            'bank_account_number' => $driverBankAccNo ?: null,
-                            'bank_account_name' => $driverBankAccName ?: null,
-                            'is_active' => true,
-                        ]);
-                    }
-                    $driverId = $driver->id;
-                }
-
-                if ($driver) {
-                    $driverId = $driver->id;
-                    $driverName = $driver->name;
-                    $hasBankInfo = !empty($driverBankName) || !empty($driverBankAccNo) || !empty($driverBankAccName);
-                    $shouldSaveToDriver = !empty($data['save_to_driver_bank']) || empty($driver->bank_account_number);
-                    if ($hasBankInfo && $shouldSaveToDriver) {
-                        $driver->update(array_filter([
-                            'bank_name' => $driverBankName ?: $driver->bank_name,
-                            'bank_account_number' => $driverBankAccNo ?: $driver->bank_account_number,
-                            'bank_account_name' => $driverBankAccName ?: $driver->bank_account_name,
-                            'phone' => $driverPhone ?: $driver->phone,
-                            'vehicle_number' => $vehicleNumber ?: $driver->vehicle_number,
-                            'vehicle_type' => $vehicleType ?: $driver->vehicle_type,
-                        ], fn($val) => !is_null($val) && $val !== ''));
-                    }
-                }
-
-                $createdDo = DeliveryOrder::create([
-                    'delivery_number' => $deliveryNumber,
-                    'sales_transaction_id' => $transaction->id,
-                    'driver_id' => $driverId,
-                    'delivery_date' => $doDate,
-                    'recipient_name' => $buyerName,
-                    'recipient_address' => $data['buyer_address'] ?? null,
-                    'recipient_phone' => $data['buyer_phone'] ?? null,
-                    'driver_name' => $driverName ?: 'Sopir Pengirim',
-                    'driver_phone' => $driverPhone,
-                    'driver_bank_name' => $driverBankName ?: ($driver?->bank_name ?? null),
-                    'driver_bank_account_number' => $driverBankAccNo ?: ($driver?->bank_account_number ?? null),
-                    'driver_bank_account_name' => $driverBankAccName ?: ($driver?->bank_account_name ?? null),
-                    'vehicle_number' => $vehicleNumber ?: 'KENDARAAN',
-                    'vehicle_type' => $vehicleType ?: 'Truk',
-                    'total_weight' => $totalWeight,
-                    'shipping_cost' => max(0, (float) ($data['shipping_cost'] ?? 0)),
-                    'loading_cost' => max(0, (float) ($data['loading_cost'] ?? 0)),
-                    'total_packages' => $totalPackages,
-                    'status' => 'sent',
-                    'notes' => $data['notes'] ?? null,
-                    'user_id' => $user->id,
-                ]);
-
-                foreach ($data['items'] as $it) {
-                    $scItem = ScrapItem::find($it['scrap_item_id']);
-                    $w = (float) ($it['weight'] ?? 0);
-                    $pr = (float) ($it['sell_price_per_kg'] ?? 0);
-                    DeliveryOrderItem::create([
-                        'delivery_order_id' => $createdDo->id,
-                        'scrap_item_id' => $it['scrap_item_id'],
-                        'item_name' => $scItem?->name ?? 'Barang Rongsok',
-                        'unit_type' => $it['unit_type'] ?? 'kg',
-                        'item_type_name' => $it['item_type_name'] ?? null,
-                        'quantity' => $it['quantity'] ?? 1,
-                        'weight' => $w,
-                        'package_qty' => (int) ($it['package_qty'] ?? 0),
-                        'price_per_kg' => $pr,
-                        'subtotal' => $pr * $w,
-                        'notes' => $it['notes'] ?? null,
-                    ]);
-                }
-
-                $createdDo->recordOperationalExpenses();
-
-                $transaction->update(['delivery_order_id' => $createdDo->id]);
-            } elseif ($deliveryOrderId) {
-                // Sync with existing Delivery Order if linked
+            // Bila transaksi dikaitkan dengan Surat Jalan yang sudah ada
+            if ($deliveryOrderId) {
                 $do = DeliveryOrder::find($deliveryOrderId);
                 if ($do) {
                     $do->update([
@@ -586,8 +479,8 @@ class SalesTransactionService
     public function updateDraftSale(SalesTransaction $transaction, array $data, User $user): SalesTransaction
     {
         return DB::transaction(function () use ($transaction, $data, $user) {
-            if (!$transaction->isDraft()) {
-                throw new Exception('Transaksi penjualan ini bukan berstatus draft atau sudah difinalisasi.');
+            if (!$transaction->isDraft() && !$transaction->isPendingDelivery()) {
+                throw new Exception('Transaksi penjualan ini bukan berstatus draft atau menunggu pengiriman.');
             }
 
             if (!$user->isAdmin()) {
@@ -1055,6 +948,205 @@ class SalesTransactionService
         }
 
         return $prefix . str_pad((string) $num, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Selesaikan penjualan tipe pengiriman dengan menginput berat dan harga jual pabrik.
+     *
+     * @throws Exception
+     */
+    public function completeDeliverySale(SalesTransaction $sale, array $itemsData, ?string $notes = null, ?User $user = null): SalesTransaction
+    {
+        return DB::transaction(function () use ($sale, $itemsData, $notes, $user) {
+            if ($sale->isCancelled()) {
+                throw new Exception('Transaksi penjualan yang dibatalkan tidak dapat diselesaikan.');
+            }
+
+            if ($sale->isCompleted()) {
+                throw new Exception('Transaksi penjualan ini sudah berstatus selesai.');
+            }
+
+            $sale->loadMissing(['items.scrapItem', 'deliveryOrder.items']);
+
+            // Validasi: Sebelum update status selesai, semua barang wajib memiliki berat > 0 dan harga jual > 0
+            if (empty($itemsData)) {
+                throw new Exception('Rincian berat dan harga jual wajib diisi sebelum menyelesaikan status pengiriman.');
+            }
+
+            // Map incoming items by item id or index
+            $incomingById = [];
+            foreach ($itemsData as $idx => $row) {
+                $id = $row['id'] ?? $row['item_id'] ?? null;
+                if ($id) {
+                    $incomingById[$id] = $row;
+                } else {
+                    $incomingById["idx_{$idx}"] = $row;
+                }
+            }
+
+            // 1. Kembalikan stok lama transaksi ini (bila sebelumnya ada berat yang sempat memotong stok)
+            foreach ($sale->items as $oldItem) {
+                if (!$oldItem->scrap_item_id) continue;
+
+                $stockBalance = StockBalance::where('scrap_item_id', $oldItem->scrap_item_id)->lockForUpdate()->first();
+                if ($stockBalance && (float)$oldItem->weight > 0) {
+                    $restoreQty = (float) $oldItem->weight;
+                    $stockBalance->update([
+                        'current_stock' => (float) $stockBalance->current_stock + $restoreQty,
+                        'total_out' => max(0, (float) $stockBalance->total_out - $restoreQty),
+                    ]);
+
+                    $oldPriceStock = ItemPriceStock::where('scrap_item_id', $oldItem->scrap_item_id)->first();
+                    if ($oldPriceStock) {
+                        $oldPriceStock->update([
+                            'current_stock' => (float) $oldPriceStock->current_stock + $restoreQty,
+                            'total_out' => max(0, (float) $oldPriceStock->total_out - $restoreQty),
+                        ]);
+                    }
+                }
+            }
+
+            // Hapus stock movements lama dari transaksi ini
+            StockMovement::where('reference_type', SalesTransaction::class)
+                ->where('reference_id', $sale->id)
+                ->delete();
+
+            $totalWeight = 0;
+            $subtotalAmount = 0;
+            $totalCogs = 0;
+
+            // 2. Loop update item penjualan dengan berat dan harga jual baru
+            foreach ($sale->items as $idx => $item) {
+                $input = $incomingById[$item->id] ?? $incomingById["idx_{$idx}"] ?? null;
+                if (!$input) {
+                    $input = [
+                        'weight' => $item->weight,
+                        'sell_price_per_kg' => $item->sell_price_per_kg,
+                    ];
+                }
+
+                $rawWeight = $input['weight'] ?? 0;
+                $rawPrice = $input['sell_price_per_kg'] ?? 0;
+
+                // Sanitasi angka (hilangkan pemisah ribuan)
+                $weight = (float) str_replace(',', '.', preg_replace('/[^\d.,]/', '', (string)$rawWeight));
+                $sellPrice = (float) preg_replace('/[^\d]/', '', (string)$rawPrice);
+
+                if ($weight <= 0) {
+                    throw new Exception("Barang '{$item->item_name_snapshot}' wajib diisi berat timbang final (kg) lebih dari 0.");
+                }
+                if ($sellPrice <= 0) {
+                    throw new Exception("Barang '{$item->item_name_snapshot}' wajib diisi harga jual pabrik (Rp/kg) lebih dari Rp 0.");
+                }
+
+                $scrapItem = ScrapItem::with('stockBalance')->lockForUpdate()->find($item->scrap_item_id);
+                $stockBalance = $scrapItem?->stockBalance;
+                $currentStock = (float) ($stockBalance?->current_stock ?? 0);
+
+                if ($weight > $currentStock) {
+                    throw new Exception(
+                        "Stok barang '{$scrapItem->name}' tidak mencukupi! Tersedia: " .
+                        FormatHelper::weight($currentStock) . " kg, ingin diselesaikan: " .
+                        FormatHelper::weight($weight) . " kg."
+                    );
+                }
+
+                $buyPrice = (float) ($item->buy_price_snapshot ?: ($stockBalance?->average_buy_price ?? $scrapItem?->buy_price_per_kg ?? 0));
+                $itemSubtotal = round($weight * $sellPrice, 2);
+                $itemCogs = round($weight * $buyPrice, 2);
+                $itemProfit = round($itemSubtotal - $itemCogs, 2);
+
+                $item->update([
+                    'weight' => $weight,
+                    'sell_price_per_kg' => $sellPrice,
+                    'buy_price_snapshot' => $buyPrice,
+                    'subtotal' => $itemSubtotal,
+                    'cogs_subtotal' => $itemCogs,
+                    'profit_subtotal' => $itemProfit,
+                ]);
+
+                // Kurangi stok
+                if ($stockBalance) {
+                    $stockBalance->update([
+                        'current_stock' => max(0, (float) $stockBalance->current_stock - $weight),
+                        'total_out' => (float) $stockBalance->total_out + $weight,
+                    ]);
+
+                    $priceStock = ItemPriceStock::where('scrap_item_id', $item->scrap_item_id)->first();
+                    if ($priceStock) {
+                        $priceStock->update([
+                            'current_stock' => max(0, (float) $priceStock->current_stock - $weight),
+                            'total_out' => (float) $priceStock->total_out + $weight,
+                        ]);
+                    }
+
+                    StockMovement::create([
+                        'scrap_item_id' => $item->scrap_item_id,
+                        'user_id' => $user?->id ?? $sale->user_id,
+                        'type' => StockMovement::TYPE_SALE,
+                        'reference_type' => SalesTransaction::class,
+                        'reference_id' => $sale->id,
+                        'weight_qty' => -$weight,
+                        'unit_price' => $sellPrice,
+                        'balance_after' => (float) $stockBalance->current_stock,
+                        'notes' => "Pengiriman Penjualan Selesai {$sale->invoice_number} ke {$sale->buyer_name}",
+                    ]);
+                }
+
+                // Sync ke DeliveryOrderItem bila ada surat jalan terkait
+                if ($sale->deliveryOrder) {
+                    $doItem = $sale->deliveryOrder->items()
+                        ->where('scrap_item_id', $item->scrap_item_id)
+                        ->first();
+                    if ($doItem) {
+                        $doItem->update([
+                            'weight' => $weight,
+                            'price_per_kg' => $sellPrice,
+                            'subtotal' => $itemSubtotal,
+                        ]);
+                    }
+                }
+
+                $totalWeight += $weight;
+                $subtotalAmount += $itemSubtotal;
+                $totalCogs += $itemCogs;
+            }
+
+            $discountAmount = (float) ($sale->discount_amount ?? 0);
+            $finalAmount = max(0, $subtotalAmount - $discountAmount);
+            $estimatedProfit = round($finalAmount - $totalCogs, 2);
+
+            $updateData = [
+                'total_weight' => $totalWeight,
+                'subtotal_amount' => $subtotalAmount,
+                'final_amount' => $finalAmount,
+                'estimated_cogs' => $totalCogs,
+                'estimated_profit' => $estimatedProfit,
+                'status' => SalesTransaction::STATUS_COMPLETED,
+                'payment_status' => 'paid',
+            ];
+
+            if ($notes) {
+                $updateData['notes'] = ($sale->notes ? ($sale->notes . "\n") : '') . $notes;
+            }
+
+            $sale->update($updateData);
+
+            if ($sale->deliveryOrder) {
+                $sale->deliveryOrder->update([
+                    'status' => 'delivered',
+                    'total_weight' => $totalWeight,
+                ]);
+            }
+
+            ActivityLog::record(
+                action: 'sale_delivery_completed',
+                subject: $sale,
+                description: "Pengiriman penjualan {$sale->invoice_number} diselesaikan dengan input timbangan pabrik ({$totalWeight} kg) & harga jual."
+            );
+
+            return $sale->fresh(['items.scrapItem', 'deliveryOrder']);
+        });
     }
 }
 

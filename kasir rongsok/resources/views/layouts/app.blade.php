@@ -354,6 +354,7 @@
     @endif
     @include('components.whatsapp-receipt-modal')
     @include('components.pdf-preview-modal')
+    @include('components.complete-delivery-modal')
 
     @stack('scripts')
     <script>

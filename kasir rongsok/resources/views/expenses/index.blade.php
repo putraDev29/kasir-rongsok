@@ -248,8 +248,8 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nominal (Rp) *</label>
-                        <input type="number" step="1000" min="1000" name="amount" required placeholder="Contoh: 150000"
-                               class="w-full text-xs font-mono font-bold p-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-900">
+                        <input type="text" inputmode="numeric" name="amount" required placeholder="Contoh: 150.000"
+                               class="w-full text-xs font-mono font-bold p-2 rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-900 format-rupiah">
                     </div>
                 </div>
 

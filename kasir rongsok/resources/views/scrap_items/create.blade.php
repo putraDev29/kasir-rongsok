@@ -57,7 +57,7 @@
                     <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Beli Standar / kg (Rp) *</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
-                        <input type="number" step="50" min="0" name="buy_price_per_kg" x-model.number="buyPrice" value="{{ old('buy_price_per_kg', 0) }}" required
+                        <input type="text" inputmode="numeric" name="buy_price_per_kg" x-rupiah="buyPrice" value="{{ old('buy_price_per_kg', 0) }}" required
                                class="w-full py-2 pl-9 pr-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono font-bold text-emerald-700">
                     </div>
                     <div class="text-[11px] text-emerald-600 font-mono font-bold mt-1" x-text="formatRp(buyPrice)"></div>
@@ -67,7 +67,7 @@
                     <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Jual / kg (Rp)</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
-                        <input type="number" step="50" min="0" name="sell_price_per_kg" x-model.number="sellPrice" value="{{ old('sell_price_per_kg', 0) }}"
+                        <input type="text" inputmode="numeric" name="sell_price_per_kg" x-rupiah="sellPrice" value="{{ old('sell_price_per_kg', 0) }}"
                                class="w-full py-2 pl-9 pr-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono font-semibold">
                     </div>
                     <div class="text-[11px] text-blue-600 font-mono font-bold mt-1" x-text="formatRp(sellPrice)"></div>

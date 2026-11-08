@@ -97,103 +97,21 @@
                     </label>
                 </div>
 
-                <!-- Input Armada & Pengemudi (Hanya tampil jika dengan pengiriman) -->
-                <div x-show="deliveryType === 'delivery'" x-transition class="pt-3 border-t border-slate-200 text-xs space-y-2">
-                    <div class="flex items-center justify-between text-blue-900 font-bold text-xs">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="truck" class="w-4 h-4 text-blue-600"></i>
-                            <span>Informasi Armada & Sopir Pengirim (Opsional - Bisa diisi untuk otomatis terbitkan Surat Jalan):</span>
-                        </div>
-                        <span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Bisa Simpan Rekening</span>
-                    </div>
-
-                    <!-- Pilih dari Master Sopir -->
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Pilih Dari Master Sopir (Opsional)</label>
-                        <select name="driver_id" x-model="driverId" @change="onDriverSelect($event)"
-                                class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:ring-blue-500">
-                            <option value="">-- Ketik Sopir Baru / Atau Pilih dari Master --</option>
-                            @foreach($drivers ?? [] as $drv)
-                                <option value="{{ $drv->id }}" data-name="{{ $drv->name }}" data-phone="{{ $drv->phone }}"
-                                        data-vehicle-number="{{ $drv->vehicle_number }}" data-vehicle-type="{{ $drv->vehicle_type }}"
-                                        data-bank-name="{{ $drv->bank_name }}" data-bank-number="{{ $drv->bank_account_number }}" data-bank-holder="{{ $drv->bank_account_name }}">
-                                    {{ $drv->name }} [{{ $drv->code }}] {{ $drv->vehicle_number ? ' - Plat: ' . $drv->vehicle_number : '' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Nama Sopir Armada</label>
-                            <input type="text" name="driver_name" x-model="driverName" placeholder="Contoh: Pak Joko"
-                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">No. Plat Polisi Kendaraan</label>
-                            <input type="text" name="vehicle_number" x-model="vehicleNumber" placeholder="B 1234 ABC"
-                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 font-mono uppercase bg-white focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Jenis Armada</label>
-                            <input type="text" name="vehicle_type" x-model="vehicleType" placeholder="Truk Engkel / Fuso / Pick Up"
-                                   class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:ring-blue-500">
-                        </div>
-                    </div>
-
-                    <!-- Informasi Rekening Bank Sopir (Pencairan Ongkos Armada) -->
-                    <div class="p-2.5 bg-blue-50/70 border border-blue-200 rounded-lg space-y-1.5">
-                        <div class="flex items-center justify-between">
-                            <span class="block text-[10.5px] font-bold text-blue-900 uppercase flex items-center gap-1">
-                                <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-600"></i>
-                                <span>Rekening Bank Sopir (Pencairan Ongkos Armada)</span>
-                            </span>
-                            <span class="text-[9.5px] text-blue-700 font-medium">Opsional</span>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Bank</label>
-                                <input type="text" name="driver_bank_name" x-model="driverBankName" placeholder="BCA / BRI / Mandiri"
-                                       class="w-full py-1 px-2 text-xs rounded border border-slate-300 bg-white focus:ring-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nomor Rekening</label>
-                                <input type="text" name="driver_bank_account_number" x-model="driverBankAccountNumber" placeholder="No. Rekening"
-                                       class="w-full py-1 px-2 text-xs rounded border border-slate-300 font-mono bg-white focus:ring-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Nama Pemilik (A/N)</label>
-                                <input type="text" name="driver_bank_account_name" x-model="driverBankAccountName" placeholder="Atas Nama Pemilik"
-                                       class="w-full py-1 px-2 text-xs rounded border border-slate-300 bg-white focus:ring-blue-500">
-                            </div>
-                        </div>
-                        <div class="pt-0.5 flex items-center">
-                            <label class="inline-flex items-center gap-1.5 text-blue-900 text-[10.5px] font-medium cursor-pointer">
-                                <input type="checkbox" name="save_to_driver_bank" value="1" checked class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
-                                <span>Simpan / perbarui nomor rekening ke master sopir/driver</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Biaya Operasional Pengiriman -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-blue-100">
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Biaya Ongkos Armada / Supir (Rp)</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
-                                <input type="text" name="shipping_cost" placeholder="0 atau -"
-                                       class="w-full py-1.5 pl-8 pr-2.5 text-xs rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:ring-blue-500">
-                            </div>
-                            <span class="text-[10px] text-slate-400">Masuk ke pengeluaran operasional (bisa 0 atau -).</span>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Biaya Bongkar Muat / Tenaga Angkut (Rp)</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
-                                <input type="text" name="loading_cost" placeholder="0 atau -"
-                                       class="w-full py-1.5 pl-8 pr-2.5 text-xs rounded-lg border border-slate-300 font-mono text-slate-800 bg-white focus:ring-blue-500">
-                            </div>
-                            <span class="text-[10px] text-slate-400">Masuk ke pengeluaran operasional (bisa 0 atau -).</span>
+                <!-- Keterangan Alur Pengiriman Armada Gudang -->
+                <div x-show="deliveryType === 'delivery'" x-transition class="pt-3 border-t border-slate-200 text-xs">
+                    <div class="p-3.5 bg-blue-50/90 border border-blue-200 rounded-xl flex items-start gap-3 text-blue-950">
+                        <i data-lucide="info" class="w-5 h-5 text-blue-600 shrink-0 mt-0.5"></i>
+                        <div class="space-y-1">
+                            <span class="font-bold text-xs text-blue-900 block">Alur Pengiriman Armada Gudang &amp; Surat Jalan:</span>
+                            <p class="text-[11px] text-blue-800 leading-relaxed">
+                                Transaksi penjualan ini akan disimpan dengan status <strong>Menunggu Pengiriman</strong> (tidak langsung masuk menjadi Surat Jalan).
+                            </p>
+                            <p class="text-[11px] text-blue-800 leading-relaxed">
+                                Surat Jalan dibuat tersendiri melalui menu <strong>Surat Jalan</strong> &rarr; <em>Buat Surat Jalan Baru</em> dengan memilih data penjualan ini.
+                            </p>
+                            <p class="text-[11px] text-emerald-800 font-medium">
+                                💡 <em>Berat dan harga jual dapat dikosongi terlebih dahulu saat pengiriman, dan wajib diisi sebelum status transaksi diselesaikan.</em>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -530,9 +448,10 @@
                                         @else
                                             <div class="relative">
                                                 <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
-                                                <input type="number" step="100" min="0" 
+                                                <input type="text" 
+                                                       inputmode="numeric"
                                                        :name="'items[' + idx + '][sell_price_per_kg]'" 
-                                                       x-model.number="row.sell_price_per_kg" 
+                                                       x-rupiah="row.sell_price_per_kg" 
                                                        placeholder="0"
                                                        class="w-full py-2 pl-9 pr-2.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono font-bold text-slate-900 bg-white">
                                             </div>
@@ -590,7 +509,8 @@
                         <span>Potongan Diskon:</span>
                         <div class="relative w-36">
                             <span class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
-                            <input type="number" step="1000" min="0" name="discount_amount" x-model.number="discountAmount"
+                            <input type="text" inputmode="numeric" name="discount_amount" x-rupiah="discountAmount"
+                                   placeholder="0"
                                    class="w-full py-1 pl-7 pr-2 text-xs text-right rounded border border-slate-300 font-mono">
                         </div>
                     </div>

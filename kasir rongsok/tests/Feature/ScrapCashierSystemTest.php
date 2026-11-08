@@ -1077,16 +1077,12 @@ class ScrapCashierSystemTest extends TestCase
         $doCreate->assertStatus(200);
         $doCreate->assertDontSee('Bpk. H. Syarif (Ambil Sendiri)');
 
-        // 2. Delivery Sale with driver and vehicle: Auto-creates DO, status pending_delivery
+        // 2. Delivery Sale: Input penjualan TIDAK langsung otomatis jadi surat jalan, status pending_delivery
         $deliveryRes = $this->actingAs($this->superAdmin)->post(route('sales.store'), [
             'delivery_type' => 'delivery',
             'buyer_name' => 'PT. Mega Steel Konstruksi',
             'buyer_phone' => '08138888222',
             'buyer_address' => 'Kawasan Industri Jababeka V',
-            'driver_name' => 'Pak Joko Widodo',
-            'driver_phone' => '0812345678',
-            'vehicle_number' => 'B 9123 KAS',
-            'vehicle_type' => 'Truk Fuso Engkel',
             'transaction_date' => now()->toDateString(),
             'payment_method_id' => $this->cashMethod->id,
             'items' => [
@@ -1106,6 +1102,33 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertEquals('pending_delivery', $deliverySale->status);
         $this->assertTrue($deliverySale->isDelivery());
         $this->assertTrue($deliverySale->isPendingDelivery());
+        // Penjualan jangan langsung masuk di surat jalan
+        $this->assertNull($deliverySale->delivery_order_id);
+
+        // Surat Jalan dibuat sendiri dengan memilih data dari input penjualan yang tipenya pengiriman
+        $doStoreRes = $this->actingAs($this->superAdmin)->post(route('delivery-orders.store'), [
+            'sales_transaction_id' => $deliverySale->id,
+            'delivery_date' => now()->toDateString(),
+            'recipient_name' => $deliverySale->buyer_name,
+            'recipient_address' => $deliverySale->buyer_address,
+            'recipient_phone' => $deliverySale->buyer_phone,
+            'driver_name' => 'Pak Joko Widodo',
+            'driver_phone' => '0812345678',
+            'vehicle_number' => 'B 9123 KAS',
+            'vehicle_type' => 'Truk Fuso Engkel',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_name' => 'Besi Super Tebal',
+                    'unit_type' => 'kg',
+                    'weight' => 200,
+                    'price_per_kg' => 5200,
+                ],
+            ],
+        ]);
+        $doStoreRes->assertSessionHasNoErrors();
+
+        $deliverySale->refresh();
         $this->assertNotNull($deliverySale->delivery_order_id);
 
         $linkedDO = $deliverySale->deliveryOrder;
@@ -1130,7 +1153,7 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertEquals('completed', $deliverySale->status);
         $this->assertTrue($deliverySale->isCompleted());
 
-        // 3. Standalone Delivery Sale marked completed directly from Sales endpoint
+        // 3. Penjualan pengiriman dengan harga dan berat kosong: sebelum update status selesai HARUS input harga & berat
         $deliverySale2 = app(\App\Services\SalesTransactionService::class)->createSale([
             'delivery_type' => 'delivery',
             'buyer_name' => 'Pabrik Peleburan Jaya',
@@ -1139,18 +1162,37 @@ class ScrapCashierSystemTest extends TestCase
             'items' => [
                 [
                     'scrap_item_id' => $this->besiItem->id,
-                    'weight' => 100,
-                    'sell_price_per_kg' => 5000,
+                    'weight' => 0, // saat pengiriman berat masih kosong
+                    'sell_price_per_kg' => 0, // harga jual masih kosong
                 ],
             ],
         ], $this->superAdmin);
 
         $this->assertEquals('pending_delivery', $deliverySale2->status);
 
-        $saleMarkRes = $this->actingAs($this->superAdmin)->post(route('sales.mark-delivered', $deliverySale2));
+        // Konfirmasi selesai tanpa input harga dan berat akan ditolak
+        $failMarkRes = $this->actingAs($this->superAdmin)->post(route('sales.mark-delivered', $deliverySale2));
+        $failMarkRes->assertSessionHas('error');
+        $deliverySale2->refresh();
+        $this->assertEquals('pending_delivery', $deliverySale2->status);
+
+        // Konfirmasi selesai dengan input berat timbang pabrik dan harga jual
+        $itemToUpdate = $deliverySale2->items->first();
+        $saleMarkRes = $this->actingAs($this->superAdmin)->post(route('sales.mark-delivered', $deliverySale2), [
+            'items' => [
+                [
+                    'id' => $itemToUpdate->id,
+                    'scrap_item_id' => $itemToUpdate->scrap_item_id,
+                    'weight' => 150,
+                    'sell_price_per_kg' => 5500,
+                ],
+            ],
+        ]);
         $saleMarkRes->assertSessionHasNoErrors();
         $deliverySale2->refresh();
         $this->assertEquals('completed', $deliverySale2->status);
+        $this->assertEquals(150, (float) $deliverySale2->total_weight);
+        $this->assertEquals(825000, (float) $deliverySale2->final_amount);
     }
 
     /**

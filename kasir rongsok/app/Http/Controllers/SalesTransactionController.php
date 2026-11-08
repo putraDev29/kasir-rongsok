@@ -117,9 +117,9 @@ class SalesTransactionController extends Controller
 
     public function edit(SalesTransaction $sale): View|RedirectResponse
     {
-        if (!$sale->isDraft()) {
+        if (!$sale->isDraft() && !$sale->isPendingDelivery()) {
             return redirect()->route('sales.show', $sale)
-                ->with('error', 'Transaksi penjualan ini bukan berstatus draft atau sudah difinalisasi.');
+                ->with('error', 'Transaksi penjualan ini bukan berstatus draft atau menunggu pengiriman.');
         }
 
         if (!Auth::user()->isAdmin()) {
@@ -202,9 +202,9 @@ class SalesTransactionController extends Controller
 
     public function update(UpdateSalesRequest $request, SalesTransaction $sale): RedirectResponse
     {
-        if (!$sale->isDraft()) {
+        if (!$sale->isDraft() && !$sale->isPendingDelivery()) {
             return redirect()->route('sales.show', $sale)
-                ->with('error', 'Transaksi penjualan ini bukan berstatus draft atau sudah difinalisasi.');
+                ->with('error', 'Transaksi penjualan ini bukan berstatus draft atau menunggu pengiriman.');
         }
 
         if (!Auth::user()->isAdmin()) {
@@ -284,7 +284,41 @@ class SalesTransactionController extends Controller
             return back()->with('error', 'Transaksi yang dibatalkan tidak dapat diselesaikan pengirimannya.');
         }
 
-        $sale->update(['status' => SalesTransaction::STATUS_COMPLETED]);
+        if ($sale->isCompleted()) {
+            return back()->with('info', "Transaksi penjualan {$sale->invoice_number} sudah berstatus selesai.");
+        }
+
+        $sale->loadMissing(['items.scrapItem', 'deliveryOrder']);
+
+        // Jika request mengirimkan array items (dari modal input berat dan harga jual pabrik)
+        if ($request->has('items') && is_array($request->input('items'))) {
+            try {
+                $this->salesService->completeDeliverySale(
+                    $sale,
+                    $request->input('items'),
+                    $request->input('notes'),
+                    Auth::user()
+                );
+
+                return back()->with('success', "Pengiriman penjualan {$sale->invoice_number} berhasil dikonfirmasi selesai dengan rincian berat timbang pabrik & harga jual final!");
+            } catch (Exception $e) {
+                return back()->withInput()->with('error', $e->getMessage());
+            }
+        }
+
+        // Jika tidak ada data items dikirim, periksa apakah transaksi sudah punya berat > 0 dan harga > 0 di semua item
+        $hasEmptyWeightOrPrice = $sale->items->contains(function ($item) {
+            return (float) $item->weight <= 0 || (float) $item->sell_price_per_kg <= 0;
+        });
+
+        if ($hasEmptyWeightOrPrice) {
+            return back()->with('error', "Transaksi penjualan {$sale->invoice_number} bertipe pengiriman ini masih memiliki berat atau harga jual yang kosong/nol. Harap lengkapi berat hasil timbang pabrik dan harga jual terlebih dahulu sebelum menyelesaikan status!");
+        }
+
+        $sale->update([
+            'status' => SalesTransaction::STATUS_COMPLETED,
+            'payment_status' => 'paid',
+        ]);
 
         if ($sale->deliveryOrder) {
             $sale->deliveryOrder->update(['status' => 'delivered']);

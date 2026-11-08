@@ -35,21 +35,34 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            @if($sale->isDraft() && (Auth::user()->isAdmin() || Auth::user()->isSuperAdmin()))
+            @if(($sale->isDraft() || $sale->isPendingDelivery()) && (Auth::user()->isAdmin() || Auth::user()->isSuperAdmin()))
                 <a href="{{ route('sales.edit', $sale) }}"
                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition-colors">
                     <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                    <span>Isi Harga Jual & Finalisasi</span>
+                    <span>Edit Berat &amp; Harga Jual</span>
                 </a>
             @endif
             @if($sale->isPendingDelivery())
-                <form action="{{ route('sales.mark-delivered', $sale) }}" method="POST" onsubmit="return confirm('Konfirmasi bahwa barang muatan telah selesai diantar/diterima pabrik? Transaksi akan resmi SELESAI.')">
-                    @csrf
-                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors">
-                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
-                        <span>Konfirmasi Pengiriman Selesai</span>
-                    </button>
-                </form>
+                <button type="button" 
+                        @click="openCompleteDeliveryModal({
+                            invoiceNumber: '{{ $sale->invoice_number }}',
+                            buyerName: '{{ addslashes($sale->buyer_name) }}',
+                            actionUrl: '{{ route('sales.mark-delivered', $sale) }}',
+                            notes: '{{ addslashes($sale->notes ?? '') }}',
+                            items: {{ json_encode($sale->items->map(fn($it) => [
+                                'id' => $it->id,
+                                'scrap_item_id' => $it->scrap_item_id,
+                                'name' => $it->item_name_snapshot,
+                                'type' => $it->item_type_name,
+                                'unit' => $it->unit_type ?: 'kg',
+                                'weight' => (float)$it->weight,
+                                'price' => (float)$it->sell_price_per_kg,
+                            ])) }}
+                        })"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    <span>Konfirmasi Pengiriman Selesai</span>
+                </button>
 
                 @if(!$sale->deliveryOrder)
                     <a href="{{ route('delivery-orders.create', ['sales_transaction_id' => $sale->id]) }}"

@@ -214,7 +214,7 @@
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
                             <input type="text" name="shipping_cost" placeholder="0 atau -"
-                                   class="w-full text-xs py-2 pl-8 pr-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white">
+                                   class="w-full text-xs py-2 pl-8 pr-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white format-rupiah">
                         </div>
                         <span class="text-[10px] text-slate-400">Dicatat ke pengeluaran 'Biaya Transportasi & Armada' (bisa 0 atau -).</span>
                     </div>
@@ -223,7 +223,7 @@
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
                             <input type="text" name="loading_cost" placeholder="0 atau -"
-                                   class="w-full text-xs py-2 pl-8 pr-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white">
+                                   class="w-full text-xs py-2 pl-8 pr-2.5 rounded-lg border border-slate-300 focus:ring-blue-500 font-mono font-bold text-slate-800 bg-white format-rupiah">
                         </div>
                         <span class="text-[10px] text-slate-400">Dicatat ke pengeluaran 'Biaya Bongkar Muat' (bisa 0 atau -).</span>
                     </div>

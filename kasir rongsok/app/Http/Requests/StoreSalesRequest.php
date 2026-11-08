@@ -60,7 +60,7 @@ class StoreSalesRequest extends FormRequest
     {
         $sanitizeCost = function ($val) {
             if ($val === '-' || $val === '' || is_null($val)) return 0;
-            return (float) preg_replace('/[^\d.]/', '', (string) $val);
+            return (float) preg_replace('/[^\d]/', '', (string) $val);
         };
 
         $merge = [];
@@ -70,6 +70,20 @@ class StoreSalesRequest extends FormRequest
         if ($this->has('loading_cost')) {
             $merge['loading_cost'] = $sanitizeCost($this->loading_cost);
         }
+        if ($this->has('discount_amount')) {
+            $merge['discount_amount'] = $sanitizeCost($this->discount_amount);
+        }
+
+        $items = $this->input('items', []);
+        if (is_array($items)) {
+            foreach ($items as $idx => $it) {
+                if (isset($it['sell_price_per_kg'])) {
+                    $items[$idx]['sell_price_per_kg'] = $sanitizeCost($it['sell_price_per_kg']);
+                }
+            }
+            $merge['items'] = $items;
+        }
+
         if (!empty($merge)) {
             $this->merge($merge);
         }

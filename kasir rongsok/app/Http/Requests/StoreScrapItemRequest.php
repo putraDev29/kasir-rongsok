@@ -34,5 +34,23 @@ class StoreScrapItemRequest extends FormRequest
             'price_change_reason' => 'nullable|string|max:255',
         ];
     }
-}
 
+    protected function prepareForValidation(): void
+    {
+        $cleanNum = function ($val) {
+            if ($val === '-' || $val === '' || is_null($val)) return 0;
+            return (float) preg_replace('/[^\d]/', '', (string) $val);
+        };
+
+        $merge = [];
+        if ($this->has('buy_price_per_kg')) {
+            $merge['buy_price_per_kg'] = $cleanNum($this->buy_price_per_kg);
+        }
+        if ($this->has('sell_price_per_kg')) {
+            $merge['sell_price_per_kg'] = $cleanNum($this->sell_price_per_kg);
+        }
+        if (!empty($merge)) {
+            $this->merge($merge);
+        }
+    }
+}

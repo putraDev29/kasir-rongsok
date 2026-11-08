@@ -35,5 +35,14 @@ class StoreExpenseRequest extends FormRequest
             }
         });
     }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('amount')) {
+            $val = $this->amount;
+            $clean = ($val === '-' || $val === '' || is_null($val)) ? 0 : (float) preg_replace('/[^\d]/', '', (string) $val);
+            $this->merge(['amount' => $clean]);
+        }
+    }
 }
 

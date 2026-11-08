@@ -40,6 +40,120 @@ window.formatNumber = (number, decimals = 2) => {
     }).format(number || 0);
 };
 
+// Universal helpers for Indonesian Rupiah input formatting
+window.formatRupiahString = (val) => {
+    if (val === null || val === undefined || val === '') return '';
+    const digits = String(val).replace(/\D/g, '');
+    if (!digits) return '';
+    return parseInt(digits, 10).toLocaleString('id-ID');
+};
+
+window.parseRupiahNumber = (val) => {
+    if (val === null || val === undefined || val === '') return 0;
+    const digits = String(val).replace(/\D/g, '');
+    return digits ? parseInt(digits, 10) : 0;
+};
+
+// Global event listener for any input with .format-rupiah, .rupiah-mask, or [data-rupiah="true"]
+document.addEventListener('input', (e) => {
+    const el = e.target;
+    if (!el) return;
+    if (el.matches && el.matches('.format-rupiah, .rupiah-mask, .input-rupiah, [data-rupiah="true"]')) {
+        const cursor = el.selectionStart;
+        const oldLength = el.value.length;
+        const raw = el.value.replace(/\D/g, '');
+        if (!raw) {
+            el.value = '';
+        } else {
+            const formatted = parseInt(raw, 10).toLocaleString('id-ID');
+            el.value = formatted;
+            const newLength = formatted.length;
+            const newCursor = Math.max(0, cursor + (newLength - oldLength));
+            try {
+                el.setSelectionRange(newCursor, newCursor);
+            } catch (err) {}
+        }
+    }
+});
+
+// Alpine custom directive: x-rupiah="property"
+Alpine.directive('rupiah', (el, { expression }, { evaluateLater, effect }) => {
+    const getModel = evaluateLater(expression);
+    const setModel = evaluateLater(`${expression} = $event`);
+
+    el.type = 'text';
+    el.inputMode = 'numeric';
+    el.classList.add('format-rupiah');
+
+    effect(() => {
+        getModel(val => {
+            const currentRaw = el.value.replace(/\D/g, '');
+            const targetRaw = String(val === 0 ? '' : (val || '')).replace(/\D/g, '');
+            if (currentRaw !== targetRaw) {
+                el.value = targetRaw ? parseInt(targetRaw, 10).toLocaleString('id-ID') : '';
+            }
+        });
+    });
+
+    el.addEventListener('input', (e) => {
+        const raw = e.target.value.replace(/\D/g, '');
+        const numVal = raw ? parseInt(raw, 10) : 0;
+        const formatted = raw ? parseInt(raw, 10).toLocaleString('id-ID') : '';
+
+        const cursor = el.selectionStart;
+        const oldLength = el.value.length;
+        el.value = formatted;
+        const newLength = formatted.length;
+        const newCursor = Math.max(0, cursor + (newLength - oldLength));
+        try {
+            el.setSelectionRange(newCursor, newCursor);
+        } catch (err) {}
+
+        setModel(null, { scope: { $event: numVal } });
+    });
+});
+
+// Alpine Store for Delivery Completion Modal (Input Timbang & Harga Jual Pabrik)
+Alpine.store('deliveryCompletion', {
+    isOpen: false,
+    invoiceNumber: '',
+    buyerName: '',
+    actionUrl: '',
+    notes: '',
+    items: [],
+    open(config) {
+        this.invoiceNumber = config.invoiceNumber || '';
+        this.buyerName = config.buyerName || '';
+        this.actionUrl = config.actionUrl || '';
+        this.notes = config.notes || '';
+        this.items = (config.items || []).map(it => ({
+            id: it.id,
+            scrap_item_id: it.scrap_item_id,
+            name: it.name || it.item_name || 'Barang',
+            type: it.type || it.item_type_name || '',
+            unit: it.unit || it.unit_type || 'kg',
+            weight: it.weight > 0 ? it.weight : '',
+            price: it.price > 0 ? it.price : (it.sell_price_per_kg > 0 ? it.sell_price_per_kg : ''),
+        }));
+        this.isOpen = true;
+        if (window.refreshIcons) window.refreshIcons();
+    },
+    totalWeight() {
+        return this.items.reduce((sum, it) => sum + (parseFloat(it.weight) || 0), 0);
+    },
+    totalAmount() {
+        return this.items.reduce((sum, it) => {
+            const w = parseFloat(it.weight) || 0;
+            const p = parseFloat(it.price) || 0;
+            return sum + Math.round(w * p);
+        }, 0);
+    }
+});
+
+window.openCompleteDeliveryModal = (config) => {
+    Alpine.store('deliveryCompletion').open(config);
+};
+
 // WhatsApp Gateway Global Alpine Store
 Alpine.store('waGateway', {
     isOpen: false,

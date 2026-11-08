@@ -209,18 +209,32 @@
                             </td>
                             <td class="py-3 px-3 text-center">
                                 <div class="inline-flex items-center gap-1.5">
-                                    @if($sale->isDraft() && (Auth::user()->isAdmin() || Auth::user()->isSuperAdmin()))
-                                        <a href="{{ route('sales.edit', $sale) }}" class="p-1 rounded text-amber-600 hover:text-amber-800 hover:bg-amber-50" title="Isi Harga Jual & Finalisasi">
+                                    @if(($sale->isDraft() || $sale->isPendingDelivery()) && (Auth::user()->isAdmin() || Auth::user()->isSuperAdmin()))
+                                        <a href="{{ route('sales.edit', $sale) }}" class="p-1 rounded text-amber-600 hover:text-amber-800 hover:bg-amber-50" title="Edit Rincian Berat & Harga Jual">
                                             <i data-lucide="edit-3" class="w-4 h-4"></i>
                                         </a>
                                     @endif
                                     @if($sale->isPendingDelivery())
-                                        <form action="{{ route('sales.mark-delivered', $sale) }}" method="POST" class="inline" onsubmit="return confirm('Konfirmasi pengiriman penjualan ini telah selesai diterima pembeli?')">
-                                            @csrf
-                                            <button type="submit" class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" title="Konfirmasi Pengiriman Selesai">
-                                                <i data-lucide="check-circle" class="w-4 h-4"></i>
-                                            </button>
-                                        </form>
+                                        <button type="button" 
+                                                @click="openCompleteDeliveryModal({
+                                                    invoiceNumber: '{{ $sale->invoice_number }}',
+                                                    buyerName: '{{ addslashes($sale->buyer_name) }}',
+                                                    actionUrl: '{{ route('sales.mark-delivered', $sale) }}',
+                                                    notes: '{{ addslashes($sale->notes ?? '') }}',
+                                                    items: {{ json_encode($sale->items->map(fn($it) => [
+                                                        'id' => $it->id,
+                                                        'scrap_item_id' => $it->scrap_item_id,
+                                                        'name' => $it->item_name_snapshot,
+                                                        'type' => $it->item_type_name,
+                                                        'unit' => $it->unit_type ?: 'kg',
+                                                        'weight' => (float)$it->weight,
+                                                        'price' => (float)$it->sell_price_per_kg,
+                                                    ])) }}
+                                                })"
+                                                class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 cursor-pointer" 
+                                                title="Input Hasil Timbang Pabrik & Selesaikan Pengiriman">
+                                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                        </button>
                                     @endif
                                     <button type="button" 
                                             @click="openWaReceiptModal('sale', {{ $sale->id }}, '{{ $sale->buyer_phone }}')"

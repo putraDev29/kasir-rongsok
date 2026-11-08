@@ -446,9 +446,10 @@
                                         </label>
                                         <div class="relative">
                                             <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
-                                            <input type="number" step="100" min="0" 
+                                            <input type="text" 
+                                                   inputmode="numeric"
                                                    :name="'items[' + idx + '][sell_price_per_kg]'" 
-                                                   x-model.number="row.sell_price_per_kg" 
+                                                   x-rupiah="row.sell_price_per_kg" 
                                                    placeholder="0"
                                                    class="w-full py-2 pl-9 pr-2.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono font-bold text-slate-900 bg-white">
                                         </div>
@@ -498,7 +499,8 @@
                         <span>Potongan / Diskon (Rp):</span>
                         <div class="relative w-36">
                             <span class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
-                            <input type="number" step="100" min="0" name="discount_amount" x-model.number="discountAmount"
+                            <input type="text" inputmode="numeric" name="discount_amount" x-rupiah="discountAmount"
+                                   placeholder="0"
                                    class="w-full py-1 pl-7 pr-2 text-xs text-right rounded border border-slate-300 font-mono">
                         </div>
                     </div>
