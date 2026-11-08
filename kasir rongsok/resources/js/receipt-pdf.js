@@ -339,126 +339,242 @@ export function generateSalesInvoicePdf(data) {
     const contentWidth = pageWidth - margin * 2;
 
     const companyName = data.companyName || 'UD. BERKAH RONGSOK MAKMUR';
-    const companyAddress = data.companyAddress || 'Sentra Daur Ulang Logam & Rongsok';
+    const companyAddress = data.companyAddress || 'Jl. Industri Daur Ulang No. 88, Sentra Rongsok';
     const companyPhone = data.companyPhone || '0812-3456-7890';
 
-    // Header
-    doc.setFillColor(239, 246, 255); // blue-50
-    doc.rect(margin, 8, contentWidth, 23, 'F');
-    doc.setDrawColor(37, 99, 235); // blue-600
-    doc.setLineWidth(1.0);
-    doc.line(margin, 31, pageWidth - margin, 31);
-
+    // Header (Matching Image 2 / sales.print)
+    let curY = 14;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
     doc.setTextColor(15, 23, 42);
-    doc.text(companyName, margin + 4, 15.5);
+    doc.text(companyName, margin, curY);
+
+    // Right Header: INVOICE & Meta
+    doc.setFontSize(12);
+    doc.text('INVOICE', pageWidth - margin, curY, { align: 'right' });
+
+    curY += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text(companyAddress, margin, curY);
+
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(data.invoiceNumber || '-', pageWidth - margin, curY, { align: 'right' });
+
+    curY += 4.5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Telp: ' + companyPhone, margin, curY);
+    doc.text(data.transactionDate || '-', pageWidth - margin, curY, { align: 'right' });
+
+    curY += 4.5;
+    const isPickup = data.isPickup ?? true;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    if (isPickup) {
+        doc.setTextColor(4, 120, 87);
+        doc.text('Diambil Langsung Pembeli', pageWidth - margin, curY, { align: 'right' });
+    } else {
+        doc.setTextColor(29, 78, 216);
+        doc.text('Pengiriman Armada Gudang', pageWidth - margin, curY, { align: 'right' });
+    }
+
+    curY += 3;
+    doc.setDrawColor(191, 219, 254); // blue-200
+    doc.setLineWidth(0.6);
+    doc.line(margin, curY, pageWidth - margin, curY);
+
+    // Two Columns Info Section
+    curY += 5;
+    const colLeftX = margin;
+    const colRightX = margin + (contentWidth / 2) + 2;
+
+    // Left Column: Pembeli
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.text(isPickup ? 'PEMBELI (DIAMBIL LANGSUNG):' : 'TUJUAN PENGIRIMAN (PEMBELI):', colLeftX, curY);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text(data.customerName || 'Pembeli', colLeftX, curY + 5);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(71, 85, 105);
-    doc.text(companyAddress, margin + 4, 21);
-    doc.text('Telp/WA: ' + companyPhone, margin + 4, 26);
+    doc.text(data.customerAddress || '-', colLeftX, curY + 9);
+    doc.setFont('courier', 'normal');
+    doc.text('Telp: ' + (data.customerPhone || '-'), colLeftX, curY + 13);
 
-    // Document Title
-    let curY = 38;
+    // Right Column: Metode Pembayaran & Catatan
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(15, 23, 42);
-    doc.text('FAKTUR PENJUALAN PARTAI (GROSIR)', margin, curY);
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text('METODE PEMBAYARAN:', colRightX, curY);
 
-    curY += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(15, 23, 42);
+    doc.text(data.paymentMethod || 'Tunai', colRightX, curY + 4.5);
+
+    let rightY = curY + 8;
+    if (data.isBankPayment && data.bankAccountNumber) {
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(71, 85, 105);
+        doc.text(`No. Rek: ${data.bankAccountNumber}${data.bankAccountName ? ' (a/n ' + data.bankAccountName + ')' : ''}`, colRightX, rightY);
+        rightY += 4.5;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text(isPickup ? 'METODE PENGAMBILAN:' : 'CATATAN TRANSPORTASI:', colRightX, rightY);
+    rightY += 3.5;
+
+    // Transport / Notes Box
+    const noteText = data.notes || (isPickup ? 'Diambil langsung oleh pembeli di gudang/depo (Tanpa kendaraan perusahaan)' : 'Pengiriman armada darat');
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.3);
-    doc.roundedRect(margin, curY, contentWidth, 18, 2, 2, 'FD');
-
-    const col1X = margin + 3.5;
-    const col2X = margin + contentWidth / 2 + 3.5;
-    const metaY = curY + 5;
-
+    doc.roundedRect(colRightX, rightY, (contentWidth / 2) - 2, 6, 1, 1, 'FD');
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 116, 139);
-    doc.text('No. Faktur:', col1X, metaY);
+    doc.setTextColor(51, 65, 85);
+    doc.text(noteText, colRightX + 2, rightY + 4, { maxWidth: (contentWidth / 2) - 6 });
+
+    rightY += 8;
+
+    if (!isPickup && data.driverName) {
+        doc.setFillColor(239, 246, 255);
+        doc.setDrawColor(191, 219, 254);
+        doc.roundedRect(colRightX, rightY, (contentWidth / 2) - 2, 9, 1, 1, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(30, 58, 138);
+        doc.text(`Supir / Armada: ${data.driverName} (${data.vehicleNumber || '-'})`, colRightX + 2, rightY + 3.8);
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(6.8);
+        doc.setTextColor(30, 64, 175);
+        doc.text(`Ongkos Armada: Rp ${data.shippingCost || 0} | Bongkar: Rp ${data.loadingCost || 0}`, colRightX + 2, rightY + 7.2);
+        rightY += 11;
+    }
+
+    curY = Math.max(curY + 17, rightY + 2);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.4);
+    doc.line(margin, curY, pageWidth - margin, curY);
+
+    // Items Table Header (Matching Image 2)
+    curY += 4;
+    const colW = { no: 7, desc: 55, weight: 20, price: 23, total: 23 };
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.5);
+    doc.line(margin, curY + 5.5, pageWidth - margin, curY + 5.5);
+
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(37, 99, 235);
-    doc.text(data.invoiceNumber || '-', col1X + 22, metaY);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 116, 139);
-    doc.text('Tanggal:', col1X, metaY + 6);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(data.transactionDate || '-', col1X + 22, metaY + 6);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 116, 139);
-    doc.text('Pembeli/Pabrik:', col2X, metaY);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(data.customerName || 'Pembeli', col2X + 22, metaY);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 116, 139);
-    doc.text('HP Pembeli:', col2X, metaY + 6);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(15, 23, 42);
-    doc.text(data.customerPhone || '-', col2X + 22, metaY + 6);
-
-    curY += 23;
-
-    // Items Table
-    const colW = { no: 8, desc: 62, weight: 24, price: 24, total: 24 };
-    doc.setFillColor(15, 23, 42);
-    doc.rect(margin, curY, contentWidth, 6, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7.5);
+    doc.setTextColor(71, 85, 105);
 
     let x = margin;
-    doc.text('No', x + 2, curY + 4.2);
+    doc.text('#', x + 1, curY + 4);
     x += colW.no;
-    doc.text('Nama Barang', x + 2, curY + 4.2);
+    doc.text('NAMA MATERIAL SCRAP & DAUR ULANG', x + 1, curY + 4);
     x += colW.desc;
-    doc.text('Berat (kg)', x + colW.weight - 2, curY + 4.2, { align: 'right' });
+    doc.text('BERAT (KG)', x + colW.weight - 1, curY + 4, { align: 'right' });
     x += colW.weight;
-    doc.text('Harga/kg', x + colW.price - 2, curY + 4.2, { align: 'right' });
+    doc.text('HARGA SATUAN/KG', x + colW.price - 1, curY + 4, { align: 'right' });
     x += colW.price;
-    doc.text('Total', x + colW.total - 2, curY + 4.2, { align: 'right' });
+    doc.text('TOTAL NILAI', x + colW.total - 1, curY + 4, { align: 'right' });
 
-    curY += 6;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
+    curY += 7;
 
     const items = data.items || [];
     items.forEach((it, idx) => {
-        doc.setFillColor(idx % 2 === 0 ? 255 : 248, idx % 2 === 0 ? 255 : 250, idx % 2 === 0 ? 255 : 252);
-        doc.rect(margin, curY, contentWidth, 6, 'F');
-        doc.setTextColor(51, 65, 85);
+        doc.setDrawColor(241, 245, 249);
+        doc.setLineWidth(0.2);
+        doc.line(margin, curY + 5, pageWidth - margin, curY + 5);
 
         let rowX = margin;
-        doc.text(String(idx + 1), rowX + 2, curY + 4.2);
-        rowX += colW.no;
-        doc.text(it.name || '-', rowX + 2, curY + 4.2);
-        rowX += colW.desc;
-        doc.text(String(it.weight || 0), rowX + colW.weight - 2, curY + 4.2, { align: 'right' });
-        rowX += colW.weight;
-        doc.text('Rp ' + (it.sellPrice || 0), rowX + colW.price - 2, curY + 4.2, { align: 'right' });
-        rowX += colW.price;
-        doc.setFont('helvetica', 'bold');
-        doc.text(it.subtotalFormatted || ('Rp ' + (it.subtotal || 0)), rowX + colW.total - 2, curY + 4.2, { align: 'right' });
-        doc.setFont('helvetica', 'normal');
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(7.8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(String(idx + 1), rowX + 1, curY + 3.8);
 
-        curY += 6;
+        rowX += colW.no;
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42);
+        doc.text(it.name || '-', rowX + 1, curY + 3.8);
+
+        rowX += colW.desc;
+        doc.setFont('courier', 'bold');
+        doc.setTextColor(15, 23, 42);
+        doc.text(String(it.weight || 0) + ' kg', rowX + colW.weight - 1, curY + 3.8, { align: 'right' });
+
+        rowX += colW.weight;
+        doc.setFont('courier', 'normal');
+        doc.setTextColor(51, 65, 85);
+        doc.text('Rp ' + (it.sellPrice || 0), rowX + colW.price - 1, curY + 3.8, { align: 'right' });
+
+        rowX += colW.price;
+        doc.setFont('courier', 'bold');
+        doc.setTextColor(15, 23, 42);
+        doc.text(it.subtotalFormatted || ('Rp ' + (it.subtotal || 0)), rowX + colW.total - 1, curY + 3.8, { align: 'right' });
+
+        curY += 5.5;
     });
 
-    curY += 4;
+    // Summary Section (Matching Image 2: right-aligned)
+    curY += 3;
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.4);
+    doc.line(pageWidth - margin - 55, curY, pageWidth - margin, curY);
+
+    curY += 3.5;
+    const sumXLabel = pageWidth - margin - 55;
+    const sumXVal = pageWidth - margin;
+
+    doc.setFont('courier', 'normal');
+    doc.setFontSize(7.8);
+    doc.setTextColor(71, 85, 105);
+    doc.text('Total Berat:', sumXLabel, curY);
+    doc.setFont('courier', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text((data.totalWeight || '0') + ' kg', sumXVal, curY, { align: 'right' });
+
+    curY += 4.5;
+    doc.setFont('courier', 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text('Subtotal:', sumXLabel, curY);
+    doc.setFont('courier', 'normal');
+    doc.setTextColor(15, 23, 42);
+    doc.text(data.subtotalAmount || data.finalAmount || 'Rp 0', sumXVal, curY, { align: 'right' });
+
+    if (data.discountAmount) {
+        curY += 4.5;
+        doc.setTextColor(220, 38, 38);
+        doc.text('Diskon:', sumXLabel, curY);
+        doc.text(String(data.discountAmount), sumXVal, curY, { align: 'right' });
+    }
+
+    curY += 2;
+    doc.setDrawColor(15, 23, 42);
+    doc.setLineWidth(0.8);
+    doc.line(sumXLabel, curY, sumXVal, curY);
+
+    curY += 4.5;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
-    doc.setTextColor(37, 99, 235);
-    doc.text('TOTAL MUATAN: ' + (data.totalWeight || '0') + ' kg', margin, curY);
-    doc.text('TOTAL TAGIHAN: ' + (data.finalAmount || 'Rp 0'), margin + contentWidth, curY, { align: 'right' });
+    doc.setTextColor(15, 23, 42);
+    doc.text('TOTAL TAGIHAN:', sumXLabel, curY);
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(10.5);
+    doc.text(data.finalAmount || 'Rp 0', sumXVal, curY, { align: 'right' });
 
     return doc;
 }

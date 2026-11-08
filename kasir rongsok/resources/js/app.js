@@ -402,35 +402,58 @@ Alpine.store('waGateway', {
         let pdfBase64 = null;
         let filename = this.receipt.filename || 'Nota.pdf';
 
-        // 1. Generate crisp PDF document if sendAsPdf is active
-        if (this.receipt.sendAsPdf && this.receipt.receiptData) {
-            try {
-                let doc = null;
-                if (this.receipt.type === 'purchase') {
-                    const safeInv = (this.receipt.receiptData.invoiceNumber || 'Pembelian').replace(/[\/\\]/g, '-');
-                    const safeSup = (this.receipt.receiptData.supplierName || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-                    filename = this.receipt.filename || `Nota_${safeInv}_${safeSup}.pdf`;
-                    this.receipt.receiptData.filename = filename;
-                    doc = generatePurchaseReceiptPdf(this.receipt.receiptData);
-                } else if (this.receipt.type === 'sale') {
-                    const safeInv = (this.receipt.receiptData.invoiceNumber || 'Penjualan').replace(/[\/\\]/g, '-');
-                    const safeCust = (this.receipt.receiptData.customerName || 'Pembeli').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-                    filename = this.receipt.filename || `Faktur_${safeInv}_${safeCust}.pdf`;
-                    this.receipt.receiptData.filename = filename;
-                    doc = generateSalesInvoicePdf(this.receipt.receiptData);
-                } else if (this.receipt.type === 'debt_payment') {
-                    const safePay = (this.receipt.receiptData.paymentNumber || 'Kasbon').replace(/[\/\\]/g, '-');
-                    const safeBorrower = (this.receipt.receiptData.borrowerName || 'Peminjam').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-                    filename = this.receipt.filename || `BuktiBayar_${safePay}_${safeBorrower}.pdf`;
-                    this.receipt.receiptData.filename = filename;
-                    doc = generateDebtPaymentPdf(this.receipt.receiptData);
+        // 1. Generate / fetch official PDF document if sendAsPdf is active
+        if (this.receipt.sendAsPdf) {
+            if (this.receipt.pdfUrl) {
+                try {
+                    const resp = await fetch(this.receipt.pdfUrl, {
+                        headers: { 'Accept': 'application/pdf' }
+                    });
+                    if (resp.ok) {
+                        const blob = await resp.blob();
+                        pdfBase64 = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+                        if (this.receipt.filename) {
+                            filename = this.receipt.filename;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Gagal mengambil PDF resmi dari backend:', e);
                 }
+            }
 
-                if (doc) {
-                    pdfBase64 = doc.output('datauristring');
+            if (!pdfBase64 && this.receipt.receiptData) {
+                try {
+                    let doc = null;
+                    if (this.receipt.type === 'purchase') {
+                        const safeInv = (this.receipt.receiptData.invoiceNumber || 'Pembelian').replace(/[\/\\]/g, '-');
+                        const safeSup = (this.receipt.receiptData.supplierName || 'Umum').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                        filename = this.receipt.filename || `Nota_${safeInv}_${safeSup}.pdf`;
+                        this.receipt.receiptData.filename = filename;
+                        doc = generatePurchaseReceiptPdf(this.receipt.receiptData);
+                    } else if (this.receipt.type === 'sale') {
+                        const safeInv = (this.receipt.receiptData.invoiceNumber || 'Penjualan').replace(/[\/\\]/g, '-');
+                        const safeCust = (this.receipt.receiptData.customerName || 'Pembeli').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                        filename = this.receipt.filename || `Invoice_${safeInv}_${safeCust}.pdf`;
+                        this.receipt.receiptData.filename = filename;
+                        doc = generateSalesInvoicePdf(this.receipt.receiptData);
+                    } else if (this.receipt.type === 'debt_payment') {
+                        const safePay = (this.receipt.receiptData.paymentNumber || 'Kasbon').replace(/[\/\\]/g, '-');
+                        const safeBorrower = (this.receipt.receiptData.borrowerName || 'Peminjam').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+                        filename = this.receipt.filename || `BuktiBayar_${safePay}_${safeBorrower}.pdf`;
+                        this.receipt.receiptData.filename = filename;
+                        doc = generateDebtPaymentPdf(this.receipt.receiptData);
+                    }
+
+                    if (doc) {
+                        pdfBase64 = doc.output('datauristring');
+                    }
+                } catch (err) {
+                    console.warn('Gagal men-generate PDF di browser:', err);
                 }
-            } catch (err) {
-                console.warn('Gagal men-generate PDF di browser:', err);
             }
         }
 
@@ -484,12 +507,18 @@ Alpine.store('waGateway', {
     },
 
     downloadPdf(downloadDirectly = false) {
-        if (!this.receipt.receiptData && this.receipt.pdfUrl) {
+        if (this.receipt.pdfUrl) {
             if (downloadDirectly) {
                 const dlUrl = this.receipt.pdfUrl + (this.receipt.pdfUrl.includes('?') ? '&' : '?') + 'download=1';
                 window.location.href = dlUrl;
             } else {
-                window.open(this.receipt.pdfUrl, '_blank');
+                if (window.openPdfPreview) {
+                    const title = this.receipt.title || 'Invoice Penjualan';
+                    const fname = this.receipt.filename || 'Invoice.pdf';
+                    window.openPdfPreview(this.receipt.pdfUrl, title, fname, this.receipt.phone || '');
+                } else {
+                    window.open(this.receipt.pdfUrl, '_blank');
+                }
             }
             return;
         }

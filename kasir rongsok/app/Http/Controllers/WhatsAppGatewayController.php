@@ -283,13 +283,29 @@ class WhatsAppGatewayController extends Controller
         $receiptData = [
             'type' => 'sale',
             'invoiceNumber' => $sale->invoice_number,
-            'transactionDate' => Carbon::parse($sale->transaction_date)->translatedFormat('d F Y, H:i') . ' WIB',
+            'transactionDate' => Carbon::parse($sale->transaction_date)->format('d/m/Y H:i'),
             'customerName' => $customerName,
             'customerPhone' => $customerPhone,
+            'customerAddress' => $sale->buyer_address ?: '-',
             'companyName' => $companyName,
             'companyAddress' => $companyAddress,
             'companyPhone' => $companyPhone,
+            'paymentMethod' => $sale->paymentMethod?->name ?? 'Tunai',
+            'isBankPayment' => $sale->isBankPayment(),
+            'bankAccountNumber' => $sale->getBankAccountNumber(),
+            'bankAccountName' => $sale->getBankAccountName(),
+            'bankInfo' => $sale->bank_info,
+            'isPickup' => $sale->isPickup(),
+            'deliveryType' => $sale->isPickup() ? 'Diambil Langsung Pembeli' : 'Pengiriman Armada Gudang',
+            'notes' => $sale->notes ?: ($sale->isPickup() ? 'Diambil langsung oleh pembeli di gudang/depo (Tanpa kendaraan perusahaan)' : 'Pengiriman armada darat'),
+            'driverName' => $sale->deliveryOrder?->driver_name,
+            'vehicleNumber' => $sale->deliveryOrder?->vehicle_number,
+            'driverPhone' => $sale->deliveryOrder?->driver_phone,
+            'shippingCost' => $sale->deliveryOrder?->shipping_cost,
+            'loadingCost' => $sale->deliveryOrder?->loading_cost,
             'totalWeight' => FormatHelper::weight($sale->total_weight),
+            'subtotalAmount' => 'Rp ' . number_format($sale->subtotal_amount, 0, ',', '.'),
+            'discountAmount' => $sale->discount_amount > 0 ? ('- Rp ' . number_format($sale->discount_amount, 0, ',', '.')) : null,
             'finalAmount' => 'Rp ' . number_format($sale->final_amount, 0, ',', '.'),
             'items' => $items,
         ];
@@ -321,7 +337,16 @@ class WhatsAppGatewayController extends Controller
 
         $fileData = $request->input('file') ?? $request->input('fileBase64');
         $caption = FormatHelper::cleanCaption($request->input('caption') ?? $request->input('message') ?? "Terlampir Faktur Penjualan Partai PDF {$sale->invoice_number}.");
-        $filename = $request->input('filename') ?: "Faktur_{$sale->invoice_number}.pdf";
+        $filename = $request->input('filename') ?: "Invoice_{$sale->invoice_number}.pdf";
+
+        // Auto-generate official PDF from sales.invoice_pdf if requested or if no file attached
+        if (empty($fileData) && $request->boolean('send_pdf', true)) {
+            $sale->loadMissing(['items.scrapItem', 'user', 'paymentMethod', 'deliveryOrder.driver']);
+            $settings = BusinessSetting::pluck('value', 'key')->all();
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('sales.invoice_pdf', compact('sale', 'settings'))
+                ->setPaper('a5', 'portrait');
+            $fileData = 'data:application/pdf;base64,' . base64_encode($pdf->output());
+        }
 
         if ($fileData) {
             $res = $this->gateway->sendFile($targetPhone, $fileData, $filename, $caption);

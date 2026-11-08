@@ -18,7 +18,7 @@
             background: #ffffff;
         }
         .mono {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'DejaVu Sans Mono', 'Courier New', Courier, monospace;
         }
         .header-table {
             width: 100%;
@@ -52,7 +52,7 @@
             text-transform: uppercase;
         }
         .doc-num {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'DejaVu Sans Mono', 'Courier New', Courier, monospace;
             font-size: 11px;
             font-weight: bold;
             color: #1e293b;
@@ -110,7 +110,7 @@
         .buyer-phone {
             font-size: 8.5px;
             color: #475569;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'DejaVu Sans Mono', 'Courier New', Courier, monospace;
             margin-top: 1px;
         }
         .payment-method {
@@ -121,7 +121,7 @@
         .payment-bank {
             font-size: 8px;
             color: #475569;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'DejaVu Sans Mono', 'Courier New', Courier, monospace;
             margin-top: 1px;
         }
         .notes-box {
@@ -191,7 +191,7 @@
         .summary-table {
             width: 100%;
             border-collapse: collapse;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'DejaVu Sans Mono', 'Courier New', Courier, monospace;
             font-size: 8.5px;
         }
         .summary-table td {
@@ -426,31 +426,5 @@
             </td>
         </tr>
     </table>
-
-    <!-- Signatures Section -->
-    <table class="signatures-table">
-        <tr>
-            <td class="sig-col">
-                Diterima Oleh (Pembeli),
-                <div class="sig-space"></div>
-                <div class="sig-name">( {{ $sale->buyer_name }} )</div>
-            </td>
-            <td class="sig-col">
-                Hormat Kami ({{ $sale->isPickup() ? 'Kasir Depo' : 'Depo Pengirim' }}),
-                <div class="sig-space" style="text-align: center;">
-                    @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                        <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 38px; max-height: 40px; width: auto; max-width: 130px; margin: 0 auto; display: block;">
-                    @endif
-                </div>
-                <div class="sig-name">( {{ $sale->user?->name ?? 'Admin / Kasir' }} )</div>
-            </td>
-        </tr>
-    </table>
-
-    <!-- Footer Note -->
-    <div class="footer-note">
-        {{ $sale->isPickup() ? '*Invoice ini merupakan bukti resmi transaksi penjualan barang yang diambil langsung oleh pembeli di tempat/depo.' : '*Invoice ini merupakan bukti resmi pengiriman muatan rongsok partai besar. Dokumen sah terbitan sistem otomatis.' }}
-    </div>
-
 </body>
 </html>
