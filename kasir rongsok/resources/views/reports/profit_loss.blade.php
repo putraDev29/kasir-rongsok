@@ -83,8 +83,8 @@
             <div class="text-xs font-bold text-slate-700 font-mono mt-0.5">
                 Modal Beli: Rp {{ number_format($totalPurchases, 0, ',', '.') }}
             </div>
-            <div class="text-[10px] text-emerald-700 font-semibold mt-1">
-                Potensi Nilai Jual: Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}
+            <div class="text-[10px] text-slate-500 font-semibold mt-1">
+                Total {{ $totalPurchasesTxCount }} Transaksi Masuk
             </div>
             <p class="text-[9px] text-slate-400 mt-1 leading-tight">* Pembelian menambah aset persediaan, bukan beban minus</p>
         </div>
@@ -145,7 +145,7 @@
             <div class="space-y-1">
                 <span class="font-bold text-blue-950 block">Prinsip Akuntansi Kasir Rongsok (Stok & Persediaan):</span>
                 <p class="text-[11px] text-blue-800 leading-relaxed">
-                    Pembelian rongsok dari masyarakat/pengepul pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg) dicatat sebagai <strong>Penambahan Aset Persediaan Fisik Gudang</strong> dan <strong>bukan beban yang mengurangi laba</strong>. Modal kas terkonversi menjadi fisik rongsok bernilai tinggi dengan estimasi nilai jual pabrik sebesar <strong>Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</strong> (Potensi Laba Margin Stok: <strong>+Rp {{ number_format($totalPotentialInventoryProfit, 0, ',', '.') }}</strong> saat nanti dikirim ke pabrik peleburan).
+                    Pembelian rongsok dari masyarakat/pengepul pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg) dicatat sebagai <strong>Penambahan Aset Persediaan Fisik Gudang</strong> dan <strong>bukan beban yang mengurangi laba</strong>. Modal kas terkonversi menjadi aset persediaan fisik rongsok di gudang depo untuk siap disortir dan dijual kembali ke pabrik peleburan.
                 </p>
             </div>
         </div>
@@ -155,7 +155,7 @@
             <!-- 1. Pendapatan Penjualan -->
             <div class="space-y-2">
                 <div class="flex justify-between items-center font-bold text-slate-900 border-b border-slate-200 pb-1 uppercase tracking-wider text-xs">
-                    <span>1. PENDAPATAN OPERASIONAL (PENJUALAN RONGSOK KE PABRIK)</span>
+                    <span>1. Omzet Penjualan</span>
                     <span class="font-mono text-sm">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between text-xs text-slate-600 pl-4">
@@ -172,11 +172,11 @@
             <!-- 2. HPP -->
             <div class="space-y-2">
                 <div class="flex justify-between items-center font-bold text-slate-900 border-b border-slate-200 pb-1 uppercase tracking-wider text-xs">
-                    <span>2. HARGA POKOK PENJUALAN (HPP TIMBANGAN TERJUAL)</span>
+                    <span>2. Pembelian (HPP TIMBANGAN TERJUAL)</span>
                     <span class="font-mono text-sm text-red-600">(Rp {{ number_format($totalCogs, 0, ',', '.') }})</span>
                 </div>
                 <div class="flex justify-between text-xs text-slate-600 pl-4">
-                    <span>Biaya Perolehan Material Scrap & Daur Ulang yang Terjual</span>
+                    <span>Pembelian Material Scrap & Daur Ulang yang Terjual</span>
                     <span class="font-mono font-medium">Rp {{ number_format($totalCogs, 0, ',', '.') }}</span>
                 </div>
             </div>
@@ -242,124 +242,199 @@
 
     </div>
 
-    <!-- DETAIL DATA PERGERAKAN BARANG MASUK & KELUAR -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        <!-- Tabel Barang Masuk (Pembelian Kasir / Penambahan Aset Stok) -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
-                        <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Rincian Barang Masuk (Pembelian)</h4>
-                        <p class="text-[10px] text-slate-500">Penambahan fisik stok persediaan di depo</p>
-                    </div>
+    <!-- 1. DETAIL RINCIAN SISA STOK BARANG & HARGA -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                    <i data-lucide="boxes" class="w-4 h-4"></i>
                 </div>
-                <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-mono text-xs font-bold">
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Rincian Sisa Stok Barang &amp; Harga</h4>
+                    <p class="text-[10px] text-slate-500">Stok fisik persediaan di depo saat ini beserta harga beli depo dan harga jual pabrik</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-800 font-mono font-bold">
+                    Total Stok: {{ \App\Services\FormatHelper::weight($totalCurrentStock) }} kg
+                </span>
+                <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 font-mono font-bold">
+                    Nilai Aset: Rp {{ number_format($totalCurrentStockValue, 0, ',', '.') }}
+                </span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                        <th class="py-2.5 px-3 w-12 text-center">No</th>
+                        <th class="py-2.5 px-3">Nama Material / Barang</th>
+                        <th class="py-2.5 px-3">Kategori</th>
+                        <th class="py-2.5 px-3 text-center">Satuan</th>
+                        <th class="py-2.5 px-3 text-right">Sisa Stok Fisik</th>
+                        <th class="py-2.5 px-3 text-right">Harga Beli (@ Rp)</th>
+                        <th class="py-2.5 px-3 text-right">Harga Jual Pabrik (@ Rp)</th>
+                        <th class="py-2.5 px-4 text-right">Total Nilai Modal Stok</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($stockBalanceItems as $idx => $stk)
+                        <tr class="hover:bg-slate-50/80 {{ $stk->current_stock > 0 ? 'bg-indigo-50/20' : '' }}">
+                            <td class="py-2 px-3 text-center text-slate-400 font-mono text-[11px]">{{ $idx + 1 }}</td>
+                            <td class="py-2 px-3 font-semibold text-slate-900">{{ $stk->name }}</td>
+                            <td class="py-2 px-3 text-slate-500 text-[11px]">{{ $stk->category_name }}</td>
+                            <td class="py-2 px-3 text-center text-slate-500 font-mono uppercase text-[10px]">{{ $stk->unit }}</td>
+                            <td class="py-2 px-3 text-right font-mono font-bold {{ $stk->current_stock > 0 ? 'text-indigo-700' : 'text-slate-400' }}">
+                                {{ \App\Services\FormatHelper::weight($stk->current_stock) }} {{ $stk->unit }}
+                            </td>
+                            <td class="py-2 px-3 text-right font-mono text-slate-700">Rp {{ number_format($stk->buy_price, 0, ',', '.') }}</td>
+                            <td class="py-2 px-3 text-right font-mono text-emerald-700 font-semibold">Rp {{ number_format($stk->sell_price, 0, ',', '.') }}</td>
+                            <td class="py-2 px-4 text-right font-mono font-bold text-slate-900">Rp {{ number_format($stk->stock_value, 0, ',', '.') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="py-6 text-center text-slate-400">Belum ada data barang rongsok terdaftar.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
+                    <tr>
+                        <td colspan="4" class="py-2.5 px-3 text-slate-800">TOTAL SISA STOK & NILAI MODAL</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-indigo-700 font-black">{{ \App\Services\FormatHelper::weight($totalCurrentStock) }} kg</td>
+                        <td colspan="2" class="py-2.5 px-3 text-center text-slate-400 text-[11px] font-normal">-</td>
+                        <td class="py-2.5 px-4 text-right font-mono text-slate-900 font-black">Rp {{ number_format($totalCurrentStockValue, 0, ',', '.') }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. DETAIL RINCIAN BARANG MASUK (PEMBELIAN) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                    <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Rincian Barang Masuk (Pembelian)</h4>
+                    <p class="text-[10px] text-slate-500">Penambahan fisik stok persediaan rongsok masuk pada periode terpilih</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="px-2.5 py-1 rounded bg-blue-50 text-blue-800 font-mono font-bold">
                     {{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg
                 </span>
-            </div>
-
-            <div class="overflow-x-auto flex-1">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                            <th class="py-2.5 px-3">Jenis Barang</th>
-                            <th class="py-2.5 px-2 text-right">Berat (kg)</th>
-                            <th class="py-2.5 px-2 text-right">Modal Beli</th>
-                            <th class="py-2.5 px-2 text-right">Estimasi Jual</th>
-                            <th class="py-2.5 px-3 text-right">Potensi Margin</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse($incomingItems as $inItem)
-                            @php
-                                $itemMargin = $inItem->estimated_sales_value - $inItem->total_amount;
-                            @endphp
-                            <tr class="hover:bg-slate-50/80">
-                                <td class="py-2.5 px-3 font-medium text-slate-900">
-                                    {{ $inItem->item_name }}
-                                    <div class="text-[10px] text-slate-400 font-mono">Beli: @ Rp {{ number_format($inItem->avg_buy_price, 0, ',', '.') }}</div>
-                                </td>
-                                <td class="py-2.5 px-2 text-right font-mono font-bold text-slate-800">{{ \App\Services\FormatHelper::weight($inItem->total_weight) }}</td>
-                                <td class="py-2.5 px-2 text-right font-mono text-slate-700">Rp {{ number_format($inItem->total_amount, 0, ',', '.') }}</td>
-                                <td class="py-2.5 px-2 text-right font-mono text-blue-700">Rp {{ number_format($inItem->estimated_sales_value, 0, ',', '.') }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600">+Rp {{ number_format($itemMargin, 0, ',', '.') }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="py-6 text-center text-slate-400">Tidak ada pembelian rongsok pada periode ini.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                    <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
-                        <tr>
-                            <td class="py-2.5 px-3 text-slate-800">TOTAL STOK MASUK</td>
-                            <td class="py-2.5 px-2 text-right font-mono text-blue-700">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg</td>
-                            <td class="py-2.5 px-2 text-right font-mono text-slate-900">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</td>
-                            <td class="py-2.5 px-2 text-right font-mono text-blue-800">Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-emerald-700">+Rp {{ number_format($totalPotentialInventoryProfit, 0, ',', '.') }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-
-        <!-- Tabel Barang Keluar (Penjualan Partai ke Pabrik) -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                        <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Rincian Barang Keluar (Penjualan)</h4>
-                        <p class="text-[10px] text-slate-500">Pengiriman partai besar ke pabrik/peleburan</p>
-                    </div>
-                </div>
-                <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">
-                    {{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg
+                <span class="px-2.5 py-1 rounded bg-slate-100 text-slate-800 font-mono font-bold">
+                    Rp {{ number_format($totalPurchases, 0, ',', '.') }}
                 </span>
             </div>
+        </div>
 
-            <div class="overflow-x-auto flex-1">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                            <th class="py-2.5 px-3">Jenis Barang</th>
-                            <th class="py-2.5 px-3 text-right">Berat Keluar</th>
-                            <th class="py-2.5 px-3 text-right">Omzet Jual</th>
-                            <th class="py-2.5 px-3 text-right">Laba Penjualan</th>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                        <th class="py-2.5 px-3 w-12 text-center">No</th>
+                        <th class="py-2.5 px-3">Jenis Barang</th>
+                        <th class="py-2.5 px-3 text-right">Harga Beli (@ Rp/kg)</th>
+                        <th class="py-2.5 px-3 text-right">Berat Masuk (kg)</th>
+                        <th class="py-2.5 px-4 text-right">Total Modal Beli</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($incomingItems as $idx => $inItem)
+                        <tr class="hover:bg-slate-50/80">
+                            <td class="py-2.5 px-3 text-center text-slate-400 font-mono text-[11px]">{{ $idx + 1 }}</td>
+                            <td class="py-2.5 px-3 font-semibold text-slate-900">{{ $inItem->item_name }}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-slate-700">Rp {{ number_format($inItem->avg_buy_price, 0, ',', '.') }}</td>
+                            <td class="py-2.5 px-3 text-right font-mono font-bold text-blue-700">{{ \App\Services\FormatHelper::weight($inItem->total_weight) }} kg</td>
+                            <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900">Rp {{ number_format($inItem->total_amount, 0, ',', '.') }}</td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse($outgoingItems as $outItem)
-                            <tr class="hover:bg-slate-50/80">
-                                <td class="py-2.5 px-3 font-medium text-slate-900">{{ $outItem->item_name }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">{{ \App\Services\FormatHelper::weight($outItem->total_weight) }} kg</td>
-                                <td class="py-2.5 px-3 text-right font-mono text-slate-700">Rp {{ number_format($outItem->total_amount, 0, ',', '.') }}</td>
-                                <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600">Rp {{ number_format($outItem->total_profit, 0, ',', '.') }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="py-6 text-center text-slate-400">Tidak ada penjualan grosir pada periode ini.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                    <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
+                    @empty
                         <tr>
-                            <td class="py-2.5 px-3 text-slate-800">TOTAL PENJUALAN</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-emerald-700">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-slate-900">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-emerald-700">Rp {{ number_format($grossProfit, 0, ',', '.') }}</td>
+                            <td colspan="5" class="py-6 text-center text-slate-400">Tidak ada pembelian rongsok pada periode ini.</td>
                         </tr>
-                    </tfoot>
-                </table>
+                    @endforelse
+                </tbody>
+                <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
+                    <tr>
+                        <td colspan="3" class="py-2.5 px-3 text-slate-800">TOTAL STOK MASUK</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-blue-700 font-black">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg</td>
+                        <td class="py-2.5 px-4 text-right font-mono text-slate-900 font-black">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. DETAIL RINCIAN BARANG KELUAR (PENJUALAN) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Rincian Barang Keluar (Penjualan)</h4>
+                    <p class="text-[10px] text-slate-500">Pengiriman partai besar ke pabrik/peleburan beserta harga beli modal (HPP) dan harga jual pabrik</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 font-mono font-bold">
+                    {{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg
+                </span>
+                <span class="px-2.5 py-1 rounded bg-slate-100 text-slate-800 font-mono font-bold">
+                    Omzet: Rp {{ number_format($totalSales, 0, ',', '.') }}
+                </span>
             </div>
         </div>
 
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                        <th class="py-2.5 px-3 w-12 text-center">No</th>
+                        <th class="py-2.5 px-3">Jenis Barang</th>
+                        <th class="py-2.5 px-3 text-right">Berat Keluar (kg)</th>
+                        <th class="py-2.5 px-3 text-right">Harga Beli (@ Rp/kg)</th>
+                        <th class="py-2.5 px-3 text-right">Harga Jual (@ Rp/kg)</th>
+                        <th class="py-2.5 px-3 text-right">Total Modal HPP</th>
+                        <th class="py-2.5 px-3 text-right">Total Omzet Jual</th>
+                        <th class="py-2.5 px-4 text-right">Laba Kotor Penjualan</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($outgoingItems as $idx => $outItem)
+                        <tr class="hover:bg-slate-50/80">
+                            <td class="py-2.5 px-3 text-center text-slate-400 font-mono text-[11px]">{{ $idx + 1 }}</td>
+                            <td class="py-2.5 px-3 font-semibold text-slate-900">{{ $outItem->item_name }}</td>
+                            <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">{{ \App\Services\FormatHelper::weight($outItem->total_weight) }} kg</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-slate-600">Rp {{ number_format($outItem->avg_buy_price, 0, ',', '.') }}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-emerald-700 font-semibold">Rp {{ number_format($outItem->avg_sell_price, 0, ',', '.') }}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-red-700">Rp {{ number_format($outItem->total_cogs, 0, ',', '.') }}</td>
+                            <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">Rp {{ number_format($outItem->total_amount, 0, ',', '.') }}</td>
+                            <td class="py-2.5 px-4 text-right font-mono font-black text-emerald-600">Rp {{ number_format($outItem->total_profit, 0, ',', '.') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="py-6 text-center text-slate-400">Tidak ada penjualan grosir pada periode ini.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
+                    <tr>
+                        <td colspan="2" class="py-2.5 px-3 text-slate-800">TOTAL PENJUALAN</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-emerald-700 font-black">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg</td>
+                        <td colspan="2" class="py-2.5 px-3 text-center text-slate-400 text-[11px] font-normal">-</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-red-700 font-black">Rp {{ number_format($totalCogs, 0, ',', '.') }}</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-slate-900 font-black">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
+                        <td class="py-2.5 px-4 text-right font-mono text-emerald-700 font-black">Rp {{ number_format($grossProfit, 0, ',', '.') }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
     </div>
 
     <!-- DETAIL RINCIAN SLIP GAJI KARYAWAN -->

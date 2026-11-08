@@ -533,11 +533,21 @@ class ScrapCashierSystemTest extends TestCase
     {
         $response = $this->actingAs($this->superAdmin)->get('/reports/profit-loss');
         $response->assertStatus(200);
+        $response->assertSee('Rincian Sisa Stok Barang & Harga');
         $response->assertSee('Rincian Barang Masuk (Pembelian)');
         $response->assertSee('Rincian Barang Keluar (Penjualan)');
+        $response->assertSee('Harga Beli (@ Rp/kg)');
+        $response->assertSee('Harga Jual (@ Rp/kg)');
+        $response->assertSee('Total Nilai Modal Stok');
         $response->assertSee('Rincian Slip Gaji Karyawan');
         $response->assertSee('Rincian Beban Operasional Gudang & Depo', false);
         $response->assertSee('ESTIMASI LABA BERSIH USAHA (NET PROFIT)');
+
+        $printResponse = $this->actingAs($this->superAdmin)->get('/reports/profit-loss?format=print');
+        $printResponse->assertStatus(200);
+        $printResponse->assertSee('II. RINCIAN SISA STOK BARANG & HARGA DEPO');
+        $printResponse->assertSee('III. RINCIAN BARANG MASUK (PEMBELIAN)');
+        $printResponse->assertSee('IV. RINCIAN BARANG KELUAR (PENJUALAN PABRIK)');
     }
 
     public function test_settings_can_update_sidebar_name_logo_and_disclaimer(): void

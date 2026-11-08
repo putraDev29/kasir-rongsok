@@ -40,7 +40,7 @@
 
         <!-- Catatan Akuntansi Kasir Rongsok -->
         <div class="p-2.5 rounded border border-slate-300 bg-slate-50 text-[10px] text-slate-700 leading-relaxed">
-            <strong>Catatan Akuntansi Stok Depo:</strong> Pembelian rongsok masuk pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg) dicatat sebagai <strong>Penambahan Aset Persediaan Gudang</strong> (bukan pengurang laba/beban kerugian). Uang kas terkonversi menjadi fisik rongsok bernilai estimasi jual pabrik <strong>Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</strong> (Potensi Margin Stok: <strong>+Rp {{ number_format($totalPotentialInventoryProfit, 0, ',', '.') }}</strong>).
+            <strong>Catatan Akuntansi Stok Depo:</strong> Pembelian rongsok masuk pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg) dicatat sebagai <strong>Penambahan Aset Persediaan Fisik Gudang</strong> (bukan pengurang laba/beban kerugian). Modal kas terkonversi menjadi aset persediaan fisik rongsok di gudang depo untuk siap disortir dan dijual kembali ke pabrik peleburan.
         </div>
 
         <!-- 1. IKHTISAR KEUANGAN LABA RUGI -->
@@ -95,86 +95,147 @@
             </div>
         </div>
 
-        <!-- 2. DATA BARANG MASUK & KELUAR -->
-        <div class="grid grid-cols-2 gap-4 pt-2">
-            <!-- Barang Masuk -->
-            <div class="border border-slate-300 rounded p-2.5">
-                <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
-                    <span>II.A. BARANG MASUK (ASET PERSEDIAAN)</span>
-                    <span class="font-mono">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg</span>
-                </div>
-                <table class="w-full text-left text-[9px] mt-1.5 font-mono">
-                    <thead>
-                        <tr class="text-slate-500 border-b border-slate-200">
-                            <th class="pb-1">Jenis Barang</th>
-                            <th class="pb-1 text-right">Berat (kg)</th>
-                            <th class="pb-1 text-right">Modal Beli</th>
-                            <th class="pb-1 text-right">Est. Jual</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach($incomingItems as $in)
-                            <tr>
-                                <td class="py-0.5 font-sans">{{ $in->item_name }}</td>
-                                <td class="py-0.5 text-right">{{ \App\Services\FormatHelper::weight($in->total_weight) }}</td>
-                                <td class="py-0.5 text-right">Rp {{ number_format($in->total_amount, 0, ',', '.') }}</td>
-                                <td class="py-0.5 text-right text-blue-800">Rp {{ number_format($in->estimated_sales_value, 0, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot class="border-t border-slate-300 font-bold">
-                        <tr>
-                            <td class="pt-1">Total</td>
-                            <td class="pt-1 text-right">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg</td>
-                            <td class="pt-1 text-right">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</td>
-                            <td class="pt-1 text-right text-blue-800">Rp {{ number_format($totalEstimatedInventorySales, 0, ',', '.') }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
-            <!-- Barang Keluar -->
-            <div class="border border-slate-300 rounded p-2.5">
-                <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
-                    <span>II.B. BARANG KELUAR (PENJUALAN PABRIK)</span>
-                    <span class="font-mono">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg</span>
-                </div>
-                <table class="w-full text-left text-[9px] mt-1.5 font-mono">
-                    <thead>
-                        <tr class="text-slate-500 border-b border-slate-200">
-                            <th class="pb-1">Jenis Barang</th>
-                            <th class="pb-1 text-right">Berat (kg)</th>
-                            <th class="pb-1 text-right">Omzet Jual</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse($outgoingItems as $out)
-                            <tr>
-                                <td class="py-0.5 font-sans">{{ $out->item_name }}</td>
-                                <td class="py-0.5 text-right">{{ \App\Services\FormatHelper::weight($out->total_weight) }}</td>
-                                <td class="py-0.5 text-right">Rp {{ number_format($out->total_amount, 0, ',', '.') }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="py-2 text-center text-slate-400">Tidak ada penjualan grosir pada periode ini.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                    <tfoot class="border-t border-slate-300 font-bold">
-                        <tr>
-                            <td class="pt-1">Total</td>
-                            <td class="pt-1 text-right">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg</td>
-                            <td class="pt-1 text-right">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-
-        <!-- 3. RINCIAN SLIP GAJI KARYAWAN -->
+        <!-- 2. DATA SISA STOK BARANG & HARGA -->
         <div class="border border-slate-300 rounded p-2.5">
             <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
-                <span>III. RINCIAN PENGGAJIAN KARYAWAN (SLIP GAJI)</span>
+                <span>II. RINCIAN SISA STOK BARANG &amp; HARGA DEPO</span>
+                <span class="font-mono">Stok: {{ \App\Services\FormatHelper::weight($totalCurrentStock) }} kg | Aset: Rp {{ number_format($totalCurrentStockValue, 0, ',', '.') }}</span>
+            </div>
+            <table class="w-full text-left text-[9px] mt-1.5 font-mono">
+                <thead>
+                    <tr class="text-slate-500 border-b border-slate-200">
+                        <th class="pb-1 w-6 text-center">No</th>
+                        <th class="pb-1 font-sans">Nama Material / Barang</th>
+                        <th class="pb-1 font-sans">Kategori</th>
+                        <th class="pb-1 text-right">Sisa Stok</th>
+                        <th class="pb-1 text-right">Harga Beli (@ Rp)</th>
+                        <th class="pb-1 text-right">Harga Jual (@ Rp)</th>
+                        <th class="pb-1 text-right">Nilai Modal Stok</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($stockBalanceItems as $idx => $stk)
+                        <tr>
+                            <td class="py-0.5 text-center text-slate-400">{{ $idx + 1 }}</td>
+                            <td class="py-0.5 font-sans font-medium">{{ $stk->name }}</td>
+                            <td class="py-0.5 font-sans text-slate-500">{{ $stk->category_name }}</td>
+                            <td class="py-0.5 text-right font-bold">{{ \App\Services\FormatHelper::weight($stk->current_stock) }} {{ $stk->unit }}</td>
+                            <td class="py-0.5 text-right">Rp {{ number_format($stk->buy_price, 0, ',', '.') }}</td>
+                            <td class="py-0.5 text-right text-emerald-800 font-semibold">Rp {{ number_format($stk->sell_price, 0, ',', '.') }}</td>
+                            <td class="py-0.5 text-right font-bold">Rp {{ number_format($stk->stock_value, 0, ',', '.') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="py-2 text-center text-slate-400 font-sans">Belum ada data barang rongsok terdaftar.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                <tfoot class="border-t border-slate-300 font-bold">
+                    <tr>
+                        <td colspan="3" class="pt-1 font-sans">TOTAL SISA STOK FISIK</td>
+                        <td class="pt-1 text-right">{{ \App\Services\FormatHelper::weight($totalCurrentStock) }} kg</td>
+                        <td colspan="2" class="pt-1 text-center font-sans font-normal">-</td>
+                        <td class="pt-1 text-right">Rp {{ number_format($totalCurrentStockValue, 0, ',', '.') }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- 3. DATA BARANG MASUK (PEMBELIAN) -->
+        <div class="border border-slate-300 rounded p-2.5">
+            <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
+                <span>III. RINCIAN BARANG MASUK (PEMBELIAN)</span>
+                <span class="font-mono">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg | Rp {{ number_format($totalPurchases, 0, ',', '.') }}</span>
+            </div>
+            <table class="w-full text-left text-[9px] mt-1.5 font-mono">
+                <thead>
+                    <tr class="text-slate-500 border-b border-slate-200">
+                        <th class="pb-1 w-6 text-center">No</th>
+                        <th class="pb-1 font-sans">Jenis Barang</th>
+                        <th class="pb-1 text-right">Harga Beli (@ Rp/kg)</th>
+                        <th class="pb-1 text-right">Berat Masuk (kg)</th>
+                        <th class="pb-1 text-right">Total Modal Beli</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($incomingItems as $idx => $in)
+                        <tr>
+                            <td class="py-0.5 text-center text-slate-400">{{ $idx + 1 }}</td>
+                            <td class="py-0.5 font-sans font-medium">{{ $in->item_name }}</td>
+                            <td class="py-0.5 text-right">Rp {{ number_format($in->avg_buy_price, 0, ',', '.') }}</td>
+                            <td class="py-0.5 text-right font-bold">{{ \App\Services\FormatHelper::weight($in->total_weight) }}</td>
+                            <td class="py-0.5 text-right font-bold">Rp {{ number_format($in->total_amount, 0, ',', '.') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="py-2 text-center text-slate-400 font-sans">Tidak ada pembelian rongsok pada periode ini.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                <tfoot class="border-t border-slate-300 font-bold">
+                    <tr>
+                        <td colspan="3" class="pt-1 font-sans">TOTAL STOK MASUK</td>
+                        <td class="pt-1 text-right">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg</td>
+                        <td class="pt-1 text-right">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- 4. DATA BARANG KELUAR (PENJUALAN PABRIK) -->
+        <div class="border border-slate-300 rounded p-2.5">
+            <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
+                <span>IV. RINCIAN BARANG KELUAR (PENJUALAN PABRIK)</span>
+                <span class="font-mono">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg | Omzet: Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
+            </div>
+            <table class="w-full text-left text-[9px] mt-1.5 font-mono">
+                <thead>
+                    <tr class="text-slate-500 border-b border-slate-200">
+                        <th class="pb-1 w-6 text-center">No</th>
+                        <th class="pb-1 font-sans">Jenis Barang</th>
+                        <th class="pb-1 text-right">Berat Keluar (kg)</th>
+                        <th class="pb-1 text-right">Harga Beli (@ Rp)</th>
+                        <th class="pb-1 text-right">Harga Jual (@ Rp)</th>
+                        <th class="pb-1 text-right">Modal HPP</th>
+                        <th class="pb-1 text-right">Omzet Jual</th>
+                        <th class="pb-1 text-right">Laba Penjualan</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($outgoingItems as $idx => $out)
+                        <tr>
+                            <td class="py-0.5 text-center text-slate-400">{{ $idx + 1 }}</td>
+                            <td class="py-0.5 font-sans font-medium">{{ $out->item_name }}</td>
+                            <td class="py-0.5 text-right font-bold">{{ \App\Services\FormatHelper::weight($out->total_weight) }}</td>
+                            <td class="py-0.5 text-right">Rp {{ number_format($out->avg_buy_price, 0, ',', '.') }}</td>
+                            <td class="py-0.5 text-right text-emerald-800 font-semibold">Rp {{ number_format($out->avg_sell_price, 0, ',', '.') }}</td>
+                            <td class="py-0.5 text-right text-red-700">Rp {{ number_format($out->total_cogs, 0, ',', '.') }}</td>
+                            <td class="py-0.5 text-right font-bold">Rp {{ number_format($out->total_amount, 0, ',', '.') }}</td>
+                            <td class="py-0.5 text-right font-bold text-emerald-700">Rp {{ number_format($out->total_profit, 0, ',', '.') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="py-2 text-center text-slate-400 font-sans">Tidak ada penjualan grosir pada periode ini.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                <tfoot class="border-t border-slate-300 font-bold">
+                    <tr>
+                        <td colspan="2" class="pt-1 font-sans">TOTAL PENJUALAN</td>
+                        <td class="pt-1 text-right">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg</td>
+                        <td colspan="2" class="pt-1 text-center font-sans font-normal">-</td>
+                        <td class="pt-1 text-right text-red-700">Rp {{ number_format($totalCogs, 0, ',', '.') }}</td>
+                        <td class="pt-1 text-right">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
+                        <td class="pt-1 text-right text-emerald-700">Rp {{ number_format($grossProfit, 0, ',', '.') }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- 5. RINCIAN SLIP GAJI KARYAWAN -->
+        <div class="border border-slate-300 rounded p-2.5">
+            <div class="font-bold text-[10px] uppercase text-slate-800 pb-1 border-b border-slate-300 flex justify-between">
+                <span>V. RINCIAN PENGGAJIAN KARYAWAN (SLIP GAJI)</span>
                 <span class="font-mono text-red-700">Rp {{ number_format($totalSalaries, 0, ',', '.') }}</span>
             </div>
             <table class="w-full text-left text-[9px] mt-1.5 font-mono">

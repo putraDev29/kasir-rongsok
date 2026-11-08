@@ -37,7 +37,7 @@ class FormatHelper
      */
     public static function number(mixed $val): string
     {
-        $num = (float) $val;
+        $num = round((float) $val, 4);
         if (floor($num) == $num) {
             return number_format($num, 0, ',', '.');
         }
@@ -51,7 +51,7 @@ class FormatHelper
      */
     public static function weight(mixed $val): string
     {
-        $num = (float) $val;
+        $num = round((float) $val, 4);
         if (floor($num) == $num) {
             return number_format($num, 0, ',', '.');
         }
@@ -89,6 +89,10 @@ class FormatHelper
 
         // 2. Remove .00 when preceded by digits and not followed by a digit
         $cleaned = preg_replace('/(\d+)\.00(?!\d)/', '$1', $cleaned);
+
+        // 3. Remove ,0 and .0 when preceded by digits and not followed by a digit
+        $cleaned = preg_replace('/(\d+),0(?!\d)/', '$1', $cleaned);
+        $cleaned = preg_replace('/(\d+)\.0(?!\d)/', '$1', $cleaned);
 
         return $cleaned;
     }

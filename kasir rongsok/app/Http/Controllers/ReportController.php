@@ -225,7 +225,9 @@ class ReportController extends Controller
                 DB::raw('SUM(sales_transaction_items.weight) as total_weight'),
                 DB::raw('SUM(sales_transaction_items.subtotal) as total_amount'),
                 DB::raw('SUM(sales_transaction_items.cogs_subtotal) as total_cogs'),
-                DB::raw('SUM(sales_transaction_items.profit_subtotal) as total_profit')
+                DB::raw('SUM(sales_transaction_items.profit_subtotal) as total_profit'),
+                DB::raw('CASE WHEN SUM(sales_transaction_items.weight) > 0 THEN (SUM(sales_transaction_items.cogs_subtotal) / SUM(sales_transaction_items.weight)) ELSE AVG(sales_transaction_items.buy_price_snapshot) END as avg_buy_price'),
+                DB::raw('CASE WHEN SUM(sales_transaction_items.weight) > 0 THEN (SUM(sales_transaction_items.subtotal) / SUM(sales_transaction_items.weight)) ELSE AVG(sales_transaction_items.sell_price_per_kg) END as avg_sell_price')
             )
             ->groupBy('sales_transaction_items.item_name_snapshot')
             ->orderByDesc('total_weight')
@@ -250,7 +252,7 @@ class ReportController extends Controller
                 'purchase_transaction_items.item_name_snapshot as item_name',
                 DB::raw('SUM(purchase_transaction_items.net_weight) as total_weight'),
                 DB::raw('SUM(purchase_transaction_items.subtotal) as total_amount'),
-                DB::raw('AVG(purchase_transaction_items.price_per_kg) as avg_buy_price'),
+                DB::raw('CASE WHEN SUM(purchase_transaction_items.net_weight) > 0 THEN (SUM(purchase_transaction_items.subtotal) / SUM(purchase_transaction_items.net_weight)) ELSE AVG(purchase_transaction_items.price_per_kg) END as avg_buy_price'),
                 DB::raw('COALESCE(MAX(scrap_items.sell_price_per_kg), 0) as current_sell_price'),
                 DB::raw('SUM(purchase_transaction_items.net_weight * COALESCE(scrap_items.sell_price_per_kg, purchase_transaction_items.price_per_kg)) as estimated_sales_value')
             )
@@ -261,7 +263,38 @@ class ReportController extends Controller
         $totalEstimatedInventorySales = (float) $incomingItems->sum('estimated_sales_value');
         $totalPotentialInventoryProfit = $totalEstimatedInventorySales - $totalPurchases;
 
-        // 3. BEBAN GAJI KARYAWAN (SLIP GAJI) PADA PERIODE TERPILIH
+        // 3. DATA SISA STOK BARANG & HARGA (STOK FISIK DI GUDANG DEPO SAAT INI)
+        $stockBalanceItems = ScrapItem::with(['category', 'stockBalance'])
+            ->where(function ($q) {
+                $q->where('is_active', true)
+                  ->orWhereHas('stockBalance', fn($sq) => $sq->where('current_stock', '>', 0));
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(function ($item) {
+                $stock = (float) ($item->stockBalance?->current_stock ?? 0);
+                $buyPrice = (float) ($item->stockBalance?->average_buy_price > 0 
+                    ? $item->stockBalance->average_buy_price 
+                    : $item->buy_price_per_kg);
+                $sellPrice = (float) $item->sell_price_per_kg;
+                $stockValue = $stock * $buyPrice;
+
+                return (object) [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'category_name' => $item->category?->name ?? 'Umum',
+                    'unit' => $item->unit ?? 'kg',
+                    'current_stock' => $stock,
+                    'buy_price' => $buyPrice,
+                    'sell_price' => $sellPrice,
+                    'stock_value' => $stockValue,
+                ];
+            });
+
+        $totalCurrentStock = (float) $stockBalanceItems->sum('current_stock');
+        $totalCurrentStockValue = (float) $stockBalanceItems->sum('stock_value');
+
+        // 4. BEBAN GAJI KARYAWAN (SLIP GAJI) PADA PERIODE TERPILIH
         $salarySlips = SalarySlip::with(['employeeUser', 'creator', 'paymentMethod'])
             ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
@@ -270,7 +303,7 @@ class ReportController extends Controller
         $totalSalaries = (float) $salarySlips->sum('net_salary');
         $totalSalariesGross = (float) $salarySlips->sum('total_income');
 
-        // 4. BEBAN PENGELUARAN OPERASIONAL LAINNYA PADA PERIODE TERPILIH
+        // 5. BEBAN PENGELUARAN OPERASIONAL LAINNYA PADA PERIODE TERPILIH
         $expenses = Expense::with(['category', 'user', 'paymentMethod'])
             ->when($startDate, fn($q) => $q->whereDate('expense_date', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('expense_date', '<=', $endDate))
@@ -287,7 +320,7 @@ class ReportController extends Controller
             ->groupBy('expense_categories.name')
             ->get();
 
-        // 5. TOTAL BEBAN OPERASIONAL KESELURUHAN & LABA BERSIH
+        // 6. TOTAL BEBAN OPERASIONAL KESELURUHAN & LABA BERSIH
         // Laba Bersih = Laba Kotor Penjualan - Total Beban Operasional (Slip Gaji + Biaya Operasional Depo)
         $totalOperatingExpenses = $totalSalaries + $totalExpenses;
         $netProfit = $grossProfit - $totalOperatingExpenses;
@@ -296,6 +329,7 @@ class ReportController extends Controller
             'startDate', 'endDate', 'allDates',
             'totalSales', 'totalSalesWeight', 'totalCogs', 'totalSalesTxCount', 'grossProfit', 'outgoingItems',
             'totalPurchases', 'totalPurchasesWeight', 'totalPurchasesTxCount', 'incomingItems',
+            'stockBalanceItems', 'totalCurrentStock', 'totalCurrentStockValue',
             'totalEstimatedInventorySales', 'totalPotentialInventoryProfit',
             'salarySlips', 'totalSalaries', 'totalSalariesGross',
             'expenses', 'totalExpenses', 'expensesByCategory',
