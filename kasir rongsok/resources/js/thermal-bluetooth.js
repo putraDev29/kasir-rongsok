@@ -104,9 +104,12 @@ export class ThermalBluetooth {
 
         // 7. Footer & Disclaimer
         bytes.push(0x1B, 0x61, 0x01); // Center
-        append('*** ' + (data.disclaimer || 'TIDAK MENERIMA BARANG ILEGAL') + ' ***\n');
-        append((data.footer || 'Barang dibeli tidak dapat ditarik kembali.') + '\n');
-        append('*** TERIMA KASIH ***\n');
+        bytes.push(0x1B, 0x45, 0x01); // Bold on
+        append('[ PERHATIAN / DISCLAIMER ]\n');
+        append('*** ' + (data.disclaimer || 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI') + ' ***\n');
+        bytes.push(0x1B, 0x45, 0x00); // Bold off
+        append('Barang yang dijual wajib milik sah pribadi penjual. Depo tidak melayani barang curian / ilegal.\n');
+        if (data.footer) append(data.footer + '\n');
 
         // 8. Feed 4 lines & cut
         append('\n\n\n\n');

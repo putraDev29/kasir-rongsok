@@ -10326,9 +10326,10 @@ end`};t.events.push(["putFont",function(i){(function(h){var o=h.font,c=h.out,l=h
 `),t.companyPhone&&i("Telp: "+t.companyPhone+`
 `),n.push(27,69,1),i(`BUKTI PENERIMAAN / NOTA TIMBANG
 `),n.push(27,69,0),n.push(27,97,0),i(this.hr("-",a)),i(this.padRow("No. Nota",t.invoiceNumber,a)),i(this.padRow("Tanggal",t.transactionDate,a)),i(this.padRow("Pemasok",t.supplierName,a)),t.supplierPhone&&i(this.padRow("HP Pemasok",t.supplierPhone,a)),i(this.padRow("Kasir",t.cashierName,a)),i(this.padRow("Metode",t.paymentMethod,a)),t.isBankPayment&&(t.bankAccountNumber&&i(this.padRow("No. Rek",t.bankAccountNumber,a)),t.bankAccountName&&i(this.padRow("a/n",t.bankAccountName,a)),!t.bankAccountNumber&&!t.bankAccountName&&t.bankInfo&&i(this.padRow("Bank Info",t.bankInfo,a))),i(this.hr("-",a)),(t.items||[]).forEach((o,c)=>{n.push(27,69,1),i(`${c+1}. ${o.name}
-`),n.push(27,69,0);const l=`   ${o.net} ${o.unit} x ${o.price}`;i(this.padRow(l,o.subtotal,a))}),i(this.hr("-",a)),i(this.padRow("Total Bersih",`${t.activeNet} kg`,a)),i(this.padRow("Subtotal",t.activeSubtotal,a)),t.discount&&i(this.padRow("Potongan","- "+t.discount,a)),t.rounding&&i(this.padRow("Pembulatan",t.rounding,a)),n.push(27,69,1),i(this.padRow("TOTAL HARGA",t.activeFinal,a)),n.push(27,69,0),t.debtDeduction&&i(this.padRow("Potong Hutang","- "+t.debtDeduction,a)),t.remainingDebt&&i(this.padRow("Sisa Hutang",t.remainingDebt,a)),n.push(27,69,1),i(this.padRow("UANG DITERIMA",t.activeNetCash,a)),n.push(27,69,0),i(this.hr("=",a)),n.push(27,97,1),i("*** "+(t.disclaimer||"TIDAK MENERIMA BARANG ILEGAL")+` ***
-`),i((t.footer||"Barang dibeli tidak dapat ditarik kembali.")+`
-`),i(`*** TERIMA KASIH ***
+`),n.push(27,69,0);const l=`   ${o.net} ${o.unit} x ${o.price}`;i(this.padRow(l,o.subtotal,a))}),i(this.hr("-",a)),i(this.padRow("Total Bersih",`${t.activeNet} kg`,a)),i(this.padRow("Subtotal",t.activeSubtotal,a)),t.discount&&i(this.padRow("Potongan","- "+t.discount,a)),t.rounding&&i(this.padRow("Pembulatan",t.rounding,a)),n.push(27,69,1),i(this.padRow("TOTAL HARGA",t.activeFinal,a)),n.push(27,69,0),t.debtDeduction&&i(this.padRow("Potong Hutang","- "+t.debtDeduction,a)),t.remainingDebt&&i(this.padRow("Sisa Hutang",t.remainingDebt,a)),n.push(27,69,1),i(this.padRow("UANG DITERIMA",t.activeNetCash,a)),n.push(27,69,0),i(this.hr("=",a)),n.push(27,97,1),n.push(27,69,1),i(`[ PERHATIAN / DISCLAIMER ]
+`),i("*** "+(t.disclaimer||"TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI")+` ***
+`),n.push(27,69,0),i(`Barang yang dijual wajib milik sah pribadi penjual. Depo tidak melayani barang curian / ilegal.
+`),t.footer&&i(t.footer+`
 `),i(`
 
 

@@ -10,11 +10,11 @@
     <title>Nota_{{ $cleanPrintInv }}_{{ $cleanPrintSup }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        @page {
+            size: {{ $format === 'thermal_58' ? '58mm auto' : ($format === 'thermal_80' ? '80mm auto' : 'auto') }};
+            margin: 0mm;
+        }
         @media print {
-            @page {
-                size: auto;
-                margin: 0mm;
-            }
             .no-print {
                 display: none !important;
             }
@@ -22,21 +22,22 @@
                 margin: 0 !important;
                 padding: 0 !important;
                 background: #fff !important;
-                color: #000 !important;
+                color: #0f172a !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
             .receipt-container {
                 box-shadow: none !important;
                 border: none !important;
-                margin: 0 !important;
-                padding: 1.5mm 1mm !important;
+                margin: 0 auto !important;
                 background: #fff !important;
+                box-sizing: border-box !important;
             }
             .receipt-58mm {
-                width: 48mm !important;
-                max-width: 48mm !important;
-                font-size: 8.5px !important;
+                width: 58mm !important;
+                max-width: 58mm !important;
+                padding: 6px 8px !important;
+                font-size: 9px !important;
                 line-height: 1.25 !important;
             }
             .receipt-58mm h1,
@@ -54,8 +55,9 @@
                 font-size: 10.5px !important;
             }
             .receipt-80mm {
-                width: 72mm !important;
-                max-width: 72mm !important;
+                width: 80mm !important;
+                max-width: 80mm !important;
+                padding: 10px 12px !important;
                 font-size: 11px !important;
                 line-height: 1.35 !important;
             }
@@ -64,11 +66,19 @@
                 max-width: 210mm !important;
                 padding: 10mm !important;
             }
-            /* Pastikan warna teks thermal murni hitam pekat agar hasil bakar thermal tajam */
-            .receipt-container * {
-                color: #000 !important;
-                border-color: #000 !important;
-                box-shadow: none !important;
+            /* Badge Disclaimer: latar belakang gelap dan teks putih pekat sama persis seperti di preview */
+            .receipt-disclaimer-badge {
+                background-color: #0f172a !important;
+                color: #ffffff !important;
+                border: 1px solid #0f172a !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                display: inline-block !important;
+                border-radius: 4px !important;
+                padding: 2px 8px !important;
+            }
+            .receipt-disclaimer-badge * {
+                color: #ffffff !important;
             }
         }
         @media screen {
@@ -192,7 +202,7 @@
              style="display: grid; grid-template-columns: max-content {{ $format === 'thermal_58' ? '6px' : '8px' }} 1fr; column-gap: {{ $format === 'thermal_58' ? '3px' : '4px' }}; row-gap: 2px; align-items: baseline;">
             <span class="whitespace-nowrap text-slate-700">No. Nota</span>
             <span class="text-center">:</span>
-            <span class="text-left font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->invoice_number }}</span>
+            <span class="text-left font-bold whitespace-nowrap">{{ $purchase->invoice_number }}</span>
 
             <span class="whitespace-nowrap text-slate-700">Tanggal</span>
             <span class="text-center">:</span>
@@ -200,7 +210,7 @@
 
             <span class="whitespace-nowrap text-slate-700">Pemasok</span>
             <span class="text-center">:</span>
-            <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->supplier_name ?: '-' }}</span>
+            <span class="text-left font-semibold break-words leading-tight">{{ $purchase->supplier_name ?: '-' }}</span>
 
             @if($purchase->supplier_phone)
                 <span class="whitespace-nowrap text-slate-700">HP Pemasok</span>
@@ -210,27 +220,27 @@
 
             <span class="whitespace-nowrap text-slate-700">Kasir</span>
             <span class="text-center">:</span>
-            <span class="text-left whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->user?->name }}</span>
+            <span class="text-left break-words leading-tight">{{ $purchase->user?->name }}</span>
 
             <span class="whitespace-nowrap text-slate-700">Metode Bayar</span>
             <span class="text-center">:</span>
-            <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
+            <span class="text-left font-semibold break-words leading-tight">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
 
             @if($purchase->isBankPayment())
                 @if($purchase->getBankAccountNumber())
                     <span class="whitespace-nowrap text-slate-700">No. Rekening</span>
                     <span class="text-center">:</span>
-                    <span class="text-left font-mono font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountNumber() }}</span>
+                    <span class="text-left font-mono font-bold break-all">{{ $purchase->getBankAccountNumber() }}</span>
                 @endif
                 @if($purchase->getBankAccountName())
                     <span class="whitespace-nowrap text-slate-700">Nama Rekening</span>
                     <span class="text-center">:</span>
-                    <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $purchase->getBankAccountName() }}</span>
+                    <span class="text-left font-semibold break-words leading-tight">{{ $purchase->getBankAccountName() }}</span>
                 @endif
                 @if(!$purchase->getBankAccountNumber() && !$purchase->getBankAccountName() && !empty($purchase->bank_info))
                     <span class="whitespace-nowrap text-slate-700">Data Rekening</span>
                     <span class="text-center">:</span>
-                    <span class="text-left font-mono text-[8.5px] font-bold whitespace-nowrap overflow-hidden text-ellipsis" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
+                    <span class="text-left font-mono text-[8.5px] font-bold break-words leading-tight" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
                 @endif
             @endif
         </div>
@@ -467,25 +477,24 @@
         </div>
 
         <!-- Peringatan Disclaimer Hukum: Tidak Menerima Barang Bukan Milik Pribadi -->
-        <div class="mt-4 pt-2 border-t border-dashed border-slate-900 text-center font-sans space-y-0.5">
-            <div class="inline-block px-1.5 py-0.2 bg-slate-900 text-white font-bold {{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[8px] sm:text-[9px]' }} uppercase tracking-wider rounded">
+        <div class="mt-4 pt-2 border-t border-dashed border-slate-400 text-center font-sans space-y-0.5">
+            <div class="receipt-disclaimer-badge inline-block px-2 py-0.5 bg-slate-900 text-white font-bold {{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[8px] sm:text-[9px]' }} uppercase tracking-wider rounded">
                 PERHATIAN / DISCLAIMER
             </div>
-                <div class="font-bold uppercase {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[9px] sm:text-[10px]' }} text-slate-900 tracking-tight leading-tight">
-                    *** {{ $settings['receipt_disclaimer'] ?? 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI' }} ***
-                </div>
-                <p class="text-[7.5px] text-slate-600 leading-tight">
-                    Barang yang dijual wajib milik sah pribadi penjual. Depo tidak melayani barang curian / ilegal.
-                </p>
-                @if(!empty($settings['receipt_terms']))
-                    <p class="text-[7.5px] text-slate-500 leading-tight">
-                        {{ $settings['receipt_terms'] }}
-                    </p>
-                @endif
-                <p class="text-[7px] text-slate-400 italic leading-tight pt-0.5">
-                    {{ $settings['receipt_footer'] ?? 'Barang yang sudah ditimbang & dibayar tidak dapat ditarik kembali.' }}
-                </p>
+            <div class="font-bold uppercase {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[9px] sm:text-[10px]' }} text-slate-900 tracking-tight leading-tight pt-0.5">
+                *** {{ $settings['receipt_disclaimer'] ?? 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI' }} ***
             </div>
+            <p class="{{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[8.5px]' }} text-slate-700 leading-tight">
+                Barang yang dijual wajib milik sah pribadi penjual. Depo tidak melayani barang curian / ilegal.
+            </p>
+            @if(!empty($settings['receipt_terms']))
+                <p class="{{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[8.5px]' }} text-slate-600 leading-tight">
+                    {{ $settings['receipt_terms'] }}
+                </p>
+            @endif
+            <p class="{{ $format === 'thermal_58' ? 'text-[7px]' : 'text-[8px]' }} text-slate-400 italic leading-tight pt-0.5">
+                {{ $settings['receipt_footer'] ?? 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali. Terima kasih atas kerja samanya.' }}
+            </p>
         </div>
 
     </div>
