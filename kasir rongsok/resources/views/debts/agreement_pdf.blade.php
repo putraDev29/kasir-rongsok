@@ -434,8 +434,8 @@
                     <div class="sig-header">{{ $sheet['role_first'] }}</div>
                     <div class="sig-sub">Pemilik Usaha / Depo</div>
                     <div class="sig-space">
-                        @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                            <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 52px; max-height: 56px; width: auto; max-width: 160px; margin: 0 auto; display: block;">
+                        @if(\App\Models\BusinessSetting::hasSignatureOrStamp())
+                            @include('components.signature-stamp', ['isPdf' => true, 'height' => 52, 'stampSize' => 58])
                         @else
                             <span class="sig-materai">Cap Stempel Depo &amp; TTD</span>
                         @endif

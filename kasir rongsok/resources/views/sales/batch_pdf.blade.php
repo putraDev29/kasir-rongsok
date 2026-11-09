@@ -93,9 +93,7 @@
         <div class="signature-box">
             <p>Penanggung Jawab Penjualan,</p>
             <div style="height: 55px; text-align: center;">
-                @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                    <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 50px; max-height: 54px; width: auto; max-width: 150px; margin: 0 auto; display: block;">
-                @endif
+                @include('components.signature-stamp', ['isPdf' => true, 'height' => 50, 'stampSize' => 56])
             </div>
             <p><strong>( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }} )</strong></p>
             <p style="color: #64748b;">Administrasi / Owner Depo</p>

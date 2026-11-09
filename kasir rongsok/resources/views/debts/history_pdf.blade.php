@@ -474,9 +474,7 @@
             <td class="sig-col">
                 <div>Pengelola Depo / Pemberi Pinjaman,</div>
                 <div class="sig-space">
-                    @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                        <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 46px; max-height: 48px; width: auto; max-width: 140px; margin: 0 auto; display: block;">
-                    @endif
+                    @include('components.signature-stamp', ['isPdf' => true, 'height' => 46, 'stampSize' => 52])
                 </div>
                 <div class="sig-name">( {{ $ownerName }} )</div>
                 <div style="font-size: 7.5px; color: #64748b; margin-top: 1px;">Owner / Pengelola Depo Rongsok</div>

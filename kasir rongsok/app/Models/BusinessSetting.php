@@ -155,6 +155,85 @@ class BusinessSetting extends Model
     }
 
     /**
+     * Determine if a company stamp image is configured and exists on disk.
+     */
+    public static function hasCompanyStamp(): bool
+    {
+        $stamp = static::get('company_stamp');
+        if (empty($stamp)) {
+            return false;
+        }
+
+        return file_exists(public_path($stamp))
+            || file_exists(base_path('../' . $stamp))
+            || file_exists(base_path('public/' . $stamp));
+    }
+
+    /**
+     * Get the accessible public URL for the company stamp.
+     */
+    public static function companyStampUrl(): ?string
+    {
+        $stamp = static::get('company_stamp');
+        if (empty($stamp) || !static::hasCompanyStamp()) {
+            return null;
+        }
+
+        return asset($stamp);
+    }
+
+    /**
+     * Get Base64 data URI of the company stamp for reliable DomPDF rendering.
+     */
+    public static function companyStampBase64(): ?string
+    {
+        $stamp = static::get('company_stamp');
+        if (empty($stamp)) {
+            return null;
+        }
+
+        $candidates = [
+            public_path($stamp),
+            base_path('../' . $stamp),
+            base_path('public/' . $stamp),
+        ];
+
+        foreach ($candidates as $path) {
+            if (file_exists($path) && is_file($path)) {
+                $mime = @mime_content_type($path) ?: 'image/png';
+                $content = @file_get_contents($path);
+                if ($content !== false) {
+                    return 'data:' . $mime . ';base64,' . base64_encode($content);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Determine if either owner signature or company stamp exists.
+     */
+    public static function hasSignatureOrStamp(): bool
+    {
+        return static::hasOwnerSignature() || static::hasCompanyStamp();
+    }
+
+    /**
+     * Render the combined signature and stamp HTML markup.
+     */
+    public static function renderSignatureAndStamp(bool $isPdf = false, int $height = 48, ?int $stampSize = null, string $stampLeft = '0px', string $style = ''): string
+    {
+        return view('components.signature-stamp', [
+            'isPdf' => $isPdf,
+            'height' => $height,
+            'stampSize' => $stampSize,
+            'stampLeft' => $stampLeft,
+            'style' => $style,
+        ])->render();
+    }
+
+    /**
      * Get the configured commodity/goods term (e.g. "Barang Rongsok", "Material Scrap", "Barang Bekas").
      */
     public static function commodityTerm(string $default = 'Barang Rongsok'): string

@@ -74,11 +74,11 @@
                     </div>
                 </div>
 
-                <!-- Signature Section (Tanda Tangan Owner untuk Dokumen PDF) -->
+                <!-- Signature Section (Tanda Tangan Owner untuk Dokumen PDF & Cetak) -->
                 <div class="border-t border-slate-200 pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Tanda Tangan Owner</label>
-                        <p class="text-[11px] text-slate-500 mb-2">Disisipkan otomatis di semua berkas PDF pada kolom tanda tangan Owner / Pimpinan. Format: PNG transparan, JPG, WebP (Maks. 2MB).</p>
+                        <p class="text-[11px] text-slate-500 mb-2">Disisipkan otomatis di semua berkas PDF & cetak pada kolom tanda tangan Owner / Pimpinan. Format: PNG transparan, JPG, WebP (Maks. 2MB).</p>
                         
                         @if(\App\Models\BusinessSetting::hasOwnerSignature())
                             <div class="p-3 bg-white rounded-xl border border-emerald-300 inline-block shadow-sm">
@@ -86,7 +86,7 @@
                             </div>
                             <div class="mt-2 flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
                                 <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
-                                <span>Tanda tangan aktif tersimpan</span>
+                                <span>Tanda tangan aktif tersimpan (permanen)</span>
                             </div>
                         @else
                             <div class="w-24 h-16 rounded-xl bg-slate-100 flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-300">
@@ -103,11 +103,64 @@
                             <input type="file" name="owner_signature" accept="image/png,image/jpeg,image/webp"
                                    class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-lg p-1 bg-white">
                             <p class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
-                                💡 <strong>Tips:</strong> Disarankan menggunakan gambar tanda tangan dengan latar belakang transparan (format <code>.png</code>) agar menyatu dengan rapi di atas dokumen PDF dan cap stempel.
+                                💡 <strong>Tips:</strong> Disarankan menggunakan gambar tanda tangan dengan latar belakang transparan (format <code>.png</code>) agar menyatu dengan rapi di atas dokumen PDF dan cap stempel. Gambar tersimpan permanen selama tidak mengunggah file baru.
                             </p>
                         </div>
                     </div>
                 </div>
+
+                <!-- Stamp Section (Cap Stempel Depo / Usaha untuk Dokumen PDF & Cetak) -->
+                <div class="border-t border-slate-200 pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Cap Stempel Depo / Usaha</label>
+                        <p class="text-[11px] text-slate-500 mb-2">Disisipkan berdampingan / menimpa tanda tangan Owner pada berkas cetak dan PDF resmi. Format: PNG transparan bulat/oval, JPG, WebP (Maks. 2MB).</p>
+                        
+                        @if(\App\Models\BusinessSetting::hasCompanyStamp())
+                            <div class="p-3 bg-white rounded-xl border border-emerald-300 inline-block shadow-sm">
+                                <img src="{{ \App\Models\BusinessSetting::companyStampUrl() }}" alt="Cap Stempel Depo" style="height: 60px; max-height: 65px; width: auto; max-width: 180px; object-fit: contain;">
+                            </div>
+                            <div class="mt-2 flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
+                                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                <span>Cap stempel aktif tersimpan (permanen)</span>
+                            </div>
+                        @else
+                            <div class="w-24 h-16 rounded-xl bg-slate-100 flex flex-col items-center justify-center text-slate-400 border border-dashed border-slate-300">
+                                <i data-lucide="stamp" class="w-5 h-5 text-slate-400 mb-0.5"></i>
+                                <span class="text-[9px] font-semibold text-slate-400">Belum Ada Cap</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-1">Area cap stempel akan kosong untuk stempel manual basah</span>
+                        @endif
+                    </div>
+
+                    <div class="sm:col-span-2 space-y-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Unggah / Ganti File Cap Stempel Usaha</label>
+                            <input type="file" name="company_stamp" accept="image/png,image/jpeg,image/webp"
+                                   class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-lg p-1 bg-white">
+                            <p class="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                                💡 <strong>Tips:</strong> Disarankan menggunakan cap stempel dengan latar belakang transparan (format <code>.png</code>) agar otomatis menimpa tanda tangan owner dengan elegan pada cetak nota, surat perjanjian, surat jalan, dan slip gaji. Gambar tersimpan permanen selama tidak mengunggah file baru.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                @if(\App\Models\BusinessSetting::hasOwnerSignature() || \App\Models\BusinessSetting::hasCompanyStamp())
+                    <!-- Preview Gabungan TTD & Stempel Pada Dokumen -->
+                    <div class="border-t border-slate-200 pt-3 bg-slate-50 p-3 rounded-lg flex items-center justify-between gap-4">
+                        <div>
+                            <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 text-blue-600"></i>
+                                <span>Pratinjau Hasil di Kolom Tanda Tangan Dokumen:</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500">Tampilan otomatis di PDF & Berkas Cetak (Surat Perjanjian, Slip Gaji, Rekap, Surat Jalan, dll):</p>
+                        </div>
+                        <div class="p-2 bg-white rounded-lg border border-slate-200 shadow-sm text-center">
+                            @include('components.signature-stamp', ['isPdf' => false, 'height' => 48])
+                            <p class="text-[9px] font-bold text-slate-700 mt-1 uppercase underline">( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }} )</p>
+                            <p class="text-[8px] text-slate-400">Owner / Pimpinan</p>
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <!-- BAGIAN 2: PROFIL USAHA & DEPO (UNTUK KOP NOTA & SURAT JALAN) -->

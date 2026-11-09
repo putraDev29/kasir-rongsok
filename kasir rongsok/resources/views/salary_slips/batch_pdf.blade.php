@@ -264,9 +264,7 @@
         <div class="signature-box">
             <p style="margin: 0 0 4px 0;">Manajer Operasional / Owner,</p>
             <div style="height: 44px; text-align: center;">
-                @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                    <img src="{{ \App\Models\BusinessSetting::ownerSignatureBase64() }}" alt="TTD Owner" style="height: 40px; max-height: 42px; width: auto; max-width: 140px; margin: 0 auto; display: block;">
-                @endif
+                @include('components.signature-stamp', ['isPdf' => true, 'height' => 40, 'stampSize' => 46])
             </div>
             <p style="margin: 2px 0 0 0; font-weight: bold; text-decoration: underline;">
                 ( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Pimpinan / Owner Depo' }} )

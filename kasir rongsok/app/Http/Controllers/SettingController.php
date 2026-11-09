@@ -42,6 +42,8 @@ class SettingController extends Controller
             'remove_logo' => 'nullable|boolean',
             'owner_signature' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'remove_signature' => 'nullable|boolean',
+            'company_stamp' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'remove_stamp' => 'nullable|boolean',
         ]);
 
         // 1. Handle Logo Upload or Removal
@@ -155,7 +157,7 @@ class SettingController extends Controller
             return back()->withInput()->with('error', 'Gagal menyimpan file logo: ' . $e->getMessage() . '. Pastikan folder uploads/logo memiliki izin tulis (chmod 755 / 775).');
         }
 
-        // 2. Handle Owner Signature Upload or Removal
+        // 2. Handle Owner Signature Upload
         try {
             if ($request->hasFile('owner_signature')) {
                 $file = $request->file('owner_signature');
@@ -195,6 +197,15 @@ class SettingController extends Controller
                     @copy($destinationPath . DIRECTORY_SEPARATOR . $filename, $parentUploadPath . DIRECTORY_SEPARATOR . $filename);
                 }
 
+                // Also mirror to base_path('public/uploads/signature') if distinct
+                $localPublicUploadPath = base_path('public/uploads/signature');
+                if (file_exists(base_path('public/uploads')) && realpath($destinationPath) !== realpath($localPublicUploadPath)) {
+                    if (!file_exists($localPublicUploadPath)) {
+                        @mkdir($localPublicUploadPath, 0775, true);
+                    }
+                    @copy($destinationPath . DIRECTORY_SEPARATOR . $filename, $localPublicUploadPath . DIRECTORY_SEPARATOR . $filename);
+                }
+
                 BusinessSetting::set('owner_signature', 'uploads/signature/' . $filename, 'branding');
             }
             // Signature is retained permanently and only replaced if a new file is uploaded
@@ -207,7 +218,68 @@ class SettingController extends Controller
             return back()->withInput()->with('error', 'Gagal menyimpan file tanda tangan: ' . $e->getMessage() . '. Pastikan folder uploads/signature memiliki izin tulis.');
         }
 
-        // 3. Save text settings
+        // 3. Handle Company Stamp Upload
+        try {
+            if ($request->hasFile('company_stamp')) {
+                $file = $request->file('company_stamp');
+                $extension = $file->getClientOriginalExtension() ?: 'png';
+                $filename = 'stamp_' . time() . '.' . $extension;
+
+                $destinationPath = public_path('uploads/stamp');
+                if (!file_exists($destinationPath)) {
+                    @mkdir($destinationPath, 0775, true);
+                }
+
+                // Remove previous stamp if exists
+                $oldStamp = BusinessSetting::get('company_stamp');
+                if ($oldStamp) {
+                    if (file_exists(public_path($oldStamp))) {
+                        @unlink(public_path($oldStamp));
+                    }
+                    if (file_exists(base_path('../' . $oldStamp))) {
+                        @unlink(base_path('../' . $oldStamp));
+                    }
+                    if (file_exists(base_path('public/' . $oldStamp))) {
+                        @unlink(base_path('public/' . $oldStamp));
+                    }
+                }
+
+                $file->move($destinationPath, $filename);
+
+                // Normalisasi dimensi gambar stempel agar proporsional (maks 500x500)
+                $this->normalizeStampImage($destinationPath . DIRECTORY_SEPARATOR . $filename);
+
+                // Mirror if parent uploads directory exists
+                if (file_exists(base_path('../uploads')) && is_dir(base_path('../uploads'))) {
+                    $parentUploadPath = realpath(base_path('../uploads')) . DIRECTORY_SEPARATOR . 'stamp';
+                    if (!file_exists($parentUploadPath)) {
+                        @mkdir($parentUploadPath, 0775, true);
+                    }
+                    @copy($destinationPath . DIRECTORY_SEPARATOR . $filename, $parentUploadPath . DIRECTORY_SEPARATOR . $filename);
+                }
+
+                // Also mirror to base_path('public/uploads/stamp') if distinct
+                $localPublicUploadPath = base_path('public/uploads/stamp');
+                if (file_exists(base_path('public/uploads')) && realpath($destinationPath) !== realpath($localPublicUploadPath)) {
+                    if (!file_exists($localPublicUploadPath)) {
+                        @mkdir($localPublicUploadPath, 0775, true);
+                    }
+                    @copy($destinationPath . DIRECTORY_SEPARATOR . $filename, $localPublicUploadPath . DIRECTORY_SEPARATOR . $filename);
+                }
+
+                BusinessSetting::set('company_stamp', 'uploads/stamp/' . $filename, 'branding');
+            }
+            // Stamp is retained permanently and only replaced if a new file is uploaded
+        } catch (Throwable $e) {
+            Log::error('Gagal mengunggah cap stempel: ' . $e->getMessage(), [
+                'exception' => $e,
+                'public_path' => public_path(),
+            ]);
+
+            return back()->withInput()->with('error', 'Gagal menyimpan file cap stempel: ' . $e->getMessage() . '. Pastikan folder uploads/stamp memiliki izin tulis.');
+        }
+
+        // 4. Save text settings
         $fieldsToSave = [
             'app_name',
             'app_subtitle',
@@ -259,6 +331,78 @@ class SettingController extends Controller
         [$origW, $origH, $type] = $imageInfo;
         $maxW = 600;
         $maxH = 300;
+
+        if ($origW <= $maxW && $origH <= $maxH) {
+            return;
+        }
+
+        $ratio = min($maxW / $origW, $maxH / $origH);
+        $newW = (int) round($origW * $ratio);
+        $newH = (int) round($origH * $ratio);
+
+        $srcImg = null;
+        switch ($type) {
+            case IMAGETYPE_PNG:
+                $srcImg = @imagecreatefrompng($filePath);
+                break;
+            case IMAGETYPE_JPEG:
+                $srcImg = @imagecreatefromjpeg($filePath);
+                break;
+            case IMAGETYPE_WEBP:
+                if (function_exists('imagecreatefromwebp')) {
+                    $srcImg = @imagecreatefromwebp($filePath);
+                }
+                break;
+        }
+
+        if (!$srcImg) {
+            return;
+        }
+
+        $dstImg = imagecreatetruecolor($newW, $newH);
+        imagealphablending($dstImg, false);
+        imagesavealpha($dstImg, true);
+        $transparent = imagecolorallocatealpha($dstImg, 255, 255, 255, 127);
+        imagefilledrectangle($dstImg, 0, 0, $newW, $newH, $transparent);
+
+        imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newW, $newH, $origW, $origH);
+
+        switch ($type) {
+            case IMAGETYPE_PNG:
+                imagepng($dstImg, $filePath, 8);
+                break;
+            case IMAGETYPE_JPEG:
+                imagejpeg($dstImg, $filePath, 90);
+                break;
+            case IMAGETYPE_WEBP:
+                if (function_exists('imagewebp')) {
+                    imagewebp($dstImg, $filePath, 90);
+                }
+                break;
+        }
+
+        imagedestroy($srcImg);
+        imagedestroy($dstImg);
+    }
+
+    /**
+     * Normalisasi ukuran cap stempel agar proporsional dan tidak merusak layout dokumen cetak/PDF.
+     * Maksimal batas bounding box: 500px x 500px dengan mempertahankan transparansi PNG/WebP.
+     */
+    protected function normalizeStampImage(string $filePath): void
+    {
+        if (!extension_loaded('gd') || !file_exists($filePath)) {
+            return;
+        }
+
+        $imageInfo = @getimagesize($filePath);
+        if (!$imageInfo) {
+            return;
+        }
+
+        [$origW, $origH, $type] = $imageInfo;
+        $maxW = 500;
+        $maxH = 500;
 
         if ($origW <= $maxW && $origH <= $maxH) {
             return;

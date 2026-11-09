@@ -216,12 +216,14 @@
         <div class="mt-3 grid grid-cols-2 gap-8 text-center text-[10px] text-slate-700">
             <div>
                 <p>Penerima (Karyawan),</p>
-                <div class="h-10"></div>
+                <div class="h-12 flex items-center justify-center my-1" style="height: 48px;"></div>
                 <p class="font-bold underline uppercase">({{ $salarySlip->employee_name }})</p>
             </div>
             <div>
                 <p>Pimpinan / Kasir Penggajian,</p>
-                <div class="h-10"></div>
+                <div class="h-12 flex items-center justify-center my-1" style="height: 48px;">
+                    @include('components.signature-stamp', ['isPdf' => false, 'height' => 46, 'stampSize' => 52])
+                </div>
                 <p class="font-bold underline uppercase">({{ $salarySlip->creator?->name ?? 'Pimpinan' }})</p>
             </div>
         </div>

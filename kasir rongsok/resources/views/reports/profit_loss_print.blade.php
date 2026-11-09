@@ -280,9 +280,7 @@
             <div>
                 <p>Pimpinan / Owner Depo</p>
                 <div class="h-16 flex items-center justify-center" style="height: 65px;">
-                    @if(\App\Models\BusinessSetting::hasOwnerSignature())
-                        <img src="{{ \App\Models\BusinessSetting::ownerSignatureUrl() }}" alt="TTD Owner" style="height: 55px; max-height: 60px; width: auto; max-width: 170px; object-fit: contain; margin: 0 auto; display: block;">
-                    @endif
+                    @include('components.signature-stamp', ['isPdf' => false, 'height' => 55, 'stampSize' => 62])
                 </div>
                 <p class="font-bold underline">({{ $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur' }})</p>
             </div>
