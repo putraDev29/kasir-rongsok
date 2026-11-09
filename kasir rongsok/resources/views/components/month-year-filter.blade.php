@@ -1,6 +1,6 @@
 @props([
-    'selectedMonth' => request('month'),
-    'selectedYear' => request('year'),
+    'selectedMonth' => null,
+    'selectedYear' => null,
     'startDateName' => 'start_date',
     'endDateName' => 'end_date',
     'inline' => false,
@@ -9,6 +9,14 @@
 @php
     $months = \App\Services\FormatHelper::getMonths();
     $years = \App\Services\FormatHelper::getYears();
+
+    // Default to current month and year when not explicitly provided
+    if ($selectedMonth === null) {
+        $selectedMonth = request()->has('month') ? request('month') : date('n');
+    }
+    if ($selectedYear === null) {
+        $selectedYear = request()->has('year') ? request('year') : date('Y');
+    }
 @endphp
 
 @if($inline)

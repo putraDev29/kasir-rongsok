@@ -15,32 +15,48 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class SalarySlipController extends Controller
 {
     public function index(Request $request): View
     {
-        $period = $request->query('period_month');
         $search = $request->query('search');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
+        $period = $request->query('period_month');
 
         $query = SalarySlip::with(['employeeUser', 'creator', 'paymentMethod'])
+            ->when($startDate, function ($q) use ($startDate) {
+                $q->whereDate('payment_date', '>=', $startDate);
+            })
+            ->when($endDate, function ($q) use ($endDate) {
+                $q->whereDate('payment_date', '<=', $endDate);
+            })
             ->when($period, function ($q) use ($period) {
                 $q->where('period_month', $period);
             })
             ->when($search, function ($q) use ($search) {
-                $q->where('employee_name', 'LIKE', "%{$search}%")
-                    ->orWhere('slip_number', 'LIKE', "%{$search}%");
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('employee_name', 'LIKE', "%{$search}%")
+                        ->orWhere('slip_number', 'LIKE', "%{$search}%");
+                });
             })
             ->latest('payment_date');
 
         $slips = $query->paginate(15)->withQueryString();
-        $totalPayroll = (float) SalarySlip::when($period, fn($q) => $q->where('period_month', $period))->sum('net_salary');
+        $totalPayroll = (float) SalarySlip::when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
+            ->when($period, fn($q) => $q->where('period_month', $period))
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('employee_name', 'LIKE', "%{$search}%")
+                        ->orWhere('slip_number', 'LIKE', "%{$search}%");
+                });
+            })
+            ->sum('net_salary');
 
-        // Available periods for filter
-        $periods = SalarySlip::select('period_month')->distinct()->orderBy('period_month', 'desc')->pluck('period_month');
-
-        return view('salary_slips.index', compact('slips', 'totalPayroll', 'periods', 'period', 'search'));
+        return view('salary_slips.index', compact('slips', 'totalPayroll', 'search', 'startDate', 'endDate', 'selectedMonth', 'selectedYear', 'period'));
     }
 
     public function create(): View
@@ -60,6 +76,8 @@ class SalarySlipController extends Controller
             'payment_method_id' => 'nullable|exists:payment_methods,id',
             'period_month' => 'required|string|max:50',
             'payment_date' => 'required|date',
+            'work_days' => 'nullable|numeric|min:0',
+            'daily_rate' => 'nullable|numeric|min:0',
             'basic_salary' => 'required|numeric|min:0',
             'allowance_amount' => 'nullable|numeric|min:0',
             'bonus_amount' => 'nullable|numeric|min:0',
@@ -95,6 +113,8 @@ class SalarySlipController extends Controller
             'payment_method_id' => $validated['payment_method_id'] ?? null,
             'period_month' => $validated['period_month'],
             'payment_date' => $date,
+            'work_days' => !empty($validated['work_days']) ? (float) $validated['work_days'] : null,
+            'daily_rate' => !empty($validated['daily_rate']) ? (float) $validated['daily_rate'] : null,
             'basic_salary' => $basic,
             'allowance_amount' => $allowance,
             'bonus_amount' => $bonus,
@@ -172,7 +192,11 @@ class SalarySlipController extends Controller
         $msg .= "📅 Tanggal  : " . $salarySlip->payment_date->format('d/m/Y') . "\n";
         $msg .= "----------------------------------------\n";
         $msg .= "💵 *PENGHASILAN:*\n";
-        $msg .= "  • Gaji Pokok  : " . FormatHelper::rupiah($salarySlip->basic_salary) . "\n";
+        if ($salarySlip->work_days && $salarySlip->daily_rate) {
+            $msg .= "  • Gaji Pokok  : " . FormatHelper::rupiah($salarySlip->basic_salary) . " (" . $salarySlip->work_days . " hari x " . FormatHelper::rupiah($salarySlip->daily_rate) . ")\n";
+        } else {
+            $msg .= "  • Gaji Pokok  : " . FormatHelper::rupiah($salarySlip->basic_salary) . "\n";
+        }
         if ($salarySlip->allowance_amount > 0) {
             $msg .= "  • Tunjangan   : " . FormatHelper::rupiah($salarySlip->allowance_amount) . "\n";
         }
@@ -266,10 +290,13 @@ class SalarySlipController extends Controller
      */
     public function batchPdf(Request $request)
     {
-        $period = $request->query('period_month');
         $search = $request->query('search');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
+        $period = $request->query('period_month');
 
         $slips = SalarySlip::with(['employeeUser', 'creator', 'paymentMethod'])
+            ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
             ->when($period, fn($q) => $q->where('period_month', $period))
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
@@ -282,11 +309,12 @@ class SalarySlipController extends Controller
 
         $totalNetSalary = (float) $slips->sum('net_salary');
         $settings = BusinessSetting::pluck('value', 'key')->all();
+        $displayPeriod = $period ?: ($startDate && $endDate ? "{$startDate} s/d {$endDate}" : date('F Y'));
 
-        $pdf = Pdf::loadView('salary_slips.batch_pdf', compact('slips', 'settings', 'period', 'totalNetSalary'))
+        $pdf = Pdf::loadView('salary_slips.batch_pdf', compact('slips', 'settings', 'period', 'displayPeriod', 'totalNetSalary'))
             ->setPaper('a4', 'portrait');
 
-        $filename = 'Rekap_Penggajian_Karyawan_' . ($period ?: date('Y-m')) . '.pdf';
+        $filename = 'Rekap_Penggajian_Karyawan_' . ($period ? Str::slug($period) : date('Ymd')) . '.pdf';
 
         if ($request->boolean('download')) {
             return $pdf->download($filename);
@@ -300,10 +328,13 @@ class SalarySlipController extends Controller
      */
     public function previewWaGlobal(Request $request): JsonResponse
     {
-        $period = $request->query('period_month');
         $search = $request->query('search');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
+        $period = $request->query('period_month');
 
-        $slips = SalarySlip::when($period, fn($q) => $q->where('period_month', $period))
+        $slips = SalarySlip::when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
+            ->when($period, fn($q) => $q->where('period_month', $period))
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('employee_name', 'LIKE', "%{$search}%")
@@ -316,10 +347,11 @@ class SalarySlipController extends Controller
         $count = $slips->count();
         $totalNetSalary = (float) $slips->sum('net_salary');
         $companyName = BusinessSetting::get('company_name', 'UD. BERKAH RONGSOK MAKMUR');
+        $displayPeriod = $period ?: ($startDate && $endDate ? "{$startDate} s/d {$endDate}" : date('F Y'));
 
         $msg = "*REKAPITULASI PENGGAJIAN KARYAWAN (PAYROLL)*\n";
         $msg .= "*{$companyName}*\n";
-        $msg .= "Periode: " . ($period ?: 'Semua Periode') . " | Tanggal: " . date('d/m/Y') . "\n\n";
+        $msg .= "Periode: " . $displayPeriod . " | Tanggal: " . date('d/m/Y') . "\n\n";
         $msg .= "🔖 Total Karyawan Dibayar: *{$count} Slip Gaji*\n";
         $msg .= "💰 Total Beban Gaji Bersih: *" . FormatHelper::rupiah($totalNetSalary) . "*\n\n";
 
@@ -341,7 +373,7 @@ class SalarySlipController extends Controller
         $msg .= "📄 *Terlampir berkas PDF dokumen rekapitulasi penggajian karyawan*.\n";
         $msg .= "Diterbitkan resmi oleh Sistem Kasir Rongsok.";
 
-        $pdfFilename = "Rekap_Gaji_Karyawan_" . ($period ?: date('Y-m')) . ".pdf";
+        $pdfFilename = "Rekap_Gaji_Karyawan_" . ($period ? Str::slug($period) : date('Ymd')) . ".pdf";
         $pdfUrl = route('salary-slips.batch-pdf', $request->query());
 
         return response()->json([
@@ -360,8 +392,9 @@ class SalarySlipController extends Controller
      */
     public function sendWaGlobal(Request $request)
     {
-        $period = $request->input('period_month');
         $search = $request->input('search');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
+        $period = $request->input('period_month');
         $phone = $request->input('phone');
         $sendPdf = $request->boolean('send_pdf', true);
         $caption = FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
@@ -374,6 +407,8 @@ class SalarySlipController extends Controller
         }
 
         $slips = SalarySlip::with(['employeeUser', 'creator', 'paymentMethod'])
+            ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
             ->when($period, fn($q) => $q->where('period_month', $period))
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
@@ -387,6 +422,7 @@ class SalarySlipController extends Controller
         $totalNetSalary = (float) $slips->sum('net_salary');
         $settings = BusinessSetting::pluck('value', 'key')->all();
         $companyName = $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR';
+        $displayPeriod = $period ?: ($startDate && $endDate ? "{$startDate} s/d {$endDate}" : date('F Y'));
 
         if (empty($caption)) {
             $caption = "*REKAPITULASI PENGGAJIAN KARYAWAN (PAYROLL)*\n";
@@ -397,10 +433,10 @@ class SalarySlipController extends Controller
         $caption = FormatHelper::cleanCaption($caption);
 
         $waService = app(WhatsAppGatewayService::class);
-        $filename = "Rekap_Gaji_Karyawan_" . ($period ?: date('Y-m')) . ".pdf";
+        $filename = "Rekap_Gaji_Karyawan_" . ($period ? Str::slug($period) : date('Ymd')) . ".pdf";
 
         if ($sendPdf) {
-            $pdf = Pdf::loadView('salary_slips.batch_pdf', compact('slips', 'settings', 'period', 'totalNetSalary'))
+            $pdf = Pdf::loadView('salary_slips.batch_pdf', compact('slips', 'settings', 'period', 'displayPeriod', 'totalNetSalary'))
                 ->setPaper('a4', 'portrait');
             $fileBase64 = base64_encode($pdf->output());
 
@@ -421,9 +457,20 @@ class SalarySlipController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        $search = $request->query('search');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
         $period = $request->query('period_month');
+
         $slips = SalarySlip::with(['employeeUser', 'creator', 'paymentMethod'])
+            ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
             ->when($period, fn($q) => $q->where('period_month', $period))
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('employee_name', 'LIKE', "%{$search}%")
+                        ->orWhere('slip_number', 'LIKE', "%{$search}%");
+                });
+            })
             ->orderBy('payment_date', 'desc')
             ->get();
 

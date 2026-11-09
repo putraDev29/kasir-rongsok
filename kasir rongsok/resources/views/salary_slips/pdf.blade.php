@@ -73,6 +73,7 @@
             padding: 2.5px 4px;
             font-size: 8.5pt;
             vertical-align: top;
+            white-space: nowrap;
         }
         .meta-label {
             color: #64748b;
@@ -196,27 +197,29 @@
 </head>
 <body>
     @php
-        function penyebutGajiPdf($nilai) {
-            $nilai = abs($nilai);
-            $huruf = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
-            if ($nilai < 12) {
-                return " " . $huruf[$nilai];
-            } elseif ($nilai < 20) {
-                return penyebutGajiPdf($nilai - 10) . " Belas";
-            } elseif ($nilai < 100) {
-                return penyebutGajiPdf(floor($nilai / 10)) . " Puluh" . penyebutGajiPdf($nilai % 10);
-            } elseif ($nilai < 200) {
-                return " Seratus" . penyebutGajiPdf($nilai - 100);
-            } elseif ($nilai < 1000) {
-                return penyebutGajiPdf(floor($nilai / 100)) . " Ratus" . penyebutGajiPdf($nilai % 100);
-            } elseif ($nilai < 2000) {
-                return " Seribu" . penyebutGajiPdf($nilai - 1000);
-            } elseif ($nilai < 1000000) {
-                return penyebutGajiPdf(floor($nilai / 1000)) . " Ribu" . penyebutGajiPdf($nilai % 1000);
-            } elseif ($nilai < 1000000000) {
-                return penyebutGajiPdf(floor($nilai / 1000000)) . " Juta" . penyebutGajiPdf($nilai % 1000000);
+        if (!function_exists('penyebutGajiPdf')) {
+            function penyebutGajiPdf($nilai) {
+                $nilai = abs($nilai);
+                $huruf = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+                if ($nilai < 12) {
+                    return " " . $huruf[$nilai];
+                } elseif ($nilai < 20) {
+                    return penyebutGajiPdf($nilai - 10) . " Belas";
+                } elseif ($nilai < 100) {
+                    return penyebutGajiPdf(floor($nilai / 10)) . " Puluh" . penyebutGajiPdf($nilai % 10);
+                } elseif ($nilai < 200) {
+                    return " Seratus" . penyebutGajiPdf($nilai - 100);
+                } elseif ($nilai < 1000) {
+                    return penyebutGajiPdf(floor($nilai / 100)) . " Ratus" . penyebutGajiPdf($nilai % 100);
+                } elseif ($nilai < 2000) {
+                    return " Seribu" . penyebutGajiPdf($nilai - 1000);
+                } elseif ($nilai < 1000000) {
+                    return penyebutGajiPdf(floor($nilai / 1000)) . " Ribu" . penyebutGajiPdf($nilai % 1000);
+                } elseif ($nilai < 1000000000) {
+                    return penyebutGajiPdf(floor($nilai / 1000000)) . " Juta" . penyebutGajiPdf($nilai % 1000000);
+                }
+                return "";
             }
-            return "";
         }
         $terbilang = trim(penyebutGajiPdf($salarySlip->net_salary)) . " Rupiah";
     @endphp
@@ -274,8 +277,15 @@
                     <div class="section-header header-income">A. Penghasilan / Penerimaan</div>
                     <table class="item-table font-mono">
                         <tr>
-                            <td>Gaji Pokok</td>
-                            <td class="text-right font-bold">{{ \App\Services\FormatHelper::rupiah($salarySlip->basic_salary) }}</td>
+                            <td style="vertical-align: top;">
+                                Gaji Pokok
+                                @if($salarySlip->work_days && $salarySlip->daily_rate)
+                                    <div style="font-size: 7.5pt; color: #047857; font-weight: normal; margin-top: 1px;">
+                                        {{ $salarySlip->work_days }} hari &times; {{ \App\Services\FormatHelper::rupiah($salarySlip->daily_rate) }}
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="text-right font-bold" style="vertical-align: top; white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($salarySlip->basic_salary) }}</td>
                         </tr>
                         @if($salarySlip->allowance_amount > 0)
                             <tr>

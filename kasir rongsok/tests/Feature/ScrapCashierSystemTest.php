@@ -416,6 +416,8 @@ class ScrapCashierSystemTest extends TestCase
             'employee_name' => 'Karyawan Test Gudang',
             'period_month' => 'November 2026',
             'payment_date' => now()->toDateString(),
+            'work_days' => 25,
+            'daily_rate' => 120000,
             'basic_salary' => 3000000,
             'allowance_amount' => 500000,
             'bonus_amount' => 200000,
@@ -426,11 +428,32 @@ class ScrapCashierSystemTest extends TestCase
         $response->assertSessionHas('success');
         $this->assertDatabaseHas('salary_slips', [
             'employee_name' => 'Karyawan Test Gudang',
+            'work_days' => 25,
+            'daily_rate' => 120000,
             'basic_salary' => 3000000,
             'total_income' => 3700000,
             'total_deduction' => 250000,
             'net_salary' => 3450000,
         ]);
+
+        $slip = \App\Models\SalarySlip::where('employee_name', 'Karyawan Test Gudang')->latest('id')->first();
+        $this->assertNotNull($slip);
+
+        // Verify detail page contains breakdown and does NOT contain Preview/Unduh PDF button
+        $showRes = $this->actingAs($this->superAdmin)->get("/salary-slips/{$slip->id}");
+        $showRes->assertStatus(200);
+        $showRes->assertSee('25 hari');
+        $showRes->assertSee('120.000');
+        $showRes->assertDontSee('Preview / Unduh PDF');
+
+        // Verify single PDF stream has the breakdown and A4 page size
+        $pdfRes = $this->actingAs($this->superAdmin)->get("/salary-slips/{$slip->id}/pdf");
+        $pdfRes->assertStatus(200);
+
+        // Verify index page does not have individual row PDF button
+        $indexRes = $this->actingAs($this->superAdmin)->get('/salary-slips');
+        $indexRes->assertStatus(200);
+        $indexRes->assertDontSee('title="Preview / Unduh PDF Slip"', false);
     }
 
     public function test_delivery_order_creation(): void

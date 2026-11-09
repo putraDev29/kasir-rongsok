@@ -355,10 +355,23 @@ class FormatHelper
         ?string $defaultStart = null,
         ?string $defaultEnd = null
     ): array {
+        // Explicitly show all dates
+        if ($request->boolean('all_dates')) {
+            return [null, null, null, null];
+        }
+
         $month = $request->filled('month') ? (int) $request->query('month') : null;
         $year = $request->filled('year') ? (int) $request->query('year') : null;
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+
+        // Check if user explicitly submitted empty month and year dropdowns ("Semua Bulan" & "Semua Tahun")
+        $isExplicitEmpty = $request->has('month') && !$request->filled('month') && 
+                            $request->has('year') && !$request->filled('year') && 
+                            empty($startDate) && empty($endDate);
+        if ($isExplicitEmpty) {
+            return [null, null, null, null];
+        }
 
         // Case 1: Both month & year are chosen in dropdown
         if ($month && $year) {
@@ -424,7 +437,12 @@ class FormatHelper
             return [$defaultStart, $defaultEnd, $detectedMonth, $detectedYear];
         }
 
-        return [null, null, null, null];
+        // Case 6: Default to current month and year when no query params are provided
+        $currentM = (int) date('n');
+        $currentY = (int) date('Y');
+        $startDate = Carbon::create($currentY, $currentM, 1)->startOfMonth()->toDateString();
+        $endDate = Carbon::create($currentY, $currentM, 1)->endOfMonth()->toDateString();
+        return [$startDate, $endDate, $currentM, $currentY];
     }
 }
 

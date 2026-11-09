@@ -24,14 +24,6 @@
 
         <div class="flex flex-wrap items-center gap-2">
             <button type="button"
-               @click="openPdfPreview('{{ route('salary-slips.pdf', $salarySlip) }}', 'Slip Gaji #{{ $salarySlip->slip_number }}', 'Slip_Gaji_{{ $salarySlip->slip_number }}.pdf', 'Karyawan: {{ $salarySlip->employee_name }} - Periode: {{ $salarySlip->period_month }}')"
-               class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
-               title="Preview & Unduh Berkas PDF Slip Gaji">
-                <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
-                <span>Preview / Unduh PDF</span>
-            </button>
-
-            <button type="button"
                     @click="openWaPdfModal({
                         title: 'Kirim Slip Gaji Karyawan PDF',
                         subtitle: 'Kirim berkas dokumen PDF resmi slip gaji ke WhatsApp karyawan',
@@ -96,8 +88,15 @@
                 </h4>
 
                 <div class="space-y-2 text-xs">
-                    <div class="flex justify-between py-1 border-b border-slate-100">
-                        <span class="text-slate-600">Gaji Pokok:</span>
+                    <div class="flex justify-between items-start py-1 border-b border-slate-100">
+                        <div>
+                            <span class="text-slate-600">Gaji Pokok:</span>
+                            @if($salarySlip->work_days && $salarySlip->daily_rate)
+                                <div class="text-[11px] text-emerald-700 font-semibold mt-0.5">
+                                    {{ (float) $salarySlip->work_days }} hari &times; Rp {{ number_format($salarySlip->daily_rate, 0, ',', '.') }}
+                                </div>
+                            @endif
+                        </div>
                         <span class="font-mono font-bold text-slate-900">Rp {{ number_format($salarySlip->basic_salary, 0, ',', '.') }}</span>
                     </div>
 

@@ -12,7 +12,7 @@
                     Rp {{ number_format($totalPayroll, 0, ',', '.') }}
                 </h3>
                 <p class="text-[11px] text-slate-400 mt-0.5">
-                    {{ $period ? "Periode {$period}" : "Semua periode penggajian" }}
+                    {{ ($startDate && $endDate) ? "Periode {$startDate} s/d {$endDate}" : ($period ? "Periode {$period}" : "Semua periode penggajian") }}
                 </p>
             </div>
             <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
@@ -37,9 +37,9 @@
             <div>
                 <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ukuran Cetak Standar</p>
                 <h3 class="text-lg font-black text-slate-800 mt-1">
-                    HVS Landscape ÷ 2
+                    Kertas A4 Portrait
                 </h3>
-                <p class="text-[11px] text-slate-400 mt-0.5">210mm × 148mm (Setengah Folio)</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">210mm × 297mm (Standar Resmi)</p>
             </div>
             <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
                 <i data-lucide="printer" class="w-6 h-6"></i>
@@ -49,38 +49,46 @@
 
     <!-- Filter Bar -->
     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <form method="GET" action="{{ route('salary-slips.index') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-end">
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Cari Karyawan / No. Slip</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                    </span>
-                    <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama karyawan / No. Slip..." 
-                           class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+        <form method="GET" action="{{ route('salary-slips.index') }}" class="space-y-3">
+            <!-- Row 1: Cari Karyawan/No. Slip, Bulan, Tahun -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Cari Karyawan / No. Slip</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                        </span>
+                        <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama karyawan / No. Slip..." 
+                               class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                    </div>
                 </div>
+
+                <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Periode Penggajian</label>
-                <select name="period_month" class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 bg-white">
-                    <option value="">-- Semua Periode --</option>
-                    @foreach($periods as $p)
-                        <option value="{{ $p }}" {{ $period === $p ? 'selected' : '' }}>{{ $p }}</option>
-                    @endforeach
-                </select>
-            </div>
+            <!-- Row 2: Dari Tanggal, Sampai Tanggal, Terapkan Filter & Reset -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-end">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal Bayar</label>
+                    <input type="date" name="start_date" value="{{ $startDate }}"
+                           class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
 
-            <div class="flex items-center gap-2">
-                <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
-                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
-                    <span>Terapkan Filter</span>
-                </button>
-                @if($search || $period)
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Sampai Tanggal Bayar</label>
+                    <input type="date" name="end_date" value="{{ $endDate }}"
+                           class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span>Terapkan Filter</span>
+                    </button>
                     <a href="{{ route('salary-slips.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Reset Filter">
                         <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                     </a>
-                @endif
+                </div>
             </div>
         </form>
     </div>
@@ -141,20 +149,20 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                        <th class="py-3 px-4">No. Slip & Tanggal</th>
-                        <th class="py-3 px-4">Nama Karyawan</th>
-                        <th class="py-3 px-4">Periode</th>
-                        <th class="py-3 px-4 text-right">Gaji Pokok</th>
-                        <th class="py-3 px-4 text-right">Tunjangan/Bonus</th>
-                        <th class="py-3 px-4 text-right">Potongan (Kasbon)</th>
-                        <th class="py-3 px-4 text-right">Gaji Bersih (THP)</th>
-                        <th class="py-3 px-4 text-center">Aksi</th>
+                        <th class="py-3 px-4 whitespace-nowrap">No. Slip & Tanggal</th>
+                        <th class="py-3 px-4 min-w-[150px]">Nama Karyawan</th>
+                        <th class="py-3 px-4 whitespace-nowrap">Periode</th>
+                        <th class="py-3 px-4 text-right whitespace-nowrap">Gaji Pokok</th>
+                        <th class="py-3 px-4 text-right whitespace-nowrap">Tunjangan/Bonus</th>
+                        <th class="py-3 px-4 text-right whitespace-nowrap">Potongan (Kasbon)</th>
+                        <th class="py-3 px-4 text-right whitespace-nowrap">Gaji Bersih (THP)</th>
+                        <th class="py-3 px-4 text-center whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
                     @forelse($slips as $slip)
                         <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="py-3 px-4">
+                            <td class="py-3 px-4 whitespace-nowrap">
                                 <a href="{{ route('salary-slips.show', $slip) }}" class="font-bold text-emerald-600 hover:underline font-mono">
                                     {{ $slip->slip_number }}
                                 </a>
@@ -172,38 +180,36 @@
                                 @endif
                             </td>
 
-                            <td class="py-3 px-4 font-medium text-slate-700">
+                            <td class="py-3 px-4 font-medium text-slate-700 whitespace-nowrap">
                                 {{ $slip->period_month }}
                             </td>
 
-                            <td class="py-3 px-4 text-right font-mono text-slate-700">
-                                {{ \App\Services\FormatHelper::rupiah($slip->basic_salary) }}
+                            <td class="py-3 px-4 text-right font-mono text-slate-700 whitespace-nowrap">
+                                <div>{{ \App\Services\FormatHelper::rupiah($slip->basic_salary) }}</div>
+                                @if($slip->work_days && $slip->daily_rate)
+                                    <div class="text-[10px] text-emerald-700 font-sans font-medium">
+                                        {{ $slip->work_days }} hr &times; {{ \App\Services\FormatHelper::rupiah($slip->daily_rate) }}
+                                    </div>
+                                @endif
                             </td>
 
-                            <td class="py-3 px-4 text-right font-mono text-emerald-600 font-semibold">
+                            <td class="py-3 px-4 text-right font-mono text-emerald-600 font-semibold whitespace-nowrap">
                                 + {{ \App\Services\FormatHelper::rupiah($slip->allowance_amount + $slip->bonus_amount) }}
                             </td>
 
-                            <td class="py-3 px-4 text-right font-mono text-red-600 font-semibold">
+                            <td class="py-3 px-4 text-right font-mono text-red-600 font-semibold whitespace-nowrap">
                                 - {{ \App\Services\FormatHelper::rupiah($slip->total_deduction) }}
                                 @if($slip->debt_deduction > 0)
                                     <div class="text-[10px] text-slate-400">Kasbon: {{ \App\Services\FormatHelper::rupiah($slip->debt_deduction) }}</div>
                                 @endif
                             </td>
 
-                            <td class="py-3 px-4 text-right font-mono font-black text-slate-900 text-sm">
+                            <td class="py-3 px-4 text-right font-mono font-black text-slate-900 text-sm whitespace-nowrap">
                                 {{ \App\Services\FormatHelper::rupiah($slip->net_salary) }}
                             </td>
 
-                            <td class="py-3 px-4 text-center">
+                            <td class="py-3 px-4 text-center whitespace-nowrap">
                                 <div class="flex items-center justify-center gap-1.5">
-                                    <a href="{{ route('salary-slips.pdf', $slip) }}" target="_blank"
-                                       class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] flex items-center gap-1 shadow-sm"
-                                       title="Preview / Unduh PDF Slip">
-                                        <i data-lucide="file-text" class="w-3 h-3 text-rose-400"></i>
-                                        <span>PDF</span>
-                                    </a>
-
                                     <button type="button"
                                             @click="openWaPdfModal({
                                                 title: 'Kirim Slip Gaji Karyawan PDF',
@@ -216,20 +222,20 @@
                                                 sendUrl: '{{ route('salary-slips.send-wa', $slip) }}',
                                                 submitButtonText: 'Kirim Slip PDF via WA'
                                             })"
-                                            class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" 
+                                            class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition-colors" 
                                             title="Kirim Slip Gaji PDF ke Karyawan">
                                         <x-whatsapp-icon class="w-4 h-4" />
                                     </button>
 
                                     <a href="{{ route('salary-slips.print', $slip) }}" target="_blank"
-                                       class="p-1 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded"
-                                       title="Print Preview">
-                                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                       class="p-1 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors"
+                                       title="Print Slip Gaji (A4)">
+                                        <i data-lucide="printer" class="w-4 h-4"></i>
                                     </a>
 
                                     <a href="{{ route('salary-slips.show', $slip) }}" 
-                                       class="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded" title="Lihat Detail">
-                                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                       class="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors" title="Lihat Detail Slip">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
                                     </a>
                                 </div>
                             </td>

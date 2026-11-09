@@ -11,7 +11,7 @@
             </a>
             <div>
                 <h2 class="text-xl font-bold text-slate-900">Form Penggajian Karyawan</h2>
-                <p class="text-xs text-slate-500">Buat slip gaji dengan format ekspor PDF ukuran HVS Landscape ÷ 2.</p>
+                <p class="text-xs text-slate-500">Buat slip gaji dengan format dokumen PDF standar A4 resmi.</p>
             </div>
         </div>
     </div>
@@ -84,10 +84,44 @@
                 </div>
 
                 <div class="space-y-3">
+                    <!-- Perhitungan Hari Kerja x Gaji Per Hari -->
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                            Hitung Gaji Harian (Jumlah Hari Kerja &times; Gaji / Hari)
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Jumlah Hari Kerja</label>
+                                <div class="relative">
+                                    <input type="number" name="work_days" x-model.number="workDays" @input="calcDailySalary()" step="0.5" min="0" placeholder="Contoh: 25"
+                                           class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono">
+                                    <span class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-xs text-slate-400 pointer-events-none">Hari</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Gaji Per Hari (Rp)</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs text-slate-400 pointer-events-none font-mono">Rp</span>
+                                    <input type="number" name="daily_rate" x-model.number="dailyRate" @input="calcDailySalary()" step="1000" min="0" placeholder="Contoh: 100000"
+                                           class="w-full text-xs pl-8 pr-2.5 py-2 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono">
+                                </div>
+                            </div>
+                        </div>
+                        <template x-if="workDays > 0 && dailyRate > 0">
+                            <div class="text-[11px] text-emerald-700 font-semibold flex items-center justify-between pt-1 border-t border-slate-200">
+                                <span>Rincian: <span x-text="workDays"></span> hari &times; <span x-text="formatRp(dailyRate)"></span></span>
+                                <span class="font-mono font-bold" x-text="formatRp(workDays * dailyRate)"></span>
+                            </div>
+                        </template>
+                    </div>
+
                     <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">Gaji Pokok (Rp) <span class="text-red-500">*</span></label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-slate-700">Total Gaji Pokok (Rp) <span class="text-red-500">*</span></label>
+                            <span class="text-[11px] text-emerald-600 font-medium" x-show="workDays > 0 && dailyRate > 0">Otomatis terisi dari perkalian hari</span>
+                        </div>
                         <input type="number" name="basic_salary" x-model.number="basicSalary" step="1000" min="0" required placeholder="0"
-                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono font-bold">
+                               class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
                     </div>
 
                     <div>
@@ -166,6 +200,8 @@ function salarySlipForm() {
     return {
         employeeName: '',
         userId: '',
+        workDays: '',
+        dailyRate: '',
         basicSalary: 0,
         allowanceAmount: 0,
         bonusAmount: 0,
@@ -176,6 +212,14 @@ function salarySlipForm() {
             const opt = e.target.selectedOptions[0];
             if (opt && opt.value) {
                 this.employeeName = opt.dataset.name || '';
+            }
+        },
+
+        calcDailySalary() {
+            const days = parseFloat(this.workDays) || 0;
+            const rate = parseFloat(this.dailyRate) || 0;
+            if (days > 0 && rate > 0) {
+                this.basicSalary = Math.round(days * rate);
             }
         },
 

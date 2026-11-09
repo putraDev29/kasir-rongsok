@@ -56,27 +56,29 @@
     </div>
 
     @php
-        function penyebutGaji($nilai) {
-            $nilai = abs($nilai);
-            $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
-            if ($nilai < 12) {
-                return " " . $huruf[$nilai];
-            } elseif ($nilai < 20) {
-                return penyebutGaji($nilai - 10) . " belas";
-            } elseif ($nilai < 100) {
-                return penyebutGaji(floor($nilai / 10)) . " puluh" . penyebutGaji($nilai % 10);
-            } elseif ($nilai < 200) {
-                return " seratus" . penyebutGaji($nilai - 100);
-            } elseif ($nilai < 1000) {
-                return penyebutGaji(floor($nilai / 100)) . " ratus" . penyebutGaji($nilai % 100);
-            } elseif ($nilai < 2000) {
-                return " seribu" . penyebutGaji($nilai - 1000);
-            } elseif ($nilai < 1000000) {
-                return penyebutGaji(floor($nilai / 1000)) . " ribu" . penyebutGaji($nilai % 1000);
-            } elseif ($nilai < 1000000000) {
-                return penyebutGaji(floor($nilai / 1000000)) . " juta" . penyebutGaji($nilai % 1000000);
+        if (!function_exists('penyebutGaji')) {
+            function penyebutGaji($nilai) {
+                $nilai = abs($nilai);
+                $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+                if ($nilai < 12) {
+                    return " " . $huruf[$nilai];
+                } elseif ($nilai < 20) {
+                    return penyebutGaji($nilai - 10) . " belas";
+                } elseif ($nilai < 100) {
+                    return penyebutGaji(floor($nilai / 10)) . " puluh" . penyebutGaji($nilai % 10);
+                } elseif ($nilai < 200) {
+                    return " seratus" . penyebutGaji($nilai - 100);
+                } elseif ($nilai < 1000) {
+                    return penyebutGaji(floor($nilai / 100)) . " ratus" . penyebutGaji($nilai % 100);
+                } elseif ($nilai < 2000) {
+                    return " seribu" . penyebutGaji($nilai - 1000);
+                } elseif ($nilai < 1000000) {
+                    return penyebutGaji(floor($nilai / 1000)) . " ribu" . penyebutGaji($nilai % 1000);
+                } elseif ($nilai < 1000000000) {
+                    return penyebutGaji(floor($nilai / 1000000)) . " juta" . penyebutGaji($nilai % 1000000);
+                }
+                return "";
             }
-            return "";
         }
         $terbilang = trim(penyebutGaji($salarySlip->net_salary)) . " rupiah";
     @endphp
@@ -137,8 +139,15 @@
                 </div>
                 <table class="w-full text-[10px] mt-1 font-mono">
                     <tr>
-                        <td class="py-0.5 text-slate-700">Gaji Pokok</td>
-                        <td class="py-0.5 text-right font-semibold">Rp {{ number_format($salarySlip->basic_salary, 0, ',', '.') }}</td>
+                        <td class="py-0.5 text-slate-700 align-top">
+                            <div>Gaji Pokok</div>
+                            @if($salarySlip->work_days && $salarySlip->daily_rate)
+                                <div class="text-[9px] text-emerald-700 font-semibold font-sans">
+                                    {{ $salarySlip->work_days }} hari &times; Rp {{ number_format($salarySlip->daily_rate, 0, ',', '.') }}
+                                </div>
+                            @endif
+                        </td>
+                        <td class="py-0.5 text-right font-semibold align-top whitespace-nowrap">Rp {{ number_format($salarySlip->basic_salary, 0, ',', '.') }}</td>
                     </tr>
                     @if($salarySlip->allowance_amount > 0)
                         <tr>

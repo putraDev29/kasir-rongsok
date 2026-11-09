@@ -187,7 +187,14 @@
                         @endif
                     </td>
                     <td>{{ $s->period_month }}</td>
-                    <td class="text-right font-mono">{{ \App\Services\FormatHelper::rupiah($s->basic_salary) }}</td>
+                    <td class="text-right font-mono" style="white-space: nowrap;">
+                        <div>{{ \App\Services\FormatHelper::rupiah($s->basic_salary) }}</div>
+                        @if($s->work_days && $s->daily_rate)
+                            <div style="font-size: 6pt; color: #047857; font-weight: normal;">
+                                {{ $s->work_days }}hr &times; {{ \App\Services\FormatHelper::rupiah($s->daily_rate) }}
+                            </div>
+                        @endif
+                    </td>
                     <td class="text-right font-mono" style="color: #047857;">{{ \App\Services\FormatHelper::rupiah($s->allowance_amount + $s->bonus_amount) }}</td>
                     <td class="text-right font-mono" style="color: #dc2626;">{{ \App\Services\FormatHelper::rupiah($s->total_deduction) }}</td>
                     <td class="text-right font-mono font-bold" style="color: #4338ca;">{{ \App\Services\FormatHelper::rupiah($s->net_salary) }}</td>

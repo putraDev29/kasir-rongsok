@@ -19,6 +19,8 @@ class SalarySlip extends Model
         'payment_method_id',
         'period_month',
         'payment_date',
+        'work_days',
+        'daily_rate',
         'basic_salary',
         'allowance_amount',
         'bonus_amount',
@@ -35,6 +37,8 @@ class SalarySlip extends Model
     {
         return [
             'payment_date' => 'date',
+            'work_days' => 'float',
+            'daily_rate' => 'decimal:2',
             'basic_salary' => 'decimal:2',
             'allowance_amount' => 'decimal:2',
             'bonus_amount' => 'decimal:2',
