@@ -72,17 +72,25 @@
                     <span>Kirim Daftar Harga (PDF)</span>
                 </button>
 
-                <a href="{{ route('scrap-items.export-excel') }}"
-                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-emerald-700 border border-emerald-200 font-bold text-xs shadow-xs transition-colors">
-                    <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
-                    <span>Export Excel</span>
-                </a>
+                <button type="button"
+                   @click="openPdfPreview('{{ route('scrap-items.pdf-price-list') }}', 'Daftar Standar Harga Beli Depo', 'Daftar_Harga_Beli_' + ('{{ date('Ymd') }}') + '.pdf', 'Standar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }}')"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer"
+                   title="Preview & Unduh Berkas PDF Daftar Standar Harga Beli (Format A4)">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    <span>Preview PDF Harga</span>
+                </button>
 
                 <a href="{{ route('scrap-items.print-price-list') }}" target="_blank"
-                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300 shadow-sm"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition-colors"
                    title="Cetak / Layout Kertas Daftar Standar Harga Beli">
-                    <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
-                    <span>Format Cetak</span>
+                    <i data-lucide="printer" class="w-4 h-4 text-slate-300"></i>
+                    <span>Print HVS</span>
+                </a>
+
+                <a href="{{ route('scrap-items.export-excel') }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-sm transition-colors">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    <span>Export Excel</span>
                 </a>
 
                 <a href="{{ route('scrap-items.create') }}" 
