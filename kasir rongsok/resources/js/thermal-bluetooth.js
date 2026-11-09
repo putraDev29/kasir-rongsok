@@ -19,6 +19,71 @@ export class ThermalBluetooth {
         return char.repeat(width) + '\n';
     }
 
+    static wrapText(text, width = 32) {
+        if (!text) return [];
+        const words = String(text).replace(/\r\n/g, '\n').split(/\s+/);
+        const lines = [];
+        let currentLine = '';
+
+        for (const word of words) {
+            if (!word) continue;
+            if (!currentLine) {
+                if (word.length <= width) {
+                    currentLine = word;
+                } else {
+                    for (let i = 0; i < word.length; i += width) {
+                        lines.push(word.slice(i, i + width));
+                    }
+                }
+            } else if ((currentLine + ' ' + word).length <= width) {
+                currentLine += ' ' + word;
+            } else {
+                lines.push(currentLine);
+                if (word.length <= width) {
+                    currentLine = word;
+                } else {
+                    for (let i = 0; i < word.length; i += width) {
+                        lines.push(word.slice(i, i + width));
+                    }
+                    currentLine = '';
+                }
+            }
+        }
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+        return lines;
+    }
+
+    static padColonRow(label, value, colonPos = 13, width = 32) {
+        label = String(label || '');
+        value = String(value || '-');
+        const paddedLabel = label.padEnd(colonPos, ' ');
+        const prefix = paddedLabel + ': ';
+        const maxValWidth = width - prefix.length;
+
+        if (value.length <= maxValWidth) {
+            return prefix + value + '\n';
+        }
+
+        const lines = this.wrapText(value, maxValWidth);
+        let result = prefix + lines[0] + '\n';
+        const indent = ' '.repeat(prefix.length);
+        for (let i = 1; i < lines.length; i++) {
+            result += indent + lines[i] + '\n';
+        }
+        return result;
+    }
+
+    static padTotalRow(label, value, colonPos = 13, width = 32) {
+        label = String(label || '');
+        value = String(value || '');
+        const paddedLabel = label.padEnd(colonPos, ' ');
+        const prefix = paddedLabel + ': ';
+        const spaces = Math.max(1, width - prefix.length - value.length);
+        return prefix + ' '.repeat(spaces) + value + '\n';
+    }
+
     static buildPurchaseEscPos(data, charWidth = 32) {
         const encoder = new TextEncoder();
         let bytes = [];
@@ -34,82 +99,133 @@ export class ThermalBluetooth {
         // 2. Header (Center align)
         bytes.push(0x1B, 0x61, 0x01); // Center
         bytes.push(0x1B, 0x45, 0x01); // Bold on
-        append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR') + '\n');
+        append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR').toUpperCase() + '\n');
         bytes.push(0x1B, 0x45, 0x00); // Bold off
 
-        if (data.companyAddress) append(data.companyAddress + '\n');
-        if (data.companyPhone) append('Telp: ' + data.companyPhone + '\n');
-
-        bytes.push(0x1B, 0x45, 0x01);
-        append('BUKTI PENERIMAAN / NOTA TIMBANG\n');
-        bytes.push(0x1B, 0x45, 0x00);
+        if (data.companyAddress) {
+            this.wrapText(data.companyAddress, charWidth).forEach(l => append(l + '\n'));
+        }
+        if (data.companyPhone) {
+            this.wrapText('Telp: ' + data.companyPhone, charWidth).forEach(l => append(l + '\n'));
+        }
 
         // 3. Divider
         bytes.push(0x1B, 0x61, 0x00); // Left align
         append(this.hr('-', charWidth));
 
-        // 4. Metadata
-        append(this.padRow('No. Nota', data.invoiceNumber, charWidth));
-        append(this.padRow('Tanggal', data.transactionDate, charWidth));
-        append(this.padRow('Pemasok', data.supplierName, charWidth));
-        if (data.supplierPhone) append(this.padRow('HP Pemasok', data.supplierPhone, charWidth));
-        append(this.padRow('Kasir', data.cashierName, charWidth));
-        append(this.padRow('Metode', data.paymentMethod, charWidth));
+        // 4. Metadata (Aligned Colons matching preview)
+        append(this.padColonRow('No. Nota', data.invoiceNumber, 13, charWidth));
+        append(this.padColonRow('Tanggal', data.transactionDate, 13, charWidth));
+        append(this.padColonRow('Pemasok', data.supplierName || '-', 13, charWidth));
+        if (data.supplierPhone) {
+            append(this.padColonRow('HP Pemasok', data.supplierPhone, 13, charWidth));
+        }
+        append(this.padColonRow('Kasir', data.cashierName || '-', 13, charWidth));
+        append(this.padColonRow('Metode Bayar', data.paymentMethod || 'Tunai', 13, charWidth));
 
         if (data.isBankPayment) {
-            if (data.bankAccountNumber) append(this.padRow('No. Rek', data.bankAccountNumber, charWidth));
-            if (data.bankAccountName) append(this.padRow('a/n', data.bankAccountName, charWidth));
+            if (data.bankAccountNumber) {
+                append(this.padColonRow('No. Rekening', data.bankAccountNumber, 13, charWidth));
+            }
+            if (data.bankAccountName) {
+                append(this.padColonRow('Nama Rekening', data.bankAccountName, 13, charWidth));
+            }
             if (!data.bankAccountNumber && !data.bankAccountName && data.bankInfo) {
-                append(this.padRow('Bank Info', data.bankInfo, charWidth));
+                append(this.padColonRow('Data Rekening', data.bankInfo, 13, charWidth));
             }
         }
 
         append(this.hr('-', charWidth));
 
-        // 5. Items breakdown
+        // 5. Items breakdown (Matching preview layout: Name -> Weight -> Price/Subtotal)
         const items = data.items || [];
         items.forEach((it, idx) => {
             bytes.push(0x1B, 0x45, 0x01); // Bold on
-            append(`${idx + 1}. ${it.name}\n`);
+            let title = String(it.name || '').toUpperCase();
+            if (it.subName) title += ` (${it.subName})`;
+            const wrappedTitle = this.wrapText(title, charWidth);
+            wrappedTitle.forEach(l => append(l + '\n'));
             bytes.push(0x1B, 0x45, 0x00); // Bold off
 
-            const qtyPrice = `   ${it.net} ${it.unit} x ${it.price}`;
-            append(this.padRow(qtyPrice, it.subtotal, charWidth));
+            const unit = it.unit || 'kg';
+            const leftW = `${it.gross} - ${it.tare} ${unit}`;
+            const rightW = `${it.net} ${unit}`;
+            append(this.padRow(leftW, rightW, charWidth));
+
+            const leftPrice = `@ ${it.price}`;
+            const rightSub = it.subtotal;
+            bytes.push(0x1B, 0x45, 0x01); // Bold on for subtotal
+            append(this.padRow(leftPrice, rightSub, charWidth));
+            bytes.push(0x1B, 0x45, 0x00); // Bold off
+
+            if (idx < items.length - 1) {
+                append(this.hr('.', charWidth));
+            }
         });
 
         append(this.hr('-', charWidth));
 
-        // 6. Totals
-        append(this.padRow('Total Bersih', `${data.activeNet} kg`, charWidth));
-        append(this.padRow('Subtotal', data.activeSubtotal, charWidth));
-        if (data.discount) append(this.padRow('Potongan', '- ' + data.discount, charWidth));
-        if (data.rounding) append(this.padRow('Pembulatan', data.rounding, charWidth));
-
+        // 6. Totals / Calculation (Colons aligned at 13, values right-aligned)
+        append(this.padTotalRow('Berat Kotor', `${data.activeGross} kg`, 13, charWidth));
+        append(this.padTotalRow('Pot./Tara', `${data.activeTare} kg`, 13, charWidth));
         bytes.push(0x1B, 0x45, 0x01); // Bold on
-        append(this.padRow('TOTAL HARGA', data.activeFinal, charWidth));
+        append(this.padTotalRow('BERAT BERSIH', `${data.activeNet} kg`, 13, charWidth));
         bytes.push(0x1B, 0x45, 0x00); // Bold off
 
-        if (data.debtDeduction) {
-            append(this.padRow('Potong Hutang', '- ' + data.debtDeduction, charWidth));
+        append(this.padTotalRow('Subtotal', data.activeSubtotal, 13, charWidth));
+        if (data.discount) {
+            append(this.padTotalRow('Potongan', '- ' + data.discount, 13, charWidth));
         }
-        if (data.remainingDebt) {
-            append(this.padRow('Sisa Hutang', data.remainingDebt, charWidth));
+        if (data.rounding) {
+            append(this.padTotalRow('Pembulatan', data.rounding, 13, charWidth));
         }
+
+        // Solid divider
+        append(this.hr('-', charWidth));
 
         bytes.push(0x1B, 0x45, 0x01); // Bold on
-        append(this.padRow('UANG DITERIMA', data.activeNetCash, charWidth));
+        append(this.padTotalRow('TOTAL HARGA', data.activeFinal, 13, charWidth));
         bytes.push(0x1B, 0x45, 0x00); // Bold off
 
-        append(this.hr('=', charWidth));
+        if (data.debtDeduction || data.remainingDebt) {
+            append(this.hr('-', charWidth));
+            if (data.debtDeduction) {
+                append(this.padTotalRow('Potong Hutang', '- ' + data.debtDeduction, 13, charWidth));
+            }
+            if (data.remainingDebt) {
+                append(this.padTotalRow('Sisa Hutang', data.remainingDebt, 13, charWidth));
+            }
+        }
 
-        // 7. Footer & Disclaimer
+        // Solid divider
+        append(this.hr('-', charWidth));
+
+        bytes.push(0x1B, 0x45, 0x01); // Bold on
+        append(this.padTotalRow('UANG DITERIMA', data.activeNetCash, 13, charWidth));
+        bytes.push(0x1B, 0x45, 0x00); // Bold off
+
+        // Dashed divider before disclaimer
+        append(this.hr('-', charWidth));
+
+        // 7. Footer & Disclaimer (Centered, full words wrapped without splitting)
         bytes.push(0x1B, 0x61, 0x01); // Center
+
         bytes.push(0x1B, 0x45, 0x01); // Bold on
         append('[ PERHATIAN / DISCLAIMER ]\n');
-        append('*** ' + (data.disclaimer || 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI') + ' ***\n');
+
+        const discTitle = '*** ' + (data.disclaimer || 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI') + ' ***';
+        this.wrapText(discTitle, charWidth).forEach(l => append(l + '\n'));
         bytes.push(0x1B, 0x45, 0x00); // Bold off
-        append('Barang yang dijual wajib milik sah pribadi penjual. Depo tidak melayani barang curian / ilegal.\n');
-        if (data.footer) append(data.footer + '\n');
+
+        const legal = data.legalNotice || 'Barang yang dijual wajib milik sah pribadi penjual. Depo tidak melayani barang curian / ilegal.';
+        this.wrapText(legal, charWidth).forEach(l => append(l + '\n'));
+
+        if (data.terms) {
+            this.wrapText(data.terms, charWidth).forEach(l => append(l + '\n'));
+        }
+
+        const footer = data.footer || 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali. Terima kasih atas kerja samanya.';
+        this.wrapText(footer, charWidth).forEach(l => append(l + '\n'));
 
         // 8. Feed 4 lines & cut
         append('\n\n\n\n');
@@ -133,34 +249,34 @@ export class ThermalBluetooth {
         // 2. Header
         bytes.push(0x1B, 0x61, 0x01); // Center
         bytes.push(0x1B, 0x45, 0x01); // Bold on
-        append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR') + '\n');
+        append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR').toUpperCase() + '\n');
         bytes.push(0x1B, 0x45, 0x00);
 
-        if (data.companyAddress) append(data.companyAddress + '\n');
-        if (data.companyPhone) append('Telp: ' + data.companyPhone + '\n');
-
-        bytes.push(0x1B, 0x45, 0x01);
-        append('FAKTUR PENJUALAN PARTAI\n');
-        bytes.push(0x1B, 0x45, 0x00);
+        if (data.companyAddress) {
+            this.wrapText(data.companyAddress, charWidth).forEach(l => append(l + '\n'));
+        }
+        if (data.companyPhone) {
+            this.wrapText('Telp: ' + data.companyPhone, charWidth).forEach(l => append(l + '\n'));
+        }
 
         // 3. Divider
         bytes.push(0x1B, 0x61, 0x00);
         append(this.hr('-', charWidth));
 
         // 4. Metadata
-        append(this.padRow('No. Faktur', data.invoiceNumber, charWidth));
-        append(this.padRow('Tanggal', data.transactionDate, charWidth));
-        append(this.padRow('Pembeli', data.buyerName || data.customerName, charWidth));
-        if (data.buyerPhone) append(this.padRow('No. Telp', data.buyerPhone, charWidth));
-        append(this.padRow('Kasir', data.cashierName, charWidth));
-        append(this.padRow('Metode', data.paymentMethod, charWidth));
-        if (data.deliveryType) append(this.padRow('Pengiriman', data.deliveryType, charWidth));
+        append(this.padColonRow('No. Faktur', data.invoiceNumber, 13, charWidth));
+        append(this.padColonRow('Tanggal', data.transactionDate, 13, charWidth));
+        append(this.padColonRow('Pembeli', data.buyerName || data.customerName || '-', 13, charWidth));
+        if (data.buyerPhone) append(this.padColonRow('No. Telp', data.buyerPhone, 13, charWidth));
+        append(this.padColonRow('Kasir', data.cashierName || '-', 13, charWidth));
+        append(this.padColonRow('Metode Bayar', data.paymentMethod || 'Tunai', 13, charWidth));
+        if (data.deliveryType) append(this.padColonRow('Pengiriman', data.deliveryType, 13, charWidth));
 
         if (data.isBankPayment) {
-            if (data.bankAccountNumber) append(this.padRow('No. Rek', data.bankAccountNumber, charWidth));
-            if (data.bankAccountName) append(this.padRow('a/n', data.bankAccountName, charWidth));
+            if (data.bankAccountNumber) append(this.padColonRow('No. Rekening', data.bankAccountNumber, 13, charWidth));
+            if (data.bankAccountName) append(this.padColonRow('Nama Rekening', data.bankAccountName, 13, charWidth));
             if (!data.bankAccountNumber && !data.bankAccountName && data.bankInfo) {
-                append(this.padRow('Bank Info', data.bankInfo, charWidth));
+                append(this.padColonRow('Data Rekening', data.bankInfo, 13, charWidth));
             }
         }
 
@@ -170,30 +286,43 @@ export class ThermalBluetooth {
         const items = data.items || [];
         items.forEach((it, idx) => {
             bytes.push(0x1B, 0x45, 0x01);
-            append(`${idx + 1}. ${it.name}\n`);
+            const wrappedTitle = this.wrapText(String(it.name || '').toUpperCase(), charWidth);
+            wrappedTitle.forEach(l => append(l + '\n'));
             bytes.push(0x1B, 0x45, 0x00);
 
-            const qtyPrice = `   ${it.weight} kg x ${it.price}`;
-            append(this.padRow(qtyPrice, it.subtotal, charWidth));
+            const qtyStr = `${it.weight || 0} kg`;
+            const priceStr = `@ ${it.price || 0}`;
+            append(this.padRow(qtyStr, priceStr, charWidth));
+
+            bytes.push(0x1B, 0x45, 0x01);
+            append(this.padRow('Total Nilai', it.subtotal || '0', charWidth));
+            bytes.push(0x1B, 0x45, 0x00);
+
+            if (idx < items.length - 1) {
+                append(this.hr('.', charWidth));
+            }
         });
 
         append(this.hr('-', charWidth));
 
         // 6. Totals
-        append(this.padRow('Total Berat', `${data.totalWeight} kg`, charWidth));
-        append(this.padRow('Subtotal', data.subtotalAmount, charWidth));
-        if (data.discountAmount) append(this.padRow('Diskon', '- ' + data.discountAmount, charWidth));
+        append(this.padTotalRow('Total Berat', `${data.totalWeight || 0} kg`, 13, charWidth));
+        append(this.padTotalRow('Subtotal', data.subtotalAmount || '0', 13, charWidth));
+        if (data.discountAmount) append(this.padTotalRow('Diskon', '- ' + data.discountAmount, 13, charWidth));
+
+        append(this.hr('-', charWidth));
 
         bytes.push(0x1B, 0x45, 0x01);
-        append(this.padRow('TOTAL AKHIR', data.finalAmount, charWidth));
+        append(this.padTotalRow('TOTAL TAGIHAN', data.finalAmount || '0', 13, charWidth));
         bytes.push(0x1B, 0x45, 0x00);
 
-        append(this.hr('=', charWidth));
+        append(this.hr('-', charWidth));
 
         // 7. Footer
         bytes.push(0x1B, 0x61, 0x01);
         append('*** BUKTI PENJUALAN RESMI ***\n');
-        append((data.footer || 'Terima kasih atas kerja samanya.') + '\n');
+        const footer = data.footer || 'Terima kasih atas kerja samanya.';
+        this.wrapText(footer, charWidth).forEach(l => append(l + '\n'));
 
         // 8. Feed & Cut
         append('\n\n\n\n');
@@ -217,11 +346,15 @@ export class ThermalBluetooth {
         // 2. Header
         bytes.push(0x1B, 0x61, 0x01);
         bytes.push(0x1B, 0x45, 0x01);
-        append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR') + '\n');
+        append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR').toUpperCase() + '\n');
         bytes.push(0x1B, 0x45, 0x00);
 
-        if (data.companyAddress) append(data.companyAddress + '\n');
-        if (data.companyPhone) append('Telp: ' + data.companyPhone + '\n');
+        if (data.companyAddress) {
+            this.wrapText(data.companyAddress, charWidth).forEach(l => append(l + '\n'));
+        }
+        if (data.companyPhone) {
+            this.wrapText('Telp: ' + data.companyPhone, charWidth).forEach(l => append(l + '\n'));
+        }
 
         bytes.push(0x1B, 0x45, 0x01);
         append('KUITANSI PEMBAYARAN KASBON\n');
@@ -232,29 +365,29 @@ export class ThermalBluetooth {
         append(this.hr('-', charWidth));
 
         // 4. Metadata
-        append(this.padRow('No. Kuitansi', data.paymentNumber, charWidth));
-        append(this.padRow('Tanggal', data.paymentDate, charWidth));
-        append(this.padRow('Peminjam', data.borrowerName, charWidth));
-        append(this.padRow('Kasir', data.cashierName, charWidth));
-        append(this.padRow('Metode', data.paymentMethod, charWidth));
-        if (data.debtNumber) append(this.padRow('No. Kasbon', data.debtNumber, charWidth));
+        append(this.padColonRow('No. Kuitansi', data.paymentNumber, 13, charWidth));
+        append(this.padColonRow('Tanggal', data.paymentDate, 13, charWidth));
+        append(this.padColonRow('Peminjam', data.borrowerName || '-', 13, charWidth));
+        append(this.padColonRow('Kasir', data.cashierName || '-', 13, charWidth));
+        append(this.padColonRow('Metode Bayar', data.paymentMethod || 'Tunai', 13, charWidth));
+        if (data.debtNumber) append(this.padColonRow('No. Kasbon', data.debtNumber, 13, charWidth));
 
         append(this.hr('-', charWidth));
 
         // 5. Amount breakdown
-        if (data.remainingBefore) append(this.padRow('Hutang Awal', data.remainingBefore, charWidth));
+        if (data.remainingBefore) append(this.padTotalRow('Hutang Awal', data.remainingBefore, 13, charWidth));
         bytes.push(0x1B, 0x45, 0x01);
-        append(this.padRow('JUMLAH BAYAR', data.amountPaid, charWidth));
+        append(this.padTotalRow('JUMLAH BAYAR', data.amountPaid, 13, charWidth));
         bytes.push(0x1B, 0x45, 0x00);
-        append(this.padRow('Sisa Hutang', data.remainingAfter, charWidth));
-        if (data.status) append(this.padRow('Status', data.status, charWidth));
+        append(this.padTotalRow('Sisa Hutang', data.remainingAfter, 13, charWidth));
+        if (data.status) append(this.padColonRow('Status', data.status, 13, charWidth));
 
         if (data.notes) {
             append(this.hr('-', charWidth));
-            append(`Ket: ${data.notes}\n`);
+            this.wrapText(`Ket: ${data.notes}`, charWidth).forEach(l => append(l + '\n'));
         }
 
-        append(this.hr('=', charWidth));
+        append(this.hr('-', charWidth));
 
         // 6. Footer
         bytes.push(0x1B, 0x61, 0x01);
@@ -283,11 +416,15 @@ export class ThermalBluetooth {
         // 2. Header
         bytes.push(0x1B, 0x61, 0x01);
         bytes.push(0x1B, 0x45, 0x01);
-        append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR') + '\n');
+        append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR').toUpperCase() + '\n');
         bytes.push(0x1B, 0x45, 0x00);
 
-        if (data.companyAddress) append(data.companyAddress + '\n');
-        if (data.companyPhone) append('Telp: ' + data.companyPhone + '\n');
+        if (data.companyAddress) {
+            this.wrapText(data.companyAddress, charWidth).forEach(l => append(l + '\n'));
+        }
+        if (data.companyPhone) {
+            this.wrapText('Telp: ' + data.companyPhone, charWidth).forEach(l => append(l + '\n'));
+        }
 
         bytes.push(0x1B, 0x45, 0x01);
         append('SURAT JALAN PENGIRIMAN\n');
@@ -298,12 +435,12 @@ export class ThermalBluetooth {
         append(this.hr('-', charWidth));
 
         // 4. Metadata
-        append(this.padRow('No. SJ', data.deliveryNumber, charWidth));
-        append(this.padRow('Tanggal', data.deliveryDate, charWidth));
-        append(this.padRow('Tujuan', data.recipientName, charWidth));
-        append(this.padRow('Supir', data.driverName, charWidth));
-        if (data.driverPhone) append(this.padRow('HP Supir', data.driverPhone, charWidth));
-        append(this.padRow('No. Polisi', data.vehicleNumber, charWidth));
+        append(this.padColonRow('No. SJ', data.deliveryNumber, 13, charWidth));
+        append(this.padColonRow('Tanggal', data.deliveryDate, 13, charWidth));
+        append(this.padColonRow('Tujuan', data.recipientName || '-', 13, charWidth));
+        append(this.padColonRow('Supir', data.driverName || '-', 13, charWidth));
+        if (data.driverPhone) append(this.padColonRow('HP Supir', data.driverPhone, 13, charWidth));
+        append(this.padColonRow('No. Polisi', data.vehicleNumber || '-', 13, charWidth));
 
         append(this.hr('-', charWidth));
 
@@ -311,22 +448,26 @@ export class ThermalBluetooth {
         const items = data.items || [];
         items.forEach((it, idx) => {
             bytes.push(0x1B, 0x45, 0x01);
-            append(`${idx + 1}. ${it.name}\n`);
+            const wrappedTitle = this.wrapText(String(it.name || '').toUpperCase(), charWidth);
+            wrappedTitle.forEach(l => append(l + '\n'));
             bytes.push(0x1B, 0x45, 0x00);
-            append(this.padRow(`   Berat:`, `${it.weight} kg`, charWidth));
+
+            append(this.padRow(`   Berat:`, `${it.weight || 0} kg`, charWidth));
+            if (idx < items.length - 1) {
+                append(this.hr('.', charWidth));
+            }
         });
 
         append(this.hr('-', charWidth));
         bytes.push(0x1B, 0x45, 0x01);
-        append(this.padRow('TOTAL BERAT', `${data.totalWeight} kg`, charWidth));
+        append(this.padTotalRow('TOTAL BERAT', `${data.totalWeight || 0} kg`, 13, charWidth));
         bytes.push(0x1B, 0x45, 0x00);
 
-        append(this.hr('=', charWidth));
+        append(this.hr('-', charWidth));
 
         // 6. Signatures / Footer
         bytes.push(0x1B, 0x61, 0x01);
-        append('Tanda Tangan Pengirim & Penerima\n');
-        append('\n\n');
+        append('Tanda Tangan Pengirim & Penerima\n\n\n');
         append('Gudang         Supir         Penerima\n');
 
         // 7. Feed & Cut

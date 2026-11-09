@@ -545,7 +545,9 @@
                 @endforeach
             ],
             disclaimer: @json($settings['receipt_disclaimer'] ?? 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI'),
-            footer: @json($settings['receipt_footer'] ?? 'Barang yang sudah ditimbang & dibayar tidak dapat ditarik kembali.')
+            legalNotice: @json('Barang yang dijual wajib milik sah pribadi penjual. Depo tidak melayani barang curian / ilegal.'),
+            terms: @json($settings['receipt_terms'] ?? ''),
+            footer: @json($settings['receipt_footer'] ?? 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali. Terima kasih atas kerja samanya.')
         };
 
         const charWidth = {{ $format === 'thermal_80' ? 48 : 32 }};
