@@ -2429,6 +2429,9 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertStringContainsString('size: a4 landscape', $batchHtml);
         $this->assertStringContainsString('white-space: nowrap', $batchHtml);
         $this->assertStringContainsString('page-break-inside: avoid', $batchHtml);
+        $this->assertStringContainsString('a/n Karyawan Permata Rekening', $batchHtml);
+        $this->assertStringContainsString('Rek: 987654321', $batchHtml);
+        $this->assertStringContainsString('text-align: center', $batchHtml);
     }
 }
 

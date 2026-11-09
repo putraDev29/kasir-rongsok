@@ -115,7 +115,7 @@
             font-size: 7pt;
             letter-spacing: 0.3px;
             white-space: nowrap;
-            text-align: left;
+            text-align: center;
         }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
@@ -185,14 +185,14 @@
         <thead>
             <tr>
                 <th class="text-center" style="width: 3%; white-space: nowrap;">No</th>
-                <th style="width: 12%; white-space: nowrap;">No. Slip</th>
-                <th style="width: 7%; white-space: nowrap;">Tanggal</th>
-                <th style="width: 16%; white-space: nowrap;">Nama Karyawan</th>
-                <th style="width: 8%; white-space: nowrap;">Periode</th>
-                <th class="text-right" style="width: 12%; white-space: nowrap;">Gaji Pokok</th>
-                <th class="text-right" style="width: 9%; white-space: nowrap;">Tunj./Bonus</th>
-                <th class="text-right" style="width: 8%; white-space: nowrap;">Potongan</th>
-                <th class="text-right" style="width: 12%; white-space: nowrap;">Gaji Bersih</th>
+                <th class="text-center" style="width: 12%; white-space: nowrap;">No. Slip</th>
+                <th class="text-center" style="width: 7%; white-space: nowrap;">Tanggal</th>
+                <th class="text-center" style="width: 16%; white-space: nowrap;">Nama Karyawan</th>
+                <th class="text-center" style="width: 8%; white-space: nowrap;">Periode</th>
+                <th class="text-center" style="width: 12%; white-space: nowrap;">Gaji Pokok</th>
+                <th class="text-center" style="width: 9%; white-space: nowrap;">Tunj./Bonus</th>
+                <th class="text-center" style="width: 8%; white-space: nowrap;">Potongan</th>
+                <th class="text-center" style="width: 12%; white-space: nowrap;">Gaji Bersih</th>
                 <th class="text-center" style="width: 13%; white-space: nowrap;">Metode</th>
             </tr>
         </thead>
@@ -222,10 +222,23 @@
                     <td class="text-right font-mono font-bold" style="color: #4338ca; white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($s->net_salary) }}</td>
                     <td class="text-center" style="font-size: 7pt; line-height: 1.25; word-wrap: break-word;">
                         <div style="font-weight: 600;">{{ $s->paymentMethod?->name ?? 'Tunai' }}</div>
-                        @if($s->bank_account_number)
-                            <div style="font-size: 6pt; color: #475569; margin-top: 1px;">Rek: {{ $s->bank_account_number }}</div>
-                        @elseif($s->bank_name && !str_contains(strtolower($s->paymentMethod?->name ?? ''), strtolower($s->bank_name)))
-                            <div style="font-size: 6pt; color: #475569; margin-top: 1px;">{{ $s->bank_name }}</div>
+                        @php
+                            $bankName = $s->bank_name ?: $s->employeeUser?->bank_name;
+                            $accNo = $s->bank_account_number ?: $s->employeeUser?->bank_account_number;
+                            $accHolder = $s->bank_account_name ?: $s->employeeUser?->bank_account_name;
+                        @endphp
+                        @if($accNo || $accHolder || ($bankName && !str_contains(strtolower($s->paymentMethod?->name ?? ''), strtolower($bankName))))
+                            <div style="font-size: 6pt; color: #475569; margin-top: 1.5px; line-height: 1.2;">
+                                @if($bankName && !str_contains(strtolower($s->paymentMethod?->name ?? ''), strtolower($bankName)))
+                                    <div>{{ $bankName }}</div>
+                                @endif
+                                @if($accNo)
+                                    <div>Rek: {{ $accNo }}</div>
+                                @endif
+                                @if($accHolder)
+                                    <div style="color: #334155; font-weight: 600;">a/n {{ $accHolder }}</div>
+                                @endif
+                            </div>
                         @endif
                     </td>
                 </tr>
