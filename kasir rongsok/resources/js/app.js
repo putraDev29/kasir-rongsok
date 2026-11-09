@@ -126,20 +126,48 @@ Alpine.store('deliveryCompletion', {
         this.buyerName = config.buyerName || '';
         this.actionUrl = config.actionUrl || '';
         this.notes = config.notes || '';
-        this.items = (config.items || []).map(it => ({
-            id: it.id,
-            scrap_item_id: it.scrap_item_id,
-            name: it.name || it.item_name || 'Barang',
-            type: it.type || it.item_type_name || '',
-            unit: it.unit || it.unit_type || 'kg',
-            weight: it.weight > 0 ? it.weight : '',
-            price: it.price > 0 ? it.price : (it.sell_price_per_kg > 0 ? it.sell_price_per_kg : ''),
-        }));
+        this.items = (config.items || []).map(it => {
+            const rawName = it.name || it.item_name || 'Barang';
+            const cleanName = rawName.replace(/\s*-\s*Rp[\d.,\s]+.*/i, '').trim();
+            const rawUnit = (it.unit || it.unit_type || 'kg').toLowerCase();
+            return {
+                id: it.id,
+                scrap_item_id: it.scrap_item_id,
+                name: cleanName,
+                type: it.type || it.item_type_name || '',
+                unit: rawUnit,
+                weight: it.weight > 0 ? it.weight : '',
+                price: it.price > 0 ? it.price : (it.sell_price_per_kg > 0 ? it.sell_price_per_kg : ''),
+            };
+        });
         this.isOpen = true;
         if (window.refreshIcons) window.refreshIcons();
     },
     totalWeight() {
         return this.items.reduce((sum, it) => sum + (parseFloat(it.weight) || 0), 0);
+    },
+    cargoSummary() {
+        let kgTotal = 0;
+        let pcsTotal = 0;
+        let otherTotal = 0;
+        let otherUnit = '';
+        (this.items || []).forEach(it => {
+            const val = parseFloat(it.weight) || 0;
+            const u = (it.unit || 'kg').toLowerCase();
+            if (u === 'pcs' || u === 'satuan' || u === 'buah' || u === 'unit') {
+                pcsTotal += val;
+            } else if (u === 'kg') {
+                kgTotal += val;
+            } else {
+                otherTotal += val;
+                otherUnit = u;
+            }
+        });
+        const parts = [];
+        if (kgTotal > 0) parts.push(window.formatNumber(kgTotal) + ' kg');
+        if (pcsTotal > 0) parts.push(window.formatNumber(pcsTotal) + ' pcs');
+        if (otherTotal > 0) parts.push(window.formatNumber(otherTotal) + (otherUnit ? ' ' + otherUnit : ''));
+        return parts.length > 0 ? parts.join(' + ') : '0';
     },
     totalAmount() {
         return this.items.reduce((sum, it) => {

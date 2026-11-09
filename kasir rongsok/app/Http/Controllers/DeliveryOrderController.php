@@ -124,7 +124,7 @@ class DeliveryOrderController extends Controller
             'notes' => 'nullable|string|max:500',
             'items' => 'required|array|min:1',
             'items.*.scrap_item_id' => 'nullable|exists:scrap_items,id',
-            'items.*.item_name' => 'required|string|max:150',
+            'items.*.item_name' => 'nullable|string|max:150',
             'items.*.unit_type' => 'nullable|string|in:kg,pcs,satuan',
             'items.*.item_type_name' => 'nullable|string|max:150',
             'items.*.quantity' => 'nullable|numeric|min:0.01',
@@ -139,6 +139,13 @@ class DeliveryOrderController extends Controller
             'vehicle_number.required' => 'Nomor plat polisi kendaraan armada wajib diisi.',
             'items.required' => 'Daftar muatan barang pada surat jalan wajib diisi.',
         ]);
+
+        // Validasi: Tiap baris wajib memilih master atau mengisi nama barang / muatan
+        foreach ($validated['items'] as $idx => $it) {
+            if (empty(trim($it['item_name'] ?? '')) && empty($it['scrap_item_id'])) {
+                return back()->withInput()->with('error', 'Baris muatan #' . ($idx + 1) . ' wajib memilih dari master barang atau mengetik nama muatan.');
+            }
+        }
 
         try {
             $deliveryOrder = DB::transaction(function () use ($validated) {
@@ -234,13 +241,26 @@ class DeliveryOrderController extends Controller
                     $pricePerKg = (float) ($item['price_per_kg'] ?? 0);
                     $subtotal = (float) ($item['subtotal'] ?? ($pricePerKg * $weight));
 
+                    $scrapItem = !empty($item['scrap_item_id']) ? ScrapItem::find($item['scrap_item_id']) : null;
+                    $rawName = trim($item['item_name'] ?? '');
+                    if ($rawName === '' && $scrapItem) {
+                        $rawName = $scrapItem->name;
+                    }
+                    // Bersihkan dari embel-embel harga jika ada
+                    $cleanName = preg_replace('/\s*-\s*Rp[\d.,\s]+.*/i', '', $rawName);
+                    if ($cleanName === '') {
+                        $cleanName = $scrapItem ? $scrapItem->name : 'Material Scrap';
+                    }
+
+                    $unitType = $item['unit_type'] ?? ($scrapItem?->unit_type ?? 'kg');
+
                     DeliveryOrderItem::create([
                         'delivery_order_id' => $order->id,
                         'scrap_item_id' => $item['scrap_item_id'] ?? null,
-                        'item_name' => $item['item_name'],
-                        'unit_type' => $item['unit_type'] ?? 'kg',
+                        'item_name' => $cleanName,
+                        'unit_type' => $unitType,
                         'item_type_name' => $item['item_type_name'] ?? null,
-                        'quantity' => $item['quantity'] ?? 1,
+                        'quantity' => $item['quantity'] ?? ($weight > 0 ? $weight : 1),
                         'weight' => $weight,
                         'package_qty' => (int) ($item['package_qty'] ?? 0),
                         'price_per_kg' => $pricePerKg,

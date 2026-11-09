@@ -234,9 +234,9 @@
                                                     items: {{ json_encode($sale->items->map(fn($it) => [
                                                         'id' => $it->id,
                                                         'scrap_item_id' => $it->scrap_item_id,
-                                                        'name' => $it->item_name_snapshot,
+                                                        'name' => preg_replace('/\s*-\s*Rp[\d.,\s]+.*/i', '', $it->item_name_snapshot),
                                                         'type' => $it->item_type_name,
-                                                        'unit' => $it->unit_type ?: 'kg',
+                                                        'unit' => $it->unit_type ?: ($it->scrapItem?->unit_type ?: 'kg'),
                                                         'weight' => (float)$it->weight,
                                                         'price' => (float)$it->sell_price_per_kg,
                                                     ])) }}

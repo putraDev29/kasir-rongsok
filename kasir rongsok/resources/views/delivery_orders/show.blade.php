@@ -40,9 +40,9 @@
                                 items: {{ json_encode($deliveryOrder->salesTransaction->items->map(fn($it) => [
                                     'id' => $it->id,
                                     'scrap_item_id' => $it->scrap_item_id,
-                                    'name' => $it->item_name_snapshot,
+                                    'name' => preg_replace('/\s*-\s*Rp[\d.,\s]+.*/i', '', $it->item_name_snapshot),
                                     'type' => $it->item_type_name,
-                                    'unit' => $it->unit_type ?: 'kg',
+                                    'unit' => $it->unit_type ?: ($it->scrapItem?->unit_type ?: 'kg'),
                                     'weight' => (float)$it->weight,
                                     'price' => (float)$it->sell_price_per_kg,
                                 ])) }}
@@ -251,7 +251,7 @@
                         <th class="py-2.5 px-4 w-12 text-center">No</th>
                         <th class="py-2.5 px-4">Nama Barang & Spesifikasi Muatan</th>
                         <th class="py-2.5 px-4 text-right">Kemasan / Koli</th>
-                        <th class="py-2.5 px-4 text-right">Berat Bersih (kg)</th>
+                        <th class="py-2.5 px-4 text-right">{{ $deliveryOrder->weight_column_header }}</th>
                         <th class="py-2.5 px-4">Keterangan / Segel</th>
                     </tr>
                 </thead>
@@ -275,7 +275,7 @@
                                 {{ $master->total_packages > 0 ? $master->total_packages . ' Koli/Ikat' : '-' }}
                             </td>
                             <td class="py-3 px-4 text-right font-mono font-bold text-emerald-800 text-sm">
-                                {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
+                                {{ \App\Services\FormatHelper::weightOrDash($master->total_weight, $master->unit_type ?? 'kg') }}
                             </td>
                             <td class="py-3 px-4 text-slate-600">
                                 @if(!$master->has_variants && $master->items->first()->notes)
@@ -298,7 +298,7 @@
                                             </span>
                                             @if($vItem->effective_price > 0)
                                                 <span class="text-[11px] text-emerald-700 font-mono font-semibold">
-                                                    @ Rp {{ number_format($vItem->effective_price, 0, ',', '.') }}/kg
+                                                    @ Rp {{ number_format($vItem->effective_price, 0, ',', '.') }}/{{ $vItem->unit_type ?? 'kg' }}
                                                 </span>
                                             @endif
                                             @if($vItem->notes)
@@ -310,7 +310,7 @@
                                         {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
                                     </td>
                                     <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-800">
-                                        {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
+                                        {{ \App\Services\FormatHelper::weightOrDash($vItem->weight, $vItem->unit_type ?? 'kg') }}
                                     </td>
                                     <td class="py-2.5 px-4 text-slate-600 text-[11px]">
                                         @if($vItem->effective_price > 0)
@@ -329,7 +329,7 @@
                         <td colspan="2" class="py-3 px-4 text-slate-900 uppercase">Total Muatan Resmi</td>
                         <td class="py-3 px-4 text-right font-mono">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '-' }}</td>
                         <td class="py-3 px-4 text-right font-mono text-sm text-emerald-800">
-                            {{ \App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight) }}
+                            {{ $deliveryOrder->total_cargo_display }}
                         </td>
                         <td></td>
                     </tr>

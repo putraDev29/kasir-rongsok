@@ -308,7 +308,7 @@
                     <th style="width: 55px;">Kode</th>
                     <th>Jenis Material Scrap & Daur Ulang</th>
                     <th class="text-right" style="width: 75px;">Kemasan / Koli</th>
-                    <th class="text-right" style="width: 90px;">Berat Bersih (kg)</th>
+                    <th class="text-right" style="width: 90px;">{{ $deliveryOrder->weight_column_header }}</th>
                     <th style="width: 110px;">Keterangan / No. Segel</th>
                 </tr>
             </thead>
@@ -328,7 +328,7 @@
                             {{ $master->total_packages > 0 ? $master->total_packages . ' Koli' : '-' }}
                         </td>
                         <td class="text-right" style="font-weight: bold; font-family: monospace;">
-                            {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
+                            {{ \App\Services\FormatHelper::weightOrDash($master->total_weight, $master->unit_type ?? 'kg') }}
                         </td>
                         <td style="font-size: 7.5px; color: #475569;">
                             @if(!$master->has_variants && $master->items->first()->notes)
@@ -349,7 +349,7 @@
                                     <span class="variant-pill">Varian: {{ $vItem->item_type_name ?: 'Standar' }}</span>
                                     @if($vItem->effective_price > 0)
                                         <span style="color: #047857; font-size: 7px; margin-left: 3px;">
-                                            (@ Rp {{ number_format($vItem->effective_price, 0, ',', '.') }}/kg)
+                                            (@ Rp {{ number_format($vItem->effective_price, 0, ',', '.') }}/{{ $vItem->unit_type ?? 'kg' }})
                                         </span>
                                     @endif
                                     @if($vItem->notes)
@@ -360,7 +360,7 @@
                                     {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
                                 </td>
                                 <td class="text-right" style="font-family: monospace; color: #0f172a;">
-                                    {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
+                                    {{ \App\Services\FormatHelper::weightOrDash($vItem->weight, $vItem->unit_type ?? 'kg') }}
                                 </td>
                                 <td style="font-size: 7px; color: #475569;">
                                     @if($vItem->effective_price > 0)
@@ -379,7 +379,7 @@
                     <td colspan="3" class="text-right" style="padding-right: 6px;">TOTAL MUATAN RESMI:</td>
                     <td class="text-right" style="font-family: monospace;">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '-' }}</td>
                     <td class="text-right" style="font-family: monospace; font-size: 9.5px; color: #047857;">
-                        {{ \App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight) }}
+                        {{ $deliveryOrder->total_cargo_display }}
                     </td>
                     <td style="font-size: 7px; color: #64748b;">Timbangan Resmi Depo</td>
                 </tr>

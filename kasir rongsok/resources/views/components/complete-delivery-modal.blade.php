@@ -52,8 +52,8 @@
                     <div>
                         <p class="font-semibold text-amber-950">Konfirmasi Penerimaan Barang Pabrik:</p>
                         <p class="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                            Saat armada berangkat mengantar barang, berat dan harga jual masih belum pasti/kosong. 
-                            Masukkan <strong>berat hasil timbang pabrik (kg)</strong> dan <strong>harga jual final (Rp/kg)</strong> di bawah ini untuk menyelesaikan transaksi penjualan dan surat jalan secara resmi.
+                            Saat armada berangkat mengantar barang, berat/jumlah muatan dan harga jual masih belum pasti/kosong. 
+                            Masukkan <strong>berat hasil timbang (kg) atau jumlah fisik (pcs)</strong> dan <strong>harga jual final</strong> di bawah ini untuk menyelesaikan transaksi penjualan dan surat jalan secara resmi.
                         </p>
                     </div>
                 </div>
@@ -65,8 +65,8 @@
                             <tr class="bg-slate-50 text-[10.5px] font-bold uppercase tracking-wider text-slate-600 border-b border-slate-200">
                                 <th class="py-2.5 px-3 w-8 text-center">#</th>
                                 <th class="py-2.5 px-3">Nama Material Scrap</th>
-                                <th class="py-2.5 px-3 w-36 text-right">Berat Final (kg) *</th>
-                                <th class="py-2.5 px-3 w-44 text-right">Harga Jual/kg (Rp) *</th>
+                                <th class="py-2.5 px-3 w-36 text-right">Berat / Qty Final *</th>
+                                <th class="py-2.5 px-3 w-44 text-right">Harga Jual / Satuan (Rp) *</th>
                                 <th class="py-2.5 px-3 w-36 text-right">Subtotal Nilai</th>
                             </tr>
                         </thead>
@@ -78,9 +78,14 @@
                                         <input type="hidden" :name="'items[' + index + '][id]'" :value="item.id">
                                         <input type="hidden" :name="'items[' + index + '][scrap_item_id]'" :value="item.scrap_item_id">
                                         <div class="font-bold text-slate-900" x-text="item.name"></div>
-                                        <template x-if="item.type">
-                                            <span class="text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 font-medium" x-text="'• ' + item.type"></span>
-                                        </template>
+                                        <div class="flex items-center gap-1.5 mt-0.5">
+                                            <template x-if="item.type">
+                                                <span class="text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 font-medium" x-text="'• ' + item.type"></span>
+                                            </template>
+                                            <span class="text-[10px] font-bold uppercase px-1.5 py-0.2 rounded"
+                                                  :class="(item.unit === 'pcs' || item.unit === 'satuan') ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-700 border border-slate-200'"
+                                                  x-text="item.unit || 'kg'"></span>
+                                        </div>
                                     </td>
                                     <td class="py-2.5 px-3 text-right">
                                         <div class="relative">
@@ -90,8 +95,10 @@
                                                    required
                                                    :name="'items[' + index + '][weight]'" 
                                                    x-model.number="item.weight"
-                                                   placeholder="0"
-                                                   class="w-full py-1.5 px-2.5 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
+                                                   :placeholder="item.unit === 'pcs' ? '0 pcs' : '0 kg'"
+                                                   class="w-full py-1.5 pl-2.5 pr-8 text-xs text-right rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-bold text-slate-900 bg-white">
+                                            <span class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400 font-bold text-[10px] uppercase font-mono"
+                                                  x-text="item.unit || 'kg'"></span>
                                         </div>
                                     </td>
                                     <td class="py-2.5 px-3 text-right">
@@ -117,7 +124,7 @@
                 <!-- Live Summary Bar -->
                 <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
                     <div class="flex items-center gap-4">
-                        <span class="text-slate-500">Total Muatan: <strong class="text-slate-900 font-mono text-sm" x-text="formatNumber($store.deliveryCompletion.totalWeight()) + ' kg'"></strong></span>
+                        <span class="text-slate-500">Total Muatan: <strong class="text-slate-900 font-mono text-sm" x-text="$store.deliveryCompletion.cargoSummary()"></strong></span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-slate-600 font-semibold uppercase text-[11px]">Total Tagihan:</span>

@@ -317,7 +317,7 @@
                                                 class="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 flex items-center justify-between transition-colors"
                                                 :class="{ 'bg-emerald-50/70': row.tier_id ? (row.tier_id === item.tier_id) : (row.scrap_item_id == item.id) }">
                                             <div class="min-w-0 pr-2">
-                                                <div class="text-xs font-bold text-slate-900 truncate" x-text="item.name"></div>
+                                                <div class="text-xs font-bold text-slate-900 truncate" x-text="item.base_name || (item.name ? item.name.replace(/\s*-\s*Rp[\d.,\s]+.*/i, '') : '')"></div>
                                                 <div class="text-[10px] text-slate-500 font-mono">
                                                     <span x-text="item.code"></span>
                                                     <span x-show="item.current_stock > 0" class="text-emerald-700 font-semibold" x-text="' • Stok: ' + item.current_stock + ' ' + (item.unit_type || 'kg')"></span>
@@ -335,13 +335,12 @@
                                 </div>
                             </div>
 
-                            <!-- Nama Barang / Muatan (Required) -->
+                            <!-- Nama Barang / Muatan (Bisa diisi atau dikosongi) -->
                             <div class="flex-1 min-w-0">
                                 <input type="text" 
                                        :name="'items['+idx+'][item_name]'" 
                                        x-model="row.item_name" 
-                                       required 
-                                       placeholder="Nama Barang / Muatan *"
+                                       :placeholder="row.search_text ? 'Otomatis: ' + (row.search_text.split(' (')[0]) : 'Nama Barang / Muatan (Bisa dikosongi)'"
                                        class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900 bg-white">
                             </div>
 
@@ -425,7 +424,7 @@
                 <div class="text-xs text-slate-600 flex items-center gap-3 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
                     <span>Total Baris: <strong class="text-slate-900 font-mono" x-text="rows.length"></strong></span>
                     <span>Total Koli: <strong class="text-slate-900 font-mono font-bold" x-text="totalPackages()"></strong></span>
-                    <span>Total Berat: <strong class="text-emerald-700 font-mono font-black text-sm" x-text="(totalWeight() || 0).toLocaleString('id-ID') + ' kg'"></strong></span>
+                    <span>Total Muatan: <strong class="text-emerald-700 font-mono font-black text-sm" x-text="cargoSummary()"></strong></span>
                 </div>
             </div>
         </div>
@@ -506,20 +505,23 @@ function deliveryOrderForm() {
             }
 
             if (sale.items && sale.items.length > 0) {
-                this.rows = sale.items.map((si, idx) => ({
-                    uid: idx + 1,
-                    scrap_item_id: si.scrap_item_id || '',
-                    search_text: si.item_name_snapshot || (si.scrap_item ? si.scrap_item.name : ''),
-                    dropdown_open: false,
-                    item_name: si.item_name_snapshot || (si.scrap_item ? si.scrap_item.name : ''),
-                    item_type_name: si.item_type_name || '',
-                    unit_type: si.unit_type || 'kg',
-                    weight: parseFloat(si.weight ?? si.quantity ?? 0) || '',
-                    price_per_kg: parseFloat(si.sell_price_per_kg ?? 0) || 0,
-                    subtotal: parseFloat(si.subtotal ?? 0) || 0,
-                    package_qty: '',
-                    notes: ''
-                }));
+                this.rows = sale.items.map((si, idx) => {
+                    const cleanName = (si.item_name_snapshot || (si.scrap_item ? si.scrap_item.name : '')).replace(/\s*-\s*Rp[\d.,\s]+.*/i, '').trim();
+                    return {
+                        uid: idx + 1,
+                        scrap_item_id: si.scrap_item_id || '',
+                        search_text: cleanName,
+                        dropdown_open: false,
+                        item_name: cleanName,
+                        item_type_name: si.item_type_name || '',
+                        unit_type: si.unit_type || 'kg',
+                        weight: parseFloat(si.weight ?? si.quantity ?? 0) || '',
+                        price_per_kg: parseFloat(si.sell_price_per_kg ?? 0) || 0,
+                        subtotal: parseFloat(si.subtotal ?? 0) || 0,
+                        package_qty: '',
+                        notes: ''
+                    };
+                });
             }
             this.$nextTick(() => {
                 if (window.createIcons && window.lucideIcons) {
@@ -549,12 +551,15 @@ function deliveryOrderForm() {
         rows: [
             @if($salesTx && $salesTx->items->count() > 0)
                 @foreach($salesTx->items as $si)
+                    @php
+                        $cleanSiName = preg_replace('/\s*-\s*Rp[\d.,\s]+.*/i', '', $si->item_name_snapshot ?: ($si->scrapItem?->name ?? ''));
+                    @endphp
                     {
                         uid: {{ $loop->index + 1 }},
                         scrap_item_id: '{{ $si->scrap_item_id }}',
-                        search_text: '{{ addslashes($si->item_name_snapshot) }}',
+                        search_text: '{{ addslashes($cleanSiName) }}',
                         dropdown_open: false,
-                        item_name: '{{ addslashes($si->item_name_snapshot) }}',
+                        item_name: '{{ addslashes($cleanSiName) }}',
                         item_type_name: '{{ addslashes($si->item_type_name ?? "") }}',
                         unit_type: '{{ $si->unit_type ?? "kg" }}',
                         weight: {{ (float) ($si->weight ?? $si->quantity ?? 0) }},
@@ -586,8 +591,9 @@ function deliveryOrderForm() {
         selectRowItem(row, item) {
             row.scrap_item_id = item.id;
             row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
-            row.search_text = item.name + (item.code ? ' (' + item.code + ')' : '');
-            row.item_name = item.name;
+            const cleanName = item.base_name || (item.name ? item.name.replace(/\s*-\s*Rp[\d.,\s]+.*/i, '').trim() : '');
+            row.search_text = cleanName + (item.code ? ' (' + item.code + ')' : '');
+            row.item_name = cleanName;
             if (item.unit_type) {
                 row.unit_type = item.unit_type;
             }
@@ -598,6 +604,7 @@ function deliveryOrderForm() {
         clearRowItem(row) {
             row.scrap_item_id = '';
             row.search_text = '';
+            row.item_name = '';
             row.price_per_kg = 0;
             row.dropdown_open = true;
         },
@@ -631,12 +638,31 @@ function deliveryOrderForm() {
         onItemSelect(row) {
             const found = this.masterItems.find(i => i.id == row.scrap_item_id);
             if (found) {
-                row.item_name = found.name;
+                const clean = found.base_name || (found.name ? found.name.replace(/\s*-\s*Rp[\d.,\s]+.*/i, '').trim() : '');
+                row.item_name = clean;
+                if (found.unit_type) row.unit_type = found.unit_type;
             }
         },
 
         totalWeight() {
             return this.rows.reduce((acc, r) => acc + (parseFloat(r.weight) || 0), 0);
+        },
+
+        cargoSummary() {
+            let kgTotal = 0;
+            let pcsTotal = 0;
+            this.rows.forEach(r => {
+                const val = parseFloat(r.weight) || 0;
+                if ((r.unit_type || 'kg') === 'pcs') {
+                    pcsTotal += val;
+                } else {
+                    kgTotal += val;
+                }
+            });
+            const parts = [];
+            if (kgTotal > 0) parts.push(kgTotal.toLocaleString('id-ID') + ' kg');
+            if (pcsTotal > 0) parts.push(pcsTotal.toLocaleString('id-ID') + ' pcs');
+            return parts.length > 0 ? parts.join(' + ') : '0';
         },
 
         totalPackages() {

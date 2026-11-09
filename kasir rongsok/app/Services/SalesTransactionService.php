@@ -1032,11 +1032,13 @@ class SalesTransactionService
                 $weight = (float) str_replace(',', '.', preg_replace('/[^\d.,]/', '', (string)$rawWeight));
                 $sellPrice = (float) preg_replace('/[^\d]/', '', (string)$rawPrice);
 
+                $itemUnit = $item->unit_type ?: ($item->scrapItem?->unit_type ?: 'kg');
+
                 if ($weight <= 0) {
-                    throw new Exception("Barang '{$item->item_name_snapshot}' wajib diisi berat timbang final (kg) lebih dari 0.");
+                    throw new Exception("Barang '{$item->item_name_snapshot}' wajib diisi berat / jumlah muatan final ({$itemUnit}) lebih dari 0.");
                 }
                 if ($sellPrice <= 0) {
-                    throw new Exception("Barang '{$item->item_name_snapshot}' wajib diisi harga jual pabrik (Rp/kg) lebih dari Rp 0.");
+                    throw new Exception("Barang '{$item->item_name_snapshot}' wajib diisi harga jual final per {$itemUnit} lebih dari Rp 0.");
                 }
 
                 $scrapItem = ScrapItem::with('stockBalance')->lockForUpdate()->find($item->scrap_item_id);
@@ -1046,8 +1048,8 @@ class SalesTransactionService
                 if ($weight > $currentStock) {
                     throw new Exception(
                         "Stok barang '{$scrapItem->name}' tidak mencukupi! Tersedia: " .
-                        FormatHelper::weight($currentStock) . " kg, ingin diselesaikan: " .
-                        FormatHelper::weight($weight) . " kg."
+                        FormatHelper::number($currentStock) . " {$itemUnit}, ingin diselesaikan: " .
+                        FormatHelper::number($weight) . " {$itemUnit}."
                     );
                 }
 

@@ -93,6 +93,62 @@ class DeliveryOrder extends Model
     }
 
     /**
+     * Header label for the weight/quantity column based on item units in this delivery order.
+     */
+    public function getWeightColumnHeaderAttribute(): string
+    {
+        $units = $this->items->pluck('unit_type')
+            ->map(fn($u) => strtolower(trim($u ?? 'kg')))
+            ->filter()
+            ->unique();
+
+        if ($units->count() === 1 && in_array($units->first(), ['pcs', 'satuan', 'unit', 'buah'])) {
+            return 'Jumlah (pcs)';
+        }
+        if ($units->count() === 1 && $units->first() === 'kg') {
+            return 'Berat Bersih (kg)';
+        }
+        return 'Berat / Satuan';
+    }
+
+    /**
+     * Formatted total cargo summary with units (e.g. "1.200 kg", "50 pcs", or "1.200 kg + 50 pcs").
+     */
+    public function getTotalCargoDisplayAttribute(): string
+    {
+        $kgTotal = 0;
+        $pcsTotal = 0;
+        $otherTotals = [];
+
+        foreach ($this->items as $it) {
+            $val = (float) ($it->weight > 0 ? $it->weight : $it->quantity);
+            $u = strtolower(trim($it->unit_type ?: ($it->scrapItem?->unit_type ?: 'kg')));
+            if (in_array($u, ['pcs', 'satuan', 'buah', 'unit'])) {
+                $pcsTotal += $val;
+            } elseif ($u === 'kg') {
+                $kgTotal += $val;
+            } else {
+                $otherTotals[$u] = ($otherTotals[$u] ?? 0) + $val;
+            }
+        }
+
+        $parts = [];
+        if ($kgTotal > 0) {
+            $parts[] = \App\Services\FormatHelper::weight($kgTotal) . ' kg';
+        }
+        if ($pcsTotal > 0) {
+            $parts[] = \App\Services\FormatHelper::number($pcsTotal) . ' pcs';
+        }
+        foreach ($otherTotals as $unit => $val) {
+            if ($val > 0) {
+                $parts[] = \App\Services\FormatHelper::number($val) . ' ' . $unit;
+            }
+        }
+
+        return count($parts) > 0 ? implode(' + ', $parts) : ($this->total_weight > 0 ? \App\Services\FormatHelper::weight($this->total_weight) . ' kg' : '-');
+    }
+
+    /**
      * Group delivery order items by master item.
      * Master level totals are aggregated, while variant breakdowns are preserved underneath.
      */
@@ -110,11 +166,14 @@ class DeliveryOrder extends Model
             // Determine if variants exist
             $hasVariants = $items->contains(fn($it) => !empty(trim($it->item_type_name ?? ''))) || $items->count() > 1;
 
+            $unitType = $first->unit_type ?? ($first->scrapItem?->unit_type ?? 'kg');
+            $cleanName = preg_replace('/\s*-\s*Rp[\d.,\s]+.*/i', '', $first->item_name ?: ($first->scrapItem?->name ?? 'Material Scrap'));
+
             return (object) [
                 'scrap_item_id' => $first->scrap_item_id,
                 'item_code' => $first->scrapItem?->code ?? '-',
-                'item_name' => $first->item_name,
-                'unit_type' => $first->unit_type ?? 'kg',
+                'item_name' => $cleanName,
+                'unit_type' => $unitType,
                 'total_weight' => $totalWeight,
                 'total_packages' => $totalPackages,
                 'total_quantity' => $totalQuantity,

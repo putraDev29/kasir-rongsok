@@ -2554,5 +2554,73 @@ class ScrapCashierSystemTest extends TestCase
             }
         }
     }
+
+    public function test_delivery_order_supports_empty_item_name_from_master_and_handles_mixed_units(): void
+    {
+        // 1. Create delivery order where item 1 leaves item_name empty (takes master),
+        // and item 2 has price string attached and pcs unit
+        $response = $this->actingAs($this->superAdmin)->post(route('delivery-orders.store'), [
+            'delivery_date' => now()->toDateString(),
+            'recipient_name' => 'PT. Pabrik Peleburan Nusantara',
+            'driver_name' => 'Pak Bambang',
+            'vehicle_number' => 'B 9876 XYZ',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'item_name' => '', // Dikosongi -> otomatis ambil nama master tanpa harga
+                    'unit_type' => 'kg',
+                    'weight' => 500,
+                    'package_qty' => 5,
+                ],
+                [
+                    'scrap_item_id' => null,
+                    'item_name' => 'Drum Besi Bekas - Rp 75.000', // Ada string harga -> harus dibersihkan
+                    'unit_type' => 'pcs',
+                    'weight' => 20, // 20 pcs
+                    'package_qty' => 20,
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $deliveryOrder = \App\Models\DeliveryOrder::where('recipient_name', 'PT. Pabrik Peleburan Nusantara')->first();
+        $this->assertNotNull($deliveryOrder);
+
+        // Pastikan nama barang tersimpan bersih tanpa harga
+        $items = $deliveryOrder->items;
+        $this->assertCount(2, $items);
+        $this->assertEquals($this->besiItem->name, $items[0]->item_name);
+        $this->assertStringNotContainsString('Rp', $items[0]->item_name);
+        $this->assertEquals('Drum Besi Bekas', $items[1]->item_name);
+        $this->assertStringNotContainsString('Rp', $items[1]->item_name);
+
+        // Pastikan kolom header dan total display menyesuaikan satuan campuran (kg dan pcs)
+        $this->assertEquals('Berat / Satuan', $deliveryOrder->weight_column_header);
+        $this->assertStringContainsString('500 kg', $deliveryOrder->total_cargo_display);
+        $this->assertStringContainsString('20 pcs', $deliveryOrder->total_cargo_display);
+
+        // Cek halaman preview / detail surat jalan
+        $showRes = $this->actingAs($this->superAdmin)->get(route('delivery-orders.show', $deliveryOrder));
+        $showRes->assertOk();
+        $showRes->assertSee('Berat / Satuan');
+        $showRes->assertSee($this->besiItem->name);
+        $showRes->assertSee('Drum Besi Bekas');
+        $showRes->assertDontSee('Drum Besi Bekas - Rp 75.000');
+        $showRes->assertSee('500 kg');
+        $showRes->assertSee('20 pcs');
+
+        // Cek halaman print surat jalan
+        $printRes = $this->actingAs($this->superAdmin)->get(route('delivery-orders.print', $deliveryOrder));
+        $printRes->assertOk();
+        $printRes->assertSee('Berat / Satuan');
+        $printRes->assertSee('500 kg');
+        $printRes->assertSee('20 pcs');
+
+        // Cek PDF stream surat jalan
+        $pdfRes = $this->actingAs($this->superAdmin)->get(route('delivery-orders.pdf', $deliveryOrder));
+        $pdfRes->assertOk();
+        $this->assertStringContainsString('application/pdf', $pdfRes->headers->get('Content-Type'));
+    }
 }
 
