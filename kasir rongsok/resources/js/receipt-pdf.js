@@ -461,7 +461,12 @@ export function generateSalesInvoicePdf(data) {
         doc.setFont('courier', 'normal');
         doc.setFontSize(6.8);
         doc.setTextColor(30, 64, 175);
-        doc.text(`Ongkos Armada: Rp ${data.shippingCost || 0} | Bongkar: Rp ${data.loadingCost || 0}`, colRightX + 2, rightY + 7.2);
+        const parseCost = (v) => parseFloat(String(v || 0).replace(/[^0-9.-]+/g, '')) || 0;
+        const sCost = parseCost(data.shippingCost);
+        const lCost = parseCost(data.loadingCost);
+        const sCostStr = sCost > 0 ? (typeof data.shippingCost === 'number' ? 'Rp ' + data.shippingCost.toLocaleString('id-ID') : (String(data.shippingCost).startsWith('Rp') ? data.shippingCost : 'Rp ' + data.shippingCost)) : '-';
+        const lCostStr = lCost > 0 ? (typeof data.loadingCost === 'number' ? 'Rp ' + data.loadingCost.toLocaleString('id-ID') : (String(data.loadingCost).startsWith('Rp') ? data.loadingCost : 'Rp ' + data.loadingCost)) : '-';
+        doc.text(`Ongkos Armada: ${sCostStr} | Bongkar: ${lCostStr}`, colRightX + 2, rightY + 7.2);
         rightY += 11;
     }
 
@@ -511,20 +516,29 @@ export function generateSalesInvoicePdf(data) {
         doc.setTextColor(15, 23, 42);
         doc.text(it.name || '-', rowX + 1, curY + 3.8);
 
+        const wNum = parseFloat(String(it.weight || 0).replace(/[^0-9.-]+/g, '')) || 0;
+        const wStr = wNum > 0 ? (String(it.weight).includes('kg') ? it.weight : (it.weight + ' kg')) : '-';
+
+        const pNum = parseFloat(String(it.sellPrice || 0).replace(/[^0-9.-]+/g, '')) || 0;
+        const pStr = pNum > 0 ? (String(it.sellPrice).startsWith('Rp') ? it.sellPrice : ('Rp ' + it.sellPrice)) : '-';
+
+        const subNum = parseFloat(String(it.subtotal || 0).replace(/[^0-9.-]+/g, '')) || 0;
+        const subStr = subNum > 0 ? (it.subtotalFormatted || ('Rp ' + it.subtotal)) : '-';
+
         rowX += colW.desc;
         doc.setFont('courier', 'bold');
         doc.setTextColor(15, 23, 42);
-        doc.text(String(it.weight || 0) + ' kg', rowX + colW.weight - 1, curY + 3.8, { align: 'right' });
+        doc.text(wStr, rowX + colW.weight - 1, curY + 3.8, { align: 'right' });
 
         rowX += colW.weight;
         doc.setFont('courier', 'normal');
         doc.setTextColor(51, 65, 85);
-        doc.text('Rp ' + (it.sellPrice || 0), rowX + colW.price - 1, curY + 3.8, { align: 'right' });
+        doc.text(pStr, rowX + colW.price - 1, curY + 3.8, { align: 'right' });
 
         rowX += colW.price;
         doc.setFont('courier', 'bold');
         doc.setTextColor(15, 23, 42);
-        doc.text(it.subtotalFormatted || ('Rp ' + (it.subtotal || 0)), rowX + colW.total - 1, curY + 3.8, { align: 'right' });
+        doc.text(subStr, rowX + colW.total - 1, curY + 3.8, { align: 'right' });
 
         curY += 5.5;
     });
@@ -545,7 +559,9 @@ export function generateSalesInvoicePdf(data) {
     doc.text('Total Berat:', sumXLabel, curY);
     doc.setFont('courier', 'bold');
     doc.setTextColor(15, 23, 42);
-    doc.text((data.totalWeight || '0') + ' kg', sumXVal, curY, { align: 'right' });
+    const totWNum = parseFloat(String(data.totalWeight || 0).replace(/[^0-9.-]+/g, '')) || 0;
+    const totWStr = totWNum > 0 ? (String(data.totalWeight).includes('kg') ? data.totalWeight : (data.totalWeight + ' kg')) : '-';
+    doc.text(totWStr, sumXVal, curY, { align: 'right' });
 
     curY += 4.5;
     doc.setFont('courier', 'normal');
@@ -553,7 +569,9 @@ export function generateSalesInvoicePdf(data) {
     doc.text('Subtotal:', sumXLabel, curY);
     doc.setFont('courier', 'normal');
     doc.setTextColor(15, 23, 42);
-    doc.text(data.subtotalAmount || data.finalAmount || 'Rp 0', sumXVal, curY, { align: 'right' });
+    const subValNum = parseFloat(String(data.subtotalAmount || data.finalAmount || 0).replace(/[^0-9.-]+/g, '')) || 0;
+    const subValStr = subValNum > 0 ? (data.subtotalAmount || data.finalAmount) : '-';
+    doc.text(subValStr, sumXVal, curY, { align: 'right' });
 
     if (data.discountAmount) {
         curY += 4.5;
@@ -574,7 +592,9 @@ export function generateSalesInvoicePdf(data) {
     doc.text('TOTAL TAGIHAN:', sumXLabel, curY);
     doc.setFont('courier', 'bold');
     doc.setFontSize(10.5);
-    doc.text(data.finalAmount || 'Rp 0', sumXVal, curY, { align: 'right' });
+    const finValNum = parseFloat(String(data.finalAmount || 0).replace(/[^0-9.-]+/g, '')) || 0;
+    const finValStr = finValNum > 0 ? (String(data.finalAmount).startsWith('Rp') ? data.finalAmount : ('Rp ' + data.finalAmount)) : '-';
+    doc.text(finValStr, sumXVal, curY, { align: 'right' });
 
     return doc;
 }

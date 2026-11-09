@@ -177,13 +177,13 @@
                                 </div>
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-medium text-slate-800">
-                                {{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg
+                                {{ \App\Services\FormatHelper::weightOrDash($sale->total_weight) }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">
-                                Rp {{ \App\Services\FormatHelper::number($sale->final_amount) }}
+                                {{ \App\Services\FormatHelper::rupiahOrDash($sale->final_amount) }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">
-                                Rp {{ \App\Services\FormatHelper::number($sale->estimated_profit) }}
+                                {{ $sale->estimated_profit != 0 ? 'Rp ' . \App\Services\FormatHelper::number($sale->estimated_profit) : '-' }}
                             </td>
                             <td class="py-3 px-3 text-slate-600">
                                 {{ $sale->user?->name }}

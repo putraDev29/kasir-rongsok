@@ -199,7 +199,7 @@
                                     {{ $master->total_packages > 0 ? $master->total_packages . ' Koli' : '-' }}
                                 </td>
                                 <td class="py-1 px-2 text-right font-mono font-bold text-slate-900 border-r border-slate-300">
-                                    {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
+                                    {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
                                 </td>
                                 <td class="py-1 px-2 text-[9px] text-slate-600">
                                     @if(!$master->has_variants && $master->items->first()->notes)
@@ -230,7 +230,7 @@
                                             {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
                                         </td>
                                         <td class="py-0.5 px-2 text-right font-mono font-semibold text-slate-800 border-r border-slate-300">
-                                            {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
+                                            {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
                                         </td>
                                         <td class="py-0.5 px-2 text-[8.5px] text-slate-600">
                                             @if($vItem->effective_price > 0)
@@ -249,7 +249,7 @@
                             <td colspan="2" class="py-1 px-2 uppercase text-slate-900 border-r border-slate-300">TOTAL MUATAN RESMI</td>
                             <td class="py-1 px-2 text-right font-mono border-r border-slate-300">{{ $deliveryOrder->total_packages }} Koli</td>
                             <td class="py-1 px-2 text-right font-mono font-black text-slate-900 border-r border-slate-300">
-                                {{ \App\Services\FormatHelper::weight($deliveryOrder->total_weight) }} kg
+                                {{ \App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight) }}
                             </td>
                             <td class="py-1 px-2 text-[8px] text-slate-400">Validitas muatan depo</td>
                         </tr>
@@ -410,7 +410,7 @@
                                     {{ $master->total_packages > 0 ? $master->total_packages . ' Koli' : '-' }}
                                 </td>
                                 <td class="py-1 px-2 text-right font-mono font-bold text-slate-900 border-r border-slate-300">
-                                    {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
+                                    {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
                                 </td>
                                 <td class="py-1 px-2 text-[9px] text-slate-600">
                                     @if(!$master->has_variants && $master->items->first()->notes)
@@ -441,7 +441,7 @@
                                             {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
                                         </td>
                                         <td class="py-0.5 px-2 text-right font-mono font-semibold text-slate-800 border-r border-slate-300">
-                                            {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
+                                            {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
                                         </td>
                                         <td class="py-0.5 px-2 text-[8.5px] text-slate-600">
                                             @if($vItem->effective_price > 0)
@@ -460,7 +460,7 @@
                             <td colspan="2" class="py-1 px-2 uppercase text-slate-900 border-r border-slate-300">TOTAL MUATAN RESMI</td>
                             <td class="py-1 px-2 text-right font-mono border-r border-slate-300">{{ $deliveryOrder->total_packages }} Koli</td>
                             <td class="py-1 px-2 text-right font-mono font-black text-slate-900 border-r border-slate-300">
-                                {{ \App\Services\FormatHelper::weight($deliveryOrder->total_weight) }} kg
+                                {{ \App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight) }}
                             </td>
                             <td class="py-1 px-2 text-[8px] text-slate-400">Validitas muatan depo</td>
                         </tr>
@@ -536,12 +536,12 @@
             recipientName: @json($deliveryOrder->recipient_name),
             driverName: @json($deliveryOrder->driver_name),
             vehicleNumber: @json($deliveryOrder->vehicle_number),
-            totalWeight: @json(\App\Services\FormatHelper::weight($deliveryOrder->total_weight)),
+            totalWeight: @json(\App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight)),
             items: [
                 @foreach($deliveryOrder->items as $item)
                     {
                         name: @json(($item->scrapItem?->name ?? 'Barang') . ($item->item_type_name ? ' (' . $item->item_type_name . ')' : '')),
-                        weight: @json(\App\Services\FormatHelper::weight($item->weight))
+                        weight: @json(\App\Services\FormatHelper::weightOrDash($item->weight))
                     },
                 @endforeach
             ]

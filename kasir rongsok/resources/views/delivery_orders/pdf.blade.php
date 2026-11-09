@@ -314,7 +314,7 @@
                             {{ $master->total_packages > 0 ? $master->total_packages . ' Koli' : '-' }}
                         </td>
                         <td class="text-right" style="font-weight: bold; font-family: monospace;">
-                            {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
+                            {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
                         </td>
                         <td style="font-size: 7.5px; color: #475569;">
                             @if(!$master->has_variants && $master->items->first()->notes)
@@ -346,7 +346,7 @@
                                     {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
                                 </td>
                                 <td class="text-right" style="font-family: monospace; color: #0f172a;">
-                                    {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
+                                    {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
                                 </td>
                                 <td style="font-size: 7px; color: #475569;">
                                     @if($vItem->effective_price > 0)
@@ -363,9 +363,9 @@
             <tfoot>
                 <tr class="total-row">
                     <td colspan="3" class="text-right" style="padding-right: 6px;">TOTAL MUATAN RESMI:</td>
-                    <td class="text-right" style="font-family: monospace;">{{ $deliveryOrder->total_packages }} Koli</td>
+                    <td class="text-right" style="font-family: monospace;">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '-' }}</td>
                     <td class="text-right" style="font-family: monospace; font-size: 9.5px; color: #047857;">
-                        {{ \App\Services\FormatHelper::weight($deliveryOrder->total_weight) }} kg
+                        {{ \App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight) }}
                     </td>
                     <td style="font-size: 7px; color: #64748b;">Timbangan Resmi Depo</td>
                 </tr>

@@ -269,16 +269,19 @@ class WhatsAppGatewayController extends Controller
         foreach ($sale->items as $it) {
             $items[] = [
                 'name' => $it->item_name_snapshot,
-                'weight' => FormatHelper::weight($it->weight),
-                'sellPrice' => number_format($it->sell_price_per_kg, 0, ',', '.'),
-                'subtotal' => number_format($it->subtotal, 0, ',', '.'),
-                'subtotalFormatted' => 'Rp ' . number_format($it->subtotal, 0, ',', '.'),
+                'weight' => $it->weight > 0 ? FormatHelper::weight($it->weight) : '-',
+                'sellPrice' => $it->sell_price_per_kg > 0 ? number_format($it->sell_price_per_kg, 0, ',', '.') : '-',
+                'subtotal' => $it->subtotal > 0 ? number_format($it->subtotal, 0, ',', '.') : '-',
+                'subtotalFormatted' => $it->subtotal > 0 ? ('Rp ' . number_format($it->subtotal, 0, ',', '.')) : '-',
             ];
         }
 
         $customerName = $sale->buyer_name ?: $sale->customer_name ?: 'Pabrik / Pembeli';
         $customerPhone = $sale->buyer_phone ?: $sale->customer_phone ?: '-';
         $filename = "Invoice_{$sale->invoice_number}.pdf";
+
+        $shippingVal = (float)($sale->deliveryOrder?->shipping_cost ?? 0);
+        $loadingVal = (float)($sale->deliveryOrder?->loading_cost ?? 0);
 
         $receiptData = [
             'type' => 'sale',
@@ -301,12 +304,12 @@ class WhatsAppGatewayController extends Controller
             'driverName' => $sale->deliveryOrder?->driver_name,
             'vehicleNumber' => $sale->deliveryOrder?->vehicle_number,
             'driverPhone' => $sale->deliveryOrder?->driver_phone,
-            'shippingCost' => $sale->deliveryOrder?->shipping_cost,
-            'loadingCost' => $sale->deliveryOrder?->loading_cost,
-            'totalWeight' => FormatHelper::weight($sale->total_weight),
-            'subtotalAmount' => 'Rp ' . number_format($sale->subtotal_amount, 0, ',', '.'),
+            'shippingCost' => $shippingVal > 0 ? number_format($shippingVal, 0, ',', '.') : '-',
+            'loadingCost' => $loadingVal > 0 ? number_format($loadingVal, 0, ',', '.') : '-',
+            'totalWeight' => $sale->total_weight > 0 ? FormatHelper::weight($sale->total_weight) : '-',
+            'subtotalAmount' => $sale->subtotal_amount > 0 ? ('Rp ' . number_format($sale->subtotal_amount, 0, ',', '.')) : '-',
             'discountAmount' => $sale->discount_amount > 0 ? ('- Rp ' . number_format($sale->discount_amount, 0, ',', '.')) : null,
-            'finalAmount' => 'Rp ' . number_format($sale->final_amount, 0, ',', '.'),
+            'finalAmount' => $sale->final_amount > 0 ? ('Rp ' . number_format($sale->final_amount, 0, ',', '.')) : '-',
             'items' => $items,
         ];
 

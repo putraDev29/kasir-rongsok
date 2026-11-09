@@ -553,17 +553,21 @@ class WhatsAppGatewayService
         $i = 1;
         foreach ($sale->items as $item) {
             $itemName = $item->item_name_snapshot;
-            $kg = FormatHelper::weight($item->weight);
-            $price = number_format($item->sell_price_per_kg, 0, ',', '.');
-            $subtotal = number_format($item->subtotal, 0, ',', '.');
+            $kgStr = $item->weight > 0 ? (FormatHelper::weight($item->weight) . ' kg') : '-';
+            $priceStr = $item->sell_price_per_kg > 0 ? ('Rp ' . number_format($item->sell_price_per_kg, 0, ',', '.')) : '-';
+            $subtotalStr = $item->subtotal > 0 ? ('Rp ' . number_format($item->subtotal, 0, ',', '.')) : '-';
 
-            $lines[] = "{$i}. *{$itemName}* ({$kg} kg @ Rp {$price}) = *Rp {$subtotal}*";
+            if ($item->weight > 0 && $item->sell_price_per_kg > 0) {
+                $lines[] = "{$i}. *{$itemName}* ({$kgStr} @ {$priceStr}) = *{$subtotalStr}*";
+            } else {
+                $lines[] = "{$i}. *{$itemName}* (Berat: {$kgStr} | Harga: {$priceStr}) = *{$subtotalStr}*";
+            }
             $i++;
         }
         $itemsStr = count($lines) > 0 ? implode("\n", $lines) : "-";
 
-        $totalWeight = FormatHelper::weight($sale->total_weight);
-        $grandTotal = number_format($sale->final_amount, 0, ',', '.');
+        $totalWeight = $sale->total_weight > 0 ? (FormatHelper::weight($sale->total_weight) . ' kg') : '-';
+        $grandTotal = $sale->final_amount > 0 ? ('Rp ' . number_format($sale->final_amount, 0, ',', '.')) : '-';
 
         $msg = "*=============================*\n";
         $msg .= "🚛 *{$companyName}*\n";

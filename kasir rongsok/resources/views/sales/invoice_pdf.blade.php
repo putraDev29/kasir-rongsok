@@ -314,8 +314,8 @@
                     <div class="delivery-box">
                         <div><strong>Supir / Armada:</strong> {{ $sale->deliveryOrder->driver_name }} ({{ $sale->deliveryOrder->vehicle_number }}{{ $sale->deliveryOrder->driver_phone ? ' - Telp: '.$sale->deliveryOrder->driver_phone : '' }})</div>
                         <div class="mono" style="margin-top: 1px; color: #1e40af;">
-                            Ongkos Armada: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost ?? 0) }}</strong> | 
-                            Bongkar: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost ?? 0) }}</strong>
+                            Ongkos Armada: <strong>{{ ($sale->deliveryOrder->shipping_cost ?? 0) > 0 ? 'Rp ' . \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost) : '-' }}</strong> | 
+                            Bongkar: <strong>{{ ($sale->deliveryOrder->loading_cost ?? 0) > 0 ? 'Rp ' . \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost) : '-' }}</strong>
                         </div>
                     </div>
                 @endif
@@ -348,17 +348,17 @@
                         @endif
                     </td>
                     <td class="mono" style="text-align: right; font-weight: bold; color: #0f172a;">
-                        {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
+                        {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
                     </td>
                     <td class="mono" style="text-align: right; color: #334155;">
                         @if($master->has_variants)
-                            <span style="color: #64748b; font-size: 7.5px; font-style: italic;">Rerata Rp {{ \App\Services\FormatHelper::number($master->avg_sell_price) }}</span>
+                            <span style="color: #64748b; font-size: 7.5px; font-style: italic;">{{ $master->avg_sell_price > 0 ? 'Rerata Rp ' . \App\Services\FormatHelper::number($master->avg_sell_price) : '-' }}</span>
                         @else
-                            Rp {{ \App\Services\FormatHelper::number($master->items->first()->sell_price_per_kg) }}
+                            {{ \App\Services\FormatHelper::rupiahOrDash($master->items->first()->sell_price_per_kg) }}
                         @endif
                     </td>
                     <td class="mono" style="text-align: right; font-weight: bold; color: #0f172a;">
-                        Rp {{ \App\Services\FormatHelper::number($master->total_subtotal) }}
+                        {{ \App\Services\FormatHelper::rupiahOrDash($master->total_subtotal) }}
                     </td>
                 </tr>
 
@@ -373,13 +373,13 @@
                                 @endif
                             </td>
                             <td class="mono" style="text-align: right; color: #475569;">
-                                {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
+                                {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
                             </td>
                             <td class="mono" style="text-align: right; color: #475569;">
-                                Rp {{ \App\Services\FormatHelper::number($vItem->sell_price_per_kg) }}
+                                {{ \App\Services\FormatHelper::rupiahOrDash($vItem->sell_price_per_kg) }}
                             </td>
                             <td class="mono" style="text-align: right; font-weight: bold; color: #334155;">
-                                Rp {{ \App\Services\FormatHelper::number($vItem->subtotal) }}
+                                {{ \App\Services\FormatHelper::rupiahOrDash($vItem->subtotal) }}
                             </td>
                         </tr>
                     @endforeach
@@ -397,13 +397,13 @@
                     <tr>
                         <td style="color: #475569;">Total Berat:</td>
                         <td class="mono" style="text-align: right; font-weight: bold; color: #0f172a;">
-                            {{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg
+                            {{ \App\Services\FormatHelper::weightOrDash($sale->total_weight) }}
                         </td>
                     </tr>
                     <tr>
                         <td style="color: #475569;">Subtotal:</td>
                         <td class="mono" style="text-align: right; color: #0f172a;">
-                            Rp {{ \App\Services\FormatHelper::number($sale->subtotal_amount) }}
+                            {{ \App\Services\FormatHelper::rupiahOrDash($sale->subtotal_amount) }}
                         </td>
                     </tr>
                     @if($sale->discount_amount > 0)
@@ -419,7 +419,7 @@
                             TOTAL TAGIHAN:
                         </td>
                         <td class="mono" style="text-align: right; font-size: 11px; font-weight: bold; color: #0f172a;">
-                            Rp {{ \App\Services\FormatHelper::number($sale->final_amount) }}
+                            {{ \App\Services\FormatHelper::rupiahOrDash($sale->final_amount) }}
                         </td>
                     </tr>
                 </table>

@@ -230,8 +230,8 @@
                     <div class="bg-blue-100/60 p-2.5 rounded-lg border border-blue-200">
                         <span class="text-blue-900 block text-[10px] uppercase font-bold">Biaya Ongkos & Bongkar</span>
                         <div class="text-[11px] text-blue-950 font-mono mt-0.5 space-y-0.5">
-                            <div>Ongkos: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost ?? 0) }}</strong></div>
-                            <div>Bongkar: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost ?? 0) }}</strong></div>
+                            <div>Ongkos: <strong>{{ ($sale->deliveryOrder->shipping_cost ?? 0) > 0 ? 'Rp ' . \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost) : '-' }}</strong></div>
+                            <div>Bongkar: <strong>{{ ($sale->deliveryOrder->loading_cost ?? 0) > 0 ? 'Rp ' . \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost) : '-' }}</strong></div>
                         </div>
                     </div>
                 </div>
@@ -271,23 +271,23 @@
                                     </div>
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
-                                    {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
+                                    {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono">
                                     @if($master->has_variants)
-                                        <span class="text-slate-400 text-[11px] italic">Rerata Rp {{ number_format($master->avg_sell_price, 0, ',', '.') }}</span>
+                                        <span class="text-slate-400 text-[11px] italic">{{ $master->avg_sell_price > 0 ? 'Rerata Rp ' . number_format($master->avg_sell_price, 0, ',', '.') : '-' }}</span>
                                     @else
-                                        Rp {{ number_format($master->items->first()->sell_price_per_kg, 0, ',', '.') }}
+                                        {{ \App\Services\FormatHelper::rupiahOrDash($master->items->first()->sell_price_per_kg) }}
                                     @endif
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
-                                    Rp {{ number_format($master->total_subtotal, 0, ',', '.') }}
+                                    {{ \App\Services\FormatHelper::rupiahOrDash($master->total_subtotal) }}
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono text-slate-500">
-                                    Rp {{ number_format($master->total_cogs, 0, ',', '.') }}
+                                    {{ $master->total_cogs > 0 ? 'Rp ' . number_format($master->total_cogs, 0, ',', '.') : '-' }}
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">
-                                    Rp {{ number_format($master->total_profit, 0, ',', '.') }}
+                                    {{ $master->total_profit != 0 ? 'Rp ' . number_format($master->total_profit, 0, ',', '.') : '-' }}
                                 </td>
                             </tr>
 
@@ -308,19 +308,19 @@
                                             </div>
                                         </td>
                                         <td class="py-2 px-3 text-right font-mono text-slate-700 font-medium">
-                                            {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
+                                            {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
                                         </td>
                                         <td class="py-2 px-3 text-right font-mono text-slate-700 font-medium">
-                                            Rp {{ number_format($vItem->sell_price_per_kg, 0, ',', '.') }}
+                                            {{ \App\Services\FormatHelper::rupiahOrDash($vItem->sell_price_per_kg) }}
                                         </td>
                                         <td class="py-2 px-3 text-right font-mono font-bold text-slate-800">
-                                            Rp {{ number_format($vItem->subtotal, 0, ',', '.') }}
+                                            {{ \App\Services\FormatHelper::rupiahOrDash($vItem->subtotal) }}
                                         </td>
                                         <td class="py-2 px-3 text-right font-mono text-slate-400 text-[11px]">
-                                            Rp {{ number_format($vItem->cogs_subtotal, 0, ',', '.') }}
+                                            {{ $vItem->cogs_subtotal > 0 ? 'Rp ' . number_format($vItem->cogs_subtotal, 0, ',', '.') : '-' }}
                                         </td>
                                         <td class="py-2 px-3 text-right font-mono font-medium text-emerald-600 text-[11px]">
-                                            Rp {{ number_format($vItem->profit_subtotal, 0, ',', '.') }}
+                                            {{ $vItem->profit_subtotal != 0 ? 'Rp ' . number_format($vItem->profit_subtotal, 0, ',', '.') : '-' }}
                                         </td>
                                     </tr>
                                 @endforeach
@@ -348,11 +348,11 @@
             <div class="w-full sm:w-80 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
                 <div class="flex justify-between text-slate-600">
                     <span>Total Berat:</span>
-                    <span class="font-mono font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg</span>
+                    <span class="font-mono font-bold text-slate-900">{{ \App\Services\FormatHelper::weightOrDash($sale->total_weight) }}</span>
                 </div>
                 <div class="flex justify-between text-slate-600">
                     <span>Subtotal:</span>
-                    <span class="font-mono">Rp {{ number_format($sale->subtotal_amount, 0, ',', '.') }}</span>
+                    <span class="font-mono">{{ \App\Services\FormatHelper::rupiahOrDash($sale->subtotal_amount) }}</span>
                 </div>
                 @if($sale->discount_amount > 0)
                     <div class="flex justify-between text-slate-600">
@@ -362,11 +362,11 @@
                 @endif
                 <div class="pt-2 border-t border-slate-200 flex justify-between items-center text-sm font-bold text-slate-900">
                     <span>TOTAL PENJUALAN:</span>
-                    <span class="font-mono text-xl font-black text-blue-700">Rp {{ number_format($sale->final_amount, 0, ',', '.') }}</span>
+                    <span class="font-mono text-xl font-black text-blue-700">{{ \App\Services\FormatHelper::rupiahOrDash($sale->final_amount) }}</span>
                 </div>
                 <div class="pt-1.5 border-t border-dotted border-slate-300 flex justify-between text-emerald-700 font-bold">
                     <span>ESTIMASI LABA KOTOR:</span>
-                    <span class="font-mono text-sm">Rp {{ number_format($sale->estimated_profit, 0, ',', '.') }}</span>
+                    <span class="font-mono text-sm">{{ $sale->estimated_profit != 0 ? 'Rp ' . number_format($sale->estimated_profit, 0, ',', '.') : '-' }}</span>
                 </div>
             </div>
         </div>

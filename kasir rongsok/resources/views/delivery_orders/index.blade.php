@@ -158,7 +158,7 @@
 
                             <td class="py-3 px-4 text-right">
                                 <div class="font-mono font-black text-slate-900 text-sm">
-                                    {{ \App\Services\FormatHelper::weight($order->total_weight) }} kg
+                                    {{ \App\Services\FormatHelper::weightOrDash($order->total_weight) }}
                                 </div>
                                 @if($order->total_packages > 0)
                                     <div class="text-[10px] text-slate-400 font-mono">{{ $order->total_packages }} Koli / Karung</div>

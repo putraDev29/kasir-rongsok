@@ -141,8 +141,8 @@
                     <div class="mt-2 p-2 bg-blue-50/70 rounded border border-blue-200 text-[11px] text-blue-950 space-y-0.5">
                         <div><strong>Supir / Armada:</strong> {{ $sale->deliveryOrder->driver_name }} ({{ $sale->deliveryOrder->vehicle_number }}{{ $sale->deliveryOrder->driver_phone ? ' - Telp: '.$sale->deliveryOrder->driver_phone : '' }})</div>
                         <div class="font-mono text-[10px] text-blue-900">
-                            Ongkos Armada: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost ?? 0) }}</strong> | 
-                            Bongkar: <strong>Rp {{ \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost ?? 0) }}</strong>
+                            Ongkos Armada: <strong>{{ ($sale->deliveryOrder->shipping_cost ?? 0) > 0 ? 'Rp ' . \App\Services\FormatHelper::number($sale->deliveryOrder->shipping_cost) : '-' }}</strong> | 
+                            Bongkar: <strong>{{ ($sale->deliveryOrder->loading_cost ?? 0) > 0 ? 'Rp ' . \App\Services\FormatHelper::number($sale->deliveryOrder->loading_cost) : '-' }}</strong>
                         </div>
                     </div>
                 @endif
@@ -176,17 +176,17 @@
                                 @endif
                             </td>
                             <td class="py-2 px-2 text-right font-bold text-slate-900 font-mono">
-                                {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
+                                {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
                             </td>
                             <td class="py-2 px-2 text-right font-mono">
                                 @if($master->has_variants)
-                                    <span class="text-slate-400 text-[10px] italic">Rerata Rp {{ \App\Services\FormatHelper::number($master->avg_sell_price) }}</span>
+                                    <span class="text-slate-400 text-[10px] italic">{{ $master->avg_sell_price > 0 ? 'Rerata Rp ' . \App\Services\FormatHelper::number($master->avg_sell_price) : '-' }}</span>
                                 @else
-                                    Rp {{ \App\Services\FormatHelper::number($master->items->first()->sell_price_per_kg) }}
+                                    {{ \App\Services\FormatHelper::rupiahOrDash($master->items->first()->sell_price_per_kg) }}
                                 @endif
                             </td>
                             <td class="py-2 px-2 text-right font-bold text-slate-900 font-mono">
-                                Rp {{ \App\Services\FormatHelper::number($master->total_subtotal) }}
+                                {{ \App\Services\FormatHelper::rupiahOrDash($master->total_subtotal) }}
                             </td>
                         </tr>
 
@@ -202,13 +202,13 @@
                                         @endif
                                     </td>
                                     <td class="py-1 px-2 text-right font-mono text-slate-700">
-                                        {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
+                                        {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
                                     </td>
                                     <td class="py-1 px-2 text-right font-mono text-slate-600">
-                                        Rp {{ \App\Services\FormatHelper::number($vItem->sell_price_per_kg) }}
+                                        {{ \App\Services\FormatHelper::rupiahOrDash($vItem->sell_price_per_kg) }}
                                     </td>
                                     <td class="py-1 px-2 text-right font-mono font-bold text-slate-800">
-                                        Rp {{ \App\Services\FormatHelper::number($vItem->subtotal) }}
+                                        {{ \App\Services\FormatHelper::rupiahOrDash($vItem->subtotal) }}
                                     </td>
                                 </tr>
                             @endforeach
@@ -223,11 +223,11 @@
             <div class="w-64 space-y-1">
                 <div class="flex justify-between text-slate-600">
                     <span>Total Berat:</span>
-                    <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($sale->total_weight) }} kg</span>
+                    <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weightOrDash($sale->total_weight) }}</span>
                 </div>
                 <div class="flex justify-between text-slate-600">
                     <span>Subtotal:</span>
-                    <span>Rp {{ \App\Services\FormatHelper::number($sale->subtotal_amount) }}</span>
+                    <span>{{ \App\Services\FormatHelper::rupiahOrDash($sale->subtotal_amount) }}</span>
                 </div>
                 @if($sale->discount_amount > 0)
                     <div class="flex justify-between text-slate-600">
@@ -237,7 +237,7 @@
                 @endif
                 <div class="pt-1.5 border-t-2 border-slate-900 flex justify-between font-bold text-sm text-slate-900 font-sans">
                     <span>TOTAL TAGIHAN:</span>
-                    <span class="font-mono text-base">Rp {{ \App\Services\FormatHelper::number($sale->final_amount) }}</span>
+                    <span class="font-mono text-base">{{ \App\Services\FormatHelper::rupiahOrDash($sale->final_amount) }}</span>
                 </div>
             </div>
         </div>
@@ -261,17 +261,17 @@
             bankAccountName: @json($sale->getBankAccountName()),
             bankInfo: @json($sale->bank_info),
             deliveryType: @json($sale->isPickup() ? 'Ambil Sendiri di Depo' : 'Kirim Armada'),
-            totalWeight: @json(\App\Services\FormatHelper::weight($sale->total_weight)),
-            subtotalAmount: @json(\App\Services\FormatHelper::rupiah($sale->subtotal_amount)),
+            totalWeight: @json(\App\Services\FormatHelper::weightOrDash($sale->total_weight)),
+            subtotalAmount: @json(\App\Services\FormatHelper::rupiahOrDash($sale->subtotal_amount)),
             discountAmount: @json($sale->discount_amount > 0 ? \App\Services\FormatHelper::rupiah($sale->discount_amount) : null),
-            finalAmount: @json(\App\Services\FormatHelper::rupiah($sale->final_amount)),
+            finalAmount: @json(\App\Services\FormatHelper::rupiahOrDash($sale->final_amount)),
             items: [
                 @foreach($sale->items as $item)
                     {
                         name: @json(($item->scrapItem?->name ?? 'Barang') . ($item->item_type_name ? ' (' . $item->item_type_name . ')' : '')),
-                        weight: @json(\App\Services\FormatHelper::weight($item->weight)),
-                        price: @json(\App\Services\FormatHelper::rupiah($item->sell_price_per_kg)),
-                        subtotal: @json(\App\Services\FormatHelper::rupiah($item->subtotal))
+                        weight: @json(\App\Services\FormatHelper::weightOrDash($item->weight)),
+                        price: @json(\App\Services\FormatHelper::rupiahOrDash($item->sell_price_per_kg)),
+                        subtotal: @json(\App\Services\FormatHelper::rupiahOrDash($item->subtotal))
                     },
                 @endforeach
             ],

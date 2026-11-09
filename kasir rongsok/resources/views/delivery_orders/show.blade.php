@@ -231,7 +231,7 @@
                 Rincian Muatan Material Scrap & Daur Ulang
             </h3>
             <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                Total Berat: {{ \App\Services\FormatHelper::weight($deliveryOrder->total_weight) }} kg
+                Total Berat: {{ \App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight) }}
             </span>
         </div>
 
@@ -266,7 +266,7 @@
                                 {{ $master->total_packages > 0 ? $master->total_packages . ' Koli/Ikat' : '-' }}
                             </td>
                             <td class="py-3 px-4 text-right font-mono font-bold text-emerald-800 text-sm">
-                                {{ \App\Services\FormatHelper::weight($master->total_weight) }} kg
+                                {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
                             </td>
                             <td class="py-3 px-4 text-slate-600">
                                 @if(!$master->has_variants && $master->items->first()->notes)
@@ -301,7 +301,7 @@
                                         {{ $vItem->package_qty > 0 ? $vItem->package_qty . ' Koli' : '-' }}
                                     </td>
                                     <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-800">
-                                        {{ \App\Services\FormatHelper::weight($vItem->weight) }} kg
+                                        {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
                                     </td>
                                     <td class="py-2.5 px-4 text-slate-600 text-[11px]">
                                         @if($vItem->effective_price > 0)
@@ -318,9 +318,9 @@
                 <tfoot class="bg-slate-50 font-bold text-xs border-t-2 border-slate-200">
                     <tr>
                         <td colspan="2" class="py-3 px-4 text-slate-900 uppercase">Total Muatan Resmi</td>
-                        <td class="py-3 px-4 text-right font-mono">{{ $deliveryOrder->total_packages }} Koli</td>
+                        <td class="py-3 px-4 text-right font-mono">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '-' }}</td>
                         <td class="py-3 px-4 text-right font-mono text-sm text-emerald-800">
-                            {{ \App\Services\FormatHelper::weight($deliveryOrder->total_weight) }} kg
+                            {{ \App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight) }}
                         </td>
                         <td></td>
                     </tr>

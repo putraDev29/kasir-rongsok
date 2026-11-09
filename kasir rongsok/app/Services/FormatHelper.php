@@ -33,6 +33,18 @@ class FormatHelper
     }
 
     /**
+     * Format currency as integer, but return '-' if 0 or empty.
+     */
+    public static function rupiahOrDash(mixed $val): string
+    {
+        $num = (float) $val;
+        if ($num <= 0) {
+            return '-';
+        }
+        return 'Rp ' . number_format($num, 0, ',', '.');
+    }
+
+    /**
      * Format clean number (no decimals if whole number, e.g. 4 instead of 4,0).
      */
     public static function number(mixed $val): string
@@ -43,6 +55,18 @@ class FormatHelper
         }
         $formatted = number_format($num, 2, ',', '.');
         return rtrim(rtrim($formatted, '0'), ',');
+    }
+
+    /**
+     * Format number, but return '-' if 0 or empty.
+     */
+    public static function numberOrDash(mixed $val): string
+    {
+        $num = (float) $val;
+        if ($num <= 0) {
+            return '-';
+        }
+        return self::number($val);
     }
 
     /**
@@ -57,6 +81,19 @@ class FormatHelper
         }
         $formatted = number_format($num, 2, ',', '.');
         return rtrim(rtrim($formatted, '0'), ',');
+    }
+
+    /**
+     * Format weight with unit, but return '-' if 0 or empty.
+     * e.g. 5 -> "5 kg", 0 -> "-"
+     */
+    public static function weightOrDash(mixed $val, string $unit = 'kg'): string
+    {
+        $num = (float) $val;
+        if ($num <= 0) {
+            return '-';
+        }
+        return self::weight($val) . ($unit ? ' ' . $unit : '');
     }
 
     /**
