@@ -77,7 +77,7 @@ Artisan::command('app:reset-transactions {--force : Paksa reset tanpa konfirmasi
 })->purpose('Hapus semua data transaksi dan reset stok ke 0, menyisakan akun user dan master barang');
 
 Artisan::command('app:generate-icon', function () {
-    $this->info('Menghasilkan file icon ICO Windows secara dinamis...');
+    $this->info('Menghasilkan file icon ICO Windows secara dinamis dari logo usaha...');
     $success = \App\Services\IconGeneratorService::generateCurrentOrFallbackIco();
     if ($success) {
         $path = \App\Services\IconGeneratorService::resolveActiveIconPath();
@@ -88,5 +88,97 @@ Artisan::command('app:generate-icon', function () {
         return 1;
     }
 })->purpose('Generate icon Windows ICO secara dinamis untuk pintasan desktop dan favicon');
+
+Artisan::command('app:ensure-system-ready', function () {
+    $this->info('============================================================');
+    $this->info('  MEMERIKSA KESIAPAN SISTEM KASIR RONGSOK (AUTO-INITIALIZE)');
+    $this->info('============================================================');
+
+    $dbConnection = config('database.default', 'mysql');
+    $dbHost = config("database.connections.{$dbConnection}.host", '127.0.0.1');
+    $dbPort = config("database.connections.{$dbConnection}.port", '3306');
+    $dbName = config("database.connections.{$dbConnection}.database", 'kasir_rongsok_2');
+    $dbUser = config("database.connections.{$dbConnection}.username", 'root');
+    $dbPass = config("database.connections.{$dbConnection}.password", '');
+
+    // 1. Buat Database MySQL jika belum ada di PC / Laptop ini
+    if ($dbConnection === 'mysql') {
+        try {
+            $pdo = new \PDO("mysql:host={$dbHost};port={$dbPort}", $dbUser, $dbPass, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_TIMEOUT => 5,
+            ]);
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
+            $this->info("[V] Database '{$dbName}' siap di MySQL ({$dbHost}:{$dbPort}).");
+        } catch (\Throwable $e) {
+            $this->warn("[!] Peringatan koneksi server MySQL awal: " . $e->getMessage());
+        }
+    }
+
+    // 2. Jalankan Migrasi Database jika tabel belum ada atau ada migrasi pending
+    try {
+        $this->info('Memeriksa migrasi skema database...');
+        Artisan::call('migrate', ['--force' => true]);
+        $this->info('[V] Migrasi skema tabel database siap.');
+    } catch (\Throwable $e) {
+        $this->error('[X] Gagal migrasi: ' . $e->getMessage());
+    }
+
+    // 3. Seed Akun Default & Master Barang jika tabel user kosong
+    try {
+        $userCount = \Illuminate\Support\Facades\Schema::hasTable('users') 
+            ? \Illuminate\Support\Facades\DB::table('users')->count() 
+            : 0;
+
+        if ($userCount === 0) {
+            $this->info('Mengisi data akun awal (Owner, Admin, Kasir) & master barang rongsok...');
+            Artisan::call('db:seed', ['--force' => true]);
+            $this->info('[V] Seeder data bawaan berhasil diselesaikan.');
+        } else {
+            $this->info("[V] Database sudah berisi {$userCount} pengguna terdaftar.");
+        }
+    } catch (\Throwable $e) {
+        $this->warn('[!] Gagal seeding data awal: ' . $e->getMessage());
+    }
+
+    // 4. Sinkronisasi Logo, Tanda Tangan, & Stempel dari direktori uploads pada disk
+    try {
+        if (\Illuminate\Support\Facades\Schema::hasTable('business_settings')) {
+            \App\Models\BusinessSetting::syncUploadedMediaFromDisk();
+            $this->info('[V] Sinkronisasi media usaha (logo, stempel, tanda tangan) selesai.');
+        }
+    } catch (\Throwable $e) {
+        $this->warn('[!] Gagal sinkronisasi media usaha: ' . $e->getMessage());
+    }
+
+    // 5. Generate Icon ICO Aktif & Sinkronkan ke Desktop Shortcut
+    try {
+        $iconUpdated = \App\Services\IconGeneratorService::generateCurrentOrFallbackIco();
+        if ($iconUpdated) {
+            $icoPath = \App\Services\IconGeneratorService::resolveActiveIconPath();
+            $this->info("[V] Icon aplikasi berhasil diperbarui dari logo usaha: {$icoPath}");
+        }
+    } catch (\Throwable $e) {
+        $this->warn('[!] Peringatan generate icon: ' . $e->getMessage());
+    }
+
+    // 6. Buat / Perbarui Pintasan Desktop di PC / Laptop ini
+    try {
+        $projectRoot = \App\Services\IconGeneratorService::resolveProjectRoot();
+        $psScript = $projectRoot . DIRECTORY_SEPARATOR . 'setup_shortcuts.ps1';
+        if (file_exists($psScript)) {
+            @pclose(@popen("start /B powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"" . $psScript . "\"", "r"));
+            $this->info('[V] Pintasan desktop & folder proyek berhasil diperbarui.');
+        }
+    } catch (\Throwable $e) {
+        // Abaikan jika PowerShell tidak bisa dipanggil
+    }
+
+    $this->info('============================================================');
+    $this->info('  KASIR RONGSOK SYSTEM SUDAH SIAP BERJALAN!');
+    $this->info('============================================================');
+    return 0;
+})->purpose('Memastikan database MySQL, migrasi, data default, dan icon usaha siap pakai di PC baru');
+
 
 

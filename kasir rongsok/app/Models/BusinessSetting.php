@@ -41,18 +41,193 @@ class BusinessSetting extends Model
     }
 
     /**
+     * Auto-detect any uploaded logo on disk and self-heal the setting.
+     */
+    public static function detectUploadedLogo(): ?string
+    {
+        $dirs = [
+            public_path('uploads/logo'),
+            base_path('public/uploads/logo'),
+            base_path('../uploads/logo'),
+        ];
+
+        $candidates = [];
+        foreach ($dirs as $dir) {
+            if (is_dir($dir)) {
+                $files = @scandir($dir);
+                if (is_array($files)) {
+                    foreach ($files as $f) {
+                        if ($f === '.' || $f === '..' || str_starts_with($f, 'pwa_icon_') || $f === '.gitignore') {
+                            continue;
+                        }
+                        $full = $dir . DIRECTORY_SEPARATOR . $f;
+                        if (is_file($full) && filesize($full) > 500) {
+                            $ext = strtolower(pathinfo($full, PATHINFO_EXTENSION));
+                            if (in_array($ext, ['png', 'jpg', 'jpeg', 'webp', 'ico'])) {
+                                $candidates[$full] = filemtime($full);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($candidates)) {
+            arsort($candidates);
+            $best = array_key_first($candidates);
+            $relative = 'uploads/logo/' . basename($best);
+            try {
+                if (\Illuminate\Support\Facades\Schema::hasTable('business_settings')) {
+                    static::set('app_logo', $relative, 'branding');
+                }
+            } catch (\Throwable $e) {}
+            return $relative;
+        }
+
+        return null;
+    }
+
+    /**
+     * Auto-detect any uploaded owner signature on disk and self-heal the setting.
+     */
+    public static function detectUploadedSignature(): ?string
+    {
+        $dirs = [
+            public_path('uploads/signature'),
+            base_path('public/uploads/signature'),
+            base_path('../uploads/signature'),
+        ];
+
+        $candidates = [];
+        foreach ($dirs as $dir) {
+            if (is_dir($dir)) {
+                $files = @scandir($dir);
+                if (is_array($files)) {
+                    foreach ($files as $f) {
+                        if ($f === '.' || $f === '..' || $f === '.gitignore') {
+                            continue;
+                        }
+                        $full = $dir . DIRECTORY_SEPARATOR . $f;
+                        if (is_file($full) && filesize($full) > 100) {
+                            $candidates[$full] = filemtime($full);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($candidates)) {
+            // Prioritize owner_signature_active.png if exists, otherwise newest
+            $best = null;
+            foreach (array_keys($candidates) as $path) {
+                if (basename($path) === 'owner_signature_active.png') {
+                    $best = $path;
+                    break;
+                }
+            }
+            if (!$best) {
+                arsort($candidates);
+                $best = array_key_first($candidates);
+            }
+            $relative = 'uploads/signature/' . basename($best);
+            try {
+                if (\Illuminate\Support\Facades\Schema::hasTable('business_settings')) {
+                    static::set('owner_signature', $relative, 'branding');
+                }
+            } catch (\Throwable $e) {}
+            return $relative;
+        }
+
+        return null;
+    }
+
+    /**
+     * Auto-detect any uploaded company stamp on disk and self-heal the setting.
+     */
+    public static function detectUploadedStamp(): ?string
+    {
+        $dirs = [
+            public_path('uploads/stamp'),
+            base_path('public/uploads/stamp'),
+            base_path('../uploads/stamp'),
+        ];
+
+        $candidates = [];
+        foreach ($dirs as $dir) {
+            if (is_dir($dir)) {
+                $files = @scandir($dir);
+                if (is_array($files)) {
+                    foreach ($files as $f) {
+                        if ($f === '.' || $f === '..' || $f === '.gitignore') {
+                            continue;
+                        }
+                        $full = $dir . DIRECTORY_SEPARATOR . $f;
+                        if (is_file($full) && filesize($full) > 100) {
+                            $candidates[$full] = filemtime($full);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($candidates)) {
+            // Prioritize company_stamp_active.png if exists, otherwise newest
+            $best = null;
+            foreach (array_keys($candidates) as $path) {
+                if (basename($path) === 'company_stamp_active.png') {
+                    $best = $path;
+                    break;
+                }
+            }
+            if (!$best) {
+                arsort($candidates);
+                $best = array_key_first($candidates);
+            }
+            $relative = 'uploads/stamp/' . basename($best);
+            try {
+                if (\Illuminate\Support\Facades\Schema::hasTable('business_settings')) {
+                    static::set('company_stamp', $relative, 'branding');
+                }
+            } catch (\Throwable $e) {}
+            return $relative;
+        }
+
+        return null;
+    }
+
+    /**
+     * Sync all uploaded media (logo, signature, stamp) from disk into BusinessSettings.
+     */
+    public static function syncUploadedMediaFromDisk(): void
+    {
+        static::detectUploadedLogo();
+        static::detectUploadedSignature();
+        static::detectUploadedStamp();
+    }
+
+    /**
      * Determine if a custom app logo is configured and exists on disk.
      */
     public static function hasLogo(): bool
     {
         $logo = static::get('app_logo');
         if (empty($logo)) {
-            return false;
+            $logo = static::detectUploadedLogo();
+            if (empty($logo)) {
+                return false;
+            }
         }
 
-        return file_exists(public_path($logo))
+        $exists = file_exists(public_path($logo))
             || file_exists(base_path('../' . $logo))
             || file_exists(base_path('public/' . $logo));
+
+        if (!$exists) {
+            $detected = static::detectUploadedLogo();
+            return !empty($detected);
+        }
+
+        return true;
     }
 
     /**
@@ -60,12 +235,12 @@ class BusinessSetting extends Model
      */
     public static function logoUrl(): ?string
     {
-        $logo = static::get('app_logo');
-        if (empty($logo)) {
+        if (!static::hasLogo()) {
             return null;
         }
 
-        return static::hasLogo() ? asset($logo) : null;
+        $logo = static::get('app_logo');
+        return $logo ? asset($logo) : null;
     }
 
     /**
@@ -73,6 +248,10 @@ class BusinessSetting extends Model
      */
     public static function logoBase64(): ?string
     {
+        if (!static::hasLogo()) {
+            return null;
+        }
+
         $logo = static::get('app_logo');
         if (empty($logo)) {
             return null;
@@ -104,12 +283,22 @@ class BusinessSetting extends Model
     {
         $sig = static::get('owner_signature');
         if (empty($sig)) {
-            return false;
+            $sig = static::detectUploadedSignature();
+            if (empty($sig)) {
+                return false;
+            }
         }
 
-        return file_exists(public_path($sig))
+        $exists = file_exists(public_path($sig))
             || file_exists(base_path('../' . $sig))
             || file_exists(base_path('public/' . $sig));
+
+        if (!$exists) {
+            $detected = static::detectUploadedSignature();
+            return !empty($detected);
+        }
+
+        return true;
     }
 
     /**
@@ -117,12 +306,12 @@ class BusinessSetting extends Model
      */
     public static function ownerSignatureUrl(): ?string
     {
-        $sig = static::get('owner_signature');
-        if (empty($sig) || !static::hasOwnerSignature()) {
+        if (!static::hasOwnerSignature()) {
             return null;
         }
 
-        return asset($sig);
+        $sig = static::get('owner_signature');
+        return $sig ? asset($sig) : null;
     }
 
     /**
@@ -130,6 +319,10 @@ class BusinessSetting extends Model
      */
     public static function ownerSignatureBase64(): ?string
     {
+        if (!static::hasOwnerSignature()) {
+            return null;
+        }
+
         $sig = static::get('owner_signature');
         if (empty($sig)) {
             return null;
@@ -161,12 +354,22 @@ class BusinessSetting extends Model
     {
         $stamp = static::get('company_stamp');
         if (empty($stamp)) {
-            return false;
+            $stamp = static::detectUploadedStamp();
+            if (empty($stamp)) {
+                return false;
+            }
         }
 
-        return file_exists(public_path($stamp))
+        $exists = file_exists(public_path($stamp))
             || file_exists(base_path('../' . $stamp))
             || file_exists(base_path('public/' . $stamp));
+
+        if (!$exists) {
+            $detected = static::detectUploadedStamp();
+            return !empty($detected);
+        }
+
+        return true;
     }
 
     /**
@@ -174,12 +377,12 @@ class BusinessSetting extends Model
      */
     public static function companyStampUrl(): ?string
     {
-        $stamp = static::get('company_stamp');
-        if (empty($stamp) || !static::hasCompanyStamp()) {
+        if (!static::hasCompanyStamp()) {
             return null;
         }
 
-        return asset($stamp);
+        $stamp = static::get('company_stamp');
+        return $stamp ? asset($stamp) : null;
     }
 
     /**
@@ -187,6 +390,10 @@ class BusinessSetting extends Model
      */
     public static function companyStampBase64(): ?string
     {
+        if (!static::hasCompanyStamp()) {
+            return null;
+        }
+
         $stamp = static::get('company_stamp');
         if (empty($stamp)) {
             return null;

@@ -100,24 +100,24 @@ WshShell.Run "cmd /c netsh advfirewall firewall add rule name=""Kasir Rongsok WA
 ' Pastikan shortcut di Desktop dibuat jika belum ada (tanpa menimpa shortcut yang sudah aktif agar icon tidak flicker/revert)
 Dim desktopLnkPath, autoDeskLnk, activeIconPath
 desktopLnkPath = WshShell.SpecialFolders("Desktop") & "\Kasir Rongsok.lnk"
-If Not fso.FileExists(desktopLnkPath) Then
-    activeIconPath = ""
-    If fso.FileExists(currentDir & "\app_logo_active.ico") Then
-        If fso.GetFile(currentDir & "\app_logo_active.ico").Size > 500 Then
-            activeIconPath = currentDir & "\app_logo_active.ico"
-        End If
+activeIconPath = ""
+If fso.FileExists(currentDir & "\app_logo_active.ico") Then
+    If fso.GetFile(currentDir & "\app_logo_active.ico").Size > 500 Then
+        activeIconPath = currentDir & "\app_logo_active.ico"
     End If
-    If activeIconPath = "" And fso.FileExists(currentDir & "\app_icon.ico") Then
-        If fso.GetFile(currentDir & "\app_icon.ico").Size > 500 Then
-            activeIconPath = currentDir & "\app_icon.ico"
-        End If
+End If
+If activeIconPath = "" And fso.FileExists(currentDir & "\app_icon.ico") Then
+    If fso.GetFile(currentDir & "\app_icon.ico").Size > 500 Then
+        activeIconPath = currentDir & "\app_icon.ico"
     End If
-    If activeIconPath = "" And fso.FileExists(currentDir & "\kasir rongsok\public\favicon.ico") Then
-        If fso.GetFile(currentDir & "\kasir rongsok\public\favicon.ico").Size > 500 Then
-            activeIconPath = currentDir & "\kasir rongsok\public\favicon.ico"
-        End If
+End If
+If activeIconPath = "" And fso.FileExists(currentDir & "\kasir rongsok\public\favicon.ico") Then
+    If fso.GetFile(currentDir & "\kasir rongsok\public\favicon.ico").Size > 500 Then
+        activeIconPath = currentDir & "\kasir rongsok\public\favicon.ico"
     End If
+End If
 
+If Not fso.FileExists(desktopLnkPath) Then
     Set autoDeskLnk = WshShell.CreateShortcut(desktopLnkPath)
     autoDeskLnk.TargetPath = "wscript.exe"
     autoDeskLnk.Arguments = """" & currentDir & "\START_KASIR_RONGSOK.vbs"""
@@ -127,6 +127,13 @@ If Not fso.FileExists(desktopLnkPath) Then
         autoDeskLnk.IconLocation = activeIconPath & ",0"
     End If
     autoDeskLnk.Save
+    Set autoDeskLnk = Nothing
+ElseIf activeIconPath <> "" Then
+    Set autoDeskLnk = WshShell.CreateShortcut(desktopLnkPath)
+    If autoDeskLnk.IconLocation <> (activeIconPath & ",0") Then
+        autoDeskLnk.IconLocation = activeIconPath & ",0"
+        autoDeskLnk.Save
+    End If
     Set autoDeskLnk = Nothing
 End If
 
@@ -138,6 +145,8 @@ If Not IsProcessRunning("mysqld.exe") Then
         WshShell.Run """D:\xampp\mysql_start.bat""", 0, False
     ElseIf fso.FileExists("E:\xampp\mysql_start.bat") Then
         WshShell.Run """E:\xampp\mysql_start.bat""", 0, False
+    ElseIf fso.FileExists("F:\xampp\mysql_start.bat") Then
+        WshShell.Run """F:\xampp\mysql_start.bat""", 0, False
     End If
     Call WaitForMySql(20)
     WScript.Sleep 2000
@@ -153,8 +162,8 @@ If Not CheckHttp("http://127.0.0.1:21465/api/status") Then
     WshShell.Run """" & currentDir & "\wa_gateway\run_wa_gateway.bat""", 7, False
 End If
 
-' 4. Tunggu Server Siap (Max 20 detik)
-Call WaitForHttpUrl("http://127.0.0.1:8000", 20)
+' 4. Tunggu Server Siap (Max 30 detik untuk penyiapan otomatis awal)
+Call WaitForHttpUrl("http://127.0.0.1:8000", 30)
 WScript.Sleep 1000
 
 ' 5. Buka Browser (Chrome jika ada, atau default browser)

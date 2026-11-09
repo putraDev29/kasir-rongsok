@@ -575,51 +575,66 @@ class ScrapCashierSystemTest extends TestCase
 
     public function test_settings_can_update_sidebar_name_logo_and_disclaimer(): void
     {
-        $fakeLogo = UploadedFile::fake()->image('depo_logo.png', 100, 100);
-
-        $response = $this->actingAs($this->superAdmin)->put('/settings', [
-            'app_name' => 'DEPO BESI MAKMUR',
-            'app_subtitle' => 'Sentra Daur Ulang Logam',
-            'company_name' => 'PT. Daur Ulang Terpadu',
-            'company_tagline' => 'Solusi Logam & Rongsok',
-            'company_phone' => '0812-9988-7766',
-            'company_address' => 'Jl. Pahlawan Rongsok No. 12',
-            'receipt_disclaimer' => 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI',
-            'receipt_footer' => 'Barang sudah ditimbang tidak dapat ditarik kembali.',
-            'receipt_header' => 'Nota Pembelian Resmi',
-            'default_printer_type' => 'thermal_58',
-            'app_logo' => $fakeLogo,
-        ]);
-
-        $response->assertSessionHas('success');
-        $this->assertDatabaseHas('business_settings', [
-            'key' => 'app_name',
-            'value' => 'DEPO BESI MAKMUR',
-        ]);
-        $this->assertDatabaseHas('business_settings', [
-            'key' => 'receipt_disclaimer',
-            'value' => 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI',
-        ]);
-
-        // Verify Sidebar Displays the custom name
-        $dashResponse = $this->actingAs($this->admin)->get('/dashboard');
-        $dashResponse->assertStatus(200);
-        $dashResponse->assertSee('DEPO BESI MAKMUR');
-        $dashResponse->assertSee('Sentra Daur Ulang Logam');
-
-        // Verify Nota Print Displays Disclaimer
-        $purchase = PurchaseTransaction::first();
-        if ($purchase) {
-            $printResponse = $this->actingAs($this->kasir)->get('/purchases/' . $purchase->id . '/print');
-            $printResponse->assertStatus(200);
-            $printResponse->assertSee('TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI');
-            $printResponse->assertSee('PERHATIAN / DISCLAIMER');
+        $existingLogo = \App\Models\BusinessSetting::get('app_logo');
+        $existingLogoBackup = null;
+        if ($existingLogo && file_exists(public_path($existingLogo))) {
+            $existingLogoBackup = public_path($existingLogo . '.test_bak');
+            @copy(public_path($existingLogo), $existingLogoBackup);
         }
 
-        // Clean up uploaded fake logo file
-        $logoPath = \App\Models\BusinessSetting::get('app_logo');
-        if ($logoPath && file_exists(public_path($logoPath))) {
-            @unlink(public_path($logoPath));
+        try {
+            $fakeLogo = UploadedFile::fake()->image('depo_logo.png', 100, 100);
+
+            $response = $this->actingAs($this->superAdmin)->put('/settings', [
+                'app_name' => 'DEPO BESI MAKMUR',
+                'app_subtitle' => 'Sentra Daur Ulang Logam',
+                'company_name' => 'PT. Daur Ulang Terpadu',
+                'company_tagline' => 'Solusi Logam & Rongsok',
+                'company_phone' => '0812-9988-7766',
+                'company_address' => 'Jl. Pahlawan Rongsok No. 12',
+                'receipt_disclaimer' => 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI',
+                'receipt_footer' => 'Barang sudah ditimbang tidak dapat ditarik kembali.',
+                'receipt_header' => 'Nota Pembelian Resmi',
+                'default_printer_type' => 'thermal_58',
+                'app_logo' => $fakeLogo,
+            ]);
+
+            $response->assertSessionHas('success');
+            $this->assertDatabaseHas('business_settings', [
+                'key' => 'app_name',
+                'value' => 'DEPO BESI MAKMUR',
+            ]);
+            $this->assertDatabaseHas('business_settings', [
+                'key' => 'receipt_disclaimer',
+                'value' => 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI',
+            ]);
+
+            // Verify Sidebar Displays the custom name
+            $dashResponse = $this->actingAs($this->admin)->get('/dashboard');
+            $dashResponse->assertStatus(200);
+            $dashResponse->assertSee('DEPO BESI MAKMUR');
+            $dashResponse->assertSee('Sentra Daur Ulang Logam');
+
+            // Verify Nota Print Displays Disclaimer
+            $purchase = PurchaseTransaction::first();
+            if ($purchase) {
+                $printResponse = $this->actingAs($this->kasir)->get('/purchases/' . $purchase->id . '/print');
+                $printResponse->assertStatus(200);
+                $printResponse->assertSee('TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI');
+                $printResponse->assertSee('PERHATIAN / DISCLAIMER');
+            }
+
+            // Clean up uploaded fake logo file
+            $logoPath = \App\Models\BusinessSetting::get('app_logo');
+            if ($logoPath && file_exists(public_path($logoPath)) && $logoPath !== $existingLogo) {
+                @unlink(public_path($logoPath));
+            }
+        } finally {
+            if ($existingLogoBackup && file_exists($existingLogoBackup)) {
+                @copy($existingLogoBackup, public_path($existingLogo));
+                @unlink($existingLogoBackup);
+                \App\Models\BusinessSetting::set('app_logo', $existingLogo, 'branding');
+            }
         }
     }
 

@@ -90,14 +90,14 @@ if %errorLevel% neq 0 (
 )
 echo [OK] MySQL aktif.
 
-:: 3. Buat Database MySQL kasir_rongsok
+:: 3. Buat Database MySQL
 echo.
-echo [2/7] Menyiapkan Database "kasir_rongsok"...
-mysql -u root -e "CREATE DATABASE IF NOT EXISTS kasir_rongsok CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" >nul 2>&1
+echo [2/7] Menyiapkan Database MySQL...
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS kasir_rongsok CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS kasir_rongsok_2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" >nul 2>&1
 if %errorLevel% equ 0 (
-    echo [OK] Database kasir_rongsok siap.
+    echo [OK] Database siap.
 ) else (
-    echo [!] Melewati pembuatan otomatis database. Pastikan database kasir_rongsok sudah dibuat di phpMyAdmin.
+    echo [!] Melewati pembuatan manual database. Pastikan MySQL aktif.
 )
 
 :: 4. Setup File .env Laravel
@@ -124,8 +124,8 @@ if not exist "vendor\autoload.php" (
 echo Menghasilkan Application Key...
 call php artisan key:generate --force >nul 2>&1
 
-echo Menjalankan Migrasi & Seeder Database...
-call php artisan migrate --seed --force
+echo Menjalankan Penyiapan Database, Migrasi, Seeder, dan Icon...
+call php artisan app:ensure-system-ready
 cd ..
 
 :: 6. Build Aset Frontend (NPM)

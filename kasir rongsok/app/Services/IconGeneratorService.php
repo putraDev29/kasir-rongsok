@@ -57,40 +57,112 @@ class IconGeneratorService
     }
 
     /**
+     * Resolve the active source brand image path from BusinessSettings or disk uploads.
+     * Guaranteed to detect uploaded logo files (e.g. logo_*.png) even before DB is migrated or populated.
+     */
+    public static function resolveActiveSourceImagePath(): ?string
+    {
+        $projectRoot = self::resolveProjectRoot();
+
+        // 1. Check if configured in BusinessSetting
+        try {
+            $activeLogoRelative = BusinessSetting::get('app_logo');
+            if ($activeLogoRelative) {
+                $candidates = [
+                    public_path($activeLogoRelative),
+                    base_path($activeLogoRelative),
+                    $projectRoot . DIRECTORY_SEPARATOR . 'kasir rongsok' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . $activeLogoRelative,
+                    $projectRoot . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . $activeLogoRelative,
+                ];
+                foreach ($candidates as $cand) {
+                    if (file_exists($cand) && is_file($cand) && filesize($cand) > 100) {
+                        return $cand;
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            // DB might be down or not migrated yet
+        }
+
+        // 2. Scan disk uploads directory for uploaded logo (e.g. logo_*.png, etc.)
+        $uploadDirs = [
+            public_path('uploads/logo'),
+            base_path('public/uploads/logo'),
+            $projectRoot . DIRECTORY_SEPARATOR . 'kasir rongsok' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'logo',
+            $projectRoot . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'logo',
+        ];
+
+        $foundFiles = [];
+        foreach ($uploadDirs as $dir) {
+            if (is_dir($dir)) {
+                $files = @scandir($dir);
+                if (is_array($files)) {
+                    foreach ($files as $f) {
+                        if ($f === '.' || $f === '..' || str_starts_with($f, 'pwa_icon_') || $f === '.gitignore') {
+                            continue;
+                        }
+                        $filePath = $dir . DIRECTORY_SEPARATOR . $f;
+                        if (is_file($filePath) && filesize($filePath) > 500) {
+                            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                            if (in_array($ext, ['png', 'jpg', 'jpeg', 'webp', 'ico'])) {
+                                $foundFiles[$filePath] = filemtime($filePath);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($foundFiles)) {
+            // Pick the latest modified logo file
+            arsort($foundFiles);
+            $bestPath = array_key_first($foundFiles);
+
+            // Self-heal BusinessSetting if DB is accessible
+            try {
+                if (\Illuminate\Support\Facades\Schema::hasTable('business_settings')) {
+                    $relative = 'uploads/logo/' . basename($bestPath);
+                    BusinessSetting::set('app_logo', $relative, 'branding');
+                }
+            } catch (Throwable $e) {}
+
+            return $bestPath;
+        }
+
+        return null;
+    }
+
+    /**
      * Generate an ICO from the active business logo, or default if no logo exists.
      */
     public static function generateCurrentOrFallbackIco(?string $targetIcoPath = null): bool
     {
         $projectRoot = self::resolveProjectRoot();
         $targetIco = $targetIcoPath ?: ($projectRoot . DIRECTORY_SEPARATOR . 'app_icon.ico');
+        $activeTarget = $projectRoot . DIRECTORY_SEPARATOR . 'app_logo_active.ico';
 
-        $activeLogoRelative = BusinessSetting::get('app_logo');
-        if ($activeLogoRelative) {
-            $possiblePaths = [
-                public_path($activeLogoRelative),
-                base_path($activeLogoRelative),
-                $projectRoot . DIRECTORY_SEPARATOR . 'kasir rongsok' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . $activeLogoRelative,
-                $projectRoot . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . $activeLogoRelative,
-            ];
-
-            foreach ($possiblePaths as $path) {
-                if (file_exists($path) && filesize($path) > 0) {
-                    $activeTarget = $projectRoot . DIRECTORY_SEPARATOR . 'app_logo_active.ico';
-                    $success = self::generateIcoFromImage($path, $activeTarget);
-                    if ($success) {
-                        @copy($activeTarget, $targetIco);
-                        @copy($activeTarget, public_path('favicon.ico'));
-                        self::syncWindowsDesktopShortcut($activeTarget);
-                        return true;
-                    }
+        $sourceImagePath = self::resolveActiveSourceImagePath();
+        if ($sourceImagePath && file_exists($sourceImagePath)) {
+            $success = self::generateIcoFromImage($sourceImagePath, $activeTarget);
+            if ($success) {
+                @copy($activeTarget, $targetIco);
+                @copy($activeTarget, public_path('favicon.ico'));
+                if (file_exists($projectRoot . DIRECTORY_SEPARATOR . 'kasir rongsok' . DIRECTORY_SEPARATOR . 'public')) {
+                    @copy($activeTarget, $projectRoot . DIRECTORY_SEPARATOR . 'kasir rongsok' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'favicon.ico');
                 }
+                self::syncWindowsDesktopShortcut($activeTarget);
+                return true;
             }
         }
 
-        // Fallback: generate crisp default ICO
+        // Fallback: generate crisp default ICO only if no brand logo exists on disk or DB
         $success = self::generateDefaultIco($targetIco);
         if ($success) {
+            @copy($targetIco, $activeTarget);
             @copy($targetIco, public_path('favicon.ico'));
+            if (file_exists($projectRoot . DIRECTORY_SEPARATOR . 'kasir rongsok' . DIRECTORY_SEPARATOR . 'public')) {
+                @copy($targetIco, $projectRoot . DIRECTORY_SEPARATOR . 'kasir rongsok' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'favicon.ico');
+            }
             self::syncWindowsDesktopShortcut($targetIco);
         }
 

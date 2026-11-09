@@ -125,6 +125,9 @@ class DatabaseSeeder extends Seeder
             BusinessSetting::updateOrCreate(['key' => $key], ['value' => $val, 'group' => 'general']);
         }
 
+        // Sinkronkan logo, tanda tangan, dan stempel dari file yang sudah di-upload pada direktori uploads
+        BusinessSetting::syncUploadedMediaFromDisk();
+
         // 3. Payment Methods
         $cash = PaymentMethod::firstOrCreate(['code' => 'cash'], ['name' => 'Tunai / Cash', 'is_active' => true]);
         $bca = PaymentMethod::updateOrCreate(['code' => 'transfer_bca'], [

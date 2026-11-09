@@ -31,6 +31,9 @@ if (-not $foundIcon) {
     if (Test-Path "C:\xampp\php\php.exe") { $phpCmd = "C:\xampp\php\php.exe" }
     elseif (Test-Path "D:\xampp\php\php.exe") { $phpCmd = "D:\xampp\php\php.exe" }
     elseif (Test-Path "E:\xampp\php\php.exe") { $phpCmd = "E:\xampp\php\php.exe" }
+    elseif (Test-Path "F:\xampp\php\php.exe") { $phpCmd = "F:\xampp\php\php.exe" }
+    elseif (Test-Path "C:\php\php.exe") { $phpCmd = "C:\php\php.exe" }
+    elseif (Test-Path "D:\php\php.exe") { $phpCmd = "D:\php\php.exe" }
 
     $artisan = Join-Path $workingDir "kasir rongsok\artisan"
     if (Test-Path $artisan) {
