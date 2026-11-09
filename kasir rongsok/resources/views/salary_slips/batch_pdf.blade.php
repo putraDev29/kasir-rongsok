@@ -47,21 +47,23 @@
         }
 
         /* Summary KPI Cards */
-        .kpi-table {
+        table.kpi-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 8px 0;
-            margin-left: -8px;
-            margin-right: -8px;
+            border-collapse: collapse;
+            table-layout: fixed;
             margin-bottom: 8px;
+        }
+        table.kpi-table td {
+            padding: 0;
+            vertical-align: top;
         }
         .kpi-box {
             border: 1px solid #cbd5e1;
             border-radius: 4px;
-            padding: 5px 10px;
+            padding: 5px 8px;
             background-color: #ffffff;
-            width: 33.33%;
             text-align: center;
+            box-sizing: border-box;
         }
         .kpi-label {
             font-size: 7pt;
@@ -85,6 +87,7 @@
         table.data-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
             margin-top: 4px;
         }
         table.data-table thead {
@@ -150,22 +153,30 @@
     <!-- 3 KPI Cards -->
     <table class="kpi-table">
         <tr>
-            <td class="kpi-box" style="border-top: 2.5px solid #64748b;">
-                <div class="kpi-label">Total Gaji Pokok</div>
-                <div class="kpi-amount" style="color: #0f172a;">{{ \App\Services\FormatHelper::rupiah($slips->sum('basic_salary')) }}</div>
-                <div class="kpi-subtext">Dari {{ $slips->count() }} slip gaji karyawan</div>
-            </td>
-            <td class="kpi-box" style="border-top: 2.5px solid #10b981; background-color: #f0fdf4;">
-                <div class="kpi-label" style="color: #047857;">Tunjangan &amp; Lembur</div>
-                <div class="kpi-amount" style="color: #047857;">{{ \App\Services\FormatHelper::rupiah($slips->sum('allowance_amount') + $slips->sum('bonus_amount')) }}</div>
-                <div class="kpi-subtext" style="color: #059669;">
-                    Potongan kasbon: {{ \App\Services\FormatHelper::rupiah($slips->sum('total_deduction')) }}
+            <td style="width: 32%;">
+                <div class="kpi-box" style="border-top: 2.5px solid #64748b;">
+                    <div class="kpi-label">Total Gaji Pokok</div>
+                    <div class="kpi-amount" style="color: #0f172a;">{{ \App\Services\FormatHelper::rupiah($slips->sum('basic_salary')) }}</div>
+                    <div class="kpi-subtext">Dari {{ $slips->count() }} slip gaji karyawan</div>
                 </div>
             </td>
-            <td class="kpi-box" style="border-top: 2.5px solid #4338ca; background-color: #eef2ff;">
-                <div class="kpi-label" style="color: #4338ca;">Total Pengeluaran Gaji Bersih</div>
-                <div class="kpi-amount" style="color: #4338ca;">{{ \App\Services\FormatHelper::rupiah($totalNetSalary) }}</div>
-                <div class="kpi-subtext" style="color: #4338ca;">Total kas keluar payroll karyawan</div>
+            <td style="width: 2%;"></td>
+            <td style="width: 32%;">
+                <div class="kpi-box" style="border-top: 2.5px solid #10b981; background-color: #f0fdf4;">
+                    <div class="kpi-label" style="color: #047857;">Tunjangan &amp; Lembur</div>
+                    <div class="kpi-amount" style="color: #047857;">{{ \App\Services\FormatHelper::rupiah($slips->sum('allowance_amount') + $slips->sum('bonus_amount')) }}</div>
+                    <div class="kpi-subtext" style="color: #059669;">
+                        Potongan kasbon: {{ \App\Services\FormatHelper::rupiah($slips->sum('total_deduction')) }}
+                    </div>
+                </div>
+            </td>
+            <td style="width: 2%;"></td>
+            <td style="width: 32%;">
+                <div class="kpi-box" style="border-top: 2.5px solid #4338ca; background-color: #eef2ff;">
+                    <div class="kpi-label" style="color: #4338ca;">Total Pengeluaran Gaji Bersih</div>
+                    <div class="kpi-amount" style="color: #4338ca;">{{ \App\Services\FormatHelper::rupiah($totalNetSalary) }}</div>
+                    <div class="kpi-subtext" style="color: #4338ca;">Total kas keluar payroll karyawan</div>
+                </div>
             </td>
         </tr>
     </table>

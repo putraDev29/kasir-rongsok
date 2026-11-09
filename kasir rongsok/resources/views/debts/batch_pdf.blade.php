@@ -46,21 +46,23 @@
         }
 
         /* Summary KPI Cards */
-        .kpi-table {
+        table.kpi-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 6px 0;
-            margin-left: -6px;
-            margin-right: -6px;
+            border-collapse: collapse;
+            table-layout: fixed;
             margin-bottom: 8px;
+        }
+        table.kpi-table td {
+            padding: 0;
+            vertical-align: top;
         }
         .kpi-box {
             border: 1px solid #cbd5e1;
             border-radius: 4px;
             padding: 5px 8px;
             background-color: #ffffff;
-            width: 33.33%;
             text-align: center;
+            box-sizing: border-box;
         }
         .kpi-label {
             font-size: 7pt;
@@ -162,22 +164,30 @@
     <!-- 3 KPI Cards -->
     <table class="kpi-table">
         <tr>
-            <td class="kpi-box" style="border-top: 2.5px solid #64748b;">
-                <div class="kpi-label">Total Pinjaman Modal</div>
-                <div class="kpi-amount" style="color: #0f172a;">{{ \App\Services\FormatHelper::rupiah($totalAmount) }}</div>
-                <div class="kpi-subtext">Akumulasi seluruh kasbon &amp; pinjaman</div>
-            </td>
-            <td class="kpi-box" style="border-top: 2.5px solid #10b981; background-color: #f0fdf4;">
-                <div class="kpi-label" style="color: #047857;">Telah Diangsur / Dipotong</div>
-                <div class="kpi-amount" style="color: #047857;">{{ \App\Services\FormatHelper::rupiah($totalPaid) }}</div>
-                <div class="kpi-subtext" style="color: #059669;">
-                    {{ $totalAmount > 0 ? round(($totalPaid / $totalAmount) * 100) : 0 }}% terbayar / terpotong timbangan
+            <td style="width: 32%;">
+                <div class="kpi-box" style="border-top: 2.5px solid #64748b;">
+                    <div class="kpi-label">Total Pinjaman Modal</div>
+                    <div class="kpi-amount" style="color: #0f172a;">{{ \App\Services\FormatHelper::rupiah($totalAmount) }}</div>
+                    <div class="kpi-subtext">Akumulasi seluruh kasbon &amp; pinjaman</div>
                 </div>
             </td>
-            <td class="kpi-box" style="border-top: 2.5px solid #f59e0b; background-color: #fffbeb;">
-                <div class="kpi-label" style="color: #b45309;">Sisa Saldo Kasbon Aktif</div>
-                <div class="kpi-amount" style="color: #b45309;">{{ \App\Services\FormatHelper::rupiah($totalRemaining) }}</div>
-                <div class="kpi-subtext" style="color: #b45309;">Piutang berjalan belum lunas</div>
+            <td style="width: 2%;"></td>
+            <td style="width: 32%;">
+                <div class="kpi-box" style="border-top: 2.5px solid #10b981; background-color: #f0fdf4;">
+                    <div class="kpi-label" style="color: #047857;">Telah Diangsur / Dipotong</div>
+                    <div class="kpi-amount" style="color: #047857;">{{ \App\Services\FormatHelper::rupiah($totalPaid) }}</div>
+                    <div class="kpi-subtext" style="color: #059669;">
+                        {{ $totalAmount > 0 ? round(($totalPaid / $totalAmount) * 100) : 0 }}% terbayar / terpotong timbangan
+                    </div>
+                </div>
+            </td>
+            <td style="width: 2%;"></td>
+            <td style="width: 32%;">
+                <div class="kpi-box" style="border-top: 2.5px solid #f59e0b; background-color: #fffbeb;">
+                    <div class="kpi-label" style="color: #b45309;">Sisa Saldo Kasbon Aktif</div>
+                    <div class="kpi-amount" style="color: #b45309;">{{ \App\Services\FormatHelper::rupiah($totalRemaining) }}</div>
+                    <div class="kpi-subtext" style="color: #b45309;">Piutang berjalan belum lunas</div>
+                </div>
             </td>
         </tr>
     </table>

@@ -126,21 +126,23 @@
         }
 
         /* 3-Column Financial KPI Cards */
-        .kpi-table {
+        table.kpi-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 6px 0;
-            margin-left: -6px;
-            margin-right: -6px;
+            border-collapse: collapse;
+            table-layout: fixed;
             margin-bottom: 12px;
+        }
+        table.kpi-table td {
+            padding: 0;
+            vertical-align: top;
         }
         .kpi-box {
             border: 1px solid #cbd5e1;
             border-radius: 4px;
             padding: 7px 10px;
             background-color: #ffffff;
-            width: 33.33%;
             text-align: center;
+            box-sizing: border-box;
         }
         .kpi-label {
             font-size: 8px;
@@ -352,29 +354,37 @@
     <!-- 3 KPI Cards: Posisi Saldo Terkini -->
     <table class="kpi-table">
         <tr>
-            <td class="kpi-box" style="border-top: 3px solid #64748b;">
-                <div class="kpi-label">Nominal Pinjaman Awal</div>
-                <div class="kpi-amount" style="color: #0f172a;">
-                    Rp {{ number_format($debt->initial_amount, 0, ',', '.') }}
-                </div>
-                <div class="kpi-subtext">Pokok pinjaman yang disalurkan</div>
-            </td>
-            <td class="kpi-box" style="border-top: 3px solid #10b981; background-color: #f0fdf4;">
-                <div class="kpi-label" style="color: #047857;">Total Sudah Diangsur</div>
-                <div class="kpi-amount" style="color: #047857;">
-                    Rp {{ number_format($debt->paid_amount, 0, ',', '.') }}
-                </div>
-                <div class="kpi-subtext" style="color: #059669;">
-                    {{ $debt->initial_amount > 0 ? round(($debt->paid_amount / $debt->initial_amount) * 100) : 0 }}% terbayar ({{ $payments->count() }}x angsuran)
+            <td style="width: 32%;">
+                <div class="kpi-box" style="border-top: 3px solid #64748b;">
+                    <div class="kpi-label">Nominal Pinjaman Awal</div>
+                    <div class="kpi-amount" style="color: #0f172a;">
+                        Rp {{ number_format($debt->initial_amount, 0, ',', '.') }}
+                    </div>
+                    <div class="kpi-subtext">Pokok pinjaman yang disalurkan</div>
                 </div>
             </td>
-            <td class="kpi-box" style="border-top: 3px solid {{ $debt->isPaid() ? '#10b981' : '#f59e0b' }}; background-color: {{ $debt->isPaid() ? '#f0fdf4' : '#fffbeb' }};">
-                <div class="kpi-label" style="color: {{ $debt->isPaid() ? '#047857' : '#b45309' }};">Sisa Saldo Hutang</div>
-                <div class="kpi-amount" style="color: {{ $debt->isPaid() ? '#047857' : '#b45309' }};">
-                    Rp {{ number_format($debt->remaining_amount, 0, ',', '.') }}
+            <td style="width: 2%;"></td>
+            <td style="width: 32%;">
+                <div class="kpi-box" style="border-top: 3px solid #10b981; background-color: #f0fdf4;">
+                    <div class="kpi-label" style="color: #047857;">Total Sudah Diangsur</div>
+                    <div class="kpi-amount" style="color: #047857;">
+                        Rp {{ number_format($debt->paid_amount, 0, ',', '.') }}
+                    </div>
+                    <div class="kpi-subtext" style="color: #059669;">
+                        {{ $debt->initial_amount > 0 ? round(($debt->paid_amount / $debt->initial_amount) * 100) : 0 }}% terbayar ({{ $payments->count() }}x angsuran)
+                    </div>
                 </div>
-                <div class="kpi-subtext" style="color: {{ $debt->isPaid() ? '#059669' : '#b45309' }};">
-                    {{ $debt->isPaid() ? 'Hutang telah dinyatakan LUNAS' : 'Wajib diselesaikan / dilunasi' }}
+            </td>
+            <td style="width: 2%;"></td>
+            <td style="width: 32%;">
+                <div class="kpi-box" style="border-top: 3px solid {{ $debt->isPaid() ? '#10b981' : '#f59e0b' }}; background-color: {{ $debt->isPaid() ? '#f0fdf4' : '#fffbeb' }};">
+                    <div class="kpi-label" style="color: {{ $debt->isPaid() ? '#047857' : '#b45309' }};">Sisa Saldo Hutang</div>
+                    <div class="kpi-amount" style="color: {{ $debt->isPaid() ? '#047857' : '#b45309' }};">
+                        Rp {{ number_format($debt->remaining_amount, 0, ',', '.') }}
+                    </div>
+                    <div class="kpi-subtext" style="color: {{ $debt->isPaid() ? '#059669' : '#b45309' }};">
+                        {{ $debt->isPaid() ? 'Hutang telah dinyatakan LUNAS' : 'Wajib diselesaikan / dilunasi' }}
+                    </div>
                 </div>
             </td>
         </tr>
