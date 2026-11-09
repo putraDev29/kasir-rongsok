@@ -96,6 +96,7 @@
                             subtitle: 'Kirim berkas dokumen PDF gabungan nota timbang ke nomor WhatsApp',
                             filename: 'Semua_Nota_Pembelian_' + ('{{ ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd') }}') + '.pdf',
                             fileDescription: 'Dokumen PDF Rekapitulasi Semua Nota Pembelian (Format 58mm Kertas HVS)',
+                            printUrl: '{{ route('purchases.batch-print', request()->query()) }}',
                             pdfUrl: '{{ route('purchases.batch-pdf', request()->query()) }}',
                             previewUrl: '{{ route('purchases.preview-wa-global', request()->query()) }}',
                             sendUrl: '{{ route('purchases.send-wa-global') }}',

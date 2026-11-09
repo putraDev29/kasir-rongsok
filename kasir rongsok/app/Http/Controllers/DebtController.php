@@ -241,6 +241,7 @@ class DebtController extends Controller
             'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
+            'print_url' => route('debts.agreement', $debt),
             'file_description' => "Dokumen PDF {$title} ({$debt->debt_number})",
         ]);
     }

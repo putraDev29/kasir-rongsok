@@ -71,6 +71,7 @@
                         phone: '{{ $deliveryOrder->recipient_phone ?: $deliveryOrder->driver_phone }}',
                         filename: 'Surat_Jalan_{{ $deliveryOrder->delivery_number }}_2Rangkap.pdf',
                         fileDescription: 'Dokumen PDF Resmi Surat Jalan (2 Rangkap: Lembar 1 Gudang & Lembar 2 Supir)',
+                        printUrl: '{{ route('delivery-orders.print', $deliveryOrder) }}',
                         pdfUrl: '{{ route('delivery-orders.pdf', $deliveryOrder) }}',
                         previewUrl: '{{ route('delivery-orders.wa-preview', $deliveryOrder) }}',
                         sendUrl: '{{ route('delivery-orders.send-wa', $deliveryOrder) }}',

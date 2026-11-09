@@ -410,6 +410,7 @@ class DeliveryOrderController extends Controller
             'filename' => $filename,
             'pdf_filename' => $filename,
             'pdf_url' => route('delivery-orders.pdf', $deliveryOrder),
+            'print_url' => route('delivery-orders.print', $deliveryOrder),
             'file_description' => 'Dokumen PDF Resmi Surat Jalan Pengiriman (2 Rangkap: Lembar 1 Gudang & Lembar 2 Supir)',
         ]);
     }

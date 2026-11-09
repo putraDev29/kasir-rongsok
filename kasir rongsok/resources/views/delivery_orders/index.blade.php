@@ -258,6 +258,7 @@
                                                 phone: '{{ $order->recipient_phone ?: $order->driver_phone }}',
                                                 filename: 'Surat_Jalan_{{ $order->delivery_number }}.pdf',
                                                 fileDescription: 'Dokumen PDF Resmi Surat Jalan (Lengkap Supir, Armada & Muatan)',
+                                                printUrl: '{{ route('delivery-orders.print', $order) }}',
                                                 pdfUrl: '{{ route('delivery-orders.pdf', $order) }}',
                                                 previewUrl: '{{ route('delivery-orders.wa-preview', $order) }}',
                                                 sendUrl: '{{ route('delivery-orders.send-wa', $order) }}',

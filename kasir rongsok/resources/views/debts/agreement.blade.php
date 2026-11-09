@@ -43,6 +43,7 @@
                         phone: '{{ $debt->borrower_phone }}',
                         filename: 'SPH_' + ('{{ str_replace(['/', ' '], '_', $debt->agreement_number ?: $debt->debt_number) }}') + '.pdf',
                         fileDescription: 'Dokumen PDF Resmi Surat Perjanjian (A4 - 2 Lembar)',
+                        printUrl: '{{ route('debts.agreement', $debt) }}',
                         pdfUrl: '{{ route('debts.agreement-pdf', $debt) }}',
                         previewUrl: '{{ route('debts.agreement-wa-preview', $debt) }}',
                         sendUrl: '{{ route('debts.agreement-wa', $debt) }}',

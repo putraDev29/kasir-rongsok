@@ -193,6 +193,7 @@
                                                 phone: '{{ $sup->phone }}',
                                                 filename: 'Kartu_Member_{{ $sup->member_number }}.pdf',
                                                 fileDescription: 'Dokumen PDF Resmi Kartu Member & Hak Reward Pemasok',
+                                                printUrl: '{{ route('suppliers.member-card', $sup) }}',
                                                 pdfUrl: '{{ route('suppliers.member-card-pdf', $sup) }}',
                                                 previewUrl: '{{ route('suppliers.member-card-wa-preview', $sup) }}',
                                                 sendUrl: '{{ route('suppliers.member-card-wa', $sup) }}',

@@ -315,6 +315,7 @@ class SalarySlipController extends Controller
             'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
+            'print_url' => route('salary-slips.print', $salarySlip),
             'file_description' => "Dokumen PDF Resmi Slip Gaji ({$salarySlip->employee_name})",
         ]);
     }

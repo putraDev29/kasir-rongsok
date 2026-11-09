@@ -206,6 +206,7 @@ class WhatsAppGatewayController extends Controller
             'filename' => $filename,
             'pdf_filename' => $filename,
             'pdf_url' => route('purchases.pdf', $purchase),
+            'print_url' => route('purchases.print', ['purchase' => $purchase, 'format' => 'a4']),
             'receipt_data' => $receiptData,
         ]);
     }
@@ -321,6 +322,7 @@ class WhatsAppGatewayController extends Controller
             'filename' => $filename,
             'pdf_filename' => $filename,
             'pdf_url' => route('sales.pdf', $sale),
+            'print_url' => route('sales.print', $sale),
             'receipt_data' => $receiptData,
         ]);
     }
@@ -403,6 +405,7 @@ class WhatsAppGatewayController extends Controller
             'filename' => $filename,
             'pdf_filename' => $filename,
             'pdf_url' => $pdfUrl,
+            'print_url' => route('debts.payments.print', $payment),
             'receipt_data' => $receiptData,
         ]);
     }

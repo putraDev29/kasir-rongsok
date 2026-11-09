@@ -218,6 +218,7 @@
                                                 phone: '{{ $slip->employeeUser?->phone ?? $slip->employee_phone }}',
                                                 filename: 'Slip_Gaji_{{ $slip->slip_number }}.pdf',
                                                 fileDescription: 'Dokumen PDF Resmi Slip Gaji & Honor Karyawan',
+                                                printUrl: '{{ route('salary-slips.print', $slip) }}',
                                                 pdfUrl: '{{ route('salary-slips.pdf', $slip) }}',
                                                 previewUrl: '{{ route('salary-slips.wa-preview', $slip) }}',
                                                 sendUrl: '{{ route('salary-slips.send-wa', $slip) }}',

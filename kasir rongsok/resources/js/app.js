@@ -206,6 +206,7 @@ Alpine.store('waGateway', {
         formattedPhone: '',
         filename: 'Nota.pdf',
         fileDescription: 'Dokumen PDF Resmi Kasir Rongsok (Format A5)',
+        printUrl: null,
         pdfUrl: null,
         sendUrl: null,
         sendPayload: null,
@@ -393,6 +394,7 @@ Alpine.store('waGateway', {
         this.receipt.isSending = false;
         this.receipt.sendSuccess = false;
         this.receipt.sendError = null;
+        this.receipt.printUrl = null;
         this.receipt.pdfUrl = null;
         this.receipt.sendUrl = null;
         this.receipt.sendPayload = null;
@@ -403,23 +405,27 @@ Alpine.store('waGateway', {
         if (type === 'purchase') {
             previewUrl = `/whatsapp/purchases/${id}/preview`;
             this.receipt.title = 'Kirim Nota Timbang PDF via WhatsApp';
-            this.receipt.subtitle = 'Pratinjau dokumen resmi di aplikasi & kirim ke nomor WhatsApp pemasok';
+            this.receipt.subtitle = 'Kirim berkas dokumen PDF resmi langsung ke nomor WhatsApp pemasok';
             this.receipt.fileDescription = 'Dokumen PDF Resmi Kasir Rongsok (Format A5)';
             this.receipt.submitButtonText = 'Kirim Nota PDF via WA';
             this.receipt.pdfUrl = `/purchases/${id}/pdf`;
+            this.receipt.printUrl = `/purchases/${id}/print?format=a4`;
         } else if (type === 'sale') {
             previewUrl = `/whatsapp/sales/${id}/preview`;
             this.receipt.title = 'Kirim Faktur Penjualan Partai PDF';
-            this.receipt.subtitle = 'Pratinjau faktur resmi di aplikasi & kirim ke WhatsApp pembeli';
+            this.receipt.subtitle = 'Kirim berkas dokumen PDF faktur penjualan langsung ke WhatsApp pembeli';
             this.receipt.fileDescription = 'Dokumen PDF Resmi Faktur Penjualan Rongsok (A5)';
             this.receipt.submitButtonText = 'Kirim Faktur PDF via WA';
             this.receipt.pdfUrl = `/sales/${id}/pdf`;
+            this.receipt.printUrl = `/sales/${id}/print`;
         } else if (type === 'debt_payment') {
             previewUrl = `/whatsapp/debt-payments/${id}/preview`;
             this.receipt.title = 'Kirim Bukti Pembayaran Kasbon PDF';
-            this.receipt.subtitle = 'Pratinjau kuitansi kasbon di aplikasi & kirim ke nomor WhatsApp';
+            this.receipt.subtitle = 'Kirim berkas kuitansi cicilan kasbon langsung ke nomor WhatsApp';
             this.receipt.fileDescription = 'Dokumen PDF Kuitansi Pembayaran Kasbon Resmi';
             this.receipt.submitButtonText = 'Kirim Bukti PDF via WA';
+            this.receipt.pdfUrl = `/debts/payments/${id}/pdf`;
+            this.receipt.printUrl = `/debts/payments/${id}/print`;
         }
 
         try {
@@ -437,6 +443,7 @@ Alpine.store('waGateway', {
                 if (data.filename) this.receipt.filename = data.filename;
                 if (data.pdf_filename) this.receipt.filename = data.pdf_filename;
                 if (data.pdf_url) this.receipt.pdfUrl = data.pdf_url;
+                if (data.print_url) this.receipt.printUrl = data.print_url;
             } else {
                 this.receipt.sendError = 'Gagal memuat data pratinjau nota.';
             }
@@ -457,6 +464,7 @@ Alpine.store('waGateway', {
         this.receipt.formattedPhone = '';
         this.receipt.filename = config.filename || 'Dokumen.pdf';
         this.receipt.fileDescription = config.fileDescription || 'Dokumen PDF Resmi Kasir Rongsok';
+        this.receipt.printUrl = config.printUrl || null;
         this.receipt.pdfUrl = config.pdfUrl || null;
         this.receipt.sendUrl = config.sendUrl || null;
         this.receipt.sendPayload = config.sendPayload || {};
@@ -481,6 +489,7 @@ Alpine.store('waGateway', {
                     if (data.phone && !this.receipt.phone) this.receipt.phone = data.phone;
                     if (data.pdf_filename) this.receipt.filename = data.pdf_filename;
                     if (data.pdf_url) this.receipt.pdfUrl = data.pdf_url;
+                    if (data.print_url) this.receipt.printUrl = data.print_url;
                     if (data.file_description) this.receipt.fileDescription = data.file_description;
                 } else {
                     this.receipt.sendError = 'Gagal memuat pratinjau pesan.';
@@ -651,24 +660,32 @@ Alpine.store('waGateway', {
     },
 
     downloadPdf(downloadDirectly = false) {
-        if (this.receipt.pdfUrl) {
-            if (downloadDirectly) {
+        if (downloadDirectly) {
+            // Direct download/save PDF
+            if (this.receipt.pdfUrl) {
                 const dlUrl = this.receipt.pdfUrl + (this.receipt.pdfUrl.includes('?') ? '&' : '?') + 'download=1';
                 window.location.href = dlUrl;
-            } else {
-                const container = document.getElementById('waReceiptPdfPages');
-                if (container) {
-                    container.scrollIntoView({ behavior: 'smooth' });
-                } else if (window.openPdfPreview) {
-                    const title = this.receipt.title || 'Pratinjau Dokumen PDF';
-                    const fname = this.receipt.filename || 'Dokumen.pdf';
-                    window.openPdfPreview(this.receipt.pdfUrl, title, fname, this.receipt.phone || '');
-                }
+                return;
             }
-            return;
+        } else {
+            // Preview: opens in new tab (like http://localhost:8000/purchases/batch-print)
+            const targetUrl = this.receipt.printUrl || this.receipt.pdfUrl;
+            if (targetUrl) {
+                window.open(targetUrl, '_blank');
+                return;
+            }
         }
 
         if (!this.receipt.receiptData) {
+            if (this.receipt.pdfUrl) {
+                if (downloadDirectly) {
+                    const dlUrl = this.receipt.pdfUrl + (this.receipt.pdfUrl.includes('?') ? '&' : '?') + 'download=1';
+                    window.location.href = dlUrl;
+                } else {
+                    window.open(this.receipt.pdfUrl, '_blank');
+                }
+                return;
+            }
             alert('Data nota belum siap.');
             return;
         }

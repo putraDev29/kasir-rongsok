@@ -199,6 +199,7 @@ class SupplierController extends Controller
             'message' => \App\Services\FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
+            'print_url' => route('suppliers.member-card', $supplier),
             'file_description' => "Dokumen PDF Resmi Kartu Member ({$supplier->name} - {$tierName})",
         ]);
     }
