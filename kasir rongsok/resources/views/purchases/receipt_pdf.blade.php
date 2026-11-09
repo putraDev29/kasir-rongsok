@@ -373,22 +373,6 @@
         <div class="clear"></div>
     </div>
 
-    <!-- Signatures -->
-    <table class="signatures-table">
-        <tr>
-            <td>
-                <div>Pemasok / Penjual,</div>
-                <div class="sig-space"></div>
-                <div class="sig-name">{{ $purchase->supplier_name ?: 'Pemasok Umum' }}</div>
-            </td>
-            <td>
-                <div>Kasir / Penimbang,</div>
-                <div class="sig-space"></div>
-                <div class="sig-name">{{ $purchase->user?->name ?? 'Kasir Timbang' }}</div>
-            </td>
-        </tr>
-    </table>
-
     <!-- Footer Note -->
     <div class="footer-note">
         {{ $settings['receipt_footer'] ?? 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali.' }}

@@ -466,26 +466,11 @@
             </div>
         </div>
 
-        <!-- Signatures (Especially in A4 / Receipt for supplier confirmation) -->
-        <div class="mt-4 pt-1.5 border-t border-slate-300 text-center font-sans">
-            <div class="grid grid-cols-2 gap-2 {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} text-slate-600">
-                <div>
-                    <p>Penjual / Pemasok</p>
-                    <div class="{{ $format === 'thermal_58' ? 'h-7' : 'h-10' }}"></div>
-                    <p class="font-bold">({{ $purchase->supplier_name ?: '...................' }})</p>
-                </div>
-                <div>
-                    <p>Operator Kasir</p>
-                    <div class="{{ $format === 'thermal_58' ? 'h-7' : 'h-10' }}"></div>
-                    <p class="font-bold">({{ $purchase->user?->name }})</p>
-                </div>
+        <!-- Peringatan Disclaimer Hukum: Tidak Menerima Barang Bukan Milik Pribadi -->
+        <div class="mt-4 pt-2 border-t border-dashed border-slate-900 text-center font-sans space-y-0.5">
+            <div class="inline-block px-1.5 py-0.2 bg-slate-900 text-white font-bold {{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[8px] sm:text-[9px]' }} uppercase tracking-wider rounded">
+                PERHATIAN / DISCLAIMER
             </div>
-
-            <!-- Peringatan Disclaimer Hukum: Tidak Menerima Barang Bukan Milik Pribadi -->
-            <div class="mt-3 pt-2 border-t border-dashed border-slate-900 text-center font-sans space-y-0.5">
-                <div class="inline-block px-1.5 py-0.2 bg-slate-900 text-white font-bold {{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[8px] sm:text-[9px]' }} uppercase tracking-wider rounded">
-                    PERHATIAN / DISCLAIMER
-                </div>
                 <div class="font-bold uppercase {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[9px] sm:text-[10px]' }} text-slate-900 tracking-tight leading-tight">
                     *** {{ $settings['receipt_disclaimer'] ?? 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI' }} ***
                 </div>
