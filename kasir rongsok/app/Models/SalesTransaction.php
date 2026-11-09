@@ -154,6 +154,7 @@ class SalesTransaction extends Model
                 'total_cogs' => $totalCogs,
                 'total_profit' => $totalProfit,
                 'avg_sell_price' => $totalWeight > 0 ? ($totalSubtotal / $totalWeight) : ($totalQuantity > 0 ? ($totalSubtotal / $totalQuantity) : (float) $first->sell_price_per_kg),
+                'avg_buy_price' => $totalWeight > 0 ? ($totalCogs / $totalWeight) : ($totalQuantity > 0 ? ($totalCogs / $totalQuantity) : (float) ($first->buy_price_snapshot ?? $first->scrapItem?->buy_price_per_kg ?? 0)),
                 'has_variants' => $hasVariants,
                 'items' => $items,
             ];

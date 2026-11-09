@@ -239,15 +239,21 @@
                             <th class="py-2.5 px-3">#</th>
                             <th class="py-2.5 px-3">Kode</th>
                             <th class="py-2.5 px-3">Nama Barang</th>
-                            <th class="py-2.5 px-3 text-right">Berat (kg)</th>
+                            <th class="py-2.5 px-3 text-right">Berat / Satuan</th>
+                            <th class="py-2.5 px-3 text-right">Harga Beli/kg</th>
+                            <th class="py-2.5 px-3 text-right">Subtotal Beli</th>
                             <th class="py-2.5 px-3 text-right">Harga Jual/kg</th>
-                            <th class="py-2.5 px-3 text-right font-bold">Subtotal</th>
-                            <th class="py-2.5 px-3 text-right">Estimasi HPP</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-900">Subtotal Harga Jual</th>
                             <th class="py-2.5 px-3 text-right font-bold text-emerald-700">Estimasi Laba</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @foreach($sale->grouped_master_items as $idx => $master)
+                            @php
+                                $isPcs = ($master->unit_type === 'pcs' || $master->unit_type === 'satuan');
+                                $masterBuyPrice = $master->has_variants ? ($master->avg_buy_price ?? 0) : ($master->items->first()->buy_price_snapshot ?: ($master->items->first()->scrapItem?->buy_price_per_kg ?? 0));
+                                $masterSellPrice = $master->has_variants ? $master->avg_sell_price : $master->items->first()->sell_price_per_kg;
+                            @endphp
                             <!-- Master Item Row (Akumulasi Total dari Master Barang) -->
                             <tr class="{{ $master->has_variants ? 'bg-slate-50/50 font-semibold' : 'hover:bg-slate-50' }}">
                                 <td class="py-2.5 px-3 text-slate-500 font-mono">{{ $idx + 1 }}</td>
@@ -263,20 +269,31 @@
                                     </div>
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
-                                    {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
+                                    @if($isPcs)
+                                        {{ \App\Services\FormatHelper::numberOrDash($master->total_quantity) }} {{ $master->total_quantity > 0 ? 'pcs' : '' }}
+                                    @else
+                                        {{ \App\Services\FormatHelper::weightOrDash($master->total_weight) }}
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono text-slate-700">
+                                    @if($master->has_variants)
+                                        <span class="text-slate-400 text-[11px] italic">{{ $master->avg_buy_price > 0 ? 'Rerata Rp ' . number_format($master->avg_buy_price, 0, ',', '.') : '-' }}</span>
+                                    @else
+                                        {{ \App\Services\FormatHelper::rupiahOrDash($masterBuyPrice) }}
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono text-slate-700">
+                                    {{ \App\Services\FormatHelper::rupiahOrDash($master->total_cogs) }}
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono">
                                     @if($master->has_variants)
                                         <span class="text-slate-400 text-[11px] italic">{{ $master->avg_sell_price > 0 ? 'Rerata Rp ' . number_format($master->avg_sell_price, 0, ',', '.') : '-' }}</span>
                                     @else
-                                        {{ \App\Services\FormatHelper::rupiahOrDash($master->items->first()->sell_price_per_kg) }}
+                                        {{ \App\Services\FormatHelper::rupiahOrDash($masterSellPrice) }}
                                     @endif
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
                                     {{ \App\Services\FormatHelper::rupiahOrDash($master->total_subtotal) }}
-                                </td>
-                                <td class="py-2.5 px-3 text-right font-mono text-slate-500">
-                                    {{ $master->total_cogs > 0 ? 'Rp ' . number_format($master->total_cogs, 0, ',', '.') : '-' }}
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">
                                     {{ $master->total_profit != 0 ? 'Rp ' . number_format($master->total_profit, 0, ',', '.') : '-' }}
@@ -286,6 +303,10 @@
                             <!-- Rincian Jenis Varian (Bila Ada Varian) -->
                             @if($master->has_variants)
                                 @foreach($master->items as $vItem)
+                                    @php
+                                        $vIsPcs = ($vItem->unit_type === 'pcs' || $vItem->unit_type === 'satuan');
+                                        $vBuyPrice = $vItem->buy_price_snapshot ?: ($vItem->scrapItem?->buy_price_per_kg ?? 0);
+                                    @endphp
                                     <tr class="bg-blue-50/30 hover:bg-blue-50/60 border-l-4 border-l-blue-500 text-xs transition-colors">
                                         <td class="py-2 px-3 text-right text-blue-400 font-mono text-[11px]">↳</td>
                                         <td class="py-2 px-3 text-slate-400 font-mono text-[11px]">{{ $vItem->item_code_snapshot ?: '-' }}</td>
@@ -300,7 +321,17 @@
                                             </div>
                                         </td>
                                         <td class="py-2 px-3 text-right font-mono text-slate-700 font-medium">
-                                            {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
+                                            @if($vIsPcs)
+                                                {{ \App\Services\FormatHelper::numberOrDash($vItem->quantity) }} {{ $vItem->quantity > 0 ? 'pcs' : '' }}
+                                            @else
+                                                {{ \App\Services\FormatHelper::weightOrDash($vItem->weight) }}
+                                            @endif
+                                        </td>
+                                        <td class="py-2 px-3 text-right font-mono text-slate-700 font-medium">
+                                            {{ \App\Services\FormatHelper::rupiahOrDash($vBuyPrice) }}
+                                        </td>
+                                        <td class="py-2 px-3 text-right font-mono text-slate-700 font-medium">
+                                            {{ \App\Services\FormatHelper::rupiahOrDash($vItem->cogs_subtotal) }}
                                         </td>
                                         <td class="py-2 px-3 text-right font-mono text-slate-700 font-medium">
                                             {{ \App\Services\FormatHelper::rupiahOrDash($vItem->sell_price_per_kg) }}
@@ -308,10 +339,7 @@
                                         <td class="py-2 px-3 text-right font-mono font-bold text-slate-800">
                                             {{ \App\Services\FormatHelper::rupiahOrDash($vItem->subtotal) }}
                                         </td>
-                                        <td class="py-2 px-3 text-right font-mono text-slate-400 text-[11px]">
-                                            {{ $vItem->cogs_subtotal > 0 ? 'Rp ' . number_format($vItem->cogs_subtotal, 0, ',', '.') : '-' }}
-                                        </td>
-                                        <td class="py-2 px-3 text-right font-mono font-medium text-emerald-600 text-[11px]">
+                                        <td class="py-2 px-3 text-right font-mono text-emerald-600 font-medium">
                                             {{ $vItem->profit_subtotal != 0 ? 'Rp ' . number_format($vItem->profit_subtotal, 0, ',', '.') : '-' }}
                                         </td>
                                     </tr>
@@ -343,7 +371,11 @@
                     <span class="font-mono font-bold text-slate-900">{{ \App\Services\FormatHelper::weightOrDash($sale->total_weight) }}</span>
                 </div>
                 <div class="flex justify-between text-slate-600">
-                    <span>Subtotal:</span>
+                    <span>Total Subtotal Beli:</span>
+                    <span class="font-mono">{{ \App\Services\FormatHelper::rupiahOrDash($sale->estimated_cogs) }}</span>
+                </div>
+                <div class="flex justify-between text-slate-600">
+                    <span>Subtotal Harga Jual:</span>
                     <span class="font-mono">{{ \App\Services\FormatHelper::rupiahOrDash($sale->subtotal_amount) }}</span>
                 </div>
                 @if($sale->discount_amount > 0)
