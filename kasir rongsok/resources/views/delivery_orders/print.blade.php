@@ -256,7 +256,7 @@
                     <tfoot class="border-t-2 border-slate-900 font-bold bg-slate-50">
                         <tr>
                             <td colspan="2" class="py-1 px-2 uppercase text-slate-900 border-r border-slate-300">TOTAL MUATAN RESMI</td>
-                            <td class="py-1 px-2 text-right font-mono border-r border-slate-300">{{ $deliveryOrder->total_packages }} Koli</td>
+                            <td class="py-1 px-2 text-right font-mono border-r border-slate-300">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '-' }}</td>
                             <td class="py-1 px-2 text-right font-mono font-black text-slate-900 border-r border-slate-300">
                                 {{ \App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight) }}
                             </td>
@@ -476,7 +476,7 @@
                     <tfoot class="border-t-2 border-slate-900 font-bold bg-slate-50">
                         <tr>
                             <td colspan="2" class="py-1 px-2 uppercase text-slate-900 border-r border-slate-300">TOTAL MUATAN RESMI</td>
-                            <td class="py-1 px-2 text-right font-mono border-r border-slate-300">{{ $deliveryOrder->total_packages }} Koli</td>
+                            <td class="py-1 px-2 text-right font-mono border-r border-slate-300">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '-' }}</td>
                             <td class="py-1 px-2 text-right font-mono font-black text-slate-900 border-r border-slate-300">
                                 {{ \App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight) }}
                             </td>

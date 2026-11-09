@@ -368,7 +368,8 @@ class DeliveryOrderController extends Controller
         }
         $msg .= "----------------------------------------\n";
         $msg .= "📦 *DAFTAR MUATAN BARANG:*\n{$itemsStr}\n\n";
-        $msg .= "⚖️ *TOTAL MUATAN :* *{$totalKg} kg* ({$deliveryOrder->total_packages} Koli)\n";
+        $koliStr = $deliveryOrder->total_packages > 0 ? " ({$deliveryOrder->total_packages} Koli)" : "";
+        $msg .= "⚖️ *TOTAL MUATAN :* *{$totalKg} kg*{$koliStr}\n";
         $msg .= "----------------------------------------\n";
         $msg .= "📄 *KETERANGAN RANGKAP:*\n";
         $msg .= "• Surat jalan ini dibuat *2 rangkap*:\n";
