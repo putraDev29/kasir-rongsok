@@ -184,7 +184,7 @@
             font-size: 8.5pt;
         }
         .sig-space {
-            height: 50px;
+            height: 56px;
             text-align: center;
         }
         .sig-name {
@@ -368,7 +368,7 @@
                 <td>
                     <p style="margin: 0 0 4px 0;">Pimpinan / Kasir Penggajian,</p>
                     <div class="sig-space">
-                        @include('components.signature-stamp', ['isPdf' => true, 'height' => 46, 'stampSize' => 52])
+                        @include('components.signature-stamp', ['isPdf' => true, 'height' => 48, 'stampSize' => 56])
                     </div>
                     <p class="sig-name">( {{ $salarySlip->creator?->name ?? 'Pimpinan / Owner Depo' }} )</p>
                 </td>

@@ -279,8 +279,8 @@
             </div>
             <div>
                 <p>Pimpinan / Owner Depo</p>
-                <div class="h-16 flex items-center justify-center" style="height: 65px;">
-                    @include('components.signature-stamp', ['isPdf' => false, 'height' => 55, 'stampSize' => 62])
+                <div class="h-16 flex items-center justify-center" style="height: 58px;">
+                    @include('components.signature-stamp', ['isPdf' => false, 'height' => 48, 'stampSize' => 56])
                 </div>
                 <p class="font-bold underline">({{ $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur' }})</p>
             </div>

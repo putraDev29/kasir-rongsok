@@ -263,8 +263,8 @@
     <div class="footer">
         <div class="signature-box">
             <p style="margin: 0 0 4px 0;">Manajer Operasional / Owner,</p>
-            <div style="height: 44px; text-align: center;">
-                @include('components.signature-stamp', ['isPdf' => true, 'height' => 40, 'stampSize' => 46])
+            <div style="height: 56px; text-align: center;">
+                @include('components.signature-stamp', ['isPdf' => true, 'height' => 48, 'stampSize' => 56])
             </div>
             <p style="margin: 2px 0 0 0; font-weight: bold; text-decoration: underline;">
                 ( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Pimpinan / Owner Depo' }} )

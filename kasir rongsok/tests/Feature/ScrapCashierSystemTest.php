@@ -810,6 +810,9 @@ class ScrapCashierSystemTest extends TestCase
     public function test_owner_signature_upload_and_pdf_integration(): void
     {
         $oldSignature = BusinessSetting::get('owner_signature');
+        $oldSignatureBytes = ($oldSignature && file_exists(public_path($oldSignature))) ? file_get_contents(public_path($oldSignature)) : null;
+        $oldStamp = BusinessSetting::get('company_stamp');
+        $oldStampBytes = ($oldStamp && file_exists(public_path($oldStamp))) ? file_get_contents(public_path($oldStamp)) : null;
 
         // 1. Upload signature via settings update
         $fakeSignature = UploadedFile::fake()->image('ttd_owner.png', 300, 150);
@@ -871,7 +874,16 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertNotNull(BusinessSetting::ownerSignatureBase64());
 
         // Restore original setting & clean up debt
+        if ($savedPath && $savedPath !== $oldSignature && file_exists(public_path($savedPath))) {
+            @unlink(public_path($savedPath));
+        }
         BusinessSetting::set('owner_signature', $oldSignature);
+        if ($oldSignature && $oldSignatureBytes !== null) {
+            file_put_contents(public_path($oldSignature), $oldSignatureBytes);
+        }
+        if ($oldStamp && $oldStampBytes !== null) {
+            file_put_contents(public_path($oldStamp), $oldStampBytes);
+        }
         $debt->forceDelete();
     }
 
@@ -2441,72 +2453,105 @@ class ScrapCashierSystemTest extends TestCase
     {
         $this->actingAs($this->superAdmin);
 
-        // 1. Prepare fake transparent PNGs
-        $fakeSig = \Illuminate\Http\UploadedFile::fake()->image('owner_signature.png', 300, 150);
-        $fakeStamp = \Illuminate\Http\UploadedFile::fake()->image('company_stamp.png', 200, 200);
+        // 0. Backup existing settings and physical files to prevent test pollution
+        $preSig = \App\Models\BusinessSetting::get('owner_signature');
+        $preSigBytes = ($preSig && file_exists(public_path($preSig))) ? file_get_contents(public_path($preSig)) : null;
+        $preStamp = \App\Models\BusinessSetting::get('company_stamp');
+        $preStampBytes = ($preStamp && file_exists(public_path($preStamp))) ? file_get_contents(public_path($preStamp)) : null;
+        $preAppName = \App\Models\BusinessSetting::get('app_name');
+        $preCompanyName = \App\Models\BusinessSetting::get('company_name');
+        $prePrinter = \App\Models\BusinessSetting::get('default_printer_type');
 
-        // 2. Upload via Settings Update
-        $uploadRes = $this->put(route('settings.update'), [
-            'app_name' => 'Depo Rongsok Modern',
-            'company_name' => 'UD. Sentosa Scrap Jaya',
-            'default_printer_type' => 'a4',
-            'owner_signature' => $fakeSig,
-            'company_stamp' => $fakeStamp,
-        ]);
-        $uploadRes->assertSessionHasNoErrors();
-        $uploadRes->assertRedirect();
+        try {
+            // 1. Prepare fake transparent PNGs
+            $fakeSig = \Illuminate\Http\UploadedFile::fake()->image('owner_signature.png', 300, 150);
+            $fakeStamp = \Illuminate\Http\UploadedFile::fake()->image('company_stamp.png', 200, 200);
 
-        $savedSig = \App\Models\BusinessSetting::get('owner_signature');
-        $savedStamp = \App\Models\BusinessSetting::get('company_stamp');
+            // 2. Upload via Settings Update
+            $uploadRes = $this->put(route('settings.update'), [
+                'app_name' => 'Depo Rongsok Modern',
+                'company_name' => 'UD. Sentosa Scrap Jaya',
+                'default_printer_type' => 'a4',
+                'owner_signature' => $fakeSig,
+                'company_stamp' => $fakeStamp,
+            ]);
+            $uploadRes->assertSessionHasNoErrors();
+            $uploadRes->assertRedirect();
 
-        $this->assertNotNull($savedSig);
-        $this->assertNotNull($savedStamp);
-        $this->assertTrue(\App\Models\BusinessSetting::hasOwnerSignature());
-        $this->assertTrue(\App\Models\BusinessSetting::hasCompanyStamp());
-        $this->assertTrue(\App\Models\BusinessSetting::hasSignatureOrStamp());
+            $savedSig = \App\Models\BusinessSetting::get('owner_signature');
+            $savedStamp = \App\Models\BusinessSetting::get('company_stamp');
 
-        // 3. Verify Permanent Persistence: Submitting text-only settings update must NOT wipe signature or stamp
-        $updateRes = $this->put(route('settings.update'), [
-            'app_name' => 'Depo Rongsok Modern Perkasa',
-            'company_name' => 'UD. Sentosa Scrap Jaya Abadi',
-            'default_printer_type' => 'thermal_80',
-        ]);
-        $updateRes->assertSessionHasNoErrors();
+            $this->assertNotNull($savedSig);
+            $this->assertNotNull($savedStamp);
+            $this->assertTrue(\App\Models\BusinessSetting::hasOwnerSignature());
+            $this->assertTrue(\App\Models\BusinessSetting::hasCompanyStamp());
+            $this->assertTrue(\App\Models\BusinessSetting::hasSignatureOrStamp());
 
-        $this->assertEquals($savedSig, \App\Models\BusinessSetting::get('owner_signature'));
-        $this->assertEquals($savedStamp, \App\Models\BusinessSetting::get('company_stamp'));
-        $this->assertTrue(\App\Models\BusinessSetting::hasOwnerSignature());
-        $this->assertTrue(\App\Models\BusinessSetting::hasCompanyStamp());
+            // 3. Verify Permanent Persistence: Submitting text-only settings update must NOT wipe signature or stamp
+            $updateRes = $this->put(route('settings.update'), [
+                'app_name' => 'Depo Rongsok Modern Perkasa',
+                'company_name' => 'UD. Sentosa Scrap Jaya Abadi',
+                'default_printer_type' => 'thermal_80',
+            ]);
+            $updateRes->assertSessionHasNoErrors();
 
-        // 4. Verify Component Rendering in Web & PDF modes
-        $webHtml = \App\Models\BusinessSetting::renderSignatureAndStamp(isPdf: false, height: 50);
-        $this->assertStringContainsString('Stempel Depo', $webHtml);
-        $this->assertStringContainsString('TTD Owner', $webHtml);
-        $this->assertStringContainsString('position: absolute', $webHtml);
-        $this->assertStringContainsString('position: relative', $webHtml);
-        $this->assertStringContainsString('z-index: 2', $webHtml);
-        $this->assertStringContainsString('z-index: 1', $webHtml);
+            $this->assertEquals($savedSig, \App\Models\BusinessSetting::get('owner_signature'));
+            $this->assertEquals($savedStamp, \App\Models\BusinessSetting::get('company_stamp'));
+            $this->assertTrue(\App\Models\BusinessSetting::hasOwnerSignature());
+            $this->assertTrue(\App\Models\BusinessSetting::hasCompanyStamp());
 
-        $pdfHtml = \App\Models\BusinessSetting::renderSignatureAndStamp(isPdf: true, height: 50);
-        $this->assertStringContainsString('Stempel Depo', $pdfHtml);
-        $this->assertStringContainsString('TTD Owner', $pdfHtml);
-        $this->assertStringContainsString('data:image', $pdfHtml);
-        $this->assertStringContainsString('z-index: 2', $pdfHtml);
+            // 4. Verify Component Rendering in Web & PDF modes
+            $webHtml = \App\Models\BusinessSetting::renderSignatureAndStamp(isPdf: false, height: 50);
+            $this->assertStringContainsString('Stempel Depo', $webHtml);
+            $this->assertStringContainsString('TTD Owner', $webHtml);
+            $this->assertStringContainsString('position: absolute', $webHtml);
+            $this->assertStringContainsString('position: relative', $webHtml);
+            $this->assertStringContainsString('z-index: 2', $webHtml);
+            $this->assertStringContainsString('z-index: 1', $webHtml);
 
-        // 5. Verify Settings View includes stamp upload block and live preview
-        $settingsViewRes = $this->get(route('settings.index'));
-        $settingsViewRes->assertOk();
-        $settingsViewRes->assertSee('Cap Stempel Depo / Usaha');
-        $settingsViewRes->assertSee('name="company_stamp"', false);
-        $settingsViewRes->assertSee('Cap stempel aktif tersimpan');
-        $settingsViewRes->assertSee('Pratinjau Hasil di Kolom Tanda Tangan Dokumen');
+            $pdfHtml = \App\Models\BusinessSetting::renderSignatureAndStamp(isPdf: true, height: 50);
+            $this->assertStringContainsString('Stempel Depo', $pdfHtml);
+            $this->assertStringContainsString('TTD Owner', $pdfHtml);
+            $this->assertStringContainsString('data:image', $pdfHtml);
+            $this->assertStringContainsString('z-index: 2', $pdfHtml);
 
-        // Clean up test image files
-        if (file_exists(public_path($savedSig))) {
-            @unlink(public_path($savedSig));
-        }
-        if (file_exists(public_path($savedStamp))) {
-            @unlink(public_path($savedStamp));
+            // 5. Verify Settings View includes stamp upload block and live preview
+            $settingsViewRes = $this->get(route('settings.index'));
+            $settingsViewRes->assertOk();
+            $settingsViewRes->assertSee('Cap Stempel Depo / Usaha');
+            $settingsViewRes->assertSee('name="company_stamp"', false);
+            $settingsViewRes->assertSee('Cap stempel aktif tersimpan');
+            $settingsViewRes->assertSee('Pratinjau Hasil di Kolom Tanda Tangan Dokumen');
+        } finally {
+            // Clean up temporary test files only, without destroying pre-existing user files
+            if (isset($savedSig) && $savedSig && $savedSig !== $preSig && file_exists(public_path($savedSig))) {
+                @unlink(public_path($savedSig));
+            }
+            if (isset($savedStamp) && $savedStamp && $savedStamp !== $preStamp && file_exists(public_path($savedStamp))) {
+                @unlink(public_path($savedStamp));
+            }
+            // Restore original settings and file contents
+            if ($preSig !== null) {
+                \App\Models\BusinessSetting::set('owner_signature', $preSig, 'branding');
+                if ($preSigBytes !== null) {
+                    file_put_contents(public_path($preSig), $preSigBytes);
+                }
+            }
+            if ($preStamp !== null) {
+                \App\Models\BusinessSetting::set('company_stamp', $preStamp, 'branding');
+                if ($preStampBytes !== null) {
+                    file_put_contents(public_path($preStamp), $preStampBytes);
+                }
+            }
+            if ($preAppName !== null) {
+                \App\Models\BusinessSetting::set('app_name', $preAppName, 'general');
+            }
+            if ($preCompanyName !== null) {
+                \App\Models\BusinessSetting::set('company_name', $preCompanyName, 'general');
+            }
+            if ($prePrinter !== null) {
+                \App\Models\BusinessSetting::set('default_printer_type', $prePrinter, 'general');
+            }
         }
     }
 }

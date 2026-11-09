@@ -226,16 +226,12 @@ class BusinessSetting extends Model
         bool $isPdf = false,
         int $height = 48,
         ?int $stampSize = null,
-        string $stampLeft = '0px',
-        string $sigLeft = '22px',
         string $style = ''
     ): string {
         return view('components.signature-stamp', [
             'isPdf' => $isPdf,
             'height' => $height,
             'stampSize' => $stampSize,
-            'stampLeft' => $stampLeft,
-            'sigLeft' => $sigLeft,
             'style' => $style,
         ])->render();
     }

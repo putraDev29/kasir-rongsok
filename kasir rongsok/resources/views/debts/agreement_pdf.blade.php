@@ -435,7 +435,7 @@
                     <div class="sig-sub">Pemilik Usaha / Depo</div>
                     <div class="sig-space">
                         @if(\App\Models\BusinessSetting::hasSignatureOrStamp())
-                            @include('components.signature-stamp', ['isPdf' => true, 'height' => 52, 'stampSize' => 58])
+                            @include('components.signature-stamp', ['isPdf' => true, 'height' => 48, 'stampSize' => 56])
                         @else
                             <span class="sig-materai">Cap Stempel Depo &amp; TTD</span>
                         @endif

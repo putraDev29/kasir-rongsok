@@ -302,15 +302,15 @@
 
                 <div>
                     <p class="font-medium">Petugas Timbangan,</p>
-                    <div class="h-9"></div>
+                    <div class="h-12"></div>
                     <p class="font-bold underline uppercase">( ............................ )</p>
                     <p class="text-[8px] text-slate-400">Penimbang Gudang</p>
                 </div>
 
                 <div>
                     <p class="font-medium">Hormat Kami (Pengirim),</p>
-                    <div class="h-9 flex items-center justify-center">
-                        @include('components.signature-stamp', ['isPdf' => false, 'height' => 36, 'stampSize' => 42])
+                    <div class="h-12 flex items-center justify-center">
+                        @include('components.signature-stamp', ['isPdf' => false, 'height' => 40, 'stampSize' => 46])
                     </div>
                     <p class="font-bold underline uppercase">({{ $deliveryOrder->user?->name ?? 'Pengirim' }})</p>
                     <p class="text-[8px] text-blue-700 font-bold">Staff Gudang (Arsip Depo)</p>
@@ -529,15 +529,15 @@
 
                 <div>
                     <p class="font-medium">Petugas Timbangan,</p>
-                    <div class="h-9"></div>
+                    <div class="h-12"></div>
                     <p class="font-bold underline uppercase">( ............................ )</p>
                     <p class="text-[8px] text-slate-400">Penimbang Gudang</p>
                 </div>
 
                 <div>
                     <p class="font-medium">Hormat Kami (Pengirim),</p>
-                    <div class="h-9 flex items-center justify-center">
-                        @include('components.signature-stamp', ['isPdf' => false, 'height' => 36, 'stampSize' => 42])
+                    <div class="h-12 flex items-center justify-center">
+                        @include('components.signature-stamp', ['isPdf' => false, 'height' => 40, 'stampSize' => 46])
                     </div>
                     <p class="font-bold underline uppercase">({{ $deliveryOrder->user?->name ?? 'Pengirim' }})</p>
                     <p class="text-[8px] text-slate-400">Staff Gudang Pengirim</p>

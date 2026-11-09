@@ -186,7 +186,7 @@
             width: 25%;
         }
         .sig-space {
-            height: 38px;
+            height: 48px;
         }
         .sig-name {
             font-weight: bold;
@@ -451,7 +451,7 @@
                 <td>
                     Hormat Kami (Depo Pengirim),
                     <div class="sig-space">
-                        @include('components.signature-stamp', ['isPdf' => true, 'height' => 36, 'stampSize' => 42])
+                        @include('components.signature-stamp', ['isPdf' => true, 'height' => 40, 'stampSize' => 46])
                     </div>
                     <div class="sig-name">( {{ strtoupper($deliveryOrder->user?->name ?? 'Admin Depo') }} )</div>
                     <div class="sig-role">

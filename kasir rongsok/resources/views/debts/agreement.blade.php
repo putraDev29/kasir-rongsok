@@ -294,7 +294,7 @@
                     <p class="text-[10px] text-slate-500 font-sans">Pemilik Usaha / Depo</p>
                     <div class="h-20 flex items-center justify-center text-slate-400 italic text-[10px]" style="height: 70px;">
                         @if(\App\Models\BusinessSetting::hasSignatureOrStamp())
-                            @include('components.signature-stamp', ['isPdf' => false, 'height' => 58, 'stampSize' => 64])
+                            @include('components.signature-stamp', ['isPdf' => false, 'height' => 48, 'stampSize' => 56])
                         @else
                             <span class="border border-dashed border-slate-300 px-3 py-1.5 rounded">Cap Stempel Depo &amp; TTD</span>
                         @endif
