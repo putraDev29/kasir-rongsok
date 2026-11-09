@@ -223,6 +223,23 @@
                 </html>
             `);
             printWindow.document.close();
+        },
+
+        sendViaWa() {
+            const currentUrl = this.url;
+            const currentTitle = this.title;
+            const currentFilename = this.filename;
+            const currentSubtitle = this.subtitle;
+            this.close();
+            if (window.openWaPdfModal) {
+                window.openWaPdfModal({
+                    title: 'Kirim ' + currentTitle + ' via WhatsApp',
+                    subtitle: currentSubtitle || 'Kirim berkas dokumen PDF resmi ke nomor WhatsApp',
+                    filename: currentFilename,
+                    pdfUrl: currentUrl,
+                    submitButtonText: 'Kirim PDF via WA'
+                });
+            }
         }
      }"
      x-init="init()"
@@ -293,6 +310,15 @@
                             title="Cetak Dokumen">
                         <i data-lucide="printer" class="w-3.5 h-3.5 text-slate-600"></i>
                         <span class="hidden sm:inline">Cetak</span>
+                    </button>
+
+                    <!-- Kirim WA Button -->
+                    <button type="button"
+                            @click="sendViaWa()"
+                            class="px-2 sm:px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+                            title="Kirim Berkas Dokumen PDF ini ke WhatsApp">
+                        <x-whatsapp-icon class="w-3.5 h-3.5 text-white" />
+                        <span class="hidden sm:inline">Kirim WA</span>
                     </button>
 
                     <!-- Explicit Download Button -->

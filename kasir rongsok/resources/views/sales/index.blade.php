@@ -97,12 +97,13 @@
 
             <!-- Action Buttons on Table Card Header -->
             <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('sales.batch-pdf', request()->all()) }}" target="_blank"
-                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
-                   title="Preview & Unduh Berkas PDF Rekap Penjualan Partai">
+                <button type="button"
+                   @click="openPdfPreview('{{ route('sales.batch-pdf', request()->all()) }}', 'Rekapitulasi Penjualan Partai', 'Rekap_Penjualan_Partai_' + ('{{ $startDate && $endDate ? "{$startDate}_sd_{$endDate}" : date("Ymd") }}') + '.pdf', 'Pratinjau Dokumen Rekapitulasi PDF')"
+                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
+                   title="Pratinjau Berkas PDF Rekap Penjualan Partai">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                     <span>Preview Rekap PDF</span>
-                </a>
+                </button>
 
                 <a href="{{ route('sales.excel', request()->all()) }}" 
                    class="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"

@@ -392,11 +392,17 @@ class WhatsAppGatewayController extends Controller
             'companyPhone' => $companyPhone,
         ];
 
+        $pdfUrl = $payment->debt_id ? route('debts.pdf', $payment->debt_id) : null;
+        $filename = "BuktiBayar_{$payment->payment_number}.pdf";
+
         return response()->json([
             'phone' => $phone ?? '',
             'formatted_phone' => $this->gateway->formatPhone($phone),
             'message' => FormatHelper::cleanCaption($message),
             'payment_number' => $payment->payment_number,
+            'filename' => $filename,
+            'pdf_filename' => $filename,
+            'pdf_url' => $pdfUrl,
             'receipt_data' => $receiptData,
         ]);
     }

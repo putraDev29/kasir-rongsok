@@ -403,19 +403,21 @@ Alpine.store('waGateway', {
         if (type === 'purchase') {
             previewUrl = `/whatsapp/purchases/${id}/preview`;
             this.receipt.title = 'Kirim Nota Timbang PDF via WhatsApp';
-            this.receipt.subtitle = 'Kirim berkas dokumen PDF resmi langsung ke nomor WhatsApp pemasok';
+            this.receipt.subtitle = 'Pratinjau dokumen resmi di aplikasi & kirim ke nomor WhatsApp pemasok';
             this.receipt.fileDescription = 'Dokumen PDF Resmi Kasir Rongsok (Format A5)';
             this.receipt.submitButtonText = 'Kirim Nota PDF via WA';
+            this.receipt.pdfUrl = `/purchases/${id}/pdf`;
         } else if (type === 'sale') {
             previewUrl = `/whatsapp/sales/${id}/preview`;
             this.receipt.title = 'Kirim Faktur Penjualan Partai PDF';
-            this.receipt.subtitle = 'Kirim berkas dokumen PDF faktur penjualan langsung ke WhatsApp pembeli';
+            this.receipt.subtitle = 'Pratinjau faktur resmi di aplikasi & kirim ke WhatsApp pembeli';
             this.receipt.fileDescription = 'Dokumen PDF Resmi Faktur Penjualan Rongsok (A5)';
             this.receipt.submitButtonText = 'Kirim Faktur PDF via WA';
+            this.receipt.pdfUrl = `/sales/${id}/pdf`;
         } else if (type === 'debt_payment') {
             previewUrl = `/whatsapp/debt-payments/${id}/preview`;
             this.receipt.title = 'Kirim Bukti Pembayaran Kasbon PDF';
-            this.receipt.subtitle = 'Kirim berkas kuitansi cicilan kasbon langsung ke nomor WhatsApp';
+            this.receipt.subtitle = 'Pratinjau kuitansi kasbon di aplikasi & kirim ke nomor WhatsApp';
             this.receipt.fileDescription = 'Dokumen PDF Kuitansi Pembayaran Kasbon Resmi';
             this.receipt.submitButtonText = 'Kirim Bukti PDF via WA';
         }
@@ -654,12 +656,13 @@ Alpine.store('waGateway', {
                 const dlUrl = this.receipt.pdfUrl + (this.receipt.pdfUrl.includes('?') ? '&' : '?') + 'download=1';
                 window.location.href = dlUrl;
             } else {
-                if (window.openPdfPreview) {
-                    const title = this.receipt.title || 'Invoice Penjualan';
-                    const fname = this.receipt.filename || 'Invoice.pdf';
+                const container = document.getElementById('waReceiptPdfPages');
+                if (container) {
+                    container.scrollIntoView({ behavior: 'smooth' });
+                } else if (window.openPdfPreview) {
+                    const title = this.receipt.title || 'Pratinjau Dokumen PDF';
+                    const fname = this.receipt.filename || 'Dokumen.pdf';
                     window.openPdfPreview(this.receipt.pdfUrl, title, fname, this.receipt.phone || '');
-                } else {
-                    window.open(this.receipt.pdfUrl, '_blank');
                 }
             }
             return;

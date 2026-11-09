@@ -46,10 +46,13 @@
                 <span>Cetak Invoice</span>
             </button>
 
-            <a href="{{ route('sales.pdf', $sale) }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors">
+            <button type="button" 
+                    onclick="openPdfPreview('{{ route('sales.pdf', $sale) }}', 'Faktur Penjualan #{{ $sale->invoice_number }}', '{{ $sale->customer_phone ?? '' }}', '{{ $sale->customer_name ?? 'Pelanggan' }}', 'Halo kak {{ $sale->customer_name ?? '' }}, berikut faktur penjualan rongsok kami: {{ $sale->invoice_number }}')" 
+                    class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                    title="Pratinjau Dokumen PDF Faktur Penjualan">
                 <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                <span>Preview / Unduh PDF</span>
-            </a>
+                <span>Preview PDF</span>
+            </button>
             <a href="{{ route('sales.show', $sale) }}" class="px-2.5 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-300">
                 Kembali
             </a>
@@ -374,6 +377,7 @@
             }
         });
     </script>
+    <x-pdf-preview-modal />
 </body>
 </html>
 

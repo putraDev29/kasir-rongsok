@@ -75,12 +75,13 @@
                     <span>Print Semua (HVS)</span>
                 </a>
 
-                <a href="{{ route('purchases.batch-pdf', request()->query()) }}" target="_blank"
-                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
-                   title="Preview & Unduh Berkas PDF Semua Nota (Format 58mm Kertas HVS A4)">
+                <button type="button"
+                   @click="openPdfPreview('{{ route('purchases.batch-pdf', request()->query()) }}', 'Rekapitulasi Semua Nota Pembelian (HVS)', 'Semua_Nota_Pembelian_' + ('{{ ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd') }}') + '.pdf', 'Pratinjau Dokumen Rekapitulasi Nota')"
+                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm cursor-pointer"
+                   title="Pratinjau Berkas PDF Semua Nota di Aplikasi">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                     <span>Preview PDF HVS</span>
-                </a>
+                </button>
 
                 <a href="{{ route('purchases.export-excel', request()->query()) }}"
                    class="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm"

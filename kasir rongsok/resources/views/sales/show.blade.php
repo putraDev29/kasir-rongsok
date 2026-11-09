@@ -88,6 +88,13 @@
                 <span>Kirim Faktur WA</span>
             </button>
 
+            <button type="button" 
+                    @click="openPdfPreview('{{ route('sales.pdf', $sale) }}', 'Faktur Penjualan: {{ $sale->invoice_number }}', 'Faktur_{{ str_replace(['/', '\\'], '-', $sale->invoice_number) }}_{{ preg_replace('/[^a-zA-Z0-9_\-]/', '_', $sale->buyer_name ?: 'Pembeli') }}.pdf', 'Faktur Penjualan Resmi')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer"
+                    title="Pratinjau Berkas PDF Faktur Resmi di Aplikasi">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>Preview Faktur PDF</span>
+            </button>
             <a href="{{ route('sales.print', $sale) }}" target="_blank"
                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm">
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>

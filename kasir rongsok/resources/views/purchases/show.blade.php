@@ -46,6 +46,13 @@
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>
                 <span>Thermal 80mm</span>
             </a>
+            <button type="button" 
+                    @click="openPdfPreview('{{ route('purchases.pdf', $purchase) }}', 'Nota Penerimaan Barang {{ $purchase->invoice_number }}', 'Nota_{{ str_replace(['/', '\\'], '-', $purchase->invoice_number) }}_{{ preg_replace('/[^a-zA-Z0-9_\-]/', '_', $purchase->supplier_name ?: 'Umum') }}.pdf', 'Pratinjau Dokumen PDF')"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition-colors cursor-pointer"
+                    title="Pratinjau Berkas PDF Resmi di Aplikasi">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>Preview PDF A4</span>
+            </button>
             <a href="{{ route('purchases.print', ['purchase' => $purchase, 'format' => 'a4']) }}" target="_blank"
                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-300">
                 <i data-lucide="file-text" class="w-3.5 h-3.5"></i>

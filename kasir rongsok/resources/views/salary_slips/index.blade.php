@@ -103,12 +103,13 @@
 
             <!-- Action Buttons on Table Card Header -->
             <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('salary-slips.batch-pdf', request()->query()) }}" target="_blank"
-                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
-                   title="Unduh Berkas PDF Rekap Penggajian">
+                <button type="button"
+                   onclick="openPdfPreview('{{ route('salary-slips.batch-pdf', request()->query()) }}', 'Rekap Penggajian Karyawan', '', '', 'Berikut rekapitulasi penggajian karyawan')"
+                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
+                   title="Pratinjau PDF Rekap Penggajian">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                     <span>PDF Rekap</span>
-                </a>
+                </button>
 
                 <a href="{{ route('salary-slips.excel', request()->query()) }}" 
                    class="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
