@@ -88,14 +88,6 @@
                 <span>Kirim Faktur WA</span>
             </button>
 
-            <button type="button"
-               @click="openPdfPreview('{{ route('sales.pdf', $sale) }}', 'Invoice {{ $sale->invoice_number }}', 'Invoice_{{ str_replace(['/', ' '], '_', $sale->invoice_number) }}.pdf', 'Pembeli: {{ $sale->buyer_name }} - Total: Rp {{ number_format($sale->final_amount, 0, ',', '.') }}')"
-               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm cursor-pointer"
-               title="Preview & Unduh Berkas PDF Invoice">
-                <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-400"></i>
-                <span>Preview / Unduh PDF</span>
-            </button>
-
             <a href="{{ route('sales.print', $sale) }}" target="_blank"
                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm">
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>

@@ -82,14 +82,6 @@
                 <span>Kirim Surat Jalan WA</span>
             </button>
 
-            <button type="button"
-               @click="openPdfPreview('{{ route('delivery-orders.pdf', $deliveryOrder) }}', 'Surat Jalan {{ $deliveryOrder->delivery_number }}', 'Surat_Jalan_{{ str_replace(['/', ' '], '_', $deliveryOrder->delivery_number) }}_2Rangkap.pdf', 'Surat Jalan Pengiriman 2 Rangkap (Lembar 1: Gudang & Lembar 2: Supir)')"
-               class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
-               title="Preview Dokumen PDF Resmi Surat Jalan (2 Rangkap)">
-                <i data-lucide="file-text" class="w-4 h-4 text-rose-400"></i>
-                <span>Preview / Unduh PDF (2 Rangkap)</span>
-            </button>
-
             <a href="{{ route('delivery-orders.print', $deliveryOrder) }}" target="_blank"
                class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs"
                title="Preview & Cetak Surat Jalan (Tersedia Pilihan Lembar 1 & Lembar 2)">
