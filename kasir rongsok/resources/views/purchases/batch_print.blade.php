@@ -320,11 +320,27 @@
                                         <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($activeFinal) }}</span>
                                     </div>
 
-                                    @if($debtDeduction > 0)
-                                        <div class="text-emerald-800 font-semibold" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
+                                    @php
+                                        $debtAfter = (float) ($purchase->remaining_debt_after ?? ($purchase->supplier ? $purchase->supplier->debts->sum('remaining_amount') : 0));
+                                        $debtBefore = $debtAfter + $debtDeduction;
+                                        $hasDebtInfo = ($debtBefore > 0 || $debtAfter > 0 || $debtDeduction > 0);
+                                    @endphp
+
+                                    @if($hasDebtInfo)
+                                        <div class="text-amber-900 font-semibold" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
+                                            <span class="whitespace-nowrap">Hutang Awal</span>
+                                            <span class="text-center">:</span>
+                                            <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($debtBefore) }}</span>
+                                        </div>
+                                        <div class="{{ $debtDeduction > 0 ? 'text-emerald-800' : 'text-slate-600' }} font-semibold" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
                                             <span class="whitespace-nowrap">Potong Hutang</span>
                                             <span class="text-center">:</span>
-                                            <span class="text-right whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($debtDeduction) }}</span>
+                                            <span class="text-right whitespace-nowrap">{{ $debtDeduction > 0 ? '- ' . \App\Services\FormatHelper::rupiah($debtDeduction) : 'Rp 0' }}</span>
+                                        </div>
+                                        <div class="text-amber-900 font-bold" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
+                                            <span class="whitespace-nowrap">SISA HUTANG</span>
+                                            <span class="text-center">:</span>
+                                            <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($debtAfter) }}</span>
                                         </div>
                                     @endif
 

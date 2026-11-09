@@ -462,6 +462,10 @@ class WhatsAppGatewayService
         $debtDeduction = min((float) ($purchase->debt_deduction_amount ?? 0), $activeFinal);
         $activeNetCash = max(0, $activeFinal - $debtDeduction);
 
+        $debtAfter = (float) ($purchase->remaining_debt_after ?? ($purchase->supplier ? $purchase->supplier->debts->sum('remaining_amount') : 0));
+        $debtBefore = $debtAfter + $debtDeduction;
+        $hasDebtInfo = ($debtBefore > 0 || $debtAfter > 0 || $debtDeduction > 0);
+
         $totalNetto = FormatHelper::weight($activeNet);
         $totalGross = FormatHelper::weight($activeGross);
         $totalTare = FormatHelper::weight($activeTare);
@@ -494,17 +498,21 @@ class WhatsAppGatewayService
         $msg .= "----------------------------------------\n";
         $msg .= "💰 *TOTAL NILAI NOTA :* *Rp {$finalAmountStr}*\n";
 
-        if ($debtDeduction > 0) {
-            $msg .= "✂️ *Potongan Kasbon/Hutang:* -Rp {$debtDeductionStr}\n";
-            $msg .= "💵 *TUNAI DIBAYARKAN :* *Rp {$netCashPaidStr}*\n";
-            
-            if ($purchase->remaining_debt_after > 0) {
-                $remDebt = number_format($purchase->remaining_debt_after, 0, ',', '.');
-                $msg .= "⚠️ *Sisa Pinjaman Modal:* Rp {$remDebt}\n";
+        if ($hasDebtInfo) {
+            $debtBeforeStr = number_format($debtBefore, 0, ',', '.');
+            $debtAfterStr = number_format($debtAfter, 0, ',', '.');
+            $msg .= "----------------------------------------\n";
+            $msg .= "📋 *RINCIAN HUTANG / BON MODAL:*\n";
+            $msg .= "📌 *Hutang Awal   :* Rp {$debtBeforeStr}\n";
+            if ($debtDeduction > 0) {
+                $msg .= "✂️ *Potong Hutang :* -Rp {$debtDeductionStr}\n";
+            } else {
+                $msg .= "✂️ *Potong Hutang :* Rp 0\n";
             }
-        } else {
-            $msg .= "💵 *TUNAI DIBAYARKAN :* *Rp {$finalAmountStr}*\n";
+            $msg .= "⚠️ *SISA HUTANG   :* *Rp {$debtAfterStr}*\n";
         }
+
+        $msg .= "💵 *UANG DITERIMA  :* *Rp {$netCashPaidStr}*\n";
 
         $msg .= "\n----------------------------------------\n";
         $msg .= "⚠️ *PERINGATAN :*\n*{$disclaimer}*\n";

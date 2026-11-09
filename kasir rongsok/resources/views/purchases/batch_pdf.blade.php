@@ -430,11 +430,27 @@
                                     <td class="calc-value calc-divider-solid" style="padding-top: 2px;">{{ \App\Services\FormatHelper::rupiah($activeFinal) }}</td>
                                 </tr>
 
-                                @if($debtDeduction > 0)
-                                    <tr style="color: #047857; font-weight: bold;">
+                                @php
+                                    $debtAfter = (float) ($purchase->remaining_debt_after ?? ($purchase->supplier ? $purchase->supplier->debts->sum('remaining_amount') : 0));
+                                    $debtBefore = $debtAfter + $debtDeduction;
+                                    $hasDebtInfo = ($debtBefore > 0 || $debtAfter > 0 || $debtDeduction > 0);
+                                @endphp
+
+                                @if($hasDebtInfo)
+                                    <tr style="color: #b45309;">
+                                        <td class="calc-label">Hutang Awal</td>
+                                        <td class="calc-colon">:</td>
+                                        <td class="calc-value">{{ \App\Services\FormatHelper::rupiah($debtBefore) }}</td>
+                                    </tr>
+                                    <tr style="color: {{ $debtDeduction > 0 ? '#047857' : '#64748b' }}; font-weight: bold;">
                                         <td class="calc-label">Potong Hutang</td>
                                         <td class="calc-colon">:</td>
-                                        <td class="calc-value">- {{ \App\Services\FormatHelper::rupiah($debtDeduction) }}</td>
+                                        <td class="calc-value">{{ $debtDeduction > 0 ? '- ' . \App\Services\FormatHelper::rupiah($debtDeduction) : 'Rp 0' }}</td>
+                                    </tr>
+                                    <tr style="color: #b45309; font-weight: bold;">
+                                        <td class="calc-label">SISA HUTANG</td>
+                                        <td class="calc-colon">:</td>
+                                        <td class="calc-value">{{ \App\Services\FormatHelper::rupiah($debtAfter) }}</td>
                                     </tr>
                                 @endif
 

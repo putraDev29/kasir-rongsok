@@ -194,6 +194,9 @@
         $activeFinal = max(0, $activeSubtotal - $discount + $rounding);
         $debtDeduction = min((float) ($purchase->debt_deduction_amount ?? 0), $activeFinal);
         $activeNetCash = max(0, $activeFinal - $debtDeduction);
+        $debtAfter = (float) ($purchase->remaining_debt_after ?? ($purchase->supplier ? $purchase->supplier->debts->sum('remaining_amount') : 0));
+        $debtBefore = $debtAfter + $debtDeduction;
+        $hasDebtInfo = ($debtBefore > 0 || $debtAfter > 0 || $debtDeduction > 0);
         $isCancelled = $purchase->isCancelled();
     @endphp
 
@@ -352,17 +355,19 @@
                 <td class="total-value" style="font-size: 9px;">Rp {{ number_format($activeFinal, 0, ',', '.') }}</td>
             </tr>
 
-            @if($debtDeduction > 0 || ($purchase->remaining_debt_after ?? 0) > 0)
+            @if($hasDebtInfo)
                 <tr style="border-top: 1px dashed #d97706;">
-                    <td class="total-label" style="color: #b45309;">Potong Kasbon:</td>
-                    <td class="total-value" style="color: #b91c1c;">- Rp {{ number_format($debtDeduction, 0, ',', '.') }}</td>
+                    <td class="total-label" style="color: #b45309;">Hutang Awal:</td>
+                    <td class="total-value" style="color: #b45309;">Rp {{ number_format($debtBefore, 0, ',', '.') }}</td>
                 </tr>
-                @if(($purchase->remaining_debt_after ?? 0) > 0)
-                    <tr>
-                        <td class="total-label" style="color: #b45309;">Sisa Hutang:</td>
-                        <td class="total-value" style="color: #b45309;">Rp {{ number_format($purchase->remaining_debt_after, 0, ',', '.') }}</td>
-                    </tr>
-                @endif
+                <tr>
+                    <td class="total-label" style="color: #b45309;">Potong Hutang:</td>
+                    <td class="total-value" style="color: {{ $debtDeduction > 0 ? '#b91c1c' : '#64748b' }};">{{ $debtDeduction > 0 ? '- Rp ' . number_format($debtDeduction, 0, ',', '.') : 'Rp 0' }}</td>
+                </tr>
+                <tr style="border-bottom: 1px dashed #d97706;">
+                    <td class="total-label" style="font-weight: bold; color: #b45309;">SISA HUTANG:</td>
+                    <td class="total-value" style="font-weight: bold; color: #b45309;">Rp {{ number_format($debtAfter, 0, ',', '.') }}</td>
+                </tr>
             @endif
 
             <tr class="grand-total-row">

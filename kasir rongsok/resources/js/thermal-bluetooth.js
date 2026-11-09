@@ -187,13 +187,27 @@ export class ThermalBluetooth {
         append(this.padTotalRow('TOTAL HARGA', data.activeFinal, 13, charWidth));
         bytes.push(0x1B, 0x45, 0x00); // Bold off
 
-        if (data.debtDeduction || data.remainingDebt) {
+        if (data.hasDebt || data.debtBefore || data.debtDeduction || data.remainingDebt) {
             append(this.hr('-', charWidth));
+            bytes.push(0x1B, 0x61, 0x01); // Center
+            bytes.push(0x1B, 0x45, 0x01); // Bold on
+            append('-- RINCIAN HUTANG --\n');
+            bytes.push(0x1B, 0x45, 0x00); // Bold off
+            bytes.push(0x1B, 0x61, 0x00); // Left align
+
+            if (data.debtBefore) {
+                append(this.padTotalRow('Hutang Awal', data.debtBefore, 13, charWidth));
+            }
             if (data.debtDeduction) {
-                append(this.padTotalRow('Potong Hutang', '- ' + data.debtDeduction, 13, charWidth));
+                const dedVal = String(data.debtDeduction).startsWith('-') || String(data.debtDeduction) === 'Rp 0' || String(data.debtDeduction) === '0' || String(data.debtDeduction) === '-'
+                    ? String(data.debtDeduction)
+                    : '- ' + data.debtDeduction;
+                append(this.padTotalRow('Potong Hutang', dedVal, 13, charWidth));
             }
             if (data.remainingDebt) {
-                append(this.padTotalRow('Sisa Hutang', data.remainingDebt, 13, charWidth));
+                bytes.push(0x1B, 0x45, 0x01); // Bold on
+                append(this.padTotalRow('SISA HUTANG', data.remainingDebt, 13, charWidth));
+                bytes.push(0x1B, 0x45, 0x00); // Bold off
             }
         }
 

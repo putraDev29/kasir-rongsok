@@ -459,7 +459,7 @@
                     <div class="text-slate-800 font-semibold" style="{{ $calcGrid }}">
                         <span class="whitespace-nowrap">Potong Hutang</span>
                         <span class="text-center">:</span>
-                        <span class="text-right text-emerald-700 whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($debtDeduction) }}</span>
+                        <span class="text-right {{ $debtDeduction > 0 ? 'text-emerald-700' : 'text-slate-600' }} whitespace-nowrap">{{ $debtDeduction > 0 ? '- ' . \App\Services\FormatHelper::rupiah($debtDeduction) : 'Rp 0' }}</span>
                     </div>
                     <div class="font-bold text-amber-800 pt-0.5 border-t border-dotted border-slate-300" style="{{ $calcGrid }}">
                         <span class="whitespace-nowrap">SISA HUTANG</span>
@@ -521,8 +521,10 @@
             discount: @json($discount > 0 ? \App\Services\FormatHelper::rupiah($discount) : null),
             rounding: @json($rounding != 0 ? \App\Services\FormatHelper::rupiah($rounding) : null),
             activeFinal: @json(\App\Services\FormatHelper::rupiah($activeFinal)),
-            debtDeduction: @json($debtDeduction > 0 ? \App\Services\FormatHelper::rupiah($debtDeduction) : null),
-            remainingDebt: @json(($purchase->remaining_debt_after ?? 0) > 0 ? \App\Services\FormatHelper::rupiah($purchase->remaining_debt_after) : null),
+            hasDebt: @json($hasDebtInfo),
+            debtBefore: @json($hasDebtInfo ? \App\Services\FormatHelper::rupiah($debtBefore) : null),
+            debtDeduction: @json($hasDebtInfo ? ($debtDeduction > 0 ? '- ' . \App\Services\FormatHelper::rupiah($debtDeduction) : 'Rp 0') : null),
+            remainingDebt: @json($hasDebtInfo ? \App\Services\FormatHelper::rupiah($debtAfter) : null),
             activeNetCash: @json(\App\Services\FormatHelper::rupiah($activeNetCash)),
             items: [
                 @foreach($activeItems as $item)

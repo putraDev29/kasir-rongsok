@@ -329,7 +329,7 @@
                         </div>
                         <div class="flex justify-between text-emerald-800 font-semibold">
                             <span>Potongan Hutang Transaksi Ini:</span>
-                            <span>- {{ \App\Services\FormatHelper::rupiah($debtDeduction) }}</span>
+                            <span>{{ $debtDeduction > 0 ? '- ' . \App\Services\FormatHelper::rupiah($debtDeduction) : 'Rp 0' }}</span>
                         </div>
                         <div class="flex justify-between font-bold text-amber-900 pt-1 border-t border-amber-200">
                             <span>Sisa Saldo Hutang:</span>
