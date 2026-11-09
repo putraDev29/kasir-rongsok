@@ -154,10 +154,10 @@
                             </div>
                             <p class="text-[10px] text-slate-500">Tampilan otomatis di PDF & Berkas Cetak (Surat Perjanjian, Slip Gaji, Rekap, Surat Jalan, dll):</p>
                         </div>
-                        <div class="p-2 bg-white rounded-lg border border-slate-200 shadow-sm text-center">
+                        <div class="p-3 bg-white rounded-lg border border-slate-200 shadow-sm text-center min-w-[200px] flex flex-col items-center justify-center">
                             @include('components.signature-stamp', ['isPdf' => false, 'height' => 48])
-                            <p class="text-[9px] font-bold text-slate-700 mt-1 uppercase underline">( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }} )</p>
-                            <p class="text-[8px] text-slate-400">Owner / Pimpinan</p>
+                            <p class="text-[9px] font-bold text-slate-700 mt-1.5 uppercase underline text-center">( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }} )</p>
+                            <p class="text-[8px] text-slate-400 text-center">Owner / Pimpinan</p>
                         </div>
                     </div>
                 @endif

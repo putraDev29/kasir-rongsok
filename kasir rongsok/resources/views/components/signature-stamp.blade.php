@@ -3,7 +3,7 @@
     'height' => 48,
     'stampSize' => null,
     'stampLeft' => '0px',
-    'sigLeft' => '22px',
+    'sigLeft' => '18px',
     'style' => '',
 ])
 
@@ -11,7 +11,7 @@
     $h = (int) $height;
     $sSize = (int) ($stampSize ?: round($h * 1.25));
     $sLeft = $stampLeft ?: '0px';
-    $sgLeft = $sigLeft ?: '22px';
+    $sgLeft = $sigLeft ?: '18px';
 
     $hasSig = \App\Models\BusinessSetting::hasOwnerSignature();
     $hasStamp = \App\Models\BusinessSetting::hasCompanyStamp();
@@ -21,23 +21,23 @@
 @endphp
 
 @if($hasSig && $hasStamp && $sigSrc && $stampSrc)
-    {{-- Keduanya tersedia: Cap Stempel DI ATAS tanda tangan (menimpa tanda tangan secara fisik seperti pada foto resmi) --}}
-    <div style="position: relative; display: inline-block; min-width: 170px; max-width: 230px; height: {{ $h }}px; line-height: {{ $h }}px; vertical-align: middle; margin: 0 auto; text-align: left; {{ $style }}">
-        <!-- 1. Tanda Tangan Owner (Di bawah / latar belakang) -->
-        <img src="{{ $sigSrc }}" alt="TTD Owner" style="position: relative; margin-left: {{ $sgLeft }}; height: {{ $h }}px; max-height: {{ $h }}px; width: auto; max-width: 155px; object-fit: contain; display: inline-block; z-index: 1;">
+    {{-- Keduanya tersedia: Cap Stempel DI ATAS tanda tangan & TERPUSAT (CENTER) PERSIS DI ATAS NAMA --}}
+    <div style="position: relative; display: inline-block; height: {{ $h }}px; line-height: {{ $h }}px; vertical-align: middle; margin: 0 auto; text-align: center; padding-left: {{ $sgLeft }}; {{ $style }}">
+        <!-- 1. Tanda Tangan Owner (Di bawah stempel, centered tepat di atas nama) -->
+        <img src="{{ $sigSrc }}" alt="TTD Owner" style="position: relative; height: {{ $h }}px; max-height: {{ $h }}px; width: auto; max-width: 160px; object-fit: contain; display: inline-block; z-index: 1; vertical-align: middle;">
 
-        <!-- 2. Cap Stempel Depo / Usaha (Di ATAS tanda tangan menimpa seperti stempel basah asli dokumen) -->
+        <!-- 2. Cap Stempel Depo / Usaha (Di ATAS tanda tangan menimpa sisi kiri fisik tanda tangan seperti dokumen resmi) -->
         <img src="{{ $stampSrc }}" alt="Stempel Depo" style="position: absolute; left: {{ $sLeft }}; top: {{ round(($h - $sSize) / 2) }}px; height: {{ $sSize }}px; max-height: {{ $sSize }}px; width: auto; max-width: {{ $sSize }}px; object-fit: contain; opacity: 0.92; z-index: 2; pointer-events: none; mix-blend-mode: multiply;">
     </div>
 @elseif($hasSig && $sigSrc)
-    {{-- Hanya tanda tangan owner --}}
+    {{-- Hanya tanda tangan owner: Center tepat di atas nama --}}
     <div style="height: {{ $h }}px; line-height: {{ $h }}px; text-align: center; vertical-align: middle; margin: 0 auto; {{ $style }}">
-        <img src="{{ $sigSrc }}" alt="TTD Owner" style="height: {{ $h }}px; max-height: {{ $h }}px; width: auto; max-width: 160px; object-fit: contain; margin: 0 auto; display: inline-block;">
+        <img src="{{ $sigSrc }}" alt="TTD Owner" style="height: {{ $h }}px; max-height: {{ $h }}px; width: auto; max-width: 160px; object-fit: contain; margin: 0 auto; display: inline-block; vertical-align: middle;">
     </div>
 @elseif($hasStamp && $stampSrc)
-    {{-- Hanya cap stempel depo --}}
+    {{-- Hanya cap stempel depo: Center tepat di atas nama --}}
     <div style="height: {{ $h }}px; line-height: {{ $h }}px; text-align: center; vertical-align: middle; margin: 0 auto; {{ $style }}">
-        <img src="{{ $stampSrc }}" alt="Stempel Depo" style="height: {{ $sSize }}px; max-height: {{ $sSize }}px; width: auto; max-width: {{ $sSize }}px; object-fit: contain; margin: 0 auto; display: inline-block; opacity: 0.92;">
+        <img src="{{ $stampSrc }}" alt="Stempel Depo" style="height: {{ $sSize }}px; max-height: {{ $sSize }}px; width: auto; max-width: {{ $sSize }}px; object-fit: contain; margin: 0 auto; display: inline-block; vertical-align: middle; opacity: 0.92;">
     </div>
 @else
     {{-- Belum ada unggahan: ruang kosong untuk tanda tangan basah fisik --}}
