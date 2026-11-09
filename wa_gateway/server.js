@@ -61,11 +61,11 @@ function getChromeExecutablePath() {
   const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
 
   const possiblePaths = [
+    path.join(programFilesX86, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+    path.join(programFiles, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
     path.join(programFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'),
     path.join(programFilesX86, 'Google', 'Chrome', 'Application', 'chrome.exe'),
     localAppData ? path.join(localAppData, 'Google', 'Chrome', 'Application', 'chrome.exe') : '',
-    path.join(programFilesX86, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
-    path.join(programFiles, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
   ].filter(Boolean);
 
   for (const p of possiblePaths) {
@@ -140,7 +140,7 @@ async function startClient() {
       },
       headless: process.env.HEADLESS === 'false' || process.argv.includes('--visible') ? false : 'new',
       devtools: false,
-      useChrome: true,
+      useChrome: false,
       debug: false,
       logQR: false,
       autoClose: 0,
@@ -149,7 +149,6 @@ async function startClient() {
       puppeteerOptions: {
         executablePath: chromePath,
         args: [
-          '--remote-debugging-port=54109',
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
