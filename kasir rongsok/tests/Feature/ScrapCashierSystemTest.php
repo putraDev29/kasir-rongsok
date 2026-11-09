@@ -1381,12 +1381,12 @@ class ScrapCashierSystemTest extends TestCase
         // 1. Visit /debts/{id} show page
         $showRes = $this->actingAs($this->superAdmin)->get(route('debts.show', $debt));
         $showRes->assertStatus(200);
-        // Verify it links to debts.pdf (Debt History PDF) and debts.agreement (Contract)
+        // Verify it links to debts.pdf (via WA Modal) and doesn't show header document buttons
         $showRes->assertSee(route('debts.pdf', $debt));
-        $showRes->assertSee(route('debts.agreement', $debt));
+        $showRes->assertDontSee(route('debts.agreement', $debt));
         $showRes->assertSee(route('debts.wa-preview', $debt));
-        $showRes->assertSee('Surat Perjanjian');
-        $showRes->assertSee('Preview / Unduh PDF');
+        $showRes->assertDontSee('Surat Perjanjian');
+        $showRes->assertDontSee('Preview / Unduh PDF');
 
         // 2. Initial Debt History PDF (Status: Unpaid)
         $initialPdfRes = $this->actingAs($this->superAdmin)->get(route('debts.pdf', $debt));

@@ -178,17 +178,6 @@
                                        class="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100">
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </a>
-                                    @php
-                                        $rowCleanInv = str_replace(['/', '\\', ' '], '-', $tx->invoice_number);
-                                        $rowCleanSup = trim(preg_replace('/_+/', '_', preg_replace('/[^a-zA-Z0-9_\-]/', '_', $tx->supplier_name ?: 'Pemasok_Umum')), '_');
-                                        $rowPdfFilename = "Nota_{$rowCleanInv}_{$rowCleanSup}.pdf";
-                                    @endphp
-                                    <button type="button"
-                                            @click="openPdfPreview('{{ route('purchases.pdf', $tx) }}', 'Nota {{ $tx->invoice_number }}', '{{ $rowPdfFilename }}', 'Pemasok: {{ $tx->supplier_name }} - Total: Rp {{ number_format($tx->final_amount, 0, ',', '.') }}')"
-                                            title="Preview & Unduh PDF Nota ({{ $rowPdfFilename }})"
-                                            class="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 cursor-pointer">
-                                        <i data-lucide="file-text" class="w-4 h-4"></i>
-                                    </button>
                                     <a href="{{ route('purchases.print', $tx) }}" target="_blank" title="Cetak Ulang Nota"
                                        class="p-1 rounded text-slate-600 hover:text-slate-800 hover:bg-slate-100">
                                         <i data-lucide="printer" class="w-4 h-4"></i>
