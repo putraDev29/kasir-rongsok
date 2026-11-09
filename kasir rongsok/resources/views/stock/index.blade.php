@@ -70,15 +70,16 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs">
-                    Filter Stok
+                <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Terapkan Filter</span>
                 </button>
                 <a href="{{ route('stock.index', ['low_stock' => '1']) }}" 
                    title="Filter Stok Menipis"
                    class="px-2.5 py-1.5 rounded-lg border text-xs font-bold {{ $lowStockOnly ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-slate-100 border-slate-200 text-slate-700' }}">
                     ⚠️ Menipis
                 </a>
-                <a href="{{ route('stock.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600">
+                <a href="{{ route('stock.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors" title="Reset Filter">
                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 </a>
             </div>
@@ -87,9 +88,18 @@
 
     <!-- Stock Balances Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Persediaan Barang & Penilaian Fisik</span>
-            <span class="text-xs text-slate-500">Total: {{ $items->total() }} Barang</span>
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Persediaan Barang & Penilaian Fisik</h3>
+                <p class="text-[11px] text-slate-500">Total: {{ $items->total() }} jenis material terdata</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('stock.movements') }}" 
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors">
+                    <i data-lucide="history" class="w-3.5 h-3.5"></i>
+                    <span>Lihat Mutasi Stok</span>
+                </a>
+            </div>
         </div>
 
         <div class="overflow-x-auto">

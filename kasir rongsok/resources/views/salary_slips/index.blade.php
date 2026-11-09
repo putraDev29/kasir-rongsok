@@ -47,79 +47,96 @@
         </div>
     </div>
 
-    <!-- Filter & Action Bar -->
-    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        
-        <form method="GET" action="{{ route('salary-slips.index') }}" class="flex flex-wrap items-center gap-2.5 flex-1">
-            <div class="relative w-full sm:w-64">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <i data-lucide="search" class="w-4 h-4"></i>
-                </span>
-                <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama karyawan / No. Slip..." 
-                       class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 focus:border-emerald-500">
+    <!-- Filter Bar -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <form method="GET" action="{{ route('salary-slips.index') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-end">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Cari Karyawan / No. Slip</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                    </span>
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama karyawan / No. Slip..." 
+                           class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
             </div>
 
-            <select name="period_month" onchange="this.form.submit()" 
-                    class="py-1.5 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-700">
-                <option value="">-- Semua Periode --</option>
-                @foreach($periods as $p)
-                    <option value="{{ $p }}" {{ $period === $p ? 'selected' : '' }}>{{ $p }}</option>
-                @endforeach
-            </select>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Periode Penggajian</label>
+                <select name="period_month" class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 bg-white">
+                    <option value="">-- Semua Periode --</option>
+                    @foreach($periods as $p)
+                        <option value="{{ $p }}" {{ $period === $p ? 'selected' : '' }}>{{ $p }}</option>
+                    @endforeach
+                </select>
+            </div>
 
-            @if($search || $period)
-                <a href="{{ route('salary-slips.index') }}" class="px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 rounded-lg">
-                    Reset
-                </a>
-            @endif
+            <div class="flex items-center gap-2">
+                <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Terapkan Filter</span>
+                </button>
+                @if($search || $period)
+                    <a href="{{ route('salary-slips.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Reset Filter">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </a>
+                @endif
+            </div>
         </form>
-
-        <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('salary-slips.batch-pdf', request()->query()) }}" target="_blank"
-               class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
-               title="Unduh Berkas PDF Rekap Penggajian">
-                <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
-                <span>PDF Rekap</span>
-            </a>
-
-            <a href="{{ route('salary-slips.excel', request()->query()) }}" 
-               class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
-               title="Export Data ke Excel">
-                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
-                <span>Excel</span>
-            </a>
-
-            <button type="button"
-                    @click="openWaPdfModal({
-                        title: 'Kirim Rekapitulasi Gaji Karyawan PDF',
-                        subtitle: 'Kirim berkas dokumen PDF ringkasan penggajian karyawan ke WhatsApp',
-                        filename: 'Rekap_Penggajian_Karyawan_' + ('{{ $period ?: date("Ymd") }}') + '.pdf',
-                        fileDescription: 'Dokumen PDF Rekap Penggajian, Tunjangan & Kasbon Karyawan',
-                        pdfUrl: '{{ route('salary-slips.batch-pdf', request()->query()) }}',
-                        previewUrl: '{{ route('salary-slips.wa-global.preview', request()->query()) }}',
-                        sendUrl: '{{ route('salary-slips.send-wa-global') }}',
-                        sendPayload: {
-                            search: '{{ addslashes($search) }}',
-                            period_month: '{{ $period }}'
-                        },
-                        submitButtonText: 'Kirim Rekap Gaji PDF via WA'
-                    })"
-                    class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm"
-                    title="Kirim Rekap Penggajian PDF via WhatsApp">
-                <x-whatsapp-icon class="w-3.5 h-3.5" />
-                <span>Kirim WA Rekap (PDF)</span>
-            </button>
-
-            <a href="{{ route('salary-slips.create') }}" 
-               class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm shrink-0">
-                <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                <span>Buat Slip Baru</span>
-            </a>
-        </div>
     </div>
 
     <!-- Slips Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Daftar Slip Gaji Karyawan</span>
+                <span class="text-[11px] text-slate-500">Total ditampilkan: {{ $slips->total() }} berkas slip</span>
+            </div>
+
+            <!-- Action Buttons on Table Card Header -->
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('salary-slips.batch-pdf', request()->query()) }}" target="_blank"
+                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
+                   title="Unduh Berkas PDF Rekap Penggajian">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                    <span>PDF Rekap</span>
+                </a>
+
+                <a href="{{ route('salary-slips.excel', request()->query()) }}" 
+                   class="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
+                   title="Export Data ke Excel">
+                    <i data-lucide="sheet" class="w-3.5 h-3.5"></i>
+                    <span>Excel</span>
+                </a>
+
+                <button type="button"
+                        @click="openWaPdfModal({
+                            title: 'Kirim Rekapitulasi Gaji Karyawan PDF',
+                            subtitle: 'Kirim berkas dokumen PDF ringkasan penggajian karyawan ke WhatsApp',
+                            filename: 'Rekap_Penggajian_Karyawan_' + ('{{ $period ?: date("Ymd") }}') + '.pdf',
+                            fileDescription: 'Dokumen PDF Rekap Penggajian, Tunjangan & Kasbon Karyawan',
+                            pdfUrl: '{{ route('salary-slips.batch-pdf', request()->query()) }}',
+                            previewUrl: '{{ route('salary-slips.wa-global.preview', request()->query()) }}',
+                            sendUrl: '{{ route('salary-slips.send-wa-global') }}',
+                            sendPayload: {
+                                search: '{{ addslashes($search) }}',
+                                period_month: '{{ $period }}'
+                            },
+                            submitButtonText: 'Kirim Rekap Gaji PDF via WA'
+                        })"
+                        class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
+                        title="Kirim Rekap Penggajian PDF via WhatsApp">
+                    <x-whatsapp-icon class="w-3.5 h-3.5" />
+                    <span>Kirim WA Rekap (PDF)</span>
+                </button>
+
+                <a href="{{ route('salary-slips.create') }}" 
+                   class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    <span>Buat Slip Baru</span>
+                </a>
+            </div>
+        </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>

@@ -7,26 +7,16 @@
     form: { id: '', name: '', phone: '', vehicle_number: '', vehicle_type: 'Truk Colt Diesel', bank_name: '', bank_account_number: '', bank_account_name: '', address: '', notes: '', is_active: true }
 }">
 
-    <!-- Header Actions -->
+    <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <div>
-            <div class="flex items-center gap-2">
-                <span class="p-2 rounded-lg bg-emerald-100 text-emerald-700">
-                    <i data-lucide="truck" class="w-5 h-5"></i>
-                </span>
-                <div>
-                    <h2 class="text-base font-bold text-slate-900">Data Sopir / Driver & Rekening Bank Ongkos</h2>
-                    <p class="text-xs text-slate-500">Kelola identitas armada pengiriman, sopir, plat nomor kendaraan, dan rekening bank untuk pencairan ongkos jalan</p>
-                </div>
-            </div>
-        </div>
-
         <div class="flex items-center gap-2">
-            <button type="button" @click="isEdit = false; form = { id: '', name: '', phone: '', vehicle_number: '', vehicle_type: 'Truk Colt Diesel', bank_name: '', bank_account_number: '', bank_account_name: '', address: '', notes: '', is_active: true }; driverModal = true"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all">
-                <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                <span>Tambah Sopir Baru</span>
-            </button>
+            <span class="p-2 rounded-lg bg-emerald-100 text-emerald-700">
+                <i data-lucide="truck" class="w-5 h-5"></i>
+            </span>
+            <div>
+                <h2 class="text-base font-bold text-slate-900">Data Sopir / Driver & Rekening Bank Ongkos</h2>
+                <p class="text-xs text-slate-500">Kelola identitas armada pengiriman, sopir, plat nomor kendaraan, dan rekening bank untuk pencairan ongkos jalan</p>
+            </div>
         </div>
     </div>
 
@@ -40,10 +30,11 @@
                 <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama sopir, nomor HP, plat no. polisi, atau rekening bank..."
                        class="w-full pl-8 pr-2.5 py-2 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
             </div>
-            <button type="submit" class="py-2 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-sm">
-                Cari Sopir
+            <button type="submit" class="inline-flex items-center gap-1.5 py-2 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors">
+                <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                <span>Cari Sopir</span>
             </button>
-            <a href="{{ route('drivers.index') }}" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Reset Pencarian">
+            <a href="{{ route('drivers.index') }}" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors" title="Reset Pencarian">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
             </a>
         </form>
@@ -51,6 +42,19 @@
 
     <!-- Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Sopir & Armada Kendaraan</h3>
+                <p class="text-[11px] text-slate-500">Total terdata: {{ $drivers->total() }} sopir armada</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" @click="isEdit = false; form = { id: '', name: '', phone: '', vehicle_number: '', vehicle_type: 'Truk Colt Diesel', bank_name: '', bank_account_number: '', bank_account_name: '', address: '', notes: '', is_active: true }; driverModal = true"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Tambah Sopir Baru</span>
+                </button>
+            </div>
+        </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
                 <thead class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">

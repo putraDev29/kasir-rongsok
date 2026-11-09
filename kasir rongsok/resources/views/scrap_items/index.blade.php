@@ -3,57 +3,11 @@
 @section('content')
 <div class="space-y-4" x-data="{ quickPriceModal: false, activeItem: {} }">
 
-    <!-- Header Actions -->
+    <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div>
             <h2 class="text-base font-bold text-slate-900">Daftar Jenis Barang &amp; Standar Harga</h2>
             <p class="text-xs text-slate-500">Kelola harga beli &amp; jual {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} per kilogram</p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-            <button type="button" 
-                    @click="openWaPdfModal({
-                        title: 'Kirim Daftar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }} PDF',
-                        subtitle: 'Kirim berkas dokumen PDF daftar harga beli {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} ke nomor WhatsApp',
-                        filename: 'Daftar_Harga_Beli_' + ('{{ date("Ymd") }}') + '.pdf',
-                        fileDescription: 'Dokumen PDF Resmi Daftar Standar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }} Depo',
-                        pdfUrl: '{{ route('scrap-items.pdf-price-list') }}',
-                        previewUrl: '{{ route('scrap-items.preview-wa') }}',
-                        sendUrl: '{{ route('scrap-items.send-wa') }}',
-                        submitButtonText: 'Kirim Daftar Harga PDF via WA'
-                    })"
-                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-colors"
-                    title="Kirim Daftar Harga PDF via WhatsApp">
-                <x-whatsapp-icon class="w-4 h-4" />
-                <span>Kirim Daftar Harga (PDF)</span>
-            </button>
-
-            <a href="{{ route('scrap-items.export-excel') }}"
-               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-emerald-700 border border-emerald-200 font-bold text-xs shadow-xs transition-colors">
-                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
-                <span>Export Excel</span>
-            </a>
-
-            <button type="button"
-               @click="openPdfPreview('{{ route('scrap-items.pdf-price-list') }}', 'Daftar Standar Harga Beli Depo', 'Daftar_Harga_Beli_' + ('{{ date('Ymd') }}') + '.pdf', 'Standar Harga Beli Komoditas Rongsok & Scrap')"
-               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 shadow-xs transition-colors cursor-pointer"
-               title="Preview & Unduh Berkas PDF Daftar Standar Harga Beli">
-                <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
-                <span>Preview PDF Harga</span>
-            </button>
-
-            <a href="{{ route('scrap-items.print-price-list') }}" target="_blank"
-               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300 shadow-sm"
-               title="Cetak / Layout Kertas Daftar Standar Harga Beli">
-                <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
-                <span>Format Cetak</span>
-            </a>
-
-            <a href="{{ route('scrap-items.create') }}" 
-               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>Tambah Barang</span>
-            </a>
         </div>
     </div>
 
@@ -82,10 +36,11 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs">
-                    Cari Data
+                <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors">
+                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                    <span>Terapkan Filter</span>
                 </button>
-                <a href="{{ route('scrap-items.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600">
+                <a href="{{ route('scrap-items.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors" title="Reset Filter">
                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 </a>
             </div>
@@ -94,6 +49,57 @@
 
     <!-- Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Material & Standar Harga</h3>
+                <p class="text-[11px] text-slate-500">Total terdata: {{ $items->total() }} barang</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" 
+                        @click="openWaPdfModal({
+                            title: 'Kirim Daftar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }} PDF',
+                            subtitle: 'Kirim berkas dokumen PDF daftar harga beli {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} ke nomor WhatsApp',
+                            filename: 'Daftar_Harga_Beli_' + ('{{ date("Ymd") }}') + '.pdf',
+                            fileDescription: 'Dokumen PDF Resmi Daftar Standar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }} Depo',
+                            pdfUrl: '{{ route('scrap-items.pdf-price-list') }}',
+                            previewUrl: '{{ route('scrap-items.preview-wa') }}',
+                            sendUrl: '{{ route('scrap-items.send-wa') }}',
+                            submitButtonText: 'Kirim Daftar Harga PDF via WA'
+                        })"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-colors"
+                        title="Kirim Daftar Harga PDF via WhatsApp">
+                    <x-whatsapp-icon class="w-4 h-4" />
+                    <span>Kirim Daftar Harga (PDF)</span>
+                </button>
+
+                <a href="{{ route('scrap-items.export-excel') }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-emerald-700 border border-emerald-200 font-bold text-xs shadow-xs transition-colors">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                    <span>Export Excel</span>
+                </a>
+
+                <button type="button"
+                   @click="openPdfPreview('{{ route('scrap-items.pdf-price-list') }}', 'Daftar Standar Harga Beli Depo', 'Daftar_Harga_Beli_' + ('{{ date('Ymd') }}') + '.pdf', 'Standar Harga Beli Komoditas Rongsok & Scrap')"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 shadow-xs transition-colors cursor-pointer"
+                   title="Preview & Unduh Berkas PDF Daftar Standar Harga Beli">
+                    <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
+                    <span>Preview PDF Harga</span>
+                </button>
+
+                <a href="{{ route('scrap-items.print-price-list') }}" target="_blank"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300 shadow-sm"
+                   title="Cetak / Layout Kertas Daftar Standar Harga Beli">
+                    <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
+                    <span>Format Cetak</span>
+                </a>
+
+                <a href="{{ route('scrap-items.create') }}" 
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Tambah Barang</span>
+                </a>
+            </div>
+        </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
                 <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase text-[10px] tracking-wider">

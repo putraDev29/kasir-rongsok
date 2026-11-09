@@ -5,49 +5,55 @@
 
     <!-- Filter & Search Bar -->
     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <form method="GET" action="{{ route('purchases.index') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end">
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Cari No. Nota / Pemasok</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                    </span>
-                    <input type="text" name="search" value="{{ $search }}" placeholder="PPJ-... atau nama..."
-                           class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+        <form method="GET" action="{{ route('purchases.index') }}" class="space-y-3">
+            <!-- Row 1: Nomor Nota/Cari, Bulan, Tahun -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Cari No. Nota / Pemasok</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                        </span>
+                        <input type="text" name="search" value="{{ $search }}" placeholder="PPJ-... atau nama..."
+                               class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                    </div>
                 </div>
+
+                <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
             </div>
 
-            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
+            <!-- Row 2: Dari Tanggal, Sampai Tanggal, Status, Terapkan Filter -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal</label>
+                    <input type="date" name="start_date" value="{{ $startDate }}"
+                           class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal</label>
-                <input type="date" name="start_date" value="{{ $startDate }}"
-                       class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
-            </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Sampai Tanggal</label>
+                    <input type="date" name="end_date" value="{{ $endDate }}"
+                           class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Sampai Tanggal</label>
-                <input type="date" name="end_date" value="{{ $endDate }}"
-                       class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
-            </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Status</label>
+                    <select name="status" class="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                        <option value="">-- Semua Status --</option>
+                        <option value="completed" {{ $status === 'completed' ? 'selected' : '' }}>Selesai / Lunas</option>
+                        <option value="cancelled" {{ $status === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                    </select>
+                </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Status</label>
-                <select name="status" class="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
-                    <option value="">-- Semua Status --</option>
-                    <option value="completed" {{ $status === 'completed' ? 'selected' : '' }}>Selesai / Lunas</option>
-                    <option value="cancelled" {{ $status === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
-                </select>
-            </div>
-
-            <div class="flex items-center gap-2">
-                <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
-                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
-                    <span>Terapkan Filter</span>
-                </button>
-                <a href="{{ route('purchases.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Reset Filter">
-                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                </a>
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span>Terapkan Filter</span>
+                    </button>
+                    <a href="{{ route('purchases.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Reset Filter">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </a>
+                </div>
             </div>
         </form>
     </div>

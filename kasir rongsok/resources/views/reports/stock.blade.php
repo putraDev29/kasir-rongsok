@@ -4,7 +4,7 @@
 <div class="space-y-4">
 
     <!-- KPI Row -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Akumulasi Stok Gudang</span>
             <div class="text-xl font-bold text-slate-900 mt-1">
@@ -20,29 +20,28 @@
             </div>
             <div class="text-[11px] text-slate-400">Valuasi berbasis moving average buy price</div>
         </div>
+    </div>
 
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+    <!-- Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
             <div>
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Export Laporan</span>
-                <div class="text-xs text-slate-500">Unduh atau cetak stok</div>
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Laporan Persediaan & Valuasi Stok</h3>
+                <p class="text-[11px] text-slate-500">Total: {{ count($items) }} jenis material</p>
             </div>
             <div class="flex items-center gap-2">
                 <a href="{{ route('reports.stock', ['format' => 'csv']) }}" 
-                   class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                    <span>Excel / CSV</span>
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors">
+                    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                    <span>Export Excel / CSV</span>
                 </a>
                 <a href="{{ route('reports.stock', ['format' => 'print']) }}" target="_blank"
-                   class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm">
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors">
                     <i data-lucide="printer" class="w-3.5 h-3.5"></i>
                     <span>Print PDF</span>
                 </a>
             </div>
         </div>
-    </div>
-
-    <!-- Table -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
                 <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase text-[10px] tracking-wider">

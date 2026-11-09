@@ -3,22 +3,29 @@
 @section('content')
 <div class="space-y-4" x-data="{ userModal: false, isEdit: false, form: { id: '', name: '', email: '', role: 'kasir', phone: '', bank_name: '', bank_account_number: '', bank_account_name: '', is_active: true } }">
 
-    <!-- Header Actions -->
+    <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div>
             <h2 class="text-base font-bold text-slate-900">Kelola Akun Pengguna & Operator Kasir</h2>
             <p class="text-xs text-slate-500">Hak akses berbasis peran: Super Admin (Owner), Admin, dan Kasir Timbang</p>
         </div>
-
-        <button type="button" @click="isEdit = false; form = { id: '', name: '', email: '', role: 'kasir', phone: '', bank_name: '', bank_account_number: '', bank_account_name: '', is_active: true }; userModal = true"
-                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm">
-            <i data-lucide="user-plus" class="w-4 h-4"></i>
-            <span>Tambah Pengguna Baru</span>
-        </button>
     </div>
 
     <!-- Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Pengguna Sistem</h3>
+                <p class="text-[11px] text-slate-500">Total terdata: {{ count($users) }} akun terdaftar</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" @click="isEdit = false; form = { id: '', name: '', email: '', role: 'kasir', phone: '', bank_name: '', bank_account_number: '', bank_account_name: '', is_active: true }; userModal = true"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span>Tambah Pengguna Baru</span>
+                </button>
+            </div>
+        </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
                 <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase text-[10px] tracking-wider">

@@ -68,47 +68,79 @@
         </div>
     @endif
 
-    <!-- Filter & Action Bar -->
-    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        
-        <form method="GET" action="{{ route('delivery-orders.index') }}" class="flex flex-wrap items-center gap-2.5 flex-1">
-            <div class="relative w-full sm:w-64">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <i data-lucide="search" class="w-4 h-4"></i>
-                </span>
-                <input type="text" name="search" value="{{ $search }}" placeholder="Cari No. SJ / Penerima / Plat No / Sopir..." 
-                       class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 focus:border-emerald-500">
+    <!-- Filter Bar -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <form method="GET" action="{{ route('delivery-orders.index') }}" class="space-y-3">
+            <!-- Row 1: Nomor SJ/Cari, Bulan, Tahun -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Cari No. SJ / Penerima / Plat / Sopir</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                        </span>
+                        <input type="text" name="search" value="{{ $search }}" placeholder="SJ-... atau nama..." 
+                               class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
             </div>
 
-            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" :inline="true" />
+            <!-- Row 2: Dari Tanggal, Sampai Tanggal, Status, Terapkan Filter -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal</label>
+                    <input type="date" name="start_date" value="{{ $startDate }}"
+                           class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
 
-            <div class="flex items-center gap-1.5 text-xs">
-                <span class="text-slate-500 font-medium">Tgl:</span>
-                <input type="date" name="start_date" value="{{ $startDate }}" class="py-1.5 px-2 text-xs rounded-lg border border-slate-300">
-                <span class="text-slate-400">-</span>
-                <input type="date" name="end_date" value="{{ $endDate }}" class="py-1.5 px-2 text-xs rounded-lg border border-slate-300">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Sampai Tanggal</label>
+                    <input type="date" name="end_date" value="{{ $endDate }}"
+                           class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Status Pengiriman</label>
+                    <select name="status" class="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                        <option value="">-- Semua Status --</option>
+                        <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Dalam Perjalanan / Pending</option>
+                        <option value="delivered" {{ $status === 'delivered' ? 'selected' : '' }}>Selesai / Diterima Pabrik</option>
+                        <option value="cancelled" {{ $status === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span>Terapkan Filter</span>
+                    </button>
+                    <a href="{{ route('delivery-orders.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Reset Filter">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </a>
+                </div>
             </div>
-
-            <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs">
-                Filter
-            </button>
-
-            @if($search || $startDate || $endDate || request('month') || request('year'))
-                <a href="{{ route('delivery-orders.index') }}" class="px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 rounded-lg">
-                    Reset
-                </a>
-            @endif
         </form>
-
-        <a href="{{ route('delivery-orders.create') }}" 
-           class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm shrink-0">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            <span>Buat Surat Jalan Baru</span>
-        </a>
     </div>
 
     <!-- Orders Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Daftar Surat Jalan Pengiriman</span>
+                <span class="text-[11px] text-slate-500">Total ditampilkan: {{ $orders->total() }} surat jalan</span>
+            </div>
+
+            <!-- Action Buttons on Table Card Header -->
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('delivery-orders.create') }}" 
+                   class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    <span>Buat Surat Jalan Baru</span>
+                </a>
+            </div>
+        </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>

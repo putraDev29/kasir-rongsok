@@ -17,24 +17,14 @@
 
     <!-- Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <div>
-            <div class="flex items-center gap-2">
-                <span class="p-2 rounded-lg bg-emerald-100 text-emerald-700">
-                    <i data-lucide="award" class="w-5 h-5"></i>
-                </span>
-                <div>
-                    <h2 class="text-base font-bold text-slate-900">Keanggotaan Pemasok & Kartu Member Loyalitas</h2>
-                    <p class="text-xs text-slate-500">Hitung akumulasi penjualan, rating bintang loyalitas, dan reward resmi dari owner</p>
-                </div>
-            </div>
-        </div>
-
         <div class="flex items-center gap-2">
-            <button type="button" @click="isEdit = false; form = { id: '', name: '', phone: '', bank_name: '', bank_account_number: '', bank_account_name: '', address: '', notes: '', member_number: '', join_date: '{{ date('Y-m-d') }}', tier_override: '', is_active: true }; supplierModal = true"
-                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all">
-                <i data-lucide="user-plus" class="w-4 h-4"></i>
-                <span>Tambah Pemasok Baru</span>
-            </button>
+            <span class="p-2 rounded-lg bg-emerald-100 text-emerald-700">
+                <i data-lucide="award" class="w-5 h-5"></i>
+            </span>
+            <div>
+                <h2 class="text-base font-bold text-slate-900">Keanggotaan Pemasok & Kartu Member Loyalitas</h2>
+                <p class="text-xs text-slate-500">Hitung akumulasi penjualan, rating bintang loyalitas, dan reward resmi dari owner</p>
+            </div>
         </div>
     </div>
 
@@ -48,8 +38,9 @@
                 <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama pemasok, no. member (MBR-...), telepon, atau kode..."
                        class="w-full pl-8 pr-2.5 py-2 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
             </div>
-            <button type="submit" class="py-2 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-sm">
-                Cari Pemasok
+            <button type="submit" class="py-2 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm flex items-center gap-1.5">
+                <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                <span>Terapkan Filter</span>
             </button>
             <a href="{{ route('suppliers.index') }}" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Reset Pencarian">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
@@ -59,6 +50,21 @@
 
     <!-- Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Daftar Pemasok & Mitra Depo</span>
+                <span class="text-[11px] text-slate-500">Total ditampilkan: {{ $suppliers->total() }} pemasok</span>
+            </div>
+
+            <!-- Action Buttons on Table Card Header -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" @click="isEdit = false; form = { id: '', name: '', phone: '', bank_name: '', bank_account_number: '', bank_account_name: '', address: '', notes: '', member_number: '', join_date: '{{ date('Y-m-d') }}', tier_override: '', is_active: true }; supplierModal = true"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    <span>Tambah Pemasok Baru</span>
+                </button>
+            </div>
+        </div>
         <div class="overflow-x-auto">
             <table class="w-full min-w-[950px] text-left text-xs divide-y divide-slate-200">
                 <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase text-[10px] tracking-wider font-bold">

@@ -12,29 +12,36 @@
     </div>
 
     <!-- Date Range Filter -->
-    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-        <form method="GET" action="{{ route('reports.cashier') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 items-end">
-            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal</label>
-                <input type="date" name="start_date" value="{{ $startDate }}"
-                       class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <form method="GET" action="{{ route('reports.cashier') }}" class="space-y-3">
+            <!-- Row 1: Bulan, Tahun -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Sampai Tanggal</label>
-                <input type="date" name="end_date" value="{{ $endDate }}"
-                       class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
-            </div>
+            <!-- Row 2: Dari Tanggal, Sampai Tanggal, Terapkan Filter -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-end">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal</label>
+                    <input type="date" name="start_date" value="{{ $startDate }}"
+                           class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
 
-            <div class="flex items-center gap-2">
-                <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs">
-                    Tampilkan Rekap Kasir
-                </button>
-                <a href="{{ route('reports.cashier') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600">
-                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                </a>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Sampai Tanggal</label>
+                    <input type="date" name="end_date" value="{{ $endDate }}"
+                           class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span>Terapkan Filter</span>
+                    </button>
+                    <a href="{{ route('reports.cashier') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600" title="Reset Filter">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </a>
+                </div>
             </div>
         </form>
     </div>
