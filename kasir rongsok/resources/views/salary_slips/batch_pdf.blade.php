@@ -185,15 +185,15 @@
         <thead>
             <tr>
                 <th class="text-center" style="width: 3%; white-space: nowrap;">No</th>
-                <th style="width: 14%; white-space: nowrap;">No. Slip</th>
-                <th style="width: 8%; white-space: nowrap;">Tanggal</th>
-                <th style="width: 17%; white-space: nowrap;">Nama Karyawan</th>
-                <th style="width: 9%; white-space: nowrap;">Periode</th>
-                <th class="text-right" style="width: 13%; white-space: nowrap;">Gaji Pokok</th>
-                <th class="text-right" style="width: 10%; white-space: nowrap;">Tunj./Bonus</th>
-                <th class="text-right" style="width: 9%; white-space: nowrap;">Potongan</th>
-                <th class="text-right" style="width: 11%; white-space: nowrap;">Gaji Bersih</th>
-                <th class="text-center" style="width: 6%; white-space: nowrap;">Metode</th>
+                <th style="width: 12%; white-space: nowrap;">No. Slip</th>
+                <th style="width: 7%; white-space: nowrap;">Tanggal</th>
+                <th style="width: 16%; white-space: nowrap;">Nama Karyawan</th>
+                <th style="width: 8%; white-space: nowrap;">Periode</th>
+                <th class="text-right" style="width: 12%; white-space: nowrap;">Gaji Pokok</th>
+                <th class="text-right" style="width: 9%; white-space: nowrap;">Tunj./Bonus</th>
+                <th class="text-right" style="width: 8%; white-space: nowrap;">Potongan</th>
+                <th class="text-right" style="width: 12%; white-space: nowrap;">Gaji Bersih</th>
+                <th class="text-center" style="width: 13%; white-space: nowrap;">Metode</th>
             </tr>
         </thead>
         <tbody>
@@ -220,10 +220,12 @@
                     <td class="text-right font-mono" style="color: #047857; white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($s->allowance_amount + $s->bonus_amount) }}</td>
                     <td class="text-right font-mono" style="color: #dc2626; white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($s->total_deduction) }}</td>
                     <td class="text-right font-mono font-bold" style="color: #4338ca; white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($s->net_salary) }}</td>
-                    <td class="text-center" style="font-size: 6.5pt; white-space: nowrap;">
-                        <div>{{ $s->paymentMethod?->name ?? 'Tunai' }}</div>
-                        @if($s->hasBankDetails())
-                            <div style="font-size: 5.5pt; color: #475569;">{{ $s->bank_name ?: 'Bank' }}</div>
+                    <td class="text-center" style="font-size: 7pt; line-height: 1.25; word-wrap: break-word;">
+                        <div style="font-weight: 600;">{{ $s->paymentMethod?->name ?? 'Tunai' }}</div>
+                        @if($s->bank_account_number)
+                            <div style="font-size: 6pt; color: #475569; margin-top: 1px;">Rek: {{ $s->bank_account_number }}</div>
+                        @elseif($s->bank_name && !str_contains(strtolower($s->paymentMethod?->name ?? ''), strtolower($s->bank_name)))
+                            <div style="font-size: 6pt; color: #475569; margin-top: 1px;">{{ $s->bank_name }}</div>
                         @endif
                     </td>
                 </tr>
