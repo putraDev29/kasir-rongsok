@@ -2484,11 +2484,14 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertStringContainsString('TTD Owner', $webHtml);
         $this->assertStringContainsString('position: absolute', $webHtml);
         $this->assertStringContainsString('position: relative', $webHtml);
+        $this->assertStringContainsString('z-index: 2', $webHtml);
+        $this->assertStringContainsString('z-index: 1', $webHtml);
 
         $pdfHtml = \App\Models\BusinessSetting::renderSignatureAndStamp(isPdf: true, height: 50);
         $this->assertStringContainsString('Stempel Depo', $pdfHtml);
         $this->assertStringContainsString('TTD Owner', $pdfHtml);
         $this->assertStringContainsString('data:image', $pdfHtml);
+        $this->assertStringContainsString('z-index: 2', $pdfHtml);
 
         // 5. Verify Settings View includes stamp upload block and live preview
         $settingsViewRes = $this->get(route('settings.index'));

@@ -222,13 +222,20 @@ class BusinessSetting extends Model
     /**
      * Render the combined signature and stamp HTML markup.
      */
-    public static function renderSignatureAndStamp(bool $isPdf = false, int $height = 48, ?int $stampSize = null, string $stampLeft = '0px', string $style = ''): string
-    {
+    public static function renderSignatureAndStamp(
+        bool $isPdf = false,
+        int $height = 48,
+        ?int $stampSize = null,
+        string $stampLeft = '0px',
+        string $sigLeft = '22px',
+        string $style = ''
+    ): string {
         return view('components.signature-stamp', [
             'isPdf' => $isPdf,
             'height' => $height,
             'stampSize' => $stampSize,
             'stampLeft' => $stampLeft,
+            'sigLeft' => $sigLeft,
             'style' => $style,
         ])->render();
     }
