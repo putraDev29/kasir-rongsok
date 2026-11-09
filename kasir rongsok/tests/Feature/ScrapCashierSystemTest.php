@@ -2346,5 +2346,89 @@ class ScrapCashierSystemTest extends TestCase
         $doPrintRes->assertOk();
         $doPrintRes->assertDontSee('Biaya Operasional Pengiriman (Arsip Owner/Gudang):');
     }
+
+    public function test_salary_slip_payment_method_bank_details_and_pdf_clean_labels(): void
+    {
+        // 1. Submit slip with __new__ payment method, bank details, and Rupiah-masked formatted inputs
+        $response = $this->actingAs($this->superAdmin)->post('/salary-slips', [
+            'employee_name' => 'Karyawan Bank Test',
+            'period_month' => 'November 2026',
+            'payment_date' => now()->toDateString(),
+            'payment_method_id' => '__new__',
+            'new_payment_method_name' => 'Transfer Bank Permata',
+            'bank_name' => 'Bank Permata',
+            'bank_account_number' => '987654321',
+            'bank_account_name' => 'Karyawan Permata Rekening',
+            'work_days' => '20',
+            'daily_rate' => 'Rp 120.000',
+            'basic_salary' => 'Rp 2.400.000',
+            'allowance_amount' => 'Rp 100.000',
+            'bonus_amount' => 'Rp 50.000',
+            'debt_deduction' => 'Rp 50.000',
+            'other_deduction' => 'Rp 0',
+        ]);
+
+        $response->assertSessionHas('success');
+
+        // Verify Payment Method created
+        $this->assertDatabaseHas('payment_methods', [
+            'name' => 'Transfer Bank Permata',
+        ]);
+
+        // Verify Salary Slip created with bank details and clean numbers
+        $slip = \App\Models\SalarySlip::where('employee_name', 'Karyawan Bank Test')->latest('id')->first();
+        $this->assertNotNull($slip);
+        $this->assertEquals('Bank Permata', $slip->bank_name);
+        $this->assertEquals('987654321', $slip->bank_account_number);
+        $this->assertEquals(20, $slip->work_days);
+        $this->assertEquals(120000, $slip->daily_rate);
+        $this->assertEquals(2400000, $slip->basic_salary);
+        $this->assertEquals(2500000, $slip->net_salary);
+
+        // 2. Verify Single PDF view clean labels (no "A." / "B." / "(NETTO = A - B)")
+        $pdfRes = $this->actingAs($this->superAdmin)->get(route('salary-slips.pdf', $slip));
+        $pdfRes->assertOk();
+        $pdfHtml = view('salary_slips.pdf', [
+            'salarySlip' => $slip,
+            'settings' => [],
+        ])->render();
+
+        $this->assertStringNotContainsString('A. Penghasilan', $pdfHtml);
+        $this->assertStringNotContainsString('B. Potongan', $pdfHtml);
+        $this->assertStringNotContainsString('(A - B)', $pdfHtml);
+        $this->assertStringNotContainsString('(NETTO = A - B)', $pdfHtml);
+        $this->assertStringContainsString('Penghasilan / Penerimaan', $pdfHtml);
+        $this->assertStringContainsString('Potongan Gaji &amp; Kasbon', $pdfHtml);
+        $this->assertStringContainsString('GAJI BERSIH DITERIMA', $pdfHtml);
+        $this->assertStringContainsString('Bank Permata', $pdfHtml);
+        $this->assertStringContainsString('987654321', $pdfHtml);
+
+        // 3. Verify Print view clean labels
+        $printRes = $this->actingAs($this->superAdmin)->get(route('salary-slips.print', $slip));
+        $printRes->assertOk();
+        $printRes->assertDontSee('A. Penghasilan');
+        $printRes->assertDontSee('B. Potongan');
+        $printRes->assertDontSee('(A - B)');
+        $printRes->assertDontSee('(NETTO = A - B)');
+        $printRes->assertSee('Penghasilan / Penerimaan');
+        $printRes->assertSee('Potongan Gaji');
+        $printRes->assertSee('Gaji Bersih Diterima');
+        $printRes->assertSee('Bank Permata');
+        $printRes->assertSee('987654321');
+
+        // 4. Verify Batch PDF is Landscape and contains nowrap single-line headers
+        $batchPdfRes = $this->actingAs($this->superAdmin)->get(route('salary-slips.batch-pdf'));
+        $batchPdfRes->assertOk();
+        $batchHtml = view('salary_slips.batch_pdf', [
+            'slips' => collect([$slip]),
+            'settings' => [],
+            'period' => 'November 2026',
+            'displayPeriod' => 'November 2026',
+            'totalNetSalary' => 2500000,
+        ])->render();
+        $this->assertStringContainsString('size: a4 landscape', $batchHtml);
+        $this->assertStringContainsString('white-space: nowrap', $batchHtml);
+        $this->assertStringContainsString('page-break-inside: avoid', $batchHtml);
+    }
 }
 

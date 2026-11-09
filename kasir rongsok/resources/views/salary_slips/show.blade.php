@@ -73,6 +73,9 @@
             <div class="sm:text-right">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Metode Pembayaran</span>
                 <h4 class="text-sm font-bold text-slate-800">{{ $salarySlip->paymentMethod?->name ?? 'Tunai Langsung' }}</h4>
+                @if($salarySlip->hasBankDetails())
+                    <p class="text-[11px] font-medium text-blue-700">{{ $salarySlip->bankDisplay() }}</p>
+                @endif
                 <p class="text-[11px] text-slate-400">Dibuat oleh: {{ $salarySlip->creator?->name ?? 'Admin' }}</p>
             </div>
         </div>
@@ -83,7 +86,7 @@
             <!-- Earnings Column -->
             <div class="space-y-3">
                 <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider pb-2 border-b border-emerald-100 flex items-center justify-between">
-                    <span>A. Komponen Penerimaan</span>
+                    <span>Komponen Penerimaan</span>
                     <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-600"></i>
                 </h4>
 
@@ -120,7 +123,7 @@
             <!-- Deductions Column -->
             <div class="space-y-3">
                 <h4 class="text-xs font-bold text-red-800 uppercase tracking-wider pb-2 border-b border-red-100 flex items-center justify-between">
-                    <span>B. Komponen Potongan</span>
+                    <span>Komponen Potongan</span>
                     <i data-lucide="minus-circle" class="w-4 h-4 text-red-600"></i>
                 </h4>
 

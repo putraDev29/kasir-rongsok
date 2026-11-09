@@ -262,7 +262,14 @@
             <tr>
                 <td class="meta-label">Metode Bayar</td>
                 <td class="meta-colon">:</td>
-                <td class="meta-value">{{ $salarySlip->paymentMethod?->name ?? 'Kas Tunai' }}</td>
+                <td class="meta-value">
+                    {{ $salarySlip->paymentMethod?->name ?? 'Kas Tunai' }}
+                    @if($salarySlip->hasBankDetails())
+                        <div style="font-size: 7.5pt; color: #475569; margin-top: 1px;">
+                            {{ $salarySlip->bankDisplay() }}
+                        </div>
+                    @endif
+                </td>
                 <td class="meta-label">Status Slip</td>
                 <td class="meta-colon">:</td>
                 <td class="meta-value" style="font-weight: bold; color: #047857;">● LUNAS / TELAH DIBAYAR</td>
@@ -272,9 +279,9 @@
         <!-- 2-Column Earnings & Deductions -->
         <table class="ledger-wrapper">
             <tr>
-                <!-- Column A: Earnings -->
+                <!-- Column: Earnings -->
                 <td class="ledger-col">
-                    <div class="section-header header-income">A. Penghasilan / Penerimaan</div>
+                    <div class="section-header header-income">Penghasilan / Penerimaan</div>
                     <table class="item-table font-mono">
                         <tr>
                             <td style="vertical-align: top;">
@@ -300,7 +307,7 @@
                             </tr>
                         @endif
                         <tr class="row-total">
-                            <td style="padding-top: 5px;">Total Penghasilan (A):</td>
+                            <td style="padding-top: 5px;">Total Penghasilan:</td>
                             <td class="text-right" style="padding-top: 5px; color: #047857;">{{ \App\Services\FormatHelper::rupiah($salarySlip->total_income) }}</td>
                         </tr>
                     </table>
@@ -308,9 +315,9 @@
 
                 <td style="width: 3%;"></td>
 
-                <!-- Column B: Deductions -->
+                <!-- Column: Deductions -->
                 <td class="ledger-col">
-                    <div class="section-header header-deduct">B. Potongan Gaji &amp; Kasbon</div>
+                    <div class="section-header header-deduct">Potongan Gaji &amp; Kasbon</div>
                     <table class="item-table font-mono">
                         <tr>
                             <td>Potongan Kasbon / Bon</td>
@@ -323,7 +330,7 @@
                             </tr>
                         @endif
                         <tr class="row-total">
-                            <td style="padding-top: 5px;">Total Potongan (B):</td>
+                            <td style="padding-top: 5px;">Total Potongan:</td>
                             <td class="text-right" style="padding-top: 5px; color: #b91c1c;">- {{ \App\Services\FormatHelper::rupiah($salarySlip->total_deduction) }}</td>
                         </tr>
                     </table>
@@ -338,7 +345,7 @@
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
                             <td style="vertical-align: middle;">
-                                <div class="net-pay-title">GAJI BERSIH DITERIMA (NETTO = A - B)</div>
+                                <div class="net-pay-title">GAJI BERSIH DITERIMA</div>
                                 <div class="terbilang-text"># Terbilang: {{ $terbilang }} #</div>
                             </td>
                             <td style="text-align: right; vertical-align: middle;">

@@ -126,6 +126,10 @@
                 <span class="text-slate-400 mx-1">|</span>
                 <span class="text-slate-500">Metode:</span>
                 <span class="font-medium text-slate-800 ml-1">{{ $salarySlip->paymentMethod?->name ?? 'Tunai' }}</span>
+                @if($salarySlip->hasBankDetails())
+                    <span class="text-slate-400 mx-1">|</span>
+                    <span class="font-medium text-slate-700">({{ $salarySlip->bankDisplay() }})</span>
+                @endif
             </div>
         </div>
 
@@ -135,7 +139,7 @@
             <!-- Penerimaan -->
             <div class="pr-2 border-r border-dashed border-slate-300">
                 <div class="font-bold text-[10px] uppercase text-emerald-800 pb-1 border-b border-slate-200">
-                    A. Penghasilan / Penerimaan
+                    Penghasilan / Penerimaan
                 </div>
                 <table class="w-full text-[10px] mt-1 font-mono">
                     <tr>
@@ -162,7 +166,7 @@
                         </tr>
                     @endif
                     <tr class="border-t border-slate-200 font-bold text-slate-900">
-                        <td class="pt-1">Total Penerimaan (A)</td>
+                        <td class="pt-1">Total Penerimaan</td>
                         <td class="pt-1 text-right text-emerald-700">Rp {{ number_format($salarySlip->total_income, 0, ',', '.') }}</td>
                     </tr>
                 </table>
@@ -171,7 +175,7 @@
             <!-- Potongan -->
             <div class="pl-2">
                 <div class="font-bold text-[10px] uppercase text-red-800 pb-1 border-b border-slate-200">
-                    B. Potongan Gaji
+                    Potongan Gaji
                 </div>
                 <table class="w-full text-[10px] mt-1 font-mono">
                     <tr>
@@ -185,7 +189,7 @@
                         </tr>
                     @endif
                     <tr class="border-t border-slate-200 font-bold text-slate-900">
-                        <td class="pt-1">Total Potongan (B)</td>
+                        <td class="pt-1">Total Potongan</td>
                         <td class="pt-1 text-right text-red-700">- Rp {{ number_format($salarySlip->total_deduction, 0, ',', '.') }}</td>
                     </tr>
                 </table>
@@ -196,7 +200,7 @@
         <!-- Take Home Pay & Terbilang -->
         <div class="py-2 flex items-center justify-between bg-slate-50 px-3 rounded mt-2 border border-slate-200">
             <div>
-                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Gaji Bersih Diterima (A - B)</span>
+                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Gaji Bersih Diterima</span>
                 <span class="text-sm font-black text-slate-900 font-mono">Rp {{ number_format($salarySlip->net_salary, 0, ',', '.') }}</span>
                 <div class="text-[9px] text-slate-600 italic capitalize mt-0.5">
                     Terbilang: # {{ $terbilang }} #

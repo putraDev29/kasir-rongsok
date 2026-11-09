@@ -70,10 +70,35 @@ class SalarySlipController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        // Clean any Rupiah masked values before validation
+        $cleanNumber = function ($val) {
+            if (is_null($val) || $val === '') return null;
+            if (is_numeric($val)) return (float) $val;
+            $cleaned = preg_replace('/[^\d.]/', '', str_replace(',', '.', str_replace('.', '', (string) $val)));
+            return $cleaned === '' ? null : (float) $cleaned;
+        };
+
+        $mergeData = [];
+        foreach (['daily_rate', 'basic_salary', 'allowance_amount', 'bonus_amount', 'debt_deduction', 'other_deduction'] as $field) {
+            if ($request->has($field)) {
+                $mergeData[$field] = $cleanNumber($request->input($field));
+            }
+        }
+        if (!empty($mergeData)) {
+            $request->merge($mergeData);
+        }
+
         $validated = $request->validate([
             'employee_name' => 'required|string|max:150',
             'user_id' => 'nullable|exists:users,id',
-            'payment_method_id' => 'nullable|exists:payment_methods,id',
+            'payment_method_id' => 'nullable|string|max:50',
+            'new_payment_method_name' => 'nullable|string|max:100',
+            'bank_name' => 'nullable|string|max:100',
+            'bank_account_number' => 'nullable|string|max:100',
+            'bank_account_name' => 'nullable|string|max:150',
+            'custom_bank' => 'nullable|string|max:100',
+            'custom_account_no' => 'nullable|string|max:100',
+            'custom_account_name' => 'nullable|string|max:150',
             'period_month' => 'required|string|max:50',
             'payment_date' => 'required|date',
             'work_days' => 'nullable|numeric|min:0',
@@ -85,6 +110,62 @@ class SalarySlipController extends Controller
             'other_deduction' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:500',
         ]);
+
+        $bankName = trim($request->input('bank_name', $request->input('custom_bank', '')));
+        $bankAccountNo = trim($request->input('bank_account_number', $request->input('custom_account_no', '')));
+        $bankAccountName = trim($request->input('bank_account_name', $request->input('custom_account_name', '')));
+
+        // Resolve Payment Method (New or Existing)
+        $paymentMethodId = $request->input('payment_method_id');
+        $newPaymentMethodName = trim($request->input('new_payment_method_name', ''));
+
+        if ($paymentMethodId === '__new__' || !empty($newPaymentMethodName)) {
+            $targetName = !empty($newPaymentMethodName) ? $newPaymentMethodName : 'Metode Pembayaran Baru';
+            $pm = PaymentMethod::firstOrCreate(
+                ['name' => $targetName],
+                [
+                    'code' => strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $targetName), 0, 6)) ?: 'PM',
+                    'bank_name' => $bankName ?: null,
+                    'account_number' => $bankAccountNo ?: null,
+                    'account_holder' => $bankAccountName ?: null,
+                    'is_active' => true,
+                ]
+            );
+            if (!empty($bankName) || !empty($bankAccountNo) || !empty($bankAccountName)) {
+                $pm->update(array_filter([
+                    'bank_name' => $bankName ?: $pm->bank_name,
+                    'account_number' => $bankAccountNo ?: $pm->account_number,
+                    'account_holder' => $bankAccountName ?: $pm->account_holder,
+                ], fn($val) => !is_null($val) && $val !== ''));
+            }
+            $paymentMethodId = $pm->id;
+        } elseif (is_numeric($paymentMethodId)) {
+            $paymentMethodId = (int) $paymentMethodId;
+        } else {
+            $paymentMethodId = PaymentMethod::first()?->id ?? null;
+        }
+
+        // Auto-fallback bank details from PaymentMethod if empty
+        if (empty($bankName) && empty($bankAccountNo) && $paymentMethodId) {
+            $pmModel = PaymentMethod::find($paymentMethodId);
+            if ($pmModel && (!empty($pmModel->bank_name) || !empty($pmModel->account_number))) {
+                $bankName = $pmModel->bank_name ?: '';
+                $bankAccountNo = $pmModel->account_number ?: '';
+                $bankAccountName = $pmModel->account_holder ?: '';
+            }
+        }
+
+        // Optionally update User's bank details if selected
+        if ($request->boolean('save_to_user_bank') && !empty($validated['user_id'])) {
+            $empUser = User::find($validated['user_id']);
+            if ($empUser) {
+                $empUser->update(array_filter([
+                    'bank_name' => $bankName ?: $empUser->bank_name,
+                    'bank_account_number' => $bankAccountNo ?: $empUser->bank_account_number,
+                    'bank_account_name' => $bankAccountName ?: $empUser->bank_account_name,
+                ], fn($val) => !is_null($val) && $val !== ''));
+            }
+        }
 
         $basic = (float) $validated['basic_salary'];
         $allowance = (float) ($validated['allowance_amount'] ?? 0);
@@ -110,7 +191,10 @@ class SalarySlipController extends Controller
             'employee_name' => $validated['employee_name'],
             'user_id' => $validated['user_id'] ?? null,
             'created_by' => Auth::id(),
-            'payment_method_id' => $validated['payment_method_id'] ?? null,
+            'payment_method_id' => $paymentMethodId,
+            'bank_name' => $bankName ?: null,
+            'bank_account_number' => $bankAccountNo ?: null,
+            'bank_account_name' => $bankAccountName ?: null,
             'period_month' => $validated['period_month'],
             'payment_date' => $date,
             'work_days' => !empty($validated['work_days']) ? (float) $validated['work_days'] : null,
@@ -312,7 +396,7 @@ class SalarySlipController extends Controller
         $displayPeriod = $period ?: ($startDate && $endDate ? "{$startDate} s/d {$endDate}" : date('F Y'));
 
         $pdf = Pdf::loadView('salary_slips.batch_pdf', compact('slips', 'settings', 'period', 'displayPeriod', 'totalNetSalary'))
-            ->setPaper('a4', 'portrait');
+            ->setPaper('a4', 'landscape');
 
         $filename = 'Rekap_Penggajian_Karyawan_' . ($period ? Str::slug($period) : date('Ymd')) . '.pdf';
 
@@ -437,7 +521,7 @@ class SalarySlipController extends Controller
 
         if ($sendPdf) {
             $pdf = Pdf::loadView('salary_slips.batch_pdf', compact('slips', 'settings', 'period', 'displayPeriod', 'totalNetSalary'))
-                ->setPaper('a4', 'portrait');
+                ->setPaper('a4', 'landscape');
             $fileBase64 = base64_encode($pdf->output());
 
             $res = $waService->sendFile($phone, $fileBase64, $filename, $caption);

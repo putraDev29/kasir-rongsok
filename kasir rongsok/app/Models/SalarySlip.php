@@ -17,6 +17,9 @@ class SalarySlip extends Model
         'user_id',
         'created_by',
         'payment_method_id',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_name',
         'period_month',
         'payment_date',
         'work_days',
@@ -63,6 +66,31 @@ class SalarySlip extends Model
     public function paymentMethod(): BelongsTo
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function hasBankDetails(): bool
+    {
+        return !empty($this->bank_name) || !empty($this->bank_account_number);
+    }
+
+    public function bankDisplay(): ?string
+    {
+        if (!$this->hasBankDetails()) {
+            return null;
+        }
+
+        $parts = [];
+        if (!empty($this->bank_name)) {
+            $parts[] = $this->bank_name;
+        }
+        if (!empty($this->bank_account_number)) {
+            $parts[] = 'Rek: ' . $this->bank_account_number;
+        }
+        if (!empty($this->bank_account_name)) {
+            $parts[] = '(a/n ' . $this->bank_account_name . ')';
+        }
+
+        return implode(' - ', $parts);
     }
 }
 
