@@ -144,12 +144,15 @@
                                 <div class="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded w-max border border-slate-200">
                                     {{ $order->vehicle_number }}
                                 </div>
-                                <div class="text-[11px] text-slate-600 mt-1">
+                                <div class="text-[11px] text-slate-700 mt-1">
                                     Sopir: <strong>{{ $order->driver_name }}</strong>
                                     @if($order->vehicle_type)
                                         <span class="text-slate-400">({{ $order->vehicle_type }})</span>
                                     @endif
                                 </div>
+                                @if($order->driver_phone)
+                                    <div class="text-[10px] text-slate-500 font-mono mt-0.5">Telp: {{ $order->driver_phone }}</div>
+                                @endif
                             </td>
 
                             <td class="py-3 px-4 text-center font-bold text-slate-700">

@@ -157,15 +157,24 @@
                     @endif
                 </div>
 
-                <!-- Right: Vehicle -->
-                <div class="p-1.5 bg-slate-50/80 rounded border border-slate-200">
-                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Armada Pengiriman:</div>
-                    <div class="flex items-center justify-between mt-0.5">
-                        <span class="font-mono font-black text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-300">
+                <!-- Right: Vehicle & Driver -->
+                <div class="p-1.5 bg-slate-50/80 rounded border border-slate-200 space-y-0.5">
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Armada &amp; Pengemudi:</div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-900 uppercase text-[10px]">{{ $deliveryOrder->driver_name ?: '-' }}</span>
+                        @if($deliveryOrder->driver_phone)
+                            <span class="text-[9px] text-slate-600 font-mono">Telp: {{ $deliveryOrder->driver_phone }}</span>
+                        @endif
+                    </div>
+                    <div class="flex items-center gap-1.5 pt-0.5">
+                        <span class="font-mono font-black text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-300 text-[10px]">
                             {{ $deliveryOrder->vehicle_number }}
                         </span>
                         <span class="text-[9px] text-slate-500 font-medium">({{ $deliveryOrder->vehicle_type ?? 'Truk' }})</span>
                     </div>
+                    @if($deliveryOrder->hasDriverBankDetails())
+                        <div class="text-[8.5px] text-blue-900 font-mono pt-0.5">Rek: {{ $deliveryOrder->driverBankDisplay() }}</div>
+                    @endif
                 </div>
             </div>
 
@@ -288,7 +297,7 @@
                     <p class="font-medium">Pengemudi / Sopir,</p>
                     <div class="h-9"></div>
                     <p class="font-bold underline uppercase">({{ $deliveryOrder->driver_name }})</p>
-                    <p class="text-[8px] text-slate-400">Armada Pengantar</p>
+                    <p class="text-[8px] text-slate-500 font-mono">{{ $deliveryOrder->driver_phone ? 'Telp: ' . $deliveryOrder->driver_phone : 'Armada Pengantar' }}</p>
                 </div>
 
                 <div>
@@ -368,15 +377,24 @@
                     @endif
                 </div>
 
-                <!-- Right: Vehicle -->
-                <div class="p-1.5 bg-slate-50/80 rounded border border-slate-200">
-                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Armada Pengiriman:</div>
-                    <div class="flex items-center justify-between mt-0.5">
-                        <span class="font-mono font-black text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-300">
+                <!-- Right: Vehicle & Driver -->
+                <div class="p-1.5 bg-slate-50/80 rounded border border-slate-200 space-y-0.5">
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Armada &amp; Pengemudi:</div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-900 uppercase text-[10px]">{{ $deliveryOrder->driver_name ?: '-' }}</span>
+                        @if($deliveryOrder->driver_phone)
+                            <span class="text-[9px] text-slate-600 font-mono">Telp: {{ $deliveryOrder->driver_phone }}</span>
+                        @endif
+                    </div>
+                    <div class="flex items-center gap-1.5 pt-0.5">
+                        <span class="font-mono font-black text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-300 text-[10px]">
                             {{ $deliveryOrder->vehicle_number }}
                         </span>
                         <span class="text-[9px] text-slate-500 font-medium">({{ $deliveryOrder->vehicle_type ?? 'Truk' }})</span>
                     </div>
+                    @if($deliveryOrder->hasDriverBankDetails())
+                        <div class="text-[8.5px] text-blue-900 font-mono pt-0.5">Rek: {{ $deliveryOrder->driverBankDisplay() }}</div>
+                    @endif
                 </div>
             </div>
 
@@ -499,7 +517,12 @@
                     <p class="font-medium">Pengemudi / Sopir,</p>
                     <div class="h-9"></div>
                     <p class="font-bold underline uppercase">({{ $deliveryOrder->driver_name }})</p>
-                    <p class="text-[8px] text-amber-700 font-bold">Pengemudi (Bawa ke Tujuan)</p>
+                    <p class="text-[8px] text-amber-700 font-bold">
+                        Pengemudi (Bawa ke Tujuan)
+                        @if($deliveryOrder->driver_phone)
+                            <span class="block font-mono text-[7.5px] font-normal text-slate-600">Telp: {{ $deliveryOrder->driver_phone }}</span>
+                        @endif
+                    </p>
                 </div>
 
                 <div>
@@ -535,6 +558,7 @@
             deliveryDate: @json($deliveryOrder->delivery_date->format('d/m/Y H:i')),
             recipientName: @json($deliveryOrder->recipient_name),
             driverName: @json($deliveryOrder->driver_name),
+            driverPhone: @json($deliveryOrder->driver_phone),
             vehicleNumber: @json($deliveryOrder->vehicle_number),
             totalWeight: @json(\App\Services\FormatHelper::weightOrDash($deliveryOrder->total_weight)),
             items: [

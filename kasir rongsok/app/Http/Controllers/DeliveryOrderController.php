@@ -363,6 +363,9 @@ class DeliveryOrderController extends Controller
         if ($deliveryOrder->driver_phone) {
             $msg .= "• HP Sopir    : {$deliveryOrder->driver_phone}\n";
         }
+        if ($deliveryOrder->hasDriverBankDetails()) {
+            $msg .= "• Rek. Sopir  : {$deliveryOrder->driverBankDisplay()}\n";
+        }
         $msg .= "----------------------------------------\n";
         $msg .= "📦 *DAFTAR MUATAN BARANG:*\n{$itemsStr}\n\n";
         $msg .= "⚖️ *TOTAL MUATAN :* *{$totalKg} kg* ({$deliveryOrder->total_packages} Koli)\n";

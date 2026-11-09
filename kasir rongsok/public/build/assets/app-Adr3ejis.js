@@ -10359,7 +10359,7 @@ end`};t.events.push(["putFont",function(i){(function(h){var o=h.font,c=h.out,l=h
 `),n.push(27,69,0),t.companyAddress&&i(t.companyAddress+`
 `),t.companyPhone&&i("Telp: "+t.companyPhone+`
 `),n.push(27,69,1),i(`SURAT JALAN PENGIRIMAN
-`),n.push(27,69,0),n.push(27,97,0),i(this.hr("-",a)),i(this.padRow("No. SJ",t.deliveryNumber,a)),i(this.padRow("Tanggal",t.deliveryDate,a)),i(this.padRow("Tujuan",t.recipientName,a)),i(this.padRow("Supir",t.driverName,a)),i(this.padRow("No. Polisi",t.vehicleNumber,a)),i(this.hr("-",a)),(t.items||[]).forEach((o,c)=>{n.push(27,69,1),i(`${c+1}. ${o.name}
+`),n.push(27,69,0),n.push(27,97,0),i(this.hr("-",a)),i(this.padRow("No. SJ",t.deliveryNumber,a)),i(this.padRow("Tanggal",t.deliveryDate,a)),i(this.padRow("Tujuan",t.recipientName,a)),i(this.padRow("Supir",t.driverName,a)),t.driverPhone&&i(this.padRow("HP Supir",t.driverPhone,a)),i(this.padRow("No. Polisi",t.vehicleNumber,a)),i(this.hr("-",a)),(t.items||[]).forEach((o,c)=>{n.push(27,69,1),i(`${c+1}. ${o.name}
 `),n.push(27,69,0),i(this.padRow("   Berat:",`${o.weight} kg`,a))}),i(this.hr("-",a)),n.push(27,69,1),i(this.padRow("TOTAL BERAT",`${t.totalWeight} kg`,a)),n.push(27,69,0),i(this.hr("=",a)),n.push(27,97,1),i(`Tanda Tangan Pengirim & Penerima
 `),i(`
 

@@ -299,6 +299,7 @@ export class ThermalBluetooth {
         append(this.padRow('Tanggal', data.deliveryDate, charWidth));
         append(this.padRow('Tujuan', data.recipientName, charWidth));
         append(this.padRow('Supir', data.driverName, charWidth));
+        if (data.driverPhone) append(this.padRow('HP Supir', data.driverPhone, charWidth));
         append(this.padRow('No. Polisi', data.vehicleNumber, charWidth));
 
         append(this.hr('-', charWidth));

@@ -270,10 +270,18 @@
 
                 <td style="width: 2%;"></td>
 
-                <!-- Kolom 2: Armada Kendaraan -->
+                <!-- Kolom 2: Armada & Pengemudi -->
                 <td style="width: 49%; vertical-align: top;">
                     <div class="info-card">
-                        <div class="info-title">🚛 DATA ARMADA PENGIRIMAN (EKSPEDISI):</div>
+                        <div class="info-title">🚛 DATA ARMADA &amp; PENGEMUDI (SOPIR):</div>
+                        <div class="info-row">
+                            <span class="label">Nama Sopir:</span>
+                            <span class="val-bold">{{ strtoupper($deliveryOrder->driver_name ?: '-') }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Kontak HP:</span>
+                            <span style="font-family: monospace;">{{ $deliveryOrder->driver_phone ?: '-' }}</span>
+                        </div>
                         <div class="info-row">
                             <span class="label">No. Polisi:</span>
                             <span class="val-bold" style="font-family: monospace; background: #e2e8f0; padding: 0.5px 3px; border-radius: 2px;">
@@ -281,6 +289,12 @@
                             </span>
                             <span style="color: #64748b; font-size: 7.5px; margin-left: 3px;">({{ $deliveryOrder->vehicle_type ?: 'Truk Angkutan' }})</span>
                         </div>
+                        @if($deliveryOrder->hasDriverBankDetails())
+                            <div class="info-row">
+                                <span class="label">Rek. Sopir:</span>
+                                <span style="font-family: monospace; font-size: 7.5px; color: #1e3a8a;">{{ $deliveryOrder->driverBankDisplay() }}</span>
+                            </div>
+                        @endif
                     </div>
                 </td>
             </tr>
@@ -422,6 +436,9 @@
                             <strong style="color: #78350f;">Pengemudi (Bawa ke Tujuan)</strong>
                         @else
                             Armada Pengantar Muatan
+                        @endif
+                        @if($deliveryOrder->driver_phone)
+                            <div style="font-size: 7px; color: #64748b; font-family: monospace;">Telp: {{ $deliveryOrder->driver_phone }}</div>
                         @endif
                     </div>
                 </td>

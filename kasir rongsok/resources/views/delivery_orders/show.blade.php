@@ -199,21 +199,38 @@
             </div>
         </div>
 
-        <!-- Vehicle Card -->
+        <!-- Vehicle & Driver Card -->
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
             <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider pb-2 border-b border-slate-100 flex items-center gap-2">
                 <i data-lucide="truck" class="w-4 h-4 text-emerald-600"></i>
-                <span>Armada Ekspedisi</span>
+                <span>Armada Ekspedisi &amp; Detail Pengemudi</span>
             </h3>
 
             <div class="space-y-2 text-xs">
                 <div>
-                    <span class="text-slate-400 block text-[11px]">Nomor Polisi:</span>
+                    <span class="text-slate-400 block text-[11px]">Nama Pengemudi / Sopir:</span>
+                    <span class="font-bold text-slate-900 text-sm">{{ $deliveryOrder->driver_name ?: '-' }}</span>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 block text-[11px]">Kontak HP Sopir:</span>
+                    <span class="font-mono text-slate-800">{{ $deliveryOrder->driver_phone ?: '-' }}</span>
+                </div>
+
+                <div>
+                    <span class="text-slate-400 block text-[11px]">Nomor Polisi Armada:</span>
                     <span class="font-mono font-black text-slate-900 text-sm bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200 inline-block">
                         {{ $deliveryOrder->vehicle_number }}
                     </span>
                     <span class="text-slate-500 ml-2">({{ $deliveryOrder->vehicle_type ?? 'Truk' }})</span>
                 </div>
+
+                @if($deliveryOrder->hasDriverBankDetails())
+                    <div>
+                        <span class="text-slate-400 block text-[11px]">Rekening Bank Sopir (Pencairan Ongkos):</span>
+                        <span class="font-mono text-blue-900 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block">{{ $deliveryOrder->driverBankDisplay() }}</span>
+                    </div>
+                @endif
 
                 <div>
                     <span class="text-slate-400 block text-[11px]">Catatan / Instruksi:</span>
