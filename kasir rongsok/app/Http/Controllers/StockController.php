@@ -6,6 +6,7 @@ use App\Models\ItemCategory;
 use App\Models\ScrapItem;
 use App\Models\StockBalance;
 use App\Models\StockMovement;
+use App\Services\FormatHelper;
 use App\Services\StockService;
 use Exception;
 use Illuminate\Http\RedirectResponse;
@@ -56,8 +57,7 @@ class StockController extends Controller
     {
         $scrapItemId = $request->query('scrap_item_id');
         $type = $request->query('type');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
 
         $query = StockMovement::with(['scrapItem', 'user'])
             ->when($scrapItemId, function ($q) use ($scrapItemId) {
@@ -77,7 +77,7 @@ class StockController extends Controller
         $movements = $query->paginate(20)->withQueryString();
         $scrapItems = ScrapItem::orderBy('name')->get();
 
-        return view('stock.movements', compact('movements', 'scrapItems', 'scrapItemId', 'type', 'startDate', 'endDate'));
+        return view('stock.movements', compact('movements', 'scrapItems', 'scrapItemId', 'type', 'startDate', 'endDate', 'selectedMonth', 'selectedYear'));
     }
 
     public function adjust(Request $request, ScrapItem $scrapItem): RedirectResponse

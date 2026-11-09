@@ -29,8 +29,7 @@ class SalesTransactionController extends Controller
     public function index(Request $request): View
     {
         $search = $request->query('search');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
         $status = $request->query('status');
 
         $query = SalesTransaction::with(['user', 'paymentMethod', 'items'])
@@ -53,10 +52,16 @@ class SalesTransactionController extends Controller
 
         $transactions = $query->paginate(15)->withQueryString();
 
-        $totalSales = (float) SalesTransaction::where('status', 'completed')->sum('final_amount');
-        $totalProfit = (float) SalesTransaction::where('status', 'completed')->sum('estimated_profit');
+        $totalSales = (float) SalesTransaction::where('status', 'completed')
+            ->when($startDate, fn($q) => $q->whereDate('transaction_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
+            ->sum('final_amount');
+        $totalProfit = (float) SalesTransaction::where('status', 'completed')
+            ->when($startDate, fn($q) => $q->whereDate('transaction_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
+            ->sum('estimated_profit');
 
-        return view('sales.index', compact('transactions', 'search', 'startDate', 'endDate', 'status', 'totalSales', 'totalProfit'));
+        return view('sales.index', compact('transactions', 'search', 'startDate', 'endDate', 'status', 'totalSales', 'totalProfit', 'selectedMonth', 'selectedYear'));
     }
 
     public function create(Request $request): View
@@ -339,8 +344,7 @@ class SalesTransactionController extends Controller
     public function exportExcel(Request $request)
     {
         $search = $request->query('search');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $status = $request->query('status');
 
         $sales = SalesTransaction::with(['user', 'paymentMethod', 'items'])
@@ -427,8 +431,7 @@ class SalesTransactionController extends Controller
      */
     public function batchPdf(Request $request)
     {
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $search = $request->query('search');
         $status = $request->query('status', 'completed');
 
@@ -468,8 +471,7 @@ class SalesTransactionController extends Controller
      */
     public function previewWaGlobal(Request $request): JsonResponse
     {
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $search = $request->query('search');
         $status = $request->query('status', 'completed');
 
@@ -540,8 +542,7 @@ class SalesTransactionController extends Controller
      */
     public function sendWaGlobal(Request $request)
     {
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $search = $request->input('search');
         $status = $request->input('status', 'completed');
         $phone = $request->input('phone');

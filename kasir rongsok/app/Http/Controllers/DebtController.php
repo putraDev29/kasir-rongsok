@@ -30,6 +30,7 @@ class DebtController extends Controller
         $type = $request->query('borrower_type');
         $loanCategory = $request->query('loan_category');
         $search = $request->query('search');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
 
         $query = Debt::with(['supplier', 'user', 'payments'])
             ->when($status, function ($q) use ($status) {
@@ -40,6 +41,12 @@ class DebtController extends Controller
             })
             ->when($loanCategory, function ($q) use ($loanCategory) {
                 $q->where('loan_category', $loanCategory);
+            })
+            ->when($startDate, function ($q) use ($startDate) {
+                $q->whereDate('date', '>=', $startDate);
+            })
+            ->when($endDate, function ($q) use ($endDate) {
+                $q->whereDate('date', '<=', $endDate);
             })
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
@@ -55,16 +62,22 @@ class DebtController extends Controller
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
 
         // Summary KPI
-        $totalInitial = (float) Debt::sum('initial_amount');
-        $totalPaid = (float) Debt::sum('paid_amount');
-        $totalRemaining = (float) Debt::sum('remaining_amount');
+        $totalInitial = (float) Debt::when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+            ->sum('initial_amount');
+        $totalPaid = (float) Debt::when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+            ->sum('paid_amount');
+        $totalRemaining = (float) Debt::when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+            ->sum('remaining_amount');
 
         $justCreatedDebt = null;
         if (session('just_created_debt_id')) {
             $justCreatedDebt = Debt::with(['supplier', 'user'])->find(session('just_created_debt_id'));
         }
 
-        return view('debts.index', compact('debts', 'suppliers', 'paymentMethods', 'status', 'type', 'loanCategory', 'search', 'totalInitial', 'totalPaid', 'totalRemaining', 'justCreatedDebt'));
+        return view('debts.index', compact('debts', 'suppliers', 'paymentMethods', 'status', 'type', 'loanCategory', 'search', 'totalInitial', 'totalPaid', 'totalRemaining', 'justCreatedDebt', 'startDate', 'endDate', 'selectedMonth', 'selectedYear'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -452,10 +465,13 @@ class DebtController extends Controller
         $status = $request->query('status');
         $type = $request->query('borrower_type');
         $search = $request->query('search');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
 
         $debts = Debt::with(['supplier', 'user', 'payments'])
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($type, fn($q) => $q->where('borrower_type', $type))
+            ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('borrower_name', 'LIKE', "%{$search}%")
@@ -491,10 +507,13 @@ class DebtController extends Controller
         $status = $request->query('status');
         $type = $request->query('borrower_type');
         $search = $request->query('search');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
 
         $debts = Debt::with(['supplier'])
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($type, fn($q) => $q->where('borrower_type', $type))
+            ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('borrower_name', 'LIKE', "%{$search}%")
@@ -559,6 +578,7 @@ class DebtController extends Controller
         $status = $request->input('status');
         $type = $request->input('borrower_type');
         $search = $request->input('search');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $phone = $request->input('phone');
         $sendPdf = $request->boolean('send_pdf', true);
         $caption = FormatHelper::cleanCaption($request->input('caption') ?: $request->input('message'));
@@ -573,6 +593,8 @@ class DebtController extends Controller
         $debts = Debt::with(['supplier', 'user', 'payments'])
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($type, fn($q) => $q->where('borrower_type', $type))
+            ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('borrower_name', 'LIKE', "%{$search}%")
@@ -623,10 +645,13 @@ class DebtController extends Controller
     {
         $status = $request->query('status');
         $type = $request->query('borrower_type');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
 
         $debts = Debt::with(['supplier', 'user', 'payments'])
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($type, fn($q) => $q->where('borrower_type', $type))
+            ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
             ->latest('date')
             ->get();
 

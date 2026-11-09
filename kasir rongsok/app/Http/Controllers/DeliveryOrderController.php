@@ -23,8 +23,7 @@ class DeliveryOrderController extends Controller
     public function index(Request $request): View
     {
         $search = $request->query('search');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
         $status = $request->query('status');
 
         $query = DeliveryOrder::with(['user', 'salesTransaction', 'items'])
@@ -60,7 +59,7 @@ class DeliveryOrderController extends Controller
             ->where('status', '!=', SalesTransaction::STATUS_CANCELLED)
             ->count();
 
-        return view('delivery_orders.index', compact('orders', 'search', 'startDate', 'endDate', 'status', 'pendingSales', 'pendingSalesCount'));
+        return view('delivery_orders.index', compact('orders', 'search', 'startDate', 'endDate', 'status', 'pendingSales', 'pendingSalesCount', 'selectedMonth', 'selectedYear'));
     }
 
     public function create(Request $request): View

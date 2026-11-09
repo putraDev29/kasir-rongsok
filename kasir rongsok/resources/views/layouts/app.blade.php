@@ -356,6 +356,32 @@
     @include('components.pdf-preview-modal')
     @include('components.complete-delivery-modal')
 
+    <script>
+        function syncDateInputs(selectEl, startName = 'start_date', endName = 'end_date') {
+            const form = selectEl.closest('form');
+            if (!form) return;
+            const monthEl = form.querySelector('select[name="month"]');
+            const yearEl = form.querySelector('select[name="year"]');
+            const startEl = form.querySelector(`input[name="${startName}"]`);
+            const endEl = form.querySelector(`input[name="${endName}"]`);
+            const m = monthEl ? monthEl.value : '';
+            const y = yearEl ? yearEl.value : '';
+            if (!startEl || !endEl) return;
+            if (m && y) {
+                const lastDay = new Date(parseInt(y, 10), parseInt(m, 10), 0).getDate();
+                const mPad = String(m).padStart(2, '0');
+                startEl.value = `${y}-${mPad}-01`;
+                endEl.value = `${y}-${mPad}-${String(lastDay).padStart(2, '0')}`;
+            } else if (y && !m) {
+                startEl.value = `${y}-01-01`;
+                endEl.value = `${y}-12-31`;
+            } else if (!y && !m) {
+                startEl.value = '';
+                endEl.value = '';
+            }
+        }
+        window.syncDateInputs = syncDateInputs;
+    </script>
     @stack('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {

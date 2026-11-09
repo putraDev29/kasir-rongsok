@@ -93,7 +93,7 @@
         
         <!-- Filter Form -->
         <form method="GET" action="{{ route('debts.index') }}" class="flex flex-wrap items-center gap-2.5 flex-1">
-            <div class="relative w-full sm:w-64">
+            <div class="relative w-full sm:w-56">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <i data-lucide="search" class="w-4 h-4"></i>
                 </span>
@@ -101,7 +101,16 @@
                        class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 focus:border-emerald-500">
             </div>
 
-            <select name="loan_category" onchange="this.form.submit()" 
+            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" :inline="true" />
+
+            <div class="flex items-center gap-1 text-xs">
+                <span class="text-slate-500 font-medium">Tgl:</span>
+                <input type="date" name="start_date" value="{{ $startDate }}" class="py-1 px-2 text-xs rounded-lg border border-slate-300">
+                <span class="text-slate-400">-</span>
+                <input type="date" name="end_date" value="{{ $endDate }}" class="py-1 px-2 text-xs rounded-lg border border-slate-300">
+            </div>
+
+            <select name="loan_category" 
                     class="py-1.5 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-700 font-medium">
                 <option value="">-- Semua Kategori --</option>
                 <option value="modal" {{ ($loanCategory ?? '') === 'modal' ? 'selected' : '' }}>Modal Usaha</option>
@@ -109,7 +118,7 @@
                 <option value="komitmen" {{ ($loanCategory ?? '') === 'komitmen' ? 'selected' : '' }}>Komitmen Pasokan</option>
             </select>
 
-            <select name="status" onchange="this.form.submit()" 
+            <select name="status" 
                     class="py-1.5 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-700">
                 <option value="">-- Semua Status --</option>
                 <option value="unpaid" {{ $status === 'unpaid' ? 'selected' : '' }}>Belum Diangsur</option>
@@ -117,7 +126,7 @@
                 <option value="paid" {{ $status === 'paid' ? 'selected' : '' }}>Lunas</option>
             </select>
 
-            <select name="borrower_type" onchange="this.form.submit()" 
+            <select name="borrower_type" 
                     class="py-1.5 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 text-slate-700">
                 <option value="">-- Semua Tipe Peminjam --</option>
                 <option value="supplier" {{ $type === 'supplier' ? 'selected' : '' }}>Pemasok / Pengepul</option>
@@ -125,7 +134,11 @@
                 <option value="lainnya" {{ $type === 'lainnya' ? 'selected' : '' }}>Pihak Lain</option>
             </select>
 
-            @if($search || $status || $type || !empty($loanCategory))
+            <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs">
+                Filter
+            </button>
+
+            @if($search || $status || $type || !empty($loanCategory) || $startDate || $endDate || request('month') || request('year'))
                 <a href="{{ route('debts.index') }}" class="px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 rounded-lg">
                     Reset
                 </a>

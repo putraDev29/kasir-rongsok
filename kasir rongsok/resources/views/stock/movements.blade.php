@@ -17,7 +17,7 @@
 
     <!-- Filter Form -->
     <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-        <form method="GET" action="{{ route('stock.movements') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
+        <form method="GET" action="{{ route('stock.movements') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end">
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Material Scrap & Daur Ulang</label>
                 <select name="scrap_item_id" class="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
@@ -40,6 +40,8 @@
                     <option value="reversal" {{ $type === 'reversal' ? 'selected' : '' }}>Reversal (Pembatalan Transaksi)</option>
                 </select>
             </div>
+
+            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal</label>

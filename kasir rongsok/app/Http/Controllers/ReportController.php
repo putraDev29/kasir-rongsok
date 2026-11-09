@@ -13,6 +13,7 @@ use App\Models\ScrapItem;
 use App\Models\StockBalance;
 use App\Models\StockMovement;
 use App\Models\User;
+use App\Services\FormatHelper;
 use App\Services\ReportService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -36,8 +37,11 @@ class ReportController extends Controller
      */
     public function purchases(Request $request): View|Response
     {
-        $startDate = $request->query('start_date', Carbon::today()->startOfMonth()->toDateString());
-        $endDate = $request->query('end_date', Carbon::today()->toDateString());
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter(
+            $request,
+            Carbon::today()->startOfMonth()->toDateString(),
+            Carbon::today()->toDateString()
+        );
         $scrapItemId = $request->query('scrap_item_id');
         $cashierId = $request->query('cashier_id');
         $format = $request->query('format'); // print, csv
@@ -71,7 +75,7 @@ class ReportController extends Controller
             return response()->view('reports.purchases_print', compact('items', 'startDate', 'endDate', 'totalWeight', 'totalAmount', 'settings'));
         }
 
-        return view('reports.purchases', compact('items', 'scrapItems', 'cashiers', 'startDate', 'endDate', 'scrapItemId', 'cashierId', 'totalWeight', 'totalAmount'));
+        return view('reports.purchases', compact('items', 'scrapItems', 'cashiers', 'startDate', 'endDate', 'scrapItemId', 'cashierId', 'totalWeight', 'totalAmount', 'selectedMonth', 'selectedYear'));
     }
 
     /**
@@ -79,8 +83,11 @@ class ReportController extends Controller
      */
     public function sales(Request $request): View|Response
     {
-        $startDate = $request->query('start_date', Carbon::today()->startOfMonth()->toDateString());
-        $endDate = $request->query('end_date', Carbon::today()->toDateString());
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter(
+            $request,
+            Carbon::today()->startOfMonth()->toDateString(),
+            Carbon::today()->toDateString()
+        );
         $scrapItemId = $request->query('scrap_item_id');
         $format = $request->query('format');
 
@@ -110,7 +117,7 @@ class ReportController extends Controller
             return response()->view('reports.sales_print', compact('items', 'startDate', 'endDate', 'totalWeight', 'totalSales', 'totalProfit', 'settings'));
         }
 
-        return view('reports.sales', compact('items', 'scrapItems', 'startDate', 'endDate', 'scrapItemId', 'totalWeight', 'totalSales', 'totalCogs', 'totalProfit'));
+        return view('reports.sales', compact('items', 'scrapItems', 'startDate', 'endDate', 'scrapItemId', 'totalWeight', 'totalSales', 'totalCogs', 'totalProfit', 'selectedMonth', 'selectedYear'));
     }
 
     /**
@@ -149,12 +156,14 @@ class ReportController extends Controller
         if ($allDates) {
             $startDate = null;
             $endDate = null;
-        } elseif ($request->has('start_date') || $request->has('end_date')) {
-            $startDate = $request->query('start_date');
-            $endDate = $request->query('end_date');
+            $selectedMonth = null;
+            $selectedYear = null;
         } else {
-            $startDate = Carbon::today()->startOfMonth()->toDateString();
-            $endDate = Carbon::today()->endOfMonth()->toDateString();
+            [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter(
+                $request,
+                Carbon::today()->startOfMonth()->toDateString(),
+                Carbon::today()->endOfMonth()->toDateString()
+            );
         }
 
         $format = $request->query('format');
@@ -176,7 +185,7 @@ class ReportController extends Controller
             return response()->view('reports.expenses_print', compact('expenses', 'startDate', 'endDate', 'totalExpense', 'settings', 'allDates'));
         }
 
-        return view('reports.expenses', compact('expenses', 'startDate', 'endDate', 'totalExpense', 'allDates'));
+        return view('reports.expenses', compact('expenses', 'startDate', 'endDate', 'totalExpense', 'allDates', 'selectedMonth', 'selectedYear'));
     }
 
     /**
@@ -190,16 +199,17 @@ class ReportController extends Controller
     {
         $allDates = $request->query('all_dates') == '1';
 
-        // Default sesuai tanggal saat itu (Hari Ini) agar tidak akumulatif dari awal waktu atau awal bulan
         if ($allDates) {
             $startDate = null;
             $endDate = null;
-        } elseif ($request->has('start_date') || $request->has('end_date')) {
-            $startDate = $request->query('start_date');
-            $endDate = $request->query('end_date');
+            $selectedMonth = null;
+            $selectedYear = null;
         } else {
-            $startDate = Carbon::today()->startOfMonth()->toDateString();
-            $endDate = Carbon::today()->endOfMonth()->toDateString();
+            [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter(
+                $request,
+                Carbon::today()->startOfMonth()->toDateString(),
+                Carbon::today()->endOfMonth()->toDateString()
+            );
         }
 
         $format = $request->query('format');
@@ -326,7 +336,7 @@ class ReportController extends Controller
         $netProfit = $grossProfit - $totalOperatingExpenses;
 
         $viewData = compact(
-            'startDate', 'endDate', 'allDates',
+            'startDate', 'endDate', 'allDates', 'selectedMonth', 'selectedYear',
             'totalSales', 'totalSalesWeight', 'totalCogs', 'totalSalesTxCount', 'grossProfit', 'outgoingItems',
             'totalPurchases', 'totalPurchasesWeight', 'totalPurchasesTxCount', 'incomingItems',
             'stockBalanceItems', 'totalCurrentStock', 'totalCurrentStockValue',
@@ -350,8 +360,11 @@ class ReportController extends Controller
      */
     public function cashier(Request $request): View
     {
-        $startDate = $request->query('start_date', Carbon::today()->startOfMonth()->toDateString());
-        $endDate = $request->query('end_date', Carbon::today()->toDateString());
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter(
+            $request,
+            Carbon::today()->startOfMonth()->toDateString(),
+            Carbon::today()->toDateString()
+        );
 
         $cashiers = User::withCount(['purchaseTransactions as total_transactions' => function ($q) use ($startDate, $endDate) {
             $q->where('status', 'completed')
@@ -370,7 +383,7 @@ class ReportController extends Controller
         }], 'total_net_weight')
         ->get();
 
-        return view('reports.cashier', compact('cashiers', 'startDate', 'endDate'));
+        return view('reports.cashier', compact('cashiers', 'startDate', 'endDate', 'selectedMonth', 'selectedYear'));
     }
 
     /* --- CSV Export Helpers --- */

@@ -35,7 +35,9 @@
 
     <!-- Filter Bar -->
     <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-        <form method="GET" action="{{ route('reports.expenses') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+        <form method="GET" action="{{ route('reports.expenses') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 items-end">
+            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
+
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal</label>
                 <input type="date" name="start_date" value="{{ $startDate }}"

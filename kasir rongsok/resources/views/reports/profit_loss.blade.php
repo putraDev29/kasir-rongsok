@@ -45,7 +45,9 @@
             <span class="text-[11px] text-slate-400">Default: 1 Bulan Penuh (Tgl 1 s/d Akhir Bulan)</span>
         </div>
 
-        <form method="GET" action="{{ route('reports.profit-loss') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+        <form method="GET" action="{{ route('reports.profit-loss') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 items-end">
+            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
+
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal</label>
                 <input type="date" name="start_date" value="{{ $startDate }}"

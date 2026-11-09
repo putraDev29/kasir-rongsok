@@ -309,5 +309,122 @@ class FormatHelper
 
         return trim(preg_replace('/\s+/', ' ', $temp));
     }
+
+    /**
+     * Get list of standard Indonesian months for dropdown filters.
+     *
+     * @return array<int, string>
+     */
+    public static function getMonths(): array
+    {
+        return [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ];
+    }
+
+    /**
+     * Get list of available years for dropdown filters (descending order).
+     *
+     * @return array<int, int>
+     */
+    public static function getYears(): array
+    {
+        $currentYear = (int) date('Y');
+        return range($currentYear + 1, 2023);
+    }
+
+    /**
+     * Resolve date range, selected month, and selected year from HTTP Request.
+     * Supports dropdown month & year, direct start_date / end_date, or custom defaults.
+     *
+     * @return array{0: ?string, 1: ?string, 2: ?int, 3: ?int} [$startDate, $endDate, $selectedMonth, $selectedYear]
+     */
+    public static function resolveDateFilter(
+        \Illuminate\Http\Request $request,
+        ?string $defaultStart = null,
+        ?string $defaultEnd = null
+    ): array {
+        $month = $request->filled('month') ? (int) $request->query('month') : null;
+        $year = $request->filled('year') ? (int) $request->query('year') : null;
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        // Case 1: Both month & year are chosen in dropdown
+        if ($month && $year) {
+            $startDate = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+            $endDate = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+            return [$startDate, $endDate, $month, $year];
+        }
+
+        // Case 2: Only year is chosen in dropdown (entire year)
+        if (!$month && $year) {
+            $startDate = Carbon::create($year, 1, 1)->startOfYear()->toDateString();
+            $endDate = Carbon::create($year, 12, 31)->endOfYear()->toDateString();
+            return [$startDate, $endDate, null, $year];
+        }
+
+        // Case 3: Only month is chosen in dropdown (use current year)
+        if ($month && !$year) {
+            $currentY = (int) date('Y');
+            $startDate = Carbon::create($currentY, $month, 1)->startOfMonth()->toDateString();
+            $endDate = Carbon::create($currentY, $month, 1)->endOfMonth()->toDateString();
+            return [$startDate, $endDate, $month, $currentY];
+        }
+
+        // Case 4: Custom date range provided via start_date or end_date
+        if (!empty($startDate) || !empty($endDate)) {
+            $detectedMonth = null;
+            $detectedYear = null;
+            if (!empty($startDate) && !empty($endDate)) {
+                try {
+                    $s = Carbon::parse($startDate);
+                    $e = Carbon::parse($endDate);
+                    if ($s->format('Y-m') === $e->format('Y-m') &&
+                        $s->isSameDay($s->copy()->startOfMonth()) &&
+                        $e->isSameDay($e->copy()->endOfMonth())) {
+                        $detectedMonth = (int) $s->format('n');
+                        $detectedYear = (int) $s->format('Y');
+                    } elseif ($s->format('Y') === $e->format('Y') &&
+                              $s->isSameDay($s->copy()->startOfYear()) &&
+                              $e->isSameDay($e->copy()->endOfYear())) {
+                        $detectedYear = (int) $s->format('Y');
+                    }
+                } catch (\Exception) {}
+            }
+            return [$startDate, $endDate, $detectedMonth, $detectedYear];
+        }
+
+        // Case 5: Default range if specified
+        if ($defaultStart || $defaultEnd) {
+            $detectedMonth = null;
+            $detectedYear = null;
+            if ($defaultStart && $defaultEnd) {
+                try {
+                    $s = Carbon::parse($defaultStart);
+                    $e = Carbon::parse($defaultEnd);
+                    if ($s->format('Y-m') === $e->format('Y-m') &&
+                        $s->isSameDay($s->copy()->startOfMonth()) &&
+                        $e->isSameDay($e->copy()->endOfMonth())) {
+                        $detectedMonth = (int) $s->format('n');
+                        $detectedYear = (int) $s->format('Y');
+                    }
+                } catch (\Exception) {}
+            }
+            return [$defaultStart, $defaultEnd, $detectedMonth, $detectedYear];
+        }
+
+        return [null, null, null, null];
+    }
 }
 

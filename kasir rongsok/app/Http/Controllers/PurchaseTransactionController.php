@@ -11,6 +11,7 @@ use App\Models\PurchaseTransactionItem;
 use App\Models\ScrapItem;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Services\FormatHelper;
 use App\Services\PurchaseTransactionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
@@ -94,8 +95,7 @@ class PurchaseTransactionController extends Controller
     public function index(Request $request): View
     {
         $search = $request->query('search');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
         $status = $request->query('status');
         $cashierId = $request->query('cashier_id');
 
@@ -123,7 +123,7 @@ class PurchaseTransactionController extends Controller
         $transactions = $query->paginate(15)->withQueryString();
         $cashiers = User::where('is_active', true)->get();
 
-        return view('purchases.index', compact('transactions', 'search', 'startDate', 'endDate', 'status', 'cashierId', 'cashiers'));
+        return view('purchases.index', compact('transactions', 'search', 'startDate', 'endDate', 'status', 'cashierId', 'cashiers', 'selectedMonth', 'selectedYear'));
     }
 
     /**
@@ -177,8 +177,7 @@ class PurchaseTransactionController extends Controller
     public function batchPrint(Request $request): View
     {
         $search = $request->query('search');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $status = $request->query('status', 'completed');
         $cashierId = $request->query('cashier_id');
 
@@ -208,8 +207,7 @@ class PurchaseTransactionController extends Controller
     public function batchPdf(Request $request)
     {
         $search = $request->query('search');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $status = $request->query('status', 'completed');
         $cashierId = $request->query('cashier_id');
 
@@ -251,8 +249,7 @@ class PurchaseTransactionController extends Controller
     public function exportExcel(Request $request)
     {
         $search = $request->query('search');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $status = $request->query('status');
         $cashierId = $request->query('cashier_id');
 
@@ -283,8 +280,7 @@ class PurchaseTransactionController extends Controller
     public function previewWaGlobal(Request $request): JsonResponse
     {
         $search = $request->query('search');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $status = $request->query('status', 'completed');
         $cashierId = $request->query('cashier_id');
 
@@ -356,8 +352,7 @@ class PurchaseTransactionController extends Controller
     {
         $phone = $request->input('phone');
         $search = $request->input('search');
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $status = $request->input('status', 'completed');
         $cashierId = $request->input('cashier_id');
         $sendPdf = $request->boolean('send_pdf', true);

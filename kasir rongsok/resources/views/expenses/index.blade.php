@@ -97,12 +97,14 @@
             <span class="text-[11px] text-slate-400">Menampilkan data sesuai tanggal saat itu</span>
         </div>
 
-        <form method="GET" action="{{ route('expenses.index') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
+        <form method="GET" action="{{ route('expenses.index') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end">
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Cari Keterangan / Penerima</label>
                 <input type="text" name="search" value="{{ $search }}" placeholder="BBM, makan, solar..."
                        class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
             </div>
+
+            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori Pengeluaran</label>

@@ -30,12 +30,14 @@ class ExpenseController extends Controller
         if ($allDates) {
             $startDate = null;
             $endDate = null;
-        } elseif ($request->has('start_date') || $request->has('end_date')) {
-            $startDate = $request->query('start_date');
-            $endDate = $request->query('end_date');
+            $selectedMonth = null;
+            $selectedYear = null;
         } else {
-            $startDate = Carbon::today()->toDateString();
-            $endDate = Carbon::today()->toDateString();
+            [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter(
+                $request,
+                Carbon::today()->toDateString(),
+                Carbon::today()->toDateString()
+            );
         }
 
         $query = Expense::with(['category', 'user', 'paymentMethod'])
@@ -66,7 +68,7 @@ class ExpenseController extends Controller
             ->when($categoryId, fn($q) => $q->where('expense_category_id', $categoryId))
             ->sum('amount');
 
-        return view('expenses.index', compact('expenses', 'categories', 'paymentMethods', 'categoryId', 'startDate', 'endDate', 'search', 'totalAmount', 'allDates'));
+        return view('expenses.index', compact('expenses', 'categories', 'paymentMethods', 'categoryId', 'startDate', 'endDate', 'search', 'totalAmount', 'allDates', 'selectedMonth', 'selectedYear'));
     }
 
     public function store(StoreExpenseRequest $request): RedirectResponse
@@ -158,8 +160,7 @@ class ExpenseController extends Controller
     {
         $categoryId = $request->query('category_id');
         $search = $request->query('search');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
 
         $expenses = Expense::with(['category', 'user', 'paymentMethod'])
             ->when($categoryId, fn($q) => $q->where('expense_category_id', $categoryId))
@@ -195,8 +196,7 @@ class ExpenseController extends Controller
      */
     public function previewWa(Request $request): JsonResponse
     {
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $categoryId = $request->query('category_id');
         $search = $request->query('search');
 
@@ -257,8 +257,7 @@ class ExpenseController extends Controller
     public function sendWa(Request $request)
     {
         $phone = $request->input('phone');
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
         $categoryId = $request->input('category_id');
         $search = $request->input('search');
         $sendPdf = $request->boolean('send_pdf', true);
@@ -333,8 +332,7 @@ class ExpenseController extends Controller
     public function exportExcel(Request $request)
     {
         $categoryId = $request->query('category_id');
-        $startDate = $request->query('start_date');
-        $endDate = $request->query('end_date');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
 
         $expenses = Expense::with(['category', 'user', 'paymentMethod'])
             ->when($categoryId, fn($q) => $q->where('expense_category_id', $categoryId))

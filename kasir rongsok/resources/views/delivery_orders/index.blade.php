@@ -80,14 +80,20 @@
                        class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 focus:border-emerald-500">
             </div>
 
+            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" :inline="true" />
+
             <div class="flex items-center gap-1.5 text-xs">
-                <span class="text-slate-500">Tgl:</span>
-                <input type="date" name="start_date" value="{{ $startDate }}" class="py-1 px-2 text-xs rounded-lg border border-slate-300">
+                <span class="text-slate-500 font-medium">Tgl:</span>
+                <input type="date" name="start_date" value="{{ $startDate }}" class="py-1.5 px-2 text-xs rounded-lg border border-slate-300">
                 <span class="text-slate-400">-</span>
-                <input type="date" name="end_date" value="{{ $endDate }}" class="py-1 px-2 text-xs rounded-lg border border-slate-300">
+                <input type="date" name="end_date" value="{{ $endDate }}" class="py-1.5 px-2 text-xs rounded-lg border border-slate-300">
             </div>
 
-            @if($search || $startDate || $endDate)
+            <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs">
+                Filter
+            </button>
+
+            @if($search || $startDate || $endDate || request('month') || request('year'))
                 <a href="{{ route('delivery-orders.index') }}" class="px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 rounded-lg">
                     Reset
                 </a>
