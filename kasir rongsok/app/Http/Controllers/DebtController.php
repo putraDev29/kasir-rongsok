@@ -307,6 +307,23 @@ class DebtController extends Controller
     /**
      * Preview / Unduh PDF Riwayat & Saldo Hutang Piutang sesuai status saat ini.
      */
+    /**
+     * Printable HTML View of Debt History & Ledger (Kartu Riwayat & Posisi Saldo Hutang Modal).
+     */
+    public function print(Debt $debt): View
+    {
+        $debt->load(['supplier', 'user']);
+        $payments = $debt->payments()
+            ->with(['paymentMethod', 'user', 'purchaseTransaction'])
+            ->oldest('payment_date')
+            ->get();
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $owner = \App\Models\User::where('role', \App\Models\User::ROLE_SUPER_ADMIN)->first();
+        $ownerName = $settings['owner_name'] ?? ($owner?->name ?? 'Bapak Hartono (Owner)');
+
+        return view('debts.print', compact('debt', 'payments', 'settings', 'ownerName'));
+    }
+
     public function pdf(Request $request, Debt $debt)
     {
         $debt->load(['supplier', 'user']);
@@ -386,6 +403,7 @@ class DebtController extends Controller
             'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
+            'print_url' => route('debts.print', $debt),
             'file_description' => "Dokumen PDF Riwayat & Saldo Hutang ({$debt->debt_number})",
         ]);
     }

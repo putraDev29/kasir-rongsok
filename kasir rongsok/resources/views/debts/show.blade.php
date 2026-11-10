@@ -31,7 +31,13 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-           
+            <a href="{{ route('debts.print', $debt) }}" target="_blank"
+               class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+               title="Cetak / Pratinjau Dokumen Riwayat Hutang & Saldo">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <span>Cetak / Pratinjau</span>
+            </a>
+
             <button type="button"
                     @click="openWaPdfModal({
                         title: 'Kirim PDF Riwayat Hutang & Saldo Pinjaman',
@@ -39,6 +45,7 @@
                         phone: '{{ $debt->borrower_phone }}',
                         filename: 'Riwayat_Hutang_' + ('{{ preg_replace("/[^a-zA-Z0-9_\-]/", "_", trim($debt->borrower_name ?: "Peminjam")) }}') + '.pdf',
                         fileDescription: 'Dokumen PDF Resmi Kartu Riwayat & Posisi Saldo Hutang Modal',
+                        printUrl: '{{ route('debts.print', $debt) }}',
                         pdfUrl: '{{ route('debts.pdf', $debt) }}',
                         previewUrl: '{{ route('debts.wa-preview', $debt) }}',
                         sendUrl: '{{ route('debts.send-wa', $debt) }}',

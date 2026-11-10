@@ -619,7 +619,7 @@ class WhatsAppGatewayService
         $companyName = BusinessSetting::get('company_name', 'UD. Berkah Rongsok Makmur');
         $payment->loadMissing(['debt.supplier', 'paymentMethod']);
 
-        $supplierName = $payment->debt?->supplier?->name ?? 'Pemasok';
+        $borrowerName = $payment->debt?->borrower_name ?: ($payment->debt?->supplier?->name ?? 'Peminjam');
         $dateStr = Carbon::parse($payment->payment_date)->translatedFormat('d F Y, H:i') . ' WIB';
         $amount = number_format($payment->amount, 0, ',', '.');
         $remBefore = number_format($payment->remaining_before, 0, ',', '.');
@@ -632,7 +632,7 @@ class WhatsAppGatewayService
         $msg .= "*=============================*\n\n";
         $msg .= "🔖 No. Bukti : *{$payment->payment_number}*\n";
         $msg .= "🗓️ Waktu     : {$dateStr}\n";
-        $msg .= "👤 Pemasok   : *{$supplierName}*\n\n";
+        $msg .= "👤 Peminjam / Mitra : *{$borrowerName}*\n\n";
         $msg .= "💵 *Jumlah Dibayar  :* *Rp {$amount}* ({$method})\n";
         $msg .= "📉 *Saldo Awal      :* Rp {$remBefore}\n";
         $msg .= "✅ *Sisa Kasbon Kini:* *Rp {$remAfter}*\n\n";
@@ -646,11 +646,11 @@ class WhatsAppGatewayService
      */
     public function sendDebtPaymentReceipt(DebtPayment $payment, ?string $targetPhone = null): array
     {
-        $phone = $targetPhone ?: $payment->debt?->supplier?->phone;
+        $phone = $targetPhone ?: ($payment->debt?->borrower_phone ?: $payment->debt?->supplier?->phone);
         if (empty($phone)) {
             return [
                 'success' => false,
-                'message' => 'Nomor WhatsApp pemasok tidak ditemukan.',
+                'message' => 'Nomor WhatsApp peminjam tidak ditemukan.',
             ];
         }
 

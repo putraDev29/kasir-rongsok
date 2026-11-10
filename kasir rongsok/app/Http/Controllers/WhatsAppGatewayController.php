@@ -374,7 +374,8 @@ class WhatsAppGatewayController extends Controller
     {
         $payment->loadMissing(['debt.supplier', 'paymentMethod', 'user']);
 
-        $phone = $payment->debt?->supplier?->phone;
+        $phone = $payment->debt?->borrower_phone ?: $payment->debt?->supplier?->phone;
+        $borrowerName = $payment->debt?->borrower_name ?: ($payment->debt?->supplier?->name ?? 'Peminjam');
         $message = $this->gateway->buildDebtPaymentMessage($payment);
 
         $companyName = BusinessSetting::get('company_name', 'UD. BERKAH RONGSOK MAKMUR');
@@ -384,7 +385,8 @@ class WhatsAppGatewayController extends Controller
             'type' => 'debt_payment',
             'paymentNumber' => $payment->payment_number,
             'paymentDate' => Carbon::parse($payment->payment_date)->translatedFormat('d F Y, H:i') . ' WIB',
-            'supplierName' => $payment->debt?->supplier?->name ?? 'Pemasok',
+            'borrowerName' => $borrowerName,
+            'supplierName' => $borrowerName,
             'supplierPhone' => $phone ?? '-',
             'paymentMethod' => $payment->paymentMethod?->name ?? 'Tunai',
             'amount' => 'Rp ' . number_format($payment->amount, 0, ',', '.'),
@@ -405,7 +407,7 @@ class WhatsAppGatewayController extends Controller
             'filename' => $filename,
             'pdf_filename' => $filename,
             'pdf_url' => $pdfUrl,
-            'print_url' => route('debts.payments.print', $payment),
+            'print_url' => route('debts.print-payment', $payment),
             'receipt_data' => $receiptData,
         ]);
     }
@@ -415,11 +417,11 @@ class WhatsAppGatewayController extends Controller
      */
     public function sendDebtPayment(Request $request, DebtPayment $payment): JsonResponse
     {
-        $targetPhone = $request->input('phone') ?: $payment->debt?->supplier?->phone;
+        $targetPhone = $request->input('phone') ?: ($payment->debt?->borrower_phone ?: $payment->debt?->supplier?->phone);
         if (empty($targetPhone)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Nomor WhatsApp pemasok wajib diisi.',
+                'message' => 'Nomor WhatsApp peminjam wajib diisi.',
             ], 422);
         }
 
