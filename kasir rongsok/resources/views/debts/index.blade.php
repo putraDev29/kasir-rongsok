@@ -182,14 +182,6 @@
                     <span>Print Rekap (HVS)</span>
                 </a>
 
-                <button type="button"
-                   onclick="openPdfPreview('{{ route('debts.batch-pdf', request()->all()) }}', 'Rekap Hutang Piutang Modal', 'Rekap_Hutang_Modal_{{ date('Ymd') }}.pdf', 'Pratinjau Dokumen Rekap Kasbon')"
-                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
-                   title="Pratinjau Dokumen PDF Rekap Kasbon">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    <span>Preview PDF</span>
-                </button>
-
                 <a href="{{ route('debts.export-excel', request()->all()) }}" 
                    class="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
                    title="Export Excel">

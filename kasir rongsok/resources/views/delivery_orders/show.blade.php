@@ -82,15 +82,7 @@
                 <x-whatsapp-icon class="w-4 h-4" />
                 <span>Kirim Surat Jalan WA</span>
             </button>
-
-            <!-- <button type="button"
-                    onclick="openPdfPreview('{{ route('delivery-orders.pdf', $deliveryOrder) }}', 'Surat Jalan #{{ $deliveryOrder->delivery_number }}', '{{ $deliveryOrder->recipient_phone ?: $deliveryOrder->driver_phone }}', '{{ $deliveryOrder->customer_name ?? ($deliveryOrder->recipient_name ?? 'Pelanggan') }}', 'Halo, berikut surat jalan pengiriman rongsok: {{ $deliveryOrder->delivery_number }}')"
-                    class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                    title="Pratinjau PDF Surat Jalan">
-                <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
-                <span>Preview PDF</span>
-            </button> -->
-
+            
             <a href="{{ route('delivery-orders.print', $deliveryOrder) }}" target="_blank"
                class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs"
                title="Preview & Cetak Surat Jalan (Tersedia Pilihan Lembar 1 & Lembar 2)">
