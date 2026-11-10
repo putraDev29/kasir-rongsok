@@ -98,43 +98,45 @@
             <!-- Action Buttons on Table Card Header -->
             <div class="flex flex-wrap items-center gap-2">
 
-                <a href="{{ route('sales.batch-print', request()->all()) }}" target="_blank"
-                   class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
-                   title="Cetak Rekapitulasi Penjualan Partai (Format Kertas HVS A4)">
-                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                    <span>Print Rekap (HVS)</span>
-                </a>
+                @if(Auth::user()->isOwner())
+                    <a href="{{ route('sales.batch-print', request()->all()) }}" target="_blank"
+                       class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                       title="Cetak Rekapitulasi Penjualan Partai (Format Kertas HVS A4)">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                        <span>Print Rekap (HVS)</span>
+                    </a>
 
-                <a href="{{ route('sales.excel', request()->all()) }}" 
-                   class="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
-                   title="Export Data ke Excel">
-                    <i data-lucide="sheet" class="w-3.5 h-3.5"></i>
-                    <span>Export Excel</span>
-                </a>
+                    <a href="{{ route('sales.excel', request()->all()) }}" 
+                       class="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
+                       title="Export Data ke Excel">
+                        <i data-lucide="sheet" class="w-3.5 h-3.5"></i>
+                        <span>Export Excel</span>
+                    </a>
 
-                <button type="button" 
-                        @click="openWaPdfModal({
-                            title: 'Kirim Rekapitulasi Penjualan Partai PDF',
-                            subtitle: 'Kirim berkas dokumen PDF laporan & rekap penjualan grosir ke nomor WhatsApp',
-                            filename: 'Rekap_Penjualan_Partai_' + ('{{ $startDate && $endDate ? "{$startDate}_sd_{$endDate}" : date("Ymd") }}') + '.pdf',
-                            fileDescription: 'Dokumen PDF Rekap Penjualan Partai (Omzet, Muatan & Laba)',
-                            printUrl: '{{ route('sales.batch-print', request()->all()) }}',
-                            pdfUrl: '{{ route('sales.batch-pdf', request()->all()) }}',
-                            previewUrl: '{{ route('sales.wa-global.preview', request()->all()) }}',
-                            sendUrl: '{{ route('sales.send-wa-global') }}',
-                            sendPayload: {
-                                search: '{{ addslashes($search) }}',
-                                start_date: '{{ $startDate }}',
-                                end_date: '{{ $endDate }}',
-                                status: '{{ $status }}'
-                            },
-                            submitButtonText: 'Kirim Rekap PDF via WA'
-                        })"
-                        class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
-                        title="Kirim Rekap Penjualan PDF via WhatsApp">
-                    <x-whatsapp-icon class="w-3.5 h-3.5" />
-                    <span>Kirim Rekap WA (PDF)</span>
-                </button>
+                    <button type="button" 
+                            @click="openWaPdfModal({
+                                title: 'Kirim Rekapitulasi Penjualan Partai PDF',
+                                subtitle: 'Kirim berkas dokumen PDF laporan & rekap penjualan grosir ke nomor WhatsApp',
+                                filename: 'Rekap_Penjualan_Partai_' + ('{{ $startDate && $endDate ? "{$startDate}_sd_{$endDate}" : date("Ymd") }}') + '.pdf',
+                                fileDescription: 'Dokumen PDF Rekap Penjualan Partai (Omzet, Muatan & Laba)',
+                                printUrl: '{{ route('sales.batch-print', request()->all()) }}',
+                                pdfUrl: '{{ route('sales.batch-pdf', request()->all()) }}',
+                                previewUrl: '{{ route('sales.wa-global.preview', request()->all()) }}',
+                                sendUrl: '{{ route('sales.send-wa-global') }}',
+                                sendPayload: {
+                                    search: '{{ addslashes($search) }}',
+                                    start_date: '{{ $startDate }}',
+                                    end_date: '{{ $endDate }}',
+                                    status: '{{ $status }}'
+                                },
+                                submitButtonText: 'Kirim Rekap PDF via WA'
+                            })"
+                            class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
+                            title="Kirim Rekap Penjualan PDF via WhatsApp">
+                        <x-whatsapp-icon class="w-3.5 h-3.5" />
+                        <span>Kirim Rekap WA (PDF)</span>
+                    </button>
+                @endif
 
                 <a href="{{ route('sales.create') }}" 
                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm">
@@ -155,7 +157,9 @@
                         <th class="py-2.5 px-3 text-right">Estimasi Laba</th>
                         <th class="py-2.5 px-3">Operator</th>
                         <th class="py-2.5 px-3 text-center">Status</th>
-                        <th class="py-2.5 px-3 text-center">Aksi</th>
+                        @if(Auth::user()->isOwner())
+                            <th class="py-2.5 px-3 text-center">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -219,55 +223,57 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="py-3 px-3 text-center">
-                                <div class="inline-flex items-center gap-1.5">
-                                    @if(($sale->isDraft() || $sale->isPendingDelivery()) && (Auth::user()->isAdmin() || Auth::user()->isSuperAdmin()))
-                                        <a href="{{ route('sales.edit', $sale) }}" class="p-1 rounded text-amber-600 hover:text-amber-800 hover:bg-amber-50" title="Edit Rincian Berat & Harga Jual">
-                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                        </a>
-                                    @endif
-                                    @if($sale->isPendingDelivery())
+                            @if(Auth::user()->isOwner())
+                                <td class="py-3 px-3 text-center">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        @if(($sale->isDraft() || $sale->isPendingDelivery()) && Auth::user()->isOwner())
+                                            <a href="{{ route('sales.edit', $sale) }}" class="p-1 rounded text-amber-600 hover:text-amber-800 hover:bg-amber-50" title="Edit Rincian Berat & Harga Jual">
+                                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                            </a>
+                                        @endif
+                                        @if($sale->isPendingDelivery())
+                                            <button type="button" 
+                                                    @click="openCompleteDeliveryModal({
+                                                        invoiceNumber: '{{ $sale->invoice_number }}',
+                                                        buyerName: '{{ addslashes($sale->buyer_name) }}',
+                                                        actionUrl: '{{ route('sales.mark-delivered', $sale) }}',
+                                                        notes: '{{ addslashes($sale->notes ?? '') }}',
+                                                        items: {{ json_encode($sale->items->map(fn($it) => [
+                                                            'id' => $it->id,
+                                                            'scrap_item_id' => $it->scrap_item_id,
+                                                            'name' => preg_replace('/\s*-\s*Rp[\d.,\s]+.*/i', '', $it->item_name_snapshot),
+                                                            'type' => $it->item_type_name,
+                                                            'unit' => $it->unit_type ?: ($it->scrapItem?->unit_type ?: 'kg'),
+                                                            'weight' => (float)$it->weight,
+                                                            'price' => (float)$it->sell_price_per_kg,
+                                                        ])) }}
+                                                    })"
+                                                    class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 cursor-pointer" 
+                                                    title="Input Hasil Timbang Pabrik & Selesaikan Pengiriman">
+                                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                            </button>
+                                        @endif
                                         <button type="button" 
-                                                @click="openCompleteDeliveryModal({
-                                                    invoiceNumber: '{{ $sale->invoice_number }}',
-                                                    buyerName: '{{ addslashes($sale->buyer_name) }}',
-                                                    actionUrl: '{{ route('sales.mark-delivered', $sale) }}',
-                                                    notes: '{{ addslashes($sale->notes ?? '') }}',
-                                                    items: {{ json_encode($sale->items->map(fn($it) => [
-                                                        'id' => $it->id,
-                                                        'scrap_item_id' => $it->scrap_item_id,
-                                                        'name' => preg_replace('/\s*-\s*Rp[\d.,\s]+.*/i', '', $it->item_name_snapshot),
-                                                        'type' => $it->item_type_name,
-                                                        'unit' => $it->unit_type ?: ($it->scrapItem?->unit_type ?: 'kg'),
-                                                        'weight' => (float)$it->weight,
-                                                        'price' => (float)$it->sell_price_per_kg,
-                                                    ])) }}
-                                                })"
-                                                class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 cursor-pointer" 
-                                                title="Input Hasil Timbang Pabrik & Selesaikan Pengiriman">
-                                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                                @click="openWaReceiptModal('sale', {{ $sale->id }}, '{{ $sale->buyer_phone }}')"
+                                                class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" 
+                                                title="Kirim Faktur PDF via WhatsApp">
+                                            <x-whatsapp-icon class="w-4 h-4" />
                                         </button>
-                                    @endif
-                                    <button type="button" 
-                                            @click="openWaReceiptModal('sale', {{ $sale->id }}, '{{ $sale->buyer_phone }}')"
-                                            class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50" 
-                                            title="Kirim Faktur PDF via WhatsApp">
-                                        <x-whatsapp-icon class="w-4 h-4" />
-                                    </button>
-                                    <a href="{{ route('sales.show', $sale) }}" title="Lihat Rincian"
-                                       class="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100">
-                                        <i data-lucide="eye" class="w-4 h-4"></i>
-                                    </a>
-                                    <a href="{{ route('sales.print', $sale) }}" target="_blank" title="Preview & Cetak Invoice"
-                                       class="p-1 rounded text-blue-600 hover:text-blue-800 hover:bg-blue-50">
-                                        <i data-lucide="printer" class="w-4 h-4"></i>
-                                    </a>
-                                </div>
-                            </td>
+                                        <a href="{{ route('sales.show', $sale) }}" title="Lihat Rincian"
+                                           class="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </a>
+                                        <a href="{{ route('sales.print', $sale) }}" target="_blank" title="Preview & Cetak Invoice"
+                                           class="p-1 rounded text-blue-600 hover:text-blue-800 hover:bg-blue-50">
+                                            <i data-lucide="printer" class="w-4 h-4"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="py-8 text-center text-slate-400">Belum ada transaksi penjualan rongsok.</td>
+                            <td colspan="{{ Auth::user()->isOwner() ? 9 : 8 }}" class="py-8 text-center text-slate-400">Belum ada transaksi penjualan rongsok.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -302,7 +308,7 @@
                             <td class="py-3 px-3 text-right font-mono font-black text-emerald-700">
                                 Rp {{ \App\Services\FormatHelper::number($transactions->sum('estimated_profit')) }}
                             </td>
-                            <td colspan="3"></td>
+                            <td colspan="{{ Auth::user()->isOwner() ? 3 : 2 }}"></td>
                         </tr>
                     </tfoot>
                 @endif

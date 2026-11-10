@@ -27,7 +27,13 @@ class StockController extends Controller
         $search = $request->query('search');
         $categoryId = $request->query('category_id');
         $lowStockOnly = $request->boolean('low_stock');
-        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
+        $hasDateFilter = $request->filled('month') || $request->filled('start_date') || $request->filled('end_date') || ($request->has('month') && $request->filled('year'));
+
+        if ($hasDateFilter) {
+            [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
+        } else {
+            [$startDate, $endDate, $selectedMonth, $selectedYear] = [null, null, null, null];
+        }
 
         $query = ScrapItem::with(['category', 'stockBalance', 'priceStocks'])
             ->when($search, function ($q) use ($search) {

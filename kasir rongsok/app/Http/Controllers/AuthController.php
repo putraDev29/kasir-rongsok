@@ -15,7 +15,7 @@ class AuthController extends Controller
     public function showLogin(): View|RedirectResponse
     {
         if (Auth::check()) {
-            return Auth::user()->isKasir()
+            return (Auth::user()->isKasir() || Auth::user()->role === 'admin')
                 ? redirect()->route('purchases.create')
                 : redirect()->route('dashboard');
         }
@@ -50,7 +50,7 @@ class AuthController extends Controller
                 description: "User {$user->name} berhasil login ke dalam sistem."
             );
 
-            if ($user->isKasir()) {
+            if ($user->isKasir() || $user->role === 'admin') {
                 return redirect()->intended(route('purchases.create'));
             }
 

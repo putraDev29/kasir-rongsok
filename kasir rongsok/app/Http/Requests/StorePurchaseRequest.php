@@ -47,6 +47,7 @@ class StorePurchaseRequest extends FormRequest
             'items.*.tare_percent' => 'nullable|numeric|min:0|max:100',
             'items.*.tare_mode' => 'nullable|string|max:20',
             'items.*.price_per_kg' => 'nullable|numeric|gt:0',
+            'items.*.update_master_price' => 'nullable|boolean',
             'items.*.notes' => 'nullable|string|max:255',
         ];
     }

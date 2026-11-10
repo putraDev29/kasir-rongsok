@@ -69,7 +69,7 @@
                     </div>
                 </div>
 
-                <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
+                <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" :default-all="true" />
             </div>
 
             <!-- Row 2: Kategori, Dari Tanggal, Sampai Tanggal, Actions -->
@@ -149,7 +149,7 @@
                         <th class="py-2.5 px-3 text-right">Rata-Rata Beli</th>
                         <th class="py-2.5 px-3 text-right font-bold">Estimasi Nilai</th>
                         <th class="py-2.5 px-3 text-center">Status Stok</th>
-                        @if(Auth::user()->isAdmin())
+                        @if(Auth::user()->isOwner())
                             <th class="py-2.5 px-3 text-center">Opname / Adjust</th>
                         @endif
                     </tr>
@@ -212,7 +212,7 @@
                                     </span>
                                 @endif
                             </td>
-                            @if(Auth::user()->isAdmin())
+                            @if(Auth::user()->isOwner())
                                 <td class="py-3 px-3 text-center">
                                     <button type="button" 
                                             @click="activeItem = { id: {{ $item->id }}, name: '{{ addslashes($item->name) }}', stock: {{ $curStock }} }; adjustModal = true"
@@ -226,7 +226,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="py-8 text-center text-slate-400">Belum ada data stok.</td>
+                            <td colspan="{{ Auth::user()->isOwner() ? 10 : 9 }}" class="py-8 text-center text-slate-400">Belum ada data stok.</td>
                         </tr>
                     @endforelse
                 </tbody>

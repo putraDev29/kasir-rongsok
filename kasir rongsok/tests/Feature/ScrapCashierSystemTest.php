@@ -52,13 +52,24 @@ class ScrapCashierSystemTest extends TestCase
         // Logout
         $this->post('/logout');
 
-        // Admin redirects to dashboard
+        // Admin redirects to POS cashier screen (same as kasir)
         $response = $this->post('/login', [
             'email' => $this->admin->email,
             'password' => 'password123',
         ]);
-        $response->assertRedirect('/dashboard');
+        $response->assertRedirect('/purchases/create');
         $this->assertAuthenticatedAs($this->admin);
+
+        // Logout
+        $this->post('/logout');
+
+        // Super Admin (Owner) redirects to dashboard
+        $response = $this->post('/login', [
+            'email' => $this->superAdmin->email,
+            'password' => 'password123',
+        ]);
+        $response->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($this->superAdmin);
     }
 
     public function test_cashier_can_create_purchase_with_correct_math_and_stock_increase(): void
@@ -245,9 +256,9 @@ class ScrapCashierSystemTest extends TestCase
 
     public function test_role_based_access_control(): void
     {
-        // 1. Kasir is redirected from /dashboard directly to /purchases/create
+        // 1. Kasir and Admin are redirected from /dashboard directly to /purchases/create
         $this->actingAs($this->kasir)->get('/dashboard')->assertRedirect('/purchases/create');
-        $this->actingAs($this->admin)->get('/dashboard')->assertStatus(200);
+        $this->actingAs($this->admin)->get('/dashboard')->assertRedirect('/purchases/create');
         $this->actingAs($this->superAdmin)->get('/dashboard')->assertStatus(200);
 
         // 2. Kasir and Admin can access Penerimaan Barang & Riwayat Pembelian
@@ -272,6 +283,7 @@ class ScrapCashierSystemTest extends TestCase
         $restrictedUrls = [
             '/scrap-items',
             '/suppliers',
+            '/drivers',
             '/debts',
             '/stock',
             '/expenses',
@@ -279,6 +291,8 @@ class ScrapCashierSystemTest extends TestCase
             '/reports',
             '/users',
             '/settings',
+            '/sales/excel',
+            '/sales/batch-print',
         ];
 
         foreach ($restrictedUrls as $url) {
@@ -610,7 +624,7 @@ class ScrapCashierSystemTest extends TestCase
             ]);
 
             // Verify Sidebar Displays the custom name
-            $dashResponse = $this->actingAs($this->admin)->get('/dashboard');
+            $dashResponse = $this->actingAs($this->superAdmin)->get('/dashboard');
             $dashResponse->assertStatus(200);
             $dashResponse->assertSee('DEPO BESI MAKMUR');
             $dashResponse->assertSee('Sentra Daur Ulang Logam');
@@ -1277,17 +1291,18 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertTrue($draftSale->isDraft());
         $this->assertEquals(0, (float) $draftSale->final_amount);
 
-        // Kasir CANNOT access edit page
+        // Kasir and Admin CANNOT access edit page
         $this->actingAs($this->kasir)->get(route('sales.edit', $draftSale))->assertStatus(403);
+        $this->actingAs($this->admin)->get(route('sales.edit', $draftSale))->assertStatus(403);
 
-        // Admin CAN access edit page
-        $adminEditRes = $this->actingAs($this->admin)->get(route('sales.edit', $draftSale));
-        $adminEditRes->assertStatus(200);
-        $adminEditRes->assertSee('Form Penetapan Harga Jual');
+        // Owner (Super Admin) CAN access edit page
+        $ownerEditRes = $this->actingAs($this->superAdmin)->get(route('sales.edit', $draftSale));
+        $ownerEditRes->assertStatus(200);
+        $ownerEditRes->assertSee('Form Penetapan Harga Jual');
 
-        // 2. Admin finalizes the draft sale by setting sell price
+        // 2. Owner finalizes the draft sale by setting sell price
         $draftItem = $draftSale->items->first();
-        $finalizeRes = $this->actingAs($this->admin)->put(route('sales.update', $draftSale), [
+        $finalizeRes = $this->actingAs($this->superAdmin)->put(route('sales.update', $draftSale), [
             'items' => [
                 $draftItem->id => [
                     'sell_price_per_kg' => 6000,
@@ -1308,11 +1323,11 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertEquals(1200000, (float) $draftItem->subtotal);
 
         // Once completed, accessing edit redirects to show with error
-        $this->actingAs($this->admin)->get(route('sales.edit', $draftSale))->assertRedirect(route('sales.show', $draftSale));
+        $this->actingAs($this->superAdmin)->get(route('sales.edit', $draftSale))->assertRedirect(route('sales.show', $draftSale));
     }
 
     /**
-     * Test Admin can add new items to the draft sale when editing.
+     * Test Owner can add new items to the draft sale when editing.
      */
     public function test_admin_can_add_new_item_when_editing_draft_sale(): void
     {
@@ -1332,7 +1347,7 @@ class ScrapCashierSystemTest extends TestCase
         $kasirSaleRes->assertSessionHasNoErrors();
         $draftSale = \App\Models\SalesTransaction::where('buyer_name', 'Pabrik Peleburan Tambah Item')->first();
 
-        // Admin edits draft sale: fills price for Besi (50kg @ 6000) AND adds a second item
+        // Owner edits draft sale: fills price for Besi (50kg @ 6000) AND adds a second item
         $secondItem = \App\Models\ScrapItem::where('id', '!=', $this->besiItem->id)->first();
         // Ensure secondItem has stock
         $secondStock = \App\Models\StockBalance::firstOrCreate(['scrap_item_id' => $secondItem->id], ['current_stock' => 100, 'total_in' => 100, 'total_out' => 0]);
@@ -1341,7 +1356,7 @@ class ScrapCashierSystemTest extends TestCase
         }
 
         $draftItem = $draftSale->items->first();
-        $updateRes = $this->actingAs($this->admin)->put(route('sales.update', $draftSale), [
+        $updateRes = $this->actingAs($this->superAdmin)->put(route('sales.update', $draftSale), [
             'buyer_name' => 'Pabrik Peleburan Tambah Item',
             'delivery_type' => 'pickup',
             'items' => [
@@ -1352,7 +1367,7 @@ class ScrapCashierSystemTest extends TestCase
                     'sell_price_per_kg' => 6000,
                 ],
                 [
-                    'id' => null, // NEW ITEM added by Admin
+                    'id' => null, // NEW ITEM added by Owner
                     'scrap_item_id' => $secondItem->id,
                     'weight' => 10,
                     'sell_price_per_kg' => 20000,
@@ -2636,6 +2651,98 @@ class ScrapCashierSystemTest extends TestCase
         $pdfRes = $this->actingAs($this->superAdmin)->get(route('delivery-orders.pdf', $deliveryOrder));
         $pdfRes->assertOk();
         $this->assertStringContainsString('application/pdf', $pdfRes->headers->get('Content-Type'));
+    }
+
+    public function test_owner_can_update_master_price_from_purchase_form(): void
+    {
+        $item = ScrapItem::create([
+            'code' => 'TEST-UPD-' . rand(100, 999),
+            'name' => 'Barang Update Test',
+            'category_id' => $this->besiItem->category_id,
+            'unit' => 'kg',
+            'buy_price_per_kg' => 4000,
+            'sell_price_per_kg' => 6000,
+            'is_active' => true,
+        ]);
+
+        $service = app(PurchaseTransactionService::class);
+
+        // 1. Kasir creates purchase with update_master_price: should NOT update master price
+        $service->createPurchase([
+            'supplier_name' => 'Pemasok Test Kasir',
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $item->id,
+                    'gross_weight' => 10,
+                    'tare_weight' => 0,
+                    'price_per_kg' => 4500,
+                    'update_master_price' => true,
+                ],
+            ],
+        ], $this->kasir);
+
+        $item->refresh();
+        $this->assertEquals(4000, (float) $item->buy_price_per_kg);
+
+        // 2. Owner creates purchase with update_master_price: SHOULD update master price
+        $service->createPurchase([
+            'supplier_name' => 'Pemasok Test Owner',
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $item->id,
+                    'gross_weight' => 10,
+                    'tare_weight' => 0,
+                    'price_per_kg' => 4800,
+                    'update_master_price' => true,
+                ],
+            ],
+        ], $this->superAdmin);
+
+        $item->refresh();
+        $this->assertEquals(4800, (float) $item->buy_price_per_kg);
+    }
+
+    public function test_stock_index_defaults_to_unfiltered_and_filters_by_month(): void
+    {
+        // Default index (no query parameters) should NOT be filtered by date
+        $res = $this->actingAs($this->superAdmin)->get(route('stock.index'));
+        $res->assertOk();
+        $res->assertSee('Total berat fisik tersedia saat ini');
+        $res->assertSee('Estimasi Valuasi Persediaan');
+
+        // When month query parameter is given, filtered by date
+        $resFiltered = $this->actingAs($this->superAdmin)->get(route('stock.index', ['month' => 11, 'year' => 2026]));
+        $resFiltered->assertOk();
+        $resFiltered->assertSee('Total fisik masuk dari pembelian');
+    }
+
+    public function test_sales_index_hides_action_buttons_and_action_column_for_admin_and_kasir(): void
+    {
+        // 1. Owner can see action buttons and Aksi column
+        $ownerRes = $this->actingAs($this->superAdmin)->get(route('sales.index'));
+        $ownerRes->assertOk();
+        $ownerRes->assertSee('Print Rekap (HVS)');
+        $ownerRes->assertSee('Export Excel');
+        $ownerRes->assertSee('Kirim Rekap WA (PDF)');
+        $ownerRes->assertSee('Aksi');
+
+        // 2. Kasir DOES NOT see action buttons and Aksi column
+        $kasirRes = $this->actingAs($this->kasir)->get(route('sales.index'));
+        $kasirRes->assertOk();
+        $kasirRes->assertDontSee('Print Rekap (HVS)');
+        $kasirRes->assertDontSee('Export Excel');
+        $kasirRes->assertDontSee('Kirim Rekap WA (PDF)');
+        $kasirRes->assertDontSee('>Aksi<', false);
+
+        // 3. Admin DOES NOT see action buttons and Aksi column
+        $adminRes = $this->actingAs($this->admin)->get(route('sales.index'));
+        $adminRes->assertOk();
+        $adminRes->assertDontSee('Print Rekap (HVS)');
+        $adminRes->assertDontSee('Export Excel');
+        $adminRes->assertDontSee('Kirim Rekap WA (PDF)');
+        $adminRes->assertDontSee('>Aksi<', false);
     }
 }
 

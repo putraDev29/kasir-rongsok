@@ -6,7 +6,7 @@
     <!-- Filter & Search Bar -->
     <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
         <form method="GET" action="{{ route('reports.stock') }}" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
+            <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" :default-all="true" />
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal</label>

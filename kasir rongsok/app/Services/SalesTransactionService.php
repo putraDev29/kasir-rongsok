@@ -483,8 +483,8 @@ class SalesTransactionService
                 throw new Exception('Transaksi penjualan ini bukan berstatus draft atau menunggu pengiriman.');
             }
 
-            if (!$user->isAdmin()) {
-                throw new Exception('Hanya Admin atau Owner yang memiliki hak akses untuk memfinalisasi harga jual.');
+            if (!$user->isOwner()) {
+                throw new Exception('Hanya Owner yang memiliki hak akses untuk memfinalisasi harga jual.');
             }
 
             $transaction->load(['items.scrapItem', 'deliveryOrder']);

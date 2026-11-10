@@ -239,6 +239,15 @@ class PurchaseTransactionService
                     $itemSubtotal = round($net * $pricePerKg, 2);
                 }
 
+                if ($user->isOwner() && !empty($row['update_master_price']) && $scrapItem && !$isNewlyCreated) {
+                    $scrapItem->update(['buy_price_per_kg' => $pricePerKg]);
+                    ActivityLog::record(
+                        action: 'scrap_item_price_updated_from_purchase',
+                        subject: $scrapItem,
+                        description: "Memperbarui harga master beli '{$scrapItem->name}' menjadi " . FormatHelper::rupiah($pricePerKg) . " saat penerimaan barang"
+                    );
+                }
+
                 $totalGrossWeight += $gross;
                 $totalTareWeight += $tare;
                 $totalNetWeight += ($unitType === 'kg' ? $net : 0);

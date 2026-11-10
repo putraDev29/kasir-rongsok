@@ -35,7 +35,7 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            @if(($sale->isDraft() || $sale->isPendingDelivery()) && (Auth::user()->isAdmin() || Auth::user()->isSuperAdmin()))
+            @if(($sale->isDraft() || $sale->isPendingDelivery()) && Auth::user()->isOwner())
                 <a href="{{ route('sales.edit', $sale) }}"
                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition-colors">
                     <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
@@ -111,9 +111,9 @@
                     <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600"></i>
                     <span>Penjualan Berstatus Draft (Dibuat oleh Kasir)</span>
                 </div>
-                <p class="text-amber-800">Harga jual pabrik belum diisi. Penjualan ini menunggu Admin atau Owner untuk menentukan harga jual per kg dan menyelesaikan transaksi.</p>
+                <p class="text-amber-800">Harga jual pabrik belum diisi. Penjualan ini menunggu Owner untuk menentukan harga jual per kg dan menyelesaikan transaksi.</p>
             </div>
-            @if(Auth::user()->isAdmin() || Auth::user()->isSuperAdmin())
+            @if(Auth::user()->isOwner())
                 <a href="{{ route('sales.edit', $sale) }}"
                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow transition-colors whitespace-nowrap">
                     <i data-lucide="edit-3" class="w-4 h-4"></i>

@@ -102,14 +102,14 @@ Route::middleware('auth')->group(function () {
 
     // Root Redirect
     Route::get('/', function () {
-        return Auth::user()->isKasir()
+        return (Auth::user()->isKasir() || Auth::user()->role === 'admin')
             ? redirect()->route('purchases.create')
             : redirect()->route('dashboard');
     });
 
-    // Dashboard (Owner, Admin - Kasir dialihkan langsung ke Penerimaan Barang)
+    // Dashboard (Owner - Kasir & Admin dialihkan langsung ke Penerimaan Barang)
     Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
-        if (Auth::user()->isKasir()) {
+        if (Auth::user()->isKasir() || Auth::user()->role === 'admin') {
             return redirect()->route('purchases.create');
         }
         return app(DashboardController::class)->index($request);
@@ -177,10 +177,10 @@ Route::middleware('auth')->group(function () {
         ->except(['create', 'show', 'edit'])
         ->middleware('role:super_admin');
 
-    // Drivers (Data Sopir & Rekening Bank Ongkos Armada) - Owner & Admin
+    // Drivers (Data Sopir & Rekening Bank Ongkos Armada) - Hanya Owner
     Route::resource('drivers', DriverController::class)
         ->except(['create', 'show', 'edit'])
-        ->middleware('role:super_admin,admin');
+        ->middleware('role:super_admin');
 
     // Hutang Piutang / Pinjaman Modal (Debts & Loans) - Hanya Owner
     Route::get('/debts/excel', [DebtController::class, 'exportExcel'])->name('debts.excel')->middleware('role:super_admin');
@@ -221,19 +221,19 @@ Route::middleware('auth')->group(function () {
     // Bulk Sales of Scrap (Penjualan Partai Besar) - Owner, Admin, Kasir
     Route::get('/sales/excel', [SalesTransactionController::class, 'exportExcel'])
         ->name('sales.excel')
-        ->middleware('role:super_admin,admin');
+        ->middleware('role:super_admin');
     Route::get('/sales/batch-print', [SalesTransactionController::class, 'batchPrint'])
         ->name('sales.batch-print')
-        ->middleware('role:super_admin,admin');
+        ->middleware('role:super_admin');
     Route::get('/sales/batch-pdf', [SalesTransactionController::class, 'batchPdf'])
         ->name('sales.batch-pdf')
-        ->middleware('role:super_admin,admin');
+        ->middleware('role:super_admin');
     Route::get('/sales/wa-global/preview', [SalesTransactionController::class, 'previewWaGlobal'])
         ->name('sales.wa-global.preview')
-        ->middleware('role:super_admin,admin');
+        ->middleware('role:super_admin');
     Route::post('/sales/send-wa-global', [SalesTransactionController::class, 'sendWaGlobal'])
         ->name('sales.send-wa-global')
-        ->middleware('role:super_admin,admin');
+        ->middleware('role:super_admin');
     Route::resource('sales', SalesTransactionController::class)
         ->only(['index', 'create', 'store', 'show', 'edit', 'update'])
         ->middleware('role:super_admin,admin,kasir');

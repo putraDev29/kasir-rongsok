@@ -157,7 +157,13 @@ class ReportController extends Controller
     public function stock(Request $request): View|Response
     {
         $format = $request->query('format');
-        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
+        $hasDateFilter = $request->filled('month') || $request->filled('start_date') || $request->filled('end_date') || ($request->has('month') && $request->filled('year'));
+
+        if ($hasDateFilter) {
+            [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
+        } else {
+            [$startDate, $endDate, $selectedMonth, $selectedYear] = [null, null, null, null];
+        }
         $isFilteredByDate = !empty($startDate) && !empty($endDate);
         $periodIncomingStocks = [];
         $periodIncomingAvgPrices = [];

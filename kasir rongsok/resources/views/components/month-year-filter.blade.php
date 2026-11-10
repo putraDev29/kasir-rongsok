@@ -4,6 +4,7 @@
     'startDateName' => 'start_date',
     'endDateName' => 'end_date',
     'inline' => false,
+    'defaultAll' => false,
 ])
 
 @php
@@ -12,10 +13,10 @@
 
     // Default to current month and year when not explicitly provided
     if ($selectedMonth === null) {
-        $selectedMonth = request()->has('month') ? request('month') : date('n');
+        $selectedMonth = request()->has('month') ? request('month') : ($defaultAll ? '' : date('n'));
     }
     if ($selectedYear === null) {
-        $selectedYear = request()->has('year') ? request('year') : date('Y');
+        $selectedYear = request()->has('year') ? request('year') : ($defaultAll ? '' : date('Y'));
     }
 @endphp
 

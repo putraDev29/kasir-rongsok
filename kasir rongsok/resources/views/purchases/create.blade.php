@@ -457,6 +457,18 @@
                                             <span x-text="formatRp(row.price_per_kg || 0)"></span>
                                             <span class="text-slate-400">Bebas edit</span>
                                         </div>
+                                        @if(Auth::user()->isOwner())
+                                            <div class="mt-1 pt-1 border-t border-slate-100">
+                                                <label class="inline-flex items-center gap-1.5 cursor-pointer select-none text-[10px] text-slate-700 hover:text-emerald-700">
+                                                    <input type="checkbox" 
+                                                           :name="'items[' + index + '][update_master_price]'" 
+                                                           value="1"
+                                                           x-model="row.update_master_price"
+                                                           class="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                                    <span class="font-bold text-slate-700">Update Harga Master</span>
+                                                </label>
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <!-- 6. Subtotal (Rp) -->
@@ -1083,7 +1095,7 @@ function cashierPos() {
         isSubmitting: false,
 
         rows: [
-            { uid: 1, scrap_item_id: '', is_new: false, new_item_name: '', category_id: '', is_new_category: false, new_category_name: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0 }
+            { uid: 1, scrap_item_id: '', is_new: false, new_item_name: '', category_id: '', is_new_category: false, new_category_name: '', search_text: '', dropdown_open: false, unit_type: 'kg', item_type_name: '', quantity: 1, gross_weight: '', tare_weight: '', tare_percent: '', tare_mode: 'kg', price_per_kg: 0, update_master_price: false }
         ],
 
         init() {
@@ -1381,7 +1393,8 @@ function cashierPos() {
                     tare_weight: '',
                     tare_percent: '',
                     tare_mode: 'kg',
-                    price_per_kg: 0
+                    price_per_kg: 0,
+                    update_master_price: false
                 });
             }
             this.refreshIcons();
@@ -1397,6 +1410,7 @@ function cashierPos() {
             row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
             row.search_text = item.name + ' (' + item.code + ')';
             row.price_per_kg = parseFloat(item.price_per_kg || item.buy_price_per_kg) || 0;
+            row.update_master_price = false;
             if (item.unit_type && item.unit_type !== 'kg') {
                 row.unit_type = item.unit_type;
             } else if (!row.unit_type) {
@@ -1419,6 +1433,7 @@ function cashierPos() {
             row.tier_id = '';
             row.search_text = '';
             row.price_per_kg = 0;
+            row.update_master_price = false;
             row.dropdown_open = true;
         },
 
@@ -1441,7 +1456,8 @@ function cashierPos() {
                 tare_weight: '',
                 tare_percent: '',
                 tare_mode: 'kg',
-                price_per_kg: 0
+                price_per_kg: 0,
+                update_master_price: false
             });
             this.refreshIcons();
         },
@@ -1464,6 +1480,7 @@ function cashierPos() {
                 lastRow.unit_type = itemUnit;
                 lastRow.tare_mode = itemUnit;
                 lastRow.price_per_kg = itemPrice;
+                lastRow.update_master_price = false;
             } else {
                 this.rows.push({
                     uid: Date.now() + Math.random(),
@@ -1483,7 +1500,8 @@ function cashierPos() {
                     tare_weight: '',
                     tare_percent: '',
                     tare_mode: itemUnit,
-                    price_per_kg: itemPrice
+                    price_per_kg: itemPrice,
+                    update_master_price: false
                 });
             }
             this.refreshIcons();

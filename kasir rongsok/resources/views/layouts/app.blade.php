@@ -59,7 +59,7 @@
 
             <!-- Brand Header -->
             <div class="flex items-center justify-between h-16 px-4 border-b border-slate-800 bg-slate-950/40">
-                <a href="{{ Auth::user()->isKasir() ? route('purchases.create') : route('dashboard') }}" class="flex items-center gap-2.5 min-w-0">
+                <a href="{{ (Auth::user()->isKasir() || Auth::user()->role === 'admin') ? route('purchases.create') : route('dashboard') }}" class="flex items-center gap-2.5 min-w-0">
                     @if($appLogo)
                         <img src="{{ $appLogo }}" alt="Logo" class="w-9 h-9 object-contain rounded-lg bg-white p-1 shadow-sm shrink-0 border border-slate-700">
                     @else
@@ -88,8 +88,8 @@
 
             <!-- Navigation Links -->
             <nav class="flex-1 px-3 py-3 overflow-y-auto space-y-1 text-sm font-medium">
-                {{-- Dashboard: Hanya untuk Owner dan Admin (Kasir fokus transaksi POS) --}}
-                @if(!Auth::user()->isKasir())
+                {{-- Dashboard: Hanya untuk Owner / Super Admin (Kasir & Admin fokus transaksi POS) --}}
+                @if(Auth::user()->isSuperAdmin())
                     <a href="{{ route('dashboard') }}" 
                        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('dashboard') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
                         <i data-lucide="layout-dashboard" class="w-4 h-4 {{ request()->routeIs('dashboard') ? 'text-white' : 'text-slate-400' }}"></i>

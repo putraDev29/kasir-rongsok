@@ -128,8 +128,8 @@ class SalesTransactionController extends Controller
                 ->with('error', 'Transaksi penjualan ini bukan berstatus draft atau menunggu pengiriman.');
         }
 
-        if (!Auth::user()->isAdmin()) {
-            abort(403, 'Hanya Admin atau Owner yang dapat mengedit dan mengisi harga jual draft penjualan.');
+        if (!Auth::user()->isOwner()) {
+            abort(403, 'Hanya Owner yang dapat mengedit dan mengisi harga jual draft penjualan.');
         }
 
         $sale->load(['items.scrapItem', 'user', 'paymentMethod', 'deliveryOrder']);
@@ -213,8 +213,8 @@ class SalesTransactionController extends Controller
                 ->with('error', 'Transaksi penjualan ini bukan berstatus draft atau menunggu pengiriman.');
         }
 
-        if (!Auth::user()->isAdmin()) {
-            abort(403, 'Hanya Admin atau Owner yang dapat memfinalisasi penjualan.');
+        if (!Auth::user()->isOwner()) {
+            abort(403, 'Hanya Owner yang dapat memfinalisasi penjualan.');
         }
 
         try {
