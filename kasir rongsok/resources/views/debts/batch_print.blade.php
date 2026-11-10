@@ -125,18 +125,18 @@
                         <th class="border border-slate-700 py-2 px-2 text-center w-20">Tanggal</th>
                         <th class="border border-slate-700 py-2 px-2.5 text-left w-24">No. Bukti</th>
                         <th class="border border-slate-700 py-2 px-2.5 text-left">Peminjam / Mitra</th>
-                        <th class="border border-slate-700 py-2 px-2 text-center w-24">Kategori</th>
-                        <th class="border border-slate-700 py-2 px-2.5 text-right w-24">Jumlah Pinjaman</th>
-                        <th class="border border-slate-700 py-2 px-2.5 text-right w-24">Sisa Kasbon</th>
-                        <th class="border border-slate-700 py-2 px-2 text-center w-20">Status</th>
+                        <th class="border border-slate-700 py-2 px-2 text-center w-20">Kategori</th>
+                        <th class="border border-slate-700 py-2 px-3 text-right w-36 min-w-[130px] whitespace-nowrap">Jumlah Pinjaman</th>
+                        <th class="border border-slate-700 py-2 px-3 text-right w-36 min-w-[130px] whitespace-nowrap">Sisa Kasbon</th>
+                        <th class="border border-slate-700 py-2 px-2 text-center w-24">Status</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200">
                     @forelse($debts as $idx => $d)
                         <tr class="hover:bg-slate-50/50">
                             <td class="border border-slate-300 py-2 px-2 text-center">{{ $idx + 1 }}</td>
-                            <td class="border border-slate-300 py-2 px-2 text-center text-slate-600">{{ $d->date->format('d/m/Y') }}</td>
-                            <td class="border border-slate-300 py-2 px-2.5 font-mono font-bold text-slate-900">
+                            <td class="border border-slate-300 py-2 px-2 text-center text-slate-600 whitespace-nowrap">{{ $d->date->format('d/m/Y') }}</td>
+                            <td class="border border-slate-300 py-2 px-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">
                                 {{ $d->debt_number }}
                                 @if($d->agreement_number)
                                     <div class="text-[9px] text-blue-700 font-normal">SPH: {{ $d->agreement_number }}</div>
@@ -148,14 +148,14 @@
                                     <div class="text-[10px] text-slate-500 font-mono">{{ $d->borrower_phone }}</div>
                                 @endif
                             </td>
-                            <td class="border border-slate-300 py-2 px-2 text-center">
+                            <td class="border border-slate-300 py-2 px-2 text-center whitespace-nowrap">
                                 <span class="px-1.5 py-0.5 rounded text-[9px] font-bold {{ $d->loan_category === 'modal' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800' }}">
                                     {{ strtoupper($d->loan_category ?? 'KASBON') }}
                                 </span>
                             </td>
-                            <td class="border border-slate-300 py-2 px-2.5 text-right font-mono font-bold text-slate-900">{{ \App\Services\FormatHelper::rupiah($d->amount) }}</td>
-                            <td class="border border-slate-300 py-2 px-2.5 text-right font-mono font-bold text-rose-700">{{ \App\Services\FormatHelper::rupiah($d->remaining_amount) }}</td>
-                            <td class="border border-slate-300 py-2 px-2 text-center text-[10px] font-bold">
+                            <td class="border border-slate-300 py-2 px-3 text-right font-mono font-bold text-slate-900 whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($d->initial_amount) }}</td>
+                            <td class="border border-slate-300 py-2 px-3 text-right font-mono font-bold text-rose-700 whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($d->remaining_amount) }}</td>
+                            <td class="border border-slate-300 py-2 px-2 text-center text-[10px] font-bold whitespace-nowrap">
                                 @if($d->status === 'paid')
                                     <span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">LUNAS</span>
                                 @elseif($d->status === 'partial')
@@ -173,9 +173,9 @@
                 </tbody>
                 <tfoot>
                     <tr class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-400">
-                        <td colspan="5" class="border border-slate-300 py-2.5 px-3 text-right">TOTAL KESELURUHAN:</td>
-                        <td class="border border-slate-300 py-2.5 px-2.5 text-right font-mono text-xs">{{ \App\Services\FormatHelper::rupiah($totalAmount) }}</td>
-                        <td class="border border-slate-300 py-2.5 px-2.5 text-right font-mono text-xs text-rose-700 font-bold">{{ \App\Services\FormatHelper::rupiah($totalRemaining) }}</td>
+                        <td colspan="5" class="border border-slate-300 py-2.5 px-3 text-right whitespace-nowrap">TOTAL KESELURUHAN:</td>
+                        <td class="border border-slate-300 py-2.5 px-3 text-right font-mono text-xs whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($totalAmount) }}</td>
+                        <td class="border border-slate-300 py-2.5 px-3 text-right font-mono text-xs text-rose-700 font-bold whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($totalRemaining) }}</td>
                         <td class="border border-slate-300"></td>
                     </tr>
                 </tfoot>

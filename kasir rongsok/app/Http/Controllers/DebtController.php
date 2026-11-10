@@ -483,8 +483,8 @@ class DebtController extends Controller
             ->latest('date')
             ->get();
 
-        $totalAmount = (float) $debts->sum('amount');
-        $totalPaid = (float) $debts->sum(fn($d) => $d->amount - $d->remaining_amount);
+        $totalAmount = (float) $debts->sum('initial_amount');
+        $totalPaid = (float) $debts->sum('paid_amount');
         $totalRemaining = (float) $debts->sum('remaining_amount');
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
@@ -516,8 +516,8 @@ class DebtController extends Controller
             ->latest('date')
             ->get();
 
-        $totalAmount = (float) $debts->sum('amount');
-        $totalPaid = (float) $debts->sum(fn($d) => $d->amount - $d->remaining_amount);
+        $totalAmount = (float) $debts->sum('initial_amount');
+        $totalPaid = (float) $debts->sum('paid_amount');
         $totalRemaining = (float) $debts->sum('remaining_amount');
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
@@ -558,8 +558,8 @@ class DebtController extends Controller
             ->get();
 
         $count = $debts->count();
-        $totalAmount = (float) $debts->sum('amount');
-        $totalPaid = (float) $debts->sum(fn($d) => $d->amount - $d->remaining_amount);
+        $totalAmount = (float) $debts->sum('initial_amount');
+        $totalPaid = (float) $debts->sum('paid_amount');
         $totalRemaining = (float) $debts->sum('remaining_amount');
         $companyName = BusinessSetting::get('company_name', 'UD. BERKAH RONGSOK MAKMUR');
 
@@ -640,8 +640,8 @@ class DebtController extends Controller
             ->latest('date')
             ->get();
 
-        $totalAmount = (float) $debts->sum('amount');
-        $totalPaid = (float) $debts->sum(fn($d) => $d->amount - $d->remaining_amount);
+        $totalAmount = (float) $debts->sum('initial_amount');
+        $totalPaid = (float) $debts->sum('paid_amount');
         $totalRemaining = (float) $debts->sum('remaining_amount');
         $settings = BusinessSetting::pluck('value', 'key')->all();
         $companyName = $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR';

@@ -196,22 +196,22 @@
         <thead>
             <tr>
                 <th class="text-center" style="width: 4%;">No</th>
-                <th style="width: 14%;">No. Pinjaman</th>
-                <th style="width: 9%;">Tanggal</th>
-                <th style="width: 19%;">Peminjam / Debitur</th>
-                <th style="width: 8%;">Tipe</th>
-                <th class="text-right" style="width: 13%;">Pinjaman Awal</th>
-                <th class="text-right" style="width: 12%;">Telah Diangsur</th>
-                <th class="text-right" style="width: 13%;">Sisa Hutang</th>
-                <th class="text-center" style="width: 8%;">Status</th>
+                <th style="width: 13%;">No. Pinjaman</th>
+                <th style="width: 8%;">Tanggal</th>
+                <th style="width: 17%;">Peminjam / Debitur</th>
+                <th style="width: 6%;">Tipe</th>
+                <th class="text-right" style="width: 15%; white-space: nowrap;">Pinjaman Awal</th>
+                <th class="text-right" style="width: 15%; white-space: nowrap;">Telah Diangsur</th>
+                <th class="text-right" style="width: 15%; white-space: nowrap;">Sisa Hutang</th>
+                <th class="text-center" style="width: 7%;">Status</th>
             </tr>
         </thead>
         <tbody>
             @forelse($debts as $idx => $d)
                 <tr>
                     <td class="text-center">{{ $idx + 1 }}</td>
-                    <td class="font-mono" style="font-weight: bold; font-size: 7pt; color: #1e40af;">{{ $d->debt_number }}</td>
-                    <td>{{ $d->date->format('d/m/Y') }}</td>
+                    <td class="font-mono" style="font-weight: bold; font-size: 7pt; color: #1e40af; white-space: nowrap;">{{ $d->debt_number }}</td>
+                    <td style="white-space: nowrap;">{{ $d->date->format('d/m/Y') }}</td>
                     <td>
                         <strong>{{ $d->borrower_name }}</strong>
                         @if($d->borrower_phone)
@@ -219,9 +219,9 @@
                         @endif
                     </td>
                     <td style="text-transform: capitalize;">{{ $d->borrower_type }}</td>
-                    <td class="text-right font-mono">{{ \App\Services\FormatHelper::rupiah($d->amount) }}</td>
-                    <td class="text-right font-mono" style="color: #047857;">{{ \App\Services\FormatHelper::rupiah($d->amount - $d->remaining_amount) }}</td>
-                    <td class="text-right font-mono font-bold" style="color: #b45309;">{{ \App\Services\FormatHelper::rupiah($d->remaining_amount) }}</td>
+                    <td class="text-right font-mono" style="white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($d->initial_amount) }}</td>
+                    <td class="text-right font-mono" style="color: #047857; white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($d->paid_amount) }}</td>
+                    <td class="text-right font-mono font-bold" style="color: #b45309; white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($d->remaining_amount) }}</td>
                     <td class="text-center">
                         @if($d->status === 'paid')
                             <span class="status-badge status-paid">LUNAS</span>
@@ -240,10 +240,10 @@
         </tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="5" class="text-right">TOTAL KESELURUHAN:</td>
-                <td class="text-right font-mono">{{ \App\Services\FormatHelper::rupiah($totalAmount) }}</td>
-                <td class="text-right font-mono" style="color: #047857;">{{ \App\Services\FormatHelper::rupiah($totalPaid) }}</td>
-                <td class="text-right font-mono font-bold" style="color: #b45309;">{{ \App\Services\FormatHelper::rupiah($totalRemaining) }}</td>
+                <td colspan="5" class="text-right" style="white-space: nowrap;">TOTAL KESELURUHAN:</td>
+                <td class="text-right font-mono" style="white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($totalAmount) }}</td>
+                <td class="text-right font-mono" style="color: #047857; white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($totalPaid) }}</td>
+                <td class="text-right font-mono font-bold" style="color: #b45309; white-space: nowrap;">{{ \App\Services\FormatHelper::rupiah($totalRemaining) }}</td>
                 <td></td>
             </tr>
         </tfoot>
