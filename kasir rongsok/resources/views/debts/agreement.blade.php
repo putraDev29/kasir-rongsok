@@ -37,7 +37,7 @@
             </button>
 
             <button type="button"
-                    @click="$store.waGateway.openReceiptModal({
+                    @click="openWaPdfModal({
                         title: 'Kirim Surat Perjanjian PDF',
                         subtitle: 'Kirim berkas dokumen PDF Surat Perjanjian ke WhatsApp peminjam (2 Lembar: Asli & Salinan)',
                         phone: '{{ $debt->borrower_phone }}',

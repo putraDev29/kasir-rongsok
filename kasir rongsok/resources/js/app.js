@@ -503,6 +503,10 @@ Alpine.store('waGateway', {
         }
     },
 
+    openReceiptModal(config) {
+        return this.openPdfModal(config);
+    },
+
     async sendReceipt() {
         if (!this.receipt.phone) {
             alert('Nomor WhatsApp tujuan belum diisi!');
@@ -744,6 +748,10 @@ window.openWaGatewayModal = () => {
 };
 
 window.openWaReceiptModal = (type, id, phone = '') => {
+    Alpine.store('waGateway').openReceipt(type, id, phone);
+};
+
+window.openReceipt = (type, id, phone = '') => {
     Alpine.store('waGateway').openReceipt(type, id, phone);
 };
 
