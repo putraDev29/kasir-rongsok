@@ -234,6 +234,10 @@ class SalesTransactionController extends Controller
 
     public function show(SalesTransaction $sale): View
     {
+        if (!Auth::user()->isOwner()) {
+            abort(403, 'Akses dibatasi. Hanya Owner yang dapat melihat detail rincian transaksi penjualan partai.');
+        }
+
         $sale->load(['items.scrapItem', 'user', 'paymentMethod', 'cancelledByUser', 'deliveryOrder.driver']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
@@ -242,6 +246,10 @@ class SalesTransactionController extends Controller
 
     public function printInvoice(Request $request, SalesTransaction $sale): View
     {
+        if (!Auth::user()->isOwner()) {
+            abort(403, 'Akses dibatasi. Hanya Owner yang dapat mencetak faktur penjualan partai.');
+        }
+
         $sale->load(['items.scrapItem', 'user', 'paymentMethod', 'deliveryOrder.driver']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
 
@@ -250,6 +258,10 @@ class SalesTransactionController extends Controller
 
     public function pdfInvoice(Request $request, SalesTransaction $sale)
     {
+        if (!Auth::user()->isOwner()) {
+            abort(403, 'Akses dibatasi. Hanya Owner yang dapat mengunduh atau melihat faktur penjualan partai.');
+        }
+
         $sale->load(['items.scrapItem', 'user', 'paymentMethod', 'deliveryOrder.driver']);
         $settings = BusinessSetting::pluck('value', 'key')->all();
 

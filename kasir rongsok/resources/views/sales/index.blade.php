@@ -3,7 +3,8 @@
 @section('content')
 <div class="space-y-4">
 
-    <!-- KPI Summary -->
+    @if(Auth::user()->isOwner())
+    <!-- KPI Summary (Hanya untuk Owner) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
             <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
@@ -29,6 +30,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Filter Bar -->
     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -153,8 +155,10 @@
                         <th class="py-2.5 px-3">Tanggal</th>
                         <th class="py-2.5 px-3">Nama Pembeli / Pabrik</th>
                         <th class="py-2.5 px-3 text-right">Muatan / Berat Terjual</th>
-                        <th class="py-2.5 px-3 text-right">Total Nilai Jual</th>
-                        <th class="py-2.5 px-3 text-right">Estimasi Laba</th>
+                        @if(Auth::user()->isOwner())
+                            <th class="py-2.5 px-3 text-right">Total Nilai Jual</th>
+                            <th class="py-2.5 px-3 text-right">Estimasi Laba</th>
+                        @endif
                         <th class="py-2.5 px-3">Operator</th>
                         <th class="py-2.5 px-3 text-center">Status</th>
                         @if(Auth::user()->isOwner())
@@ -166,9 +170,13 @@
                     @forelse($transactions as $sale)
                         <tr class="hover:bg-slate-50 transition-colors {{ $sale->isCancelled() ? 'bg-red-50/40' : '' }}">
                             <td class="py-3 px-3 font-semibold">
-                                <a href="{{ route('sales.show', $sale) }}" class="text-blue-600 hover:underline">
-                                    {{ $sale->invoice_number }}
-                                </a>
+                                @if(Auth::user()->isOwner())
+                                    <a href="{{ route('sales.show', $sale) }}" class="text-blue-600 hover:underline">
+                                        {{ $sale->invoice_number }}
+                                    </a>
+                                @else
+                                    <span class="text-slate-800 font-mono font-bold">{{ $sale->invoice_number }}</span>
+                                @endif
                             </td>
                             <td class="py-3 px-3 text-slate-500">
                                 {{ $sale->transaction_date->format('d/m/Y H:i') }}
@@ -195,12 +203,14 @@
                             <td class="py-3 px-3 text-right font-mono font-medium text-slate-800">
                                 {{ $sale->total_cargo_display }}
                             </td>
-                            <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">
-                                {{ \App\Services\FormatHelper::rupiahOrDash($sale->final_amount) }}
-                            </td>
-                            <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">
-                                {{ $sale->estimated_profit != 0 ? 'Rp ' . \App\Services\FormatHelper::number($sale->estimated_profit) : '-' }}
-                            </td>
+                            @if(Auth::user()->isOwner())
+                                <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">
+                                    {{ \App\Services\FormatHelper::rupiahOrDash($sale->final_amount) }}
+                                </td>
+                                <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">
+                                    {{ $sale->estimated_profit != 0 ? 'Rp ' . \App\Services\FormatHelper::number($sale->estimated_profit) : '-' }}
+                                </td>
+                            @endif
                             <td class="py-3 px-3 text-slate-600">
                                 {{ $sale->user?->name }}
                             </td>
@@ -274,7 +284,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ Auth::user()->isOwner() ? 9 : 8 }}" class="py-8 text-center text-slate-400">Belum ada transaksi penjualan rongsok.</td>
+                            <td colspan="{{ Auth::user()->isOwner() ? 9 : 6 }}" class="py-8 text-center text-slate-400">Belum ada transaksi penjualan rongsok.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -303,12 +313,14 @@
                             <td class="py-3 px-3 text-right font-mono font-black text-slate-900">
                                 {{ $pageCargoDisplay }}
                             </td>
-                            <td class="py-3 px-3 text-right font-mono font-black text-slate-900">
-                                Rp {{ \App\Services\FormatHelper::number($transactions->sum('final_amount')) }}
-                            </td>
-                            <td class="py-3 px-3 text-right font-mono font-black text-emerald-700">
-                                Rp {{ \App\Services\FormatHelper::number($transactions->sum('estimated_profit')) }}
-                            </td>
+                            @if(Auth::user()->isOwner())
+                                <td class="py-3 px-3 text-right font-mono font-black text-slate-900">
+                                    Rp {{ \App\Services\FormatHelper::number($transactions->sum('final_amount')) }}
+                                </td>
+                                <td class="py-3 px-3 text-right font-mono font-black text-emerald-700">
+                                    Rp {{ \App\Services\FormatHelper::number($transactions->sum('estimated_profit')) }}
+                                </td>
+                            @endif
                             <td colspan="{{ Auth::user()->isOwner() ? 3 : 2 }}"></td>
                         </tr>
                     </tfoot>

@@ -2156,7 +2156,7 @@ class ScrapCashierSystemTest extends TestCase
         $this->assertNull($cashSale->getBankAccountName());
         $this->assertNull($cashSale->bank_info);
 
-        $this->actingAs($admin);
+        $this->actingAs($this->superAdmin);
 
         // Cek halaman preview detail (sales.show): tidak ada info rekening bank
         $detailRes = $this->get(route('sales.show', $cashSale));
@@ -2367,15 +2367,15 @@ class ScrapCashierSystemTest extends TestCase
             'status' => 'completed',
         ]);
 
-        // 1. Sales detail view: Menampilkan detail supir dan ongkos armada
-        $saleRes = $this->actingAs($this->admin)->get(route('sales.show', $sale));
+        // 1. Sales detail view: Menampilkan detail supir dan ongkos armada (Hanya Owner yang berhak melihat detail)
+        $saleRes = $this->actingAs($this->superAdmin)->get(route('sales.show', $sale));
         $saleRes->assertOk();
         $saleRes->assertSee('Pak Supir Anto');
         $saleRes->assertSee('350.000');
         $saleRes->assertSee('150.000');
 
         // 2. Sales PDF view: Menampilkan detail supir dan biaya kirim
-        $salePdfRes = $this->actingAs($this->admin)->get(route('sales.pdf', $sale));
+        $salePdfRes = $this->actingAs($this->superAdmin)->get(route('sales.pdf', $sale));
         $salePdfRes->assertOk();
 
         // 3. Delivery Order show & print views: HAPUS biaya operasional & rekening supir
@@ -2807,6 +2807,62 @@ class ScrapCashierSystemTest extends TestCase
         $opnameRes->assertRedirect();
         $this->besiItem->refresh();
         $this->assertEquals(150, (float) $this->besiItem->stockBalance->current_stock);
+    }
+
+    public function test_admin_and_kasir_cannot_view_sales_detail_and_financial_columns_are_hidden(): void
+    {
+        $sale = \App\Models\SalesTransaction::create([
+            'invoice_number' => 'SLS-TST-001',
+            'transaction_date' => now(),
+            'buyer_name' => 'PT Mitra Pembeli',
+            'delivery_type' => 'pickup',
+            'user_id' => $this->kasir->id,
+            'subtotal_amount' => 500000,
+            'final_amount' => 500000,
+            'status' => 'completed',
+        ]);
+
+        // 1. Kasir & Admin cannot view sales.show, sales.print, or sales.pdf (403 Forbidden)
+        $this->actingAs($this->kasir)->get(route('sales.show', $sale))->assertForbidden();
+        $this->actingAs($this->kasir)->get(route('sales.print', $sale))->assertForbidden();
+        $this->actingAs($this->kasir)->get(route('sales.pdf', $sale))->assertForbidden();
+
+        $this->actingAs($this->admin)->get(route('sales.show', $sale))->assertForbidden();
+        $this->actingAs($this->admin)->get(route('sales.print', $sale))->assertForbidden();
+        $this->actingAs($this->admin)->get(route('sales.pdf', $sale))->assertForbidden();
+
+        // 2. Owner can access sales.show, sales.print, and sales.pdf
+        $this->actingAs($this->superAdmin)->get(route('sales.show', $sale))->assertOk();
+        $this->actingAs($this->superAdmin)->get(route('sales.print', $sale))->assertOk();
+        $this->actingAs($this->superAdmin)->get(route('sales.pdf', $sale))->assertOk();
+
+        // 3. Kasir & Admin on sales.index: financial KPIs and columns are hidden, invoice is not clickable link
+        $kasirIndex = $this->actingAs($this->kasir)->get(route('sales.index'));
+        $kasirIndex->assertOk();
+        $kasirIndex->assertDontSee('Total Omzet Penjualan');
+        $kasirIndex->assertDontSee('Estimasi Laba Kotor Penjualan');
+        $kasirIndex->assertDontSee('Total Nilai Jual');
+        $kasirIndex->assertDontSee('Estimasi Laba');
+        $kasirIndex->assertDontSee(route('sales.show', $sale));
+        $kasirIndex->assertSee('SLS-TST-001');
+
+        $adminIndex = $this->actingAs($this->admin)->get(route('sales.index'));
+        $adminIndex->assertOk();
+        $adminIndex->assertDontSee('Total Omzet Penjualan');
+        $adminIndex->assertDontSee('Estimasi Laba Kotor Penjualan');
+        $adminIndex->assertDontSee('Total Nilai Jual');
+        $adminIndex->assertDontSee('Estimasi Laba');
+        $adminIndex->assertDontSee(route('sales.show', $sale));
+        $adminIndex->assertSee('SLS-TST-001');
+
+        // 4. Owner on sales.index: sees KPIs, financial columns, and clickable invoice link
+        $ownerIndex = $this->actingAs($this->superAdmin)->get(route('sales.index'));
+        $ownerIndex->assertOk();
+        $ownerIndex->assertSee('Total Omzet Penjualan');
+        $ownerIndex->assertSee('Estimasi Laba Kotor Penjualan');
+        $ownerIndex->assertSee('Total Nilai Jual');
+        $ownerIndex->assertSee('Estimasi Laba');
+        $ownerIndex->assertSee(route('sales.show', $sale));
     }
 }
 
