@@ -252,7 +252,7 @@
                     <tfoot class="border-t-2 border-slate-900 font-bold bg-slate-50">
                         <tr>
                             <td colspan="2" class="py-1 px-2 uppercase text-slate-900 border-r border-slate-300">TOTAL MUATAN RESMI</td>
-                            <td class="py-1 px-2 text-right font-mono border-r border-slate-300">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '-' }}</td>
+                            <td class="py-1 px-2 text-right font-mono border-r border-slate-300">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '' }}</td>
                             <td class="py-1 px-2 text-right font-mono font-black text-slate-900 border-r border-slate-300">
                                 {{ $deliveryOrder->total_cargo_display }}
                             </td>
@@ -285,21 +285,21 @@
                 <div>
                     <p class="font-medium">Penerima Pabrik,</p>
                     <div class="h-9"></div>
-                    <p class="font-bold underline uppercase">( ............................ )</p>
+                    <p class="font-bold underline uppercase">............................</p>
                     <p class="text-[8px] text-slate-400">Tanda Tangan & Cap</p>
                 </div>
 
                 <div>
                     <p class="font-medium">Pengemudi / Sopir,</p>
                     <div class="h-9"></div>
-                    <p class="font-bold underline uppercase">({{ $deliveryOrder->driver_name }})</p>
+                    <p class="font-bold underline uppercase">{{ $deliveryOrder->driver_name }}</p>
                     <p class="text-[8px] text-slate-500 font-mono">{{ $deliveryOrder->driver_phone ? 'Telp: ' . $deliveryOrder->driver_phone : 'Armada Pengantar' }}</p>
                 </div>
 
                 <div>
                     <p class="font-medium">Petugas Timbangan,</p>
                     <div class="h-12"></div>
-                    <p class="font-bold underline uppercase">( ............................ )</p>
+                    <p class="font-bold underline uppercase">............................</p>
                     <p class="text-[8px] text-slate-400">Penimbang Gudang</p>
                 </div>
 
@@ -308,7 +308,7 @@
                     <div class="h-12 flex items-center justify-center">
                         @include('components.signature-stamp', ['isPdf' => false, 'height' => 40, 'stampSize' => 46])
                     </div>
-                    <p class="font-bold underline uppercase">({{ $deliveryOrder->user?->name ?? 'Pengirim' }})</p>
+                    <p class="font-bold underline uppercase">{{ $deliveryOrder->user?->name ?? 'Pengirim' }}</p>
                     <p class="text-[8px] text-blue-700 font-bold">Staff Gudang (Arsip Depo)</p>
                 </div>
             </div>
@@ -474,7 +474,7 @@
                     <tfoot class="border-t-2 border-slate-900 font-bold bg-slate-50">
                         <tr>
                             <td colspan="2" class="py-1 px-2 uppercase text-slate-900 border-r border-slate-300">TOTAL MUATAN RESMI</td>
-                            <td class="py-1 px-2 text-right font-mono border-r border-slate-300">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '-' }}</td>
+                            <td class="py-1 px-2 text-right font-mono border-r border-slate-300">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '' }}</td>
                             <td class="py-1 px-2 text-right font-mono font-black text-slate-900 border-r border-slate-300">
                                 {{ $deliveryOrder->total_cargo_display }}
                             </td>
@@ -507,14 +507,14 @@
                 <div>
                     <p class="font-medium">Penerima Pabrik,</p>
                     <div class="h-9"></div>
-                    <p class="font-bold underline uppercase">( ............................ )</p>
+                    <p class="font-bold underline uppercase">............................</p>
                     <p class="text-[8px] text-amber-700 font-bold">Tanda Tangan & Cap Asli</p>
                 </div>
 
                 <div>
                     <p class="font-medium">Pengemudi / Sopir,</p>
                     <div class="h-9"></div>
-                    <p class="font-bold underline uppercase">({{ $deliveryOrder->driver_name }})</p>
+                    <p class="font-bold underline uppercase">{{ $deliveryOrder->driver_name }}</p>
                     <p class="text-[8px] text-amber-700 font-bold">
                         Pengemudi (Bawa ke Tujuan)
                         @if($deliveryOrder->driver_phone)
@@ -526,7 +526,7 @@
                 <div>
                     <p class="font-medium">Petugas Timbangan,</p>
                     <div class="h-12"></div>
-                    <p class="font-bold underline uppercase">( ............................ )</p>
+                    <p class="font-bold underline uppercase">............................</p>
                     <p class="text-[8px] text-slate-400">Penimbang Gudang</p>
                 </div>
 
@@ -535,7 +535,7 @@
                     <div class="h-12 flex items-center justify-center">
                         @include('components.signature-stamp', ['isPdf' => false, 'height' => 40, 'stampSize' => 46])
                     </div>
-                    <p class="font-bold underline uppercase">({{ $deliveryOrder->user?->name ?? 'Pengirim' }})</p>
+                    <p class="font-bold underline uppercase">{{ $deliveryOrder->user?->name ?? 'Pengirim' }}</p>
                     <p class="text-[8px] text-slate-400">Staff Gudang Pengirim</p>
                 </div>
             </div>

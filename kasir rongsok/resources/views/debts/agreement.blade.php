@@ -301,7 +301,7 @@
                             <span class="border border-dashed border-slate-300 px-3 py-1.5 rounded">Cap Stempel Depo &amp; TTD</span>
                         @endif
                     </div>
-                    <p class="font-bold underline uppercase text-slate-900">({{ $ownerName }})</p>
+                    <p class="font-bold underline uppercase text-slate-900">{{ $ownerName }}</p>
                     <p class="text-[10px] text-slate-600 font-sans">Owner / Pimpinan {{ $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur' }}</p>
                 </div>
 
@@ -312,7 +312,7 @@
                     <div class="h-20 flex items-center justify-center text-slate-400 italic text-[10px]" style="height: 70px;">
                         <span class="border border-dashed border-slate-300 px-3 py-1.5 rounded">Materai Rp 10.000 &amp; TTD</span>
                     </div>
-                    <p class="font-bold underline uppercase text-slate-900">({{ $debt->borrower_name }})</p>
+                    <p class="font-bold underline uppercase text-slate-900">{{ $debt->borrower_name }}</p>
                     <p class="text-[10px] text-slate-600 font-sans">Penerima (No. HP: {{ $debt->borrower_phone ?: '-' }})</p>
                 </div>
             </div>
@@ -320,7 +320,7 @@
             <!-- Saksi / Kasir Pencatat -->
             <div class="mt-4 pt-2 border-t border-dashed border-slate-200 text-center font-sans">
                 <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">SAKSI / PETUGAS PENCATAT:</span>
-                <span class="font-bold underline text-xs uppercase text-slate-800 ml-2">({{ $debt->witness_name ?: ($debt->user?->name ?? 'Kasir Depo') }})</span>
+                <span class="font-bold underline text-xs uppercase text-slate-800 ml-2">{{ $debt->witness_name ?: ($debt->user?->name ?? 'Kasir Depo') }}</span>
                 <span class="text-[10px] text-slate-500 ml-1">({{ $debt->witness_name ? 'Saksi Kesepakatan' : 'Petugas Kasir Depo' }})</span>
             </div>
         </div>

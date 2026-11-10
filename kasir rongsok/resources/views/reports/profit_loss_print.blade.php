@@ -275,14 +275,14 @@
             <div>
                 <p>Bagian Keuangan / Admin</p>
                 <div class="h-16" style="height: 65px;"></div>
-                <p class="font-bold underline">( .......................................... )</p>
+                <p class="font-bold underline">..........................................</p>
             </div>
             <div>
                 <p>Pimpinan / Owner Depo</p>
                 <div class="h-16 flex items-center justify-center" style="height: 58px;">
                     @include('components.signature-stamp', ['isPdf' => false, 'height' => 48, 'stampSize' => 56])
                 </div>
-                <p class="font-bold underline">({{ $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur' }})</p>
+                <p class="font-bold underline">{{ $settings['company_name'] ?? 'UD. Berkah Rongsok Makmur' }}</p>
             </div>
         </div>
 

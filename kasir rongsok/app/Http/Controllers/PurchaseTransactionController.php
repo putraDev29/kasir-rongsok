@@ -118,7 +118,8 @@ class PurchaseTransactionController extends Controller
             ->when($cashierId, function ($q) use ($cashierId) {
                 $q->where('user_id', $cashierId);
             })
-            ->latest('transaction_date');
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('id', 'desc');
 
         $transactions = $query->paginate(15)->withQueryString();
         $cashiers = User::where('is_active', true)->get();

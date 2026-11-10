@@ -217,14 +217,14 @@
             <div>
                 <p>Penerima (Karyawan),</p>
                 <div class="h-14 flex items-center justify-center my-1" style="height: 56px;"></div>
-                <p class="font-bold underline uppercase">({{ $salarySlip->employee_name }})</p>
+                <p class="font-bold underline uppercase">{{ $salarySlip->employee_name }}</p>
             </div>
             <div>
                 <p>Pimpinan / Kasir Penggajian,</p>
                 <div class="h-14 flex items-center justify-center my-1" style="height: 56px;">
                     @include('components.signature-stamp', ['isPdf' => false, 'height' => 48, 'stampSize' => 56])
                 </div>
-                <p class="font-bold underline uppercase">({{ $salarySlip->creator?->name ?? 'Pimpinan' }})</p>
+                <p class="font-bold underline uppercase">{{ $salarySlip->creator?->name ?? 'Pimpinan' }}</p>
             </div>
         </div>
 

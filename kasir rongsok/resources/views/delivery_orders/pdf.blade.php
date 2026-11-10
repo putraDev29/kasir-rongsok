@@ -377,7 +377,7 @@
             <tfoot>
                 <tr class="total-row">
                     <td colspan="3" class="text-right" style="padding-right: 6px;">TOTAL MUATAN RESMI:</td>
-                    <td class="text-right" style="font-family: monospace;">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '-' }}</td>
+                    <td class="text-right" style="font-family: monospace;">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '' }}</td>
                     <td class="text-right" style="font-family: monospace; font-size: 9.5px; color: #047857;">
                         {{ $deliveryOrder->total_cargo_display }}
                     </td>
@@ -418,7 +418,7 @@
                 <td>
                     Penerima Pabrik / Gudang,
                     <div class="sig-space"></div>
-                    <div class="sig-name">( ................................... )</div>
+                    <div class="sig-name">...................................</div>
                     <div class="sig-role">
                         @if($copyNum === 2)
                             <strong style="color: #78350f;">Tanda Tangan & Cap Asli</strong>
@@ -430,7 +430,7 @@
                 <td>
                     Pengemudi / Sopir Armada,
                     <div class="sig-space"></div>
-                    <div class="sig-name">( {{ strtoupper($deliveryOrder->driver_name) }} )</div>
+                    <div class="sig-name">{{ strtoupper($deliveryOrder->driver_name) }}</div>
                     <div class="sig-role">
                         @if($copyNum === 2)
                             <strong style="color: #78350f;">Pengemudi (Bawa ke Tujuan)</strong>
@@ -445,7 +445,7 @@
                 <td>
                     Petugas Timbangan Depo,
                     <div class="sig-space"></div>
-                    <div class="sig-name">( ................................... )</div>
+                    <div class="sig-name">...................................</div>
                     <div class="sig-role">Checker / Timbang Pengirim</div>
                 </td>
                 <td>
@@ -453,7 +453,7 @@
                     <div class="sig-space">
                         @include('components.signature-stamp', ['isPdf' => true, 'height' => 40, 'stampSize' => 46])
                     </div>
-                    <div class="sig-name">( {{ strtoupper($deliveryOrder->user?->name ?? 'Admin Depo') }} )</div>
+                    <div class="sig-name">{{ strtoupper($deliveryOrder->user?->name ?? 'Admin Depo') }}</div>
                     <div class="sig-role">
                         @if($copyNum === 1)
                             <strong style="color: #1e3a8a;">Staff Gudang (Arsip Depo)</strong>

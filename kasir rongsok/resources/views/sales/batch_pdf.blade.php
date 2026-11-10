@@ -113,7 +113,7 @@
             <div style="height: 56px; text-align: center;">
                 @include('components.signature-stamp', ['isPdf' => true, 'height' => 48, 'stampSize' => 56])
             </div>
-            <p><strong>( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }} )</strong></p>
+            <p><strong>{{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }}</strong></p>
             <p style="color: #64748b;">Administrasi / Owner Depo</p>
         </div>
         <div style="clear: both;"></div>

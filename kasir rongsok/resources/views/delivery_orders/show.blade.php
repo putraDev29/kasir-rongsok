@@ -328,7 +328,7 @@
                 <tfoot class="bg-slate-50 font-bold text-xs border-t-2 border-slate-200">
                     <tr>
                         <td colspan="2" class="py-3 px-4 text-slate-900 uppercase">Total Muatan Resmi</td>
-                        <td class="py-3 px-4 text-right font-mono">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '-' }}</td>
+                        <td class="py-3 px-4 text-right font-mono">{{ $deliveryOrder->total_packages > 0 ? $deliveryOrder->total_packages . ' Koli' : '' }}</td>
                         <td class="py-3 px-4 text-right font-mono text-sm text-emerald-800">
                             {{ $deliveryOrder->total_cargo_display }}
                         </td>

@@ -193,7 +193,7 @@
                 <div class="h-16 flex items-center justify-center my-1">
                     @include('components.signature-stamp', ['isPdf' => false, 'height' => 48, 'stampSize' => 56])
                 </div>
-                <p class="font-bold text-slate-900 mt-2">( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }} )</p>
+                <p class="font-bold text-slate-900 mt-2">{{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Owner Depo' }}</p>
                 <p class="text-[11px] text-slate-500">Administrasi / Owner Depo</p>
             </div>
         </div>

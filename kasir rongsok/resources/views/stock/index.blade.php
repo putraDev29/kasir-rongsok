@@ -10,11 +10,15 @@
                 <i data-lucide="boxes" class="w-5 h-5"></i>
             </div>
             <div>
-                <div class="text-xs text-slate-500 font-medium">Total Akumulasi Stok Gudang</div>
+                <div class="text-xs text-slate-500 font-medium">
+                    {{ $isFilteredByDate ? 'Total Penerimaan Barang (' . $periodLabel . ')' : 'Total Akumulasi Stok Gudang' }}
+                </div>
                 <div class="text-xl font-bold text-slate-900">
                     {{ \App\Services\FormatHelper::weight($totalStockKg) }} <span class="text-xs font-semibold text-slate-500">kg</span>
                 </div>
-                <div class="text-[11px] text-slate-400">Total berat fisik tersedia saat ini</div>
+                <div class="text-[11px] text-slate-400">
+                    {{ $isFilteredByDate ? 'Total fisik masuk dari pembelian' : 'Total berat fisik tersedia saat ini' }}
+                </div>
             </div>
         </div>
 
@@ -23,11 +27,15 @@
                 <i data-lucide="calculator" class="w-5 h-5"></i>
             </div>
             <div>
-                <div class="text-xs text-slate-500 font-medium">Estimasi Valuasi Persediaan</div>
+                <div class="text-xs text-slate-500 font-medium">
+                    {{ $isFilteredByDate ? 'Nilai Penerimaan (' . $periodLabel . ')' : 'Estimasi Valuasi Persediaan' }}
+                </div>
                 <div class="text-xl font-bold text-slate-900">
                     Rp {{ number_format($totalValuation, 0, ',', '.') }}
                 </div>
-                <div class="text-[11px] text-slate-400">Dihitung dari moving average buy price</div>
+                <div class="text-[11px] text-slate-400">
+                    {{ $isFilteredByDate ? 'Total biaya pembelian barang masuk' : 'Dihitung dari moving average buy price' }}
+                </div>
             </div>
         </div>
 
@@ -46,43 +54,65 @@
     </div>
 
     <!-- Filter & Search Bar -->
-    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-        <form method="GET" action="{{ route('stock.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-            <div class="sm:col-span-2">
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Cari Barang</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                    </span>
-                    <input type="text" name="search" value="{{ $search }}" placeholder="Nama barang atau kode..."
-                           class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+        <form method="GET" action="{{ route('stock.index') }}" class="space-y-3">
+            <!-- Row 1: Search + Month/Year Filter -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Cari Barang</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                        </span>
+                        <input type="text" name="search" value="{{ $search }}" placeholder="Nama barang atau kode..."
+                               class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <x-month-year-filter :selected-month="$selectedMonth ?? request('month')" :selected-year="$selectedYear ?? request('year')" />
+            </div>
+
+            <!-- Row 2: Kategori, Dari Tanggal, Sampai Tanggal, Actions -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori</label>
+                    <select name="category_id" class="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                        <option value="">-- Semua Kategori --</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}" {{ $categoryId == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Dari Tanggal</label>
+                    <input type="date" name="start_date" value="{{ $startDate }}"
+                           class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Sampai Tanggal</label>
+                    <input type="date" name="end_date" value="{{ $endDate }}"
+                           class="w-full py-1.5 px-2.5 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span>Terapkan Filter</span>
+                    </button>
+                    <a href="{{ route('stock.index', ['low_stock' => '1']) }}" 
+                       title="Filter Stok Menipis"
+                       class="px-2.5 py-1.5 rounded-lg border text-xs font-bold {{ $lowStockOnly ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-slate-100 border-slate-200 text-slate-700' }}">
+                        ⚠️ Menipis
+                    </a>
+                    <a href="{{ route('stock.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors" title="Reset Filter">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </a>
                 </div>
             </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori</label>
-                <select name="category_id" class="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500">
-                    <option value="">-- Semua Kategori --</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ $categoryId == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="flex items-center gap-2">
-                <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors">
-                    <i data-lucide="filter" class="w-3.5 h-3.5"></i>
-                    <span>Terapkan Filter</span>
-                </button>
-                <a href="{{ route('stock.index', ['low_stock' => '1']) }}" 
-                   title="Filter Stok Menipis"
-                   class="px-2.5 py-1.5 rounded-lg border text-xs font-bold {{ $lowStockOnly ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-slate-100 border-slate-200 text-slate-700' }}">
-                    ⚠️ Menipis
-                </a>
-                <a href="{{ route('stock.index') }}" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors" title="Reset Filter">
-                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                </a>
-            </div>
+        </form>
+    </div>
         </form>
     </div>
 
@@ -91,7 +121,11 @@
         <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Persediaan Barang & Penilaian Fisik</h3>
-                <p class="text-[11px] text-slate-500">Total: {{ $items->total() }} jenis material terdata</p>
+                @if($isFilteredByDate)
+                    <p class="text-[11px] text-emerald-700 font-semibold">Stock berdasarkan penerimaan barang (pembelian) periode: <span class="underline font-bold">{{ $periodLabel }}</span> &bull; Total: {{ $items->total() }} jenis material</p>
+                @else
+                    <p class="text-[11px] text-slate-500">Total: {{ $items->total() }} jenis material terdata</p>
+                @endif
             </div>
             <div class="flex items-center gap-2">
                 <a href="{{ route('stock.movements') }}" 
@@ -109,9 +143,9 @@
                         <th class="py-2.5 px-3">Kode</th>
                         <th class="py-2.5 px-3">Nama Barang</th>
                         <th class="py-2.5 px-3">Kategori</th>
-                        <th class="py-2.5 px-3 text-right">Total Masuk</th>
+                        <th class="py-2.5 px-3 text-right">{{ $isFilteredByDate ? 'Penerimaan Periode' : 'Total Masuk' }}</th>
                         <th class="py-2.5 px-3 text-right">Total Keluar</th>
-                        <th class="py-2.5 px-3 text-right font-bold text-slate-900">Stok Tersedia</th>
+                        <th class="py-2.5 px-3 text-right font-bold text-slate-900">{{ $isFilteredByDate ? 'Stok Penerimaan' : 'Stok Tersedia' }}</th>
                         <th class="py-2.5 px-3 text-right">Rata-Rata Beli</th>
                         <th class="py-2.5 px-3 text-right font-bold">Estimasi Nilai</th>
                         <th class="py-2.5 px-3 text-center">Status Stok</th>
@@ -124,15 +158,15 @@
                     @forelse($items as $item)
                         @php
                             $bal = $item->stockBalance;
-                            $curStock = (float) ($bal?->current_stock ?? 0);
-                            $avgBuy = (float) ($bal?->average_buy_price ?? 0);
+                            $curStock = $isFilteredByDate ? (float) ($periodIncomingStocks[$item->id] ?? 0) : (float) ($bal?->current_stock ?? 0);
+                            $avgBuy = $isFilteredByDate ? (float) ($periodIncomingAvgPrices[$item->id] ?? ($bal?->average_buy_price ?? 0)) : (float) ($bal?->average_buy_price ?? 0);
                             $estVal = $curStock * $avgBuy;
                         @endphp
                         <tr class="hover:bg-slate-50 transition-colors {{ $item->isLowStock() ? 'bg-amber-50/40' : '' }}">
                             <td class="py-3 px-3 font-mono font-bold text-slate-700">{{ $item->code }}</td>
                             <td class="py-3 px-3 font-bold text-slate-900">
                                 <div>{{ $item->name }}</div>
-                                @if($item->priceStocks && $item->priceStocks->count() > 1)
+                                @if(!$isFilteredByDate && $item->priceStocks && $item->priceStocks->count() > 1)
                                     <div class="mt-1 flex flex-wrap gap-1">
                                         @foreach($item->priceStocks as $ps)
                                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-50 text-blue-700 border border-blue-200">
@@ -145,10 +179,14 @@
                             </td>
                             <td class="py-3 px-3 text-slate-600">{{ $item->category?->name ?? '-' }}</td>
                             <td class="py-3 px-3 text-right font-mono text-emerald-700">
-                                +{{ \App\Services\FormatHelper::weight($bal?->total_in ?? 0) }} {{ $item->unit ?? 'kg' }}
+                                +{{ \App\Services\FormatHelper::weight($isFilteredByDate ? $curStock : ($bal?->total_in ?? 0)) }} {{ $item->unit ?? 'kg' }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono text-red-600">
-                                -{{ \App\Services\FormatHelper::weight($bal?->total_out ?? 0) }} {{ $item->unit ?? 'kg' }}
+                                @if($isFilteredByDate)
+                                    <span class="text-slate-300">-</span>
+                                @else
+                                    -{{ \App\Services\FormatHelper::weight($bal?->total_out ?? 0) }} {{ $item->unit ?? 'kg' }}
+                                @endif
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-black text-sm {{ $item->isLowStock() ? 'text-amber-600' : 'text-slate-900' }}">
                                 {{ \App\Services\FormatHelper::weight($curStock) }} {{ $item->unit ?? 'kg' }}

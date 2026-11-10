@@ -186,12 +186,12 @@
                 <div>
                     <p>Yang Menyerahkan</p>
                     <div class="h-10"></div>
-                    <p class="font-bold">({{ $payment->debt->borrower_name }})</p>
+                    <p class="font-bold">{{ $payment->debt->borrower_name }}</p>
                 </div>
                 <div>
                     <p>Penerima / Kasir</p>
                     <div class="h-10"></div>
-                    <p class="font-bold">({{ $payment->user?->name ?? 'Kasir' }})</p>
+                    <p class="font-bold">{{ $payment->user?->name ?? 'Kasir' }}</p>
                 </div>
             </div>
 

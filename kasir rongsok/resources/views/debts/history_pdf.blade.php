@@ -468,7 +468,7 @@
             <td class="sig-col">
                 <div>Peminjam / Debitur,</div>
                 <div class="sig-space"></div>
-                <div class="sig-name">( {{ $debt->borrower_name }} )</div>
+                <div class="sig-name">{{ $debt->borrower_name }}</div>
                 <div style="font-size: 7.5px; color: #64748b; margin-top: 1px;">Pihak Peminjam / Penerima Dana</div>
             </td>
             <td class="sig-col">
@@ -476,7 +476,7 @@
                 <div class="sig-space">
                     @include('components.signature-stamp', ['isPdf' => true, 'height' => 48, 'stampSize' => 56])
                 </div>
-                <div class="sig-name">( {{ $ownerName }} )</div>
+                <div class="sig-name">{{ $ownerName }}</div>
                 <div style="font-size: 7.5px; color: #64748b; margin-top: 1px;">Owner / Pengelola Depo Rongsok</div>
             </td>
         </tr>

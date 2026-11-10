@@ -121,13 +121,15 @@ class DeliveryOrder extends Model
         $otherTotals = [];
 
         foreach ($this->items as $it) {
-            $val = (float) ($it->weight > 0 ? $it->weight : $it->quantity);
             $u = strtolower(trim($it->unit_type ?: ($it->scrapItem?->unit_type ?: 'kg')));
             if (in_array($u, ['pcs', 'satuan', 'buah', 'unit'])) {
+                $val = (float) ($it->quantity > 0 ? $it->quantity : $it->weight);
                 $pcsTotal += $val;
             } elseif ($u === 'kg') {
+                $val = (float) $it->weight;
                 $kgTotal += $val;
             } else {
+                $val = (float) ($it->quantity > 0 ? $it->quantity : $it->weight);
                 $otherTotals[$u] = ($otherTotals[$u] ?? 0) + $val;
             }
         }
@@ -145,7 +147,15 @@ class DeliveryOrder extends Model
             }
         }
 
-        return count($parts) > 0 ? implode(' + ', $parts) : ($this->total_weight > 0 ? \App\Services\FormatHelper::weight($this->total_weight) . ' kg' : '-');
+        if (count($parts) > 0) {
+            return implode(' + ', $parts);
+        }
+
+        if ((float) $this->total_weight > 0) {
+            return \App\Services\FormatHelper::weight($this->total_weight) . ' kg';
+        }
+
+        return '';
     }
 
     /**

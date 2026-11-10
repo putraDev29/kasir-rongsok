@@ -22,17 +22,23 @@
     <div class="text-center pb-4 border-b border-slate-300">
         <h1 class="text-lg font-black uppercase">{{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}</h1>
         <p class="text-slate-600 text-[11px]">{{ $settings['company_address'] ?? 'Jl. Industri Daur Ulang No. 88, Sentra Rongsok' }} | Telp: {{ $settings['company_phone'] ?? '0812-3456-7890' }}</p>
-        <h2 class="text-sm font-bold uppercase mt-2 text-slate-800">LAPORAN POSISI STOK & VALUASI PERSEDIAAN GUDANG</h2>
-        <p class="text-[11px] text-slate-500">Per Tanggal: {{ \Carbon\Carbon::now()->format('d F Y, H:i') }}</p>
+        <h2 class="text-sm font-bold uppercase mt-2 text-slate-800">
+            {{ !empty($isFilteredByDate) ? 'LAPORAN PENERIMAAN BARANG &amp; NILAI PERSEDIAAN' : 'LAPORAN POSISI STOK &amp; VALUASI PERSEDIAAN GUDANG' }}
+        </h2>
+        @if(!empty($isFilteredByDate))
+            <p class="text-[11px] text-emerald-800 font-bold">Periode Penerimaan: {{ $periodLabel }}</p>
+        @else
+            <p class="text-[11px] text-slate-500">Per Tanggal: {{ \Carbon\Carbon::now()->format('d F Y, H:i') }}</p>
+        @endif
     </div>
 
     <div class="grid grid-cols-2 gap-4 my-4 p-3 bg-slate-50 border border-slate-200 rounded font-sans">
         <div>
-            <span class="text-slate-500 font-semibold block">Total Akumulasi Stok:</span>
+            <span class="text-slate-500 font-semibold block">{{ !empty($isFilteredByDate) ? 'Total Penerimaan Barang:' : 'Total Akumulasi Stok:' }}</span>
             <span class="text-sm font-bold text-slate-900">{{ $totalStockDisplay ?? (\App\Services\FormatHelper::weight($totalStock) . ' kg') }} @if(($totalStockKg ?? $totalStock) > 0) ({{ \App\Services\FormatHelper::weight(($totalStockKg ?? $totalStock) / 1000) }} Ton) @endif</span>
         </div>
         <div class="text-right">
-            <span class="text-slate-500 font-semibold block">Total Nilai Persediaan (HPP):</span>
+            <span class="text-slate-500 font-semibold block">{{ !empty($isFilteredByDate) ? 'Total Nilai Pembelian Barang Masuk:' : 'Total Nilai Persediaan (HPP):' }}</span>
             <span class="text-sm font-bold text-purple-700">Rp {{ number_format($totalValue, 0, ',', '.') }}</span>
         </div>
     </div>
@@ -43,7 +49,7 @@
                 <th class="p-1.5 border-r border-slate-300">Kode</th>
                 <th class="p-1.5 border-r border-slate-300">Nama Material Scrap & Daur Ulang</th>
                 <th class="p-1.5 border-r border-slate-300">Kategori</th>
-                <th class="p-1.5 border-r border-slate-300 text-right">Stok Fisik</th>
+                <th class="p-1.5 border-r border-slate-300 text-right">{{ !empty($isFilteredByDate) ? 'Stok Penerimaan' : 'Stok Fisik' }}</th>
                 <th class="p-1.5 border-r border-slate-300 text-right">Avg Beli / Satuan</th>
                 <th class="p-1.5 border-r border-slate-300 text-right font-bold text-purple-900">Estimasi Nilai</th>
                 <th class="p-1.5 border-r border-slate-300 text-right">Harga Beli / Satuan</th>
@@ -54,8 +60,8 @@
             @foreach($items as $item)
                 @php
                     $bal = $item->stockBalance;
-                    $cur = (float) ($bal?->current_stock ?? 0);
-                    $avg = (float) ($bal?->average_buy_price ?? 0);
+                    $cur = !empty($isFilteredByDate) ? (float) ($periodIncomingStocks[$item->id] ?? 0) : (float) ($bal?->current_stock ?? 0);
+                    $avg = !empty($isFilteredByDate) ? (float) ($periodIncomingAvgPrices[$item->id] ?? ($bal?->average_buy_price ?? 0)) : (float) ($bal?->average_buy_price ?? 0);
                     $val = $cur * $avg;
                 @endphp
                 <tr>
@@ -91,7 +97,7 @@
     </table>
 
     <div class="mt-8 text-right text-xs text-slate-500 font-sans">
-        Penanggung Jawab Gudang: (.......................................)
+        Penanggung Jawab Gudang: .......................................
     </div>
 
 </body>

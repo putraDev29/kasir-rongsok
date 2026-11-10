@@ -19,6 +19,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ReportController extends Controller
@@ -47,16 +48,15 @@ class ReportController extends Controller
         $format = $request->query('format'); // print, csv
 
         $query = PurchaseTransactionItem::with(['transaction.user', 'transaction.supplier', 'scrapItem'])
-            ->whereHas('transaction', function ($q) use ($startDate, $endDate, $cashierId) {
-                $q->where('status', 'completed')
-                    ->whereDate('transaction_date', '>=', $startDate)
-                    ->whereDate('transaction_date', '<=', $endDate);
-                if ($cashierId) {
-                    $q->where('user_id', $cashierId);
-                }
-            })
-            ->when($scrapItemId, fn($q) => $q->where('scrap_item_id', $scrapItemId))
-            ->latest('id');
+            ->join('purchase_transactions', 'purchase_transaction_items.purchase_transaction_id', '=', 'purchase_transactions.id')
+            ->where('purchase_transactions.status', 'completed')
+            ->whereDate('purchase_transactions.transaction_date', '>=', $startDate)
+            ->whereDate('purchase_transactions.transaction_date', '<=', $endDate)
+            ->when($cashierId, fn($q) => $q->where('purchase_transactions.user_id', $cashierId))
+            ->when($scrapItemId, fn($q) => $q->where('purchase_transaction_items.scrap_item_id', $scrapItemId))
+            ->select('purchase_transaction_items.*')
+            ->orderBy('purchase_transactions.transaction_date', 'desc')
+            ->orderBy('purchase_transaction_items.id', 'desc');
 
         if ($format === 'csv') {
             $items = $query->get();
@@ -67,13 +67,13 @@ class ReportController extends Controller
         $scrapItems = ScrapItem::orderBy('name')->get();
         $cashiers = User::where('is_active', true)->get();
 
-        $unitTotals = (clone $query)->selectRaw("
+        $unitTotals = (clone $query)->reorder()->select(DB::raw("
             CASE 
                 WHEN unit_type = 'pcs' THEN 'pcs'
                 ELSE 'kg'
             END as unit_cat,
             SUM(CASE WHEN unit_type = 'pcs' THEN quantity ELSE net_weight END) as total_qty
-        ")->groupBy('unit_cat')->pluck('total_qty', 'unit_cat');
+        "))->groupBy('unit_cat')->pluck('total_qty', 'unit_cat');
 
         $totalKg = (float) ($unitTotals['kg'] ?? 0);
         $totalPcs = (float) ($unitTotals['pcs'] ?? 0);
@@ -107,13 +107,14 @@ class ReportController extends Controller
         $format = $request->query('format');
 
         $query = SalesTransactionItem::with(['transaction.user', 'scrapItem'])
-            ->whereHas('transaction', function ($q) use ($startDate, $endDate) {
-                $q->where('status', 'completed')
-                    ->whereDate('transaction_date', '>=', $startDate)
-                    ->whereDate('transaction_date', '<=', $endDate);
-            })
-            ->when($scrapItemId, fn($q) => $q->where('scrap_item_id', $scrapItemId))
-            ->latest('id');
+            ->join('sales_transactions', 'sales_transaction_items.sales_transaction_id', '=', 'sales_transactions.id')
+            ->where('sales_transactions.status', 'completed')
+            ->whereDate('sales_transactions.transaction_date', '>=', $startDate)
+            ->whereDate('sales_transactions.transaction_date', '<=', $endDate)
+            ->when($scrapItemId, fn($q) => $q->where('sales_transaction_items.scrap_item_id', $scrapItemId))
+            ->select('sales_transaction_items.*')
+            ->orderBy('sales_transactions.transaction_date', 'desc')
+            ->orderBy('sales_transaction_items.id', 'desc');
 
         if ($format === 'csv') {
             return $this->exportSalesCsv($query->get(), $startDate, $endDate);
@@ -122,13 +123,13 @@ class ReportController extends Controller
         $items = $query->paginate(20)->withQueryString();
         $scrapItems = ScrapItem::orderBy('name')->get();
 
-        $unitTotals = (clone $query)->selectRaw("
+        $unitTotals = (clone $query)->reorder()->select(DB::raw("
             CASE 
                 WHEN unit_type = 'pcs' THEN 'pcs'
                 ELSE 'kg'
             END as unit_cat,
             SUM(CASE WHEN unit_type = 'pcs' THEN quantity ELSE weight END) as total_qty
-        ")->groupBy('unit_cat')->pluck('total_qty', 'unit_cat');
+        "))->groupBy('unit_cat')->pluck('total_qty', 'unit_cat');
 
         $totalKg = (float) ($unitTotals['kg'] ?? 0);
         $totalPcs = (float) ($unitTotals['pcs'] ?? 0);
@@ -156,43 +157,116 @@ class ReportController extends Controller
     public function stock(Request $request): View|Response
     {
         $format = $request->query('format');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
+        $isFilteredByDate = !empty($startDate) && !empty($endDate);
+        $periodIncomingStocks = [];
+        $periodIncomingAvgPrices = [];
 
         $items = ScrapItem::with(['category', 'stockBalance', 'priceStocks'])
-            ->orderBy('name')
+            ->orderBy('name', 'asc')
             ->get();
 
-        $stockUnitTotals = DB::table('stock_balances')
-            ->join('scrap_items', 'stock_balances.scrap_item_id', '=', 'scrap_items.id')
-            ->selectRaw("
-                CASE 
-                    WHEN scrap_items.unit_type = 'pcs' OR LOWER(scrap_items.unit) IN ('pcs', 'buah', 'unit', 'satuan', 'biji', 'set') THEN 'pcs'
-                    ELSE 'kg'
-                END as unit_cat,
-                SUM(stock_balances.current_stock) as total_stock
-            ")
-            ->groupBy('unit_cat')
-            ->pluck('total_stock', 'unit_cat');
+        if ($isFilteredByDate) {
+            $incomingData = DB::table('purchase_transaction_items')
+                ->join('purchase_transactions', 'purchase_transaction_items.purchase_transaction_id', '=', 'purchase_transactions.id')
+                ->where('purchase_transactions.status', 'completed')
+                ->whereDate('purchase_transactions.transaction_date', '>=', $startDate)
+                ->whereDate('purchase_transactions.transaction_date', '<=', $endDate)
+                ->select(
+                    'purchase_transaction_items.scrap_item_id',
+                    DB::raw('SUM(purchase_transaction_items.net_weight) as total_incoming'),
+                    DB::raw('SUM(purchase_transaction_items.subtotal) as total_cost')
+                )
+                ->groupBy('purchase_transaction_items.scrap_item_id')
+                ->get();
 
-        $totalStockKg = (float) ($stockUnitTotals['kg'] ?? 0);
-        $totalStockPcs = (float) ($stockUnitTotals['pcs'] ?? 0);
-        $stockCargoParts = [];
-        if ($totalStockKg > 0) $stockCargoParts[] = FormatHelper::weight($totalStockKg) . ' kg';
-        if ($totalStockPcs > 0) $stockCargoParts[] = number_format($totalStockPcs, 0, ',', '.') . ' pcs';
-        $totalStockDisplay = empty($stockCargoParts) ? '0 kg' : implode(' + ', $stockCargoParts);
+            foreach ($incomingData as $inc) {
+                $periodIncomingStocks[$inc->scrap_item_id] = (float) $inc->total_incoming;
+                $periodIncomingAvgPrices[$inc->scrap_item_id] = $inc->total_incoming > 0 
+                    ? (float) ($inc->total_cost / $inc->total_incoming) 
+                    : 0;
+            }
 
-        $totalStock = $totalStockKg;
-        $totalValue = (float) StockBalance::selectRaw('SUM(current_stock * average_buy_price) as val')->value('val');
+            $stockUnitTotals = DB::table('purchase_transaction_items')
+                ->join('purchase_transactions', 'purchase_transaction_items.purchase_transaction_id', '=', 'purchase_transactions.id')
+                ->join('scrap_items', 'purchase_transaction_items.scrap_item_id', '=', 'scrap_items.id')
+                ->where('purchase_transactions.status', 'completed')
+                ->whereDate('purchase_transactions.transaction_date', '>=', $startDate)
+                ->whereDate('purchase_transactions.transaction_date', '<=', $endDate)
+                ->selectRaw("
+                    CASE 
+                        WHEN scrap_items.unit_type = 'pcs' OR LOWER(scrap_items.unit) IN ('pcs', 'buah', 'unit', 'satuan', 'biji', 'set') THEN 'pcs'
+                        ELSE 'kg'
+                    END as unit_cat,
+                    SUM(purchase_transaction_items.net_weight) as total_stock
+                ")
+                ->groupBy('unit_cat')
+                ->pluck('total_stock', 'unit_cat');
+
+            $totalStockKg = (float) ($stockUnitTotals['kg'] ?? 0);
+            $totalStockPcs = (float) ($stockUnitTotals['pcs'] ?? 0);
+            $stockCargoParts = [];
+            if ($totalStockKg > 0) $stockCargoParts[] = FormatHelper::weight($totalStockKg) . ' kg';
+            if ($totalStockPcs > 0) $stockCargoParts[] = number_format($totalStockPcs, 0, ',', '.') . ' pcs';
+            $totalStockDisplay = empty($stockCargoParts) ? '0 kg' : implode(' + ', $stockCargoParts);
+            $totalStock = $totalStockKg;
+            $totalValue = (float) DB::table('purchase_transaction_items')
+                ->join('purchase_transactions', 'purchase_transaction_items.purchase_transaction_id', '=', 'purchase_transactions.id')
+                ->where('purchase_transactions.status', 'completed')
+                ->whereDate('purchase_transactions.transaction_date', '>=', $startDate)
+                ->whereDate('purchase_transactions.transaction_date', '<=', $endDate)
+                ->sum('purchase_transaction_items.subtotal');
+        } else {
+            $stockUnitTotals = DB::table('stock_balances')
+                ->join('scrap_items', 'stock_balances.scrap_item_id', '=', 'scrap_items.id')
+                ->selectRaw("
+                    CASE 
+                        WHEN scrap_items.unit_type = 'pcs' OR LOWER(scrap_items.unit) IN ('pcs', 'buah', 'unit', 'satuan', 'biji', 'set') THEN 'pcs'
+                        ELSE 'kg'
+                    END as unit_cat,
+                    SUM(stock_balances.current_stock) as total_stock
+                ")
+                ->groupBy('unit_cat')
+                ->pluck('total_stock', 'unit_cat');
+
+            $totalStockKg = (float) ($stockUnitTotals['kg'] ?? 0);
+            $totalStockPcs = (float) ($stockUnitTotals['pcs'] ?? 0);
+            $stockCargoParts = [];
+            if ($totalStockKg > 0) $stockCargoParts[] = FormatHelper::weight($totalStockKg) . ' kg';
+            if ($totalStockPcs > 0) $stockCargoParts[] = number_format($totalStockPcs, 0, ',', '.') . ' pcs';
+            $totalStockDisplay = empty($stockCargoParts) ? '0 kg' : implode(' + ', $stockCargoParts);
+
+            $totalStock = $totalStockKg;
+            $totalValue = (float) StockBalance::selectRaw('SUM(current_stock * average_buy_price) as val')->value('val');
+        }
+
+        $periodLabel = '';
+        if ($isFilteredByDate) {
+            if ($selectedMonth && $selectedYear) {
+                $periodLabel = Carbon::create($selectedYear, $selectedMonth, 1)->translatedFormat('F Y');
+            } else {
+                $periodLabel = Carbon::parse($startDate)->format('d/m/Y') . ' - ' . Carbon::parse($endDate)->format('d/m/Y');
+            }
+        }
 
         if ($format === 'csv') {
-            return $this->exportStockCsv($items);
+            return $this->exportStockCsv($items, $isFilteredByDate, $periodIncomingStocks, $periodIncomingAvgPrices, $periodLabel);
         }
 
         if ($format === 'print') {
             $settings = BusinessSetting::pluck('value', 'key')->all();
-            return response()->view('reports.stock_print', compact('items', 'totalStock', 'totalStockKg', 'totalStockPcs', 'totalStockDisplay', 'totalValue', 'settings'));
+            return response()->view('reports.stock_print', compact(
+                'items', 'totalStock', 'totalStockKg', 'totalStockPcs', 'totalStockDisplay', 
+                'totalValue', 'settings', 'isFilteredByDate', 'periodIncomingStocks', 
+                'periodIncomingAvgPrices', 'periodLabel'
+            ));
         }
 
-        return view('reports.stock', compact('items', 'totalStock', 'totalStockKg', 'totalStockPcs', 'totalStockDisplay', 'totalValue'));
+        return view('reports.stock', compact(
+            'items', 'totalStock', 'totalStockKg', 'totalStockPcs', 'totalStockDisplay', 
+            'totalValue', 'startDate', 'endDate', 'selectedMonth', 'selectedYear', 
+            'isFilteredByDate', 'periodIncomingStocks', 'periodIncomingAvgPrices', 'periodLabel'
+        ));
     }
 
     /**
@@ -589,21 +663,22 @@ class ReportController extends Controller
         return response($output, 200, $headers);
     }
 
-    protected function exportStockCsv($items): Response
+    protected function exportStockCsv($items, bool $isFilteredByDate = false, array $periodIncomingStocks = [], array $periodIncomingAvgPrices = [], string $periodLabel = ''): Response
     {
-        $filename = "laporan_stok_" . date('Ymd') . ".csv";
+        $filename = "laporan_stok_" . ($periodLabel ? Str::slug($periodLabel) . '_' : '') . date('Ymd') . ".csv";
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
         $output = "\xEF\xBB\xBF";
-        $output .= "Kode,Nama Barang,Kategori,Stok Fisik,Satuan,Rata-rata Harga Beli,Estimasi Nilai Stok,Harga Beli Terkini,Harga Jual Terkini\n";
+        $stockHeader = $isFilteredByDate ? "Stok Penerimaan ($periodLabel)" : "Stok Fisik";
+        $output .= "Kode,Nama Barang,Kategori,{$stockHeader},Satuan,Rata-rata Harga Beli,Estimasi Nilai Stok,Harga Beli Terkini,Harga Jual Terkini\n";
 
         foreach ($items as $item) {
             $bal = $item->stockBalance;
-            $avg = (float) ($bal?->average_buy_price ?? 0);
-            $qty = (float) ($bal?->current_stock ?? 0);
+            $qty = $isFilteredByDate ? ($periodIncomingStocks[$item->id] ?? 0) : (float) ($bal?->current_stock ?? 0);
+            $avg = $isFilteredByDate ? ($periodIncomingAvgPrices[$item->id] ?? (float) ($bal?->average_buy_price ?? 0)) : (float) ($bal?->average_buy_price ?? 0);
             $val = $qty * $avg;
 
             $row = [

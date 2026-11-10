@@ -348,19 +348,32 @@
                                             
                                             <template x-for="item in filteredMasterItems(row.search_text)" :key="item.tier_id || (item.id + '_' + item.price_per_kg)">
                                                 <button type="button" 
-                                                        @click="selectRowItem(row, item)"
-                                                        class="w-full text-left px-3 py-2 hover:bg-blue-50 flex items-center justify-between transition-colors"
-                                                        :class="{ 'bg-blue-50/70': row.tier_id === item.tier_id }">
+                                                        :disabled="isItemDisabled(item)"
+                                                        @click="!isItemDisabled(item) && selectRowItem(row, item)"
+                                                        class="w-full text-left px-3 py-2 flex items-center justify-between transition-colors"
+                                                        :class="{ 
+                                                            'opacity-40 cursor-not-allowed bg-slate-50 text-slate-400': isItemDisabled(item),
+                                                            'hover:bg-blue-50': !isItemDisabled(item),
+                                                            'bg-blue-50/70': row.tier_id === item.tier_id && !isItemDisabled(item) 
+                                                        }">
                                                     <div class="min-w-0 pr-2">
-                                                        <div class="text-xs font-bold text-slate-900 truncate" x-text="item.name"></div>
-                                                        <div class="text-[10px] text-slate-500 font-mono">
+                                                        <div class="text-xs font-bold truncate" :class="isItemDisabled(item) ? 'text-slate-400' : 'text-slate-900'" x-text="item.name"></div>
+                                                        <div class="text-[10px] text-slate-500 font-mono flex items-center gap-1.5 flex-wrap">
                                                             <span x-text="item.code"></span>
                                                             <span x-show="item.category_name" x-text="' • ' + item.category_name"></span>
-                                                            <span class="text-emerald-700 font-semibold" x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
+                                                            <template x-if="parseFloat(item.current_stock || 0) <= 0">
+                                                                <span class="text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1 rounded">Stok Kosong</span>
+                                                            </template>
+                                                            <template x-if="parseFloat(item.current_stock || 0) > 0 && !(parseFloat(item.sell_price_per_kg || 0) > 0)">
+                                                                <span class="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1 rounded">Harga Belum Diatur</span>
+                                                            </template>
+                                                            <template x-if="parseFloat(item.current_stock || 0) > 0 && parseFloat(item.sell_price_per_kg || 0) > 0">
+                                                                <span class="text-emerald-700 font-semibold" x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
+                                                            </template>
                                                         </div>
                                                     </div>
                                                     <div class="text-right shrink-0">
-                                                        <div class="text-[11px] font-mono font-bold text-blue-700" x-text="formatRp(item.sell_price_per_kg) + '/' + (item.unit_type || 'kg')"></div>
+                                                        <div class="text-[11px] font-mono font-bold" :class="isItemDisabled(item) ? 'text-slate-400' : 'text-blue-700'" x-text="(parseFloat(item.sell_price_per_kg || 0) > 0 ? formatRp(item.sell_price_per_kg) : 'Rp 0') + '/' + (item.unit_type || 'kg')"></div>
                                                         <div class="text-[9px] text-slate-400 font-mono" x-text="'Modal: ' + formatRp(item.buy_price_snapshot)"></div>
                                                     </div>
                                                 </button>
@@ -722,7 +735,15 @@ function salesPos() {
             });
         },
 
+        isItemDisabled(item) {
+            if (!item) return true;
+            const stock = parseFloat(item.current_stock || 0);
+            const sellPrice = parseFloat(item.sell_price_per_kg || 0);
+            return stock <= 0 || sellPrice <= 0;
+        },
+
         selectRowItem(row, item) {
+            if (this.isItemDisabled(item)) return;
             row.scrap_item_id = item.scrap_item_id || item.id;
             row.item_price_stock_id = item.item_price_stock_id || '';
             row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);

@@ -48,7 +48,8 @@ class SalesTransactionController extends Controller
             ->when($status, function ($q) use ($status) {
                 $q->where('status', $status);
             })
-            ->latest('transaction_date');
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('id', 'desc');
 
         $transactions = $query->paginate(15)->withQueryString();
 

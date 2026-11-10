@@ -267,7 +267,7 @@
                 @include('components.signature-stamp', ['isPdf' => true, 'height' => 48, 'stampSize' => 56])
             </div>
             <p style="margin: 2px 0 0 0; font-weight: bold; text-decoration: underline;">
-                ( {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Pimpinan / Owner Depo' }} )
+                {{ \App\Models\User::where('role', 'super_admin')->first()?->name ?? 'Pimpinan / Owner Depo' }}
             </p>
             <p style="margin: 1px 0 0 0; color: #64748b; font-size: 6.5pt;">Pimpinan / Owner Depo</p>
         </div>

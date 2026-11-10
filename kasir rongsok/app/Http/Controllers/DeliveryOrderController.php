@@ -260,7 +260,7 @@ class DeliveryOrderController extends Controller
                         'item_name' => $cleanName,
                         'unit_type' => $unitType,
                         'item_type_name' => $item['item_type_name'] ?? null,
-                        'quantity' => $item['quantity'] ?? ($weight > 0 ? $weight : 1),
+                        'quantity' => isset($item['quantity']) && $item['quantity'] !== '' ? (float) $item['quantity'] : $weight,
                         'weight' => $weight,
                         'package_qty' => (int) ($item['package_qty'] ?? 0),
                         'price_per_kg' => $pricePerKg,

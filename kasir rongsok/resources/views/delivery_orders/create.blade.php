@@ -313,17 +313,30 @@
                                     
                                     <template x-for="item in filteredMasterItems(row.search_text)" :key="item.tier_id || (item.id + '_' + item.price_per_kg)">
                                         <button type="button" 
-                                                @click="selectRowItem(row, item)"
-                                                class="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 flex items-center justify-between transition-colors"
-                                                :class="{ 'bg-emerald-50/70': row.tier_id ? (row.tier_id === item.tier_id) : (row.scrap_item_id == item.id) }">
+                                                :disabled="isItemDisabled(item)"
+                                                @click="!isItemDisabled(item) && selectRowItem(row, item)"
+                                                class="w-full text-left px-2.5 py-1.5 flex items-center justify-between transition-colors"
+                                                :class="{ 
+                                                    'opacity-40 cursor-not-allowed bg-slate-50 text-slate-400': isItemDisabled(item),
+                                                    'hover:bg-emerald-50': !isItemDisabled(item),
+                                                    'bg-emerald-50/70': (row.tier_id ? (row.tier_id === item.tier_id) : (row.scrap_item_id == item.id)) && !isItemDisabled(item) 
+                                                }">
                                             <div class="min-w-0 pr-2">
-                                                <div class="text-xs font-bold text-slate-900 truncate" x-text="item.base_name || (item.name ? item.name.replace(/\s*-\s*Rp[\d.,\s]+.*/i, '') : '')"></div>
-                                                <div class="text-[10px] text-slate-500 font-mono">
+                                                <div class="text-xs font-bold truncate" :class="isItemDisabled(item) ? 'text-slate-400' : 'text-slate-900'" x-text="item.base_name || (item.name ? item.name.replace(/\s*-\s*Rp[\d.,\s]+.*/i, '') : '')"></div>
+                                                <div class="text-[10px] text-slate-500 font-mono flex items-center gap-1.5 flex-wrap">
                                                     <span x-text="item.code"></span>
-                                                    <span x-show="item.current_stock > 0" class="text-emerald-700 font-semibold" x-text="' • Stok: ' + item.current_stock + ' ' + (item.unit_type || 'kg')"></span>
+                                                    <template x-if="parseFloat(item.current_stock || 0) <= 0">
+                                                        <span class="text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1 rounded">Stok Kosong</span>
+                                                    </template>
+                                                    <template x-if="parseFloat(item.current_stock || 0) > 0 && !(parseFloat(item.price_per_kg || 0) > 0 || parseFloat(item.sell_price_per_kg || 0) > 0)">
+                                                        <span class="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1 rounded">Harga Belum Ada</span>
+                                                    </template>
+                                                    <template x-if="parseFloat(item.current_stock || 0) > 0 && (parseFloat(item.price_per_kg || 0) > 0 || parseFloat(item.sell_price_per_kg || 0) > 0)">
+                                                        <span class="text-emerald-700 font-semibold" x-text="'• Stok: ' + item.current_stock + ' ' + (item.unit_type || 'kg')"></span>
+                                                    </template>
                                                 </div>
                                             </div>
-                                            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1 rounded uppercase" x-text="item.unit_type || 'kg'"></span>
+                                            <span class="text-[10px] font-bold px-1 rounded uppercase shrink-0" :class="isItemDisabled(item) ? 'text-slate-400 bg-slate-200/50' : 'text-emerald-700 bg-emerald-100/70'" x-text="item.unit_type || 'kg'"></span>
                                         </button>
                                     </template>
 
@@ -588,7 +601,15 @@ function deliveryOrderForm() {
             });
         },
 
+        isItemDisabled(item) {
+            if (!item) return true;
+            const stock = parseFloat(item.current_stock || 0);
+            const hasPrice = (parseFloat(item.price_per_kg || 0) > 0) || (parseFloat(item.sell_price_per_kg || 0) > 0);
+            return stock <= 0 || !hasPrice;
+        },
+
         selectRowItem(row, item) {
+            if (this.isItemDisabled(item)) return;
             row.scrap_item_id = item.id;
             row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
             const cleanName = item.base_name || (item.name ? item.name.replace(/\s*-\s*Rp[\d.,\s]+.*/i, '').trim() : '');
