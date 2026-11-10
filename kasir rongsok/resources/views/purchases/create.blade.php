@@ -1400,6 +1400,14 @@ function cashierPos() {
             this.refreshIcons();
         },
 
+        cleanItemName(item) {
+            if (!item) return '';
+            let name = (typeof item === 'string') ? item : (item.base_name || item.name || '');
+            name = name.split(/\s+-\s+Rp/i)[0];
+            name = name.split(' (')[0];
+            return name.trim();
+        },
+
         selectRowItem(row, item, index) {
             row.is_new = false;
             row.new_item_name = '';
@@ -1408,7 +1416,7 @@ function cashierPos() {
             row.new_category_name = '';
             row.scrap_item_id = item.scrap_item_id || item.id;
             row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
-            row.search_text = item.name + ' (' + item.code + ')';
+            row.search_text = this.cleanItemName(item);
             row.price_per_kg = parseFloat(item.price_per_kg || item.buy_price_per_kg) || 0;
             row.update_master_price = false;
             if (item.unit_type && item.unit_type !== 'kg') {
@@ -1464,7 +1472,7 @@ function cashierPos() {
 
         addItem(item) {
             const itemUnit = item.unit_type || 'kg';
-            const itemLabel = item.name + ' (' + item.code + ')';
+            const itemLabel = this.cleanItemName(item);
             const itemPrice = parseFloat(item.price_per_kg || item.buy_price_per_kg) || 0;
             const itemTierId = item.tier_id || (item.id + '_' + itemPrice);
             const lastRow = this.rows[this.rows.length - 1];
@@ -1511,7 +1519,7 @@ function cashierPos() {
             const row = this.rows[index];
             const found = this.masterItems.find(i => i.id == row.scrap_item_id);
             if (found) {
-                row.search_text = found.name + ' (' + found.code + ')';
+                row.search_text = this.cleanItemName(found);
                 row.price_per_kg = parseFloat(found.buy_price_per_kg) || 0;
                 if (found.unit_type && found.unit_type !== 'kg') {
                     row.unit_type = found.unit_type;

@@ -193,7 +193,6 @@
                                 <td class="py-1 px-2 text-center font-mono text-slate-500 border-r border-slate-300">{{ $idx + 1 }}</td>
                                 <td class="py-1 px-2 font-bold text-slate-900 border-r border-slate-300">
                                     {{ $master->item_name }}
-                                    <span class="text-slate-400 font-mono text-[9px] font-normal">({{ $master->item_code }})</span>
                                     @if($master->has_variants)
                                         <span class="ml-1 text-[8px] font-semibold text-blue-700 bg-blue-50 px-1 py-0.2 rounded border border-blue-200">
                                             Total Master ({{ $master->items->count() }} Varian)
@@ -415,7 +414,6 @@
                                 <td class="py-1 px-2 text-center font-mono text-slate-500 border-r border-slate-300">{{ $idx + 1 }}</td>
                                 <td class="py-1 px-2 font-bold text-slate-900 border-r border-slate-300">
                                     {{ $master->item_name }}
-                                    <span class="text-slate-400 font-mono text-[9px] font-normal">({{ $master->item_code }})</span>
                                     @if($master->has_variants)
                                         <span class="ml-1 text-[8px] font-semibold text-blue-700 bg-blue-50 px-1 py-0.2 rounded border border-blue-200">
                                             Total Master ({{ $master->items->count() }} Varian)

@@ -29,7 +29,7 @@ class SalesTransactionService
     public function createSale(array $data, User $user): SalesTransaction
     {
         return DB::transaction(function () use ($data, $user) {
-            $isKasir = $user->isKasir() || !empty($data['is_draft']);
+            $isDraftOnly = !$user->isOwner() || !empty($data['is_draft']);
             $date = isset($data['transaction_date']) ? Carbon::parse($data['transaction_date']) : Carbon::now();
             $invoiceNumber = FormatHelper::generateSalesInvoiceNumber($date);
 
@@ -75,9 +75,9 @@ class SalesTransactionService
                         );
                     }
 
-                    $sellPrice = isset($row['sell_price_per_kg']) && is_numeric($row['sell_price_per_kg'])
+                    $sellPrice = isset($row['sell_price_per_kg']) && is_numeric($row['sell_price_per_kg']) && !$isDraftOnly
                         ? (float) $row['sell_price_per_kg']
-                        : ($isKasir ? 0 : (float) $scrapItem->sell_price_per_kg);
+                        : ($isDraftOnly ? 0 : (float) $scrapItem->sell_price_per_kg);
                     if ($sellPrice < 0) {
                         $sellPrice = 0;
                     }
@@ -106,9 +106,9 @@ class SalesTransactionService
                         );
                     }
 
-                    $sellPrice = isset($row['sell_price_per_kg']) && is_numeric($row['sell_price_per_kg'])
+                    $sellPrice = isset($row['sell_price_per_kg']) && is_numeric($row['sell_price_per_kg']) && !$isDraftOnly
                         ? (float) $row['sell_price_per_kg']
-                        : ($isKasir ? 0 : (float) $scrapItem->sell_price_per_kg);
+                        : ($isDraftOnly ? 0 : (float) $scrapItem->sell_price_per_kg);
                     if ($sellPrice < 0) {
                         $sellPrice = 0;
                     }
@@ -150,7 +150,7 @@ class SalesTransactionService
 
             $discountAmount = max(0, (float) ($data['discount_amount'] ?? 0));
             $finalAmount = max(0, $subtotalAmount - $discountAmount);
-            $estimatedProfit = $isKasir ? 0 : round($finalAmount - $totalEstimatedCogs, 2);
+            $estimatedProfit = $isDraftOnly ? 0 : round($finalAmount - $totalEstimatedCogs, 2);
 
             $customBank = trim($data['custom_bank'] ?? '');
             $customAccountName = trim($data['custom_account_name'] ?? '');
@@ -245,10 +245,10 @@ class SalesTransactionService
             $deliveryOrderId = $data['delivery_order_id'] ?? null;
 
             // Determine status:
-            // - Jika kasir, status disimpan sebagai DRAFT (tanpa harga jual).
-            // - Diambil Sendiri: status langsung selesai (completed). Tanpa surat jalan.
-            // - Perlu Pengiriman: status pending_delivery sampai pengiriman selesai.
-            if ($isKasir) {
+            // - Jika kasir / admin (bukan owner), status disimpan sebagai DRAFT (tanpa harga jual).
+            // - Diambil Sendiri oleh Owner: status langsung selesai (completed). Tanpa surat jalan.
+            // - Perlu Pengiriman oleh Owner: status pending_delivery sampai pengiriman selesai.
+            if ($isDraftOnly) {
                 $status = SalesTransaction::STATUS_DRAFT;
             } elseif ($deliveryType === SalesTransaction::DELIVERY_TYPE_PICKUP) {
                 $status = SalesTransaction::STATUS_COMPLETED;
@@ -281,7 +281,7 @@ class SalesTransactionService
                 'final_amount' => $finalAmount,
                 'estimated_cogs' => $totalEstimatedCogs,
                 'estimated_profit' => $estimatedProfit,
-                'payment_status' => $isKasir ? 'draft' : ($data['payment_status'] ?? 'paid'),
+                'payment_status' => $isDraftOnly ? 'draft' : ($data['payment_status'] ?? 'paid'),
                 'status' => $status,
                 'notes' => $data['notes'] ?? null,
             ]);

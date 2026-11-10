@@ -664,6 +664,15 @@ function editSalesPos() {
             });
         },
 
+        cleanItemName(item) {
+            if (!item) return '';
+            let name = (typeof item === 'string') ? item : (item.base_name || item.name || '');
+            name = name.split(/\s+-\s+Rp/i)[0];
+            name = name.split(' [Stok:')[0];
+            name = name.split(' (')[0];
+            return name.trim();
+        },
+
         isItemDisabled(item) {
             if (!item) return true;
             const stock = parseFloat(item.current_stock || 0);
@@ -676,7 +685,7 @@ function editSalesPos() {
             row.scrap_item_id = item.scrap_item_id || item.id;
             row.item_price_stock_id = item.item_price_stock_id || '';
             row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
-            row.search_text = item.name + ' [Stok: ' + this.formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg') + ']';
+            row.search_text = this.cleanItemName(item);
             row.sell_price_per_kg = (parseFloat(item.sell_price_per_kg) || 0);
             row.buy_price_snapshot = parseFloat(item.buy_price_snapshot) || parseFloat(item.price_per_kg) || 0;
             row.avg_buy_price = row.buy_price_snapshot;

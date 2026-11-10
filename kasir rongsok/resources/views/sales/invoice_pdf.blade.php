@@ -347,7 +347,6 @@
                     <td class="mono" style="color: #64748b;">{{ $idx + 1 }}</td>
                     <td>
                         <span style="font-weight: bold; color: #0f172a;">{{ $master->item_name }}</span>
-                        <span class="mono" style="color: #94a3b8; font-size: 7.5px;">({{ $master->item_code }})</span>
                         @if($master->has_variants)
                             <span class="variant-badge">
                                 Total Master ({{ $master->items->count() }} Varian)

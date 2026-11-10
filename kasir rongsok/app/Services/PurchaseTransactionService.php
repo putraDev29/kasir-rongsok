@@ -111,7 +111,10 @@ class PurchaseTransactionService
 
             foreach ($itemsData as $row) {
                 $scrapItemId = $row['scrap_item_id'] ?? null;
-                $newItemName = trim($row['new_item_name'] ?? $row['search_text'] ?? $row['name'] ?? '');
+                $rawNewName = trim($row['new_item_name'] ?? $row['search_text'] ?? $row['name'] ?? '');
+                $cleanNewName = preg_replace('/\s*-\s*Rp[\d.,\s]+.*/i', '', $rawNewName);
+                $cleanNewName = preg_replace('/\s*\([A-Z0-9-]+\)\s*$/i', '', $cleanNewName);
+                $newItemName = trim($cleanNewName);
                 $isNewlyCreated = false;
 
                 if ($scrapItemId === '__new__' || (empty($scrapItemId) && !empty($newItemName)) || (!is_numeric($scrapItemId) && !empty($newItemName))) {

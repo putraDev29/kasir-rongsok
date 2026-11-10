@@ -42,15 +42,15 @@
 
             <input type="hidden" name="delivery_order_id" x-model="deliveryOrderId">
 
-            @if(Auth::user()->isKasir())
+            @if(!Auth::user()->isOwner())
                 <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center gap-3 shadow-xs">
                     <div class="p-2 rounded-lg bg-amber-100 text-amber-700 shrink-0">
                         <i data-lucide="file-clock" class="w-5 h-5"></i>
                     </div>
                     <div class="space-y-0.5">
-                        <div class="font-bold text-sm">Mode Kasir: Input Penjualan sebagai DRAFT</div>
+                        <div class="font-bold text-sm">Mode Kasir & Admin: Input Penjualan sebagai DRAFT</div>
                         <p class="text-[11px] text-amber-800 leading-relaxed">
-                            Field harga jual dinonaktifkan. Anda hanya perlu mendata pembeli, jenis barang, dan berat/jumlah fisik yang dikeluarkan. <strong>Status penjualan akan tersimpan sebagai DRAFT</strong> dan Admin / Owner akan melengkapi harga jual resminya.
+                            Field harga jual dinonaktifkan. Anda hanya perlu mendata pembeli, jenis barang, dan berat/jumlah fisik yang dikeluarkan. <strong>Status penjualan akan tersimpan sebagai DRAFT</strong> dan Owner akan melengkapi berat & harga jual untuk menyelesaikan transaksi.
                         </p>
                     </div>
                 </div>
@@ -357,25 +357,39 @@
                                                             'bg-blue-50/70': row.tier_id === item.tier_id && !isItemDisabled(item) 
                                                         }">
                                                     <div class="min-w-0 pr-2">
-                                                        <div class="text-xs font-bold truncate" :class="isItemDisabled(item) ? 'text-slate-400' : 'text-slate-900'" x-text="item.name"></div>
+                                                        <div class="text-xs font-bold truncate" :class="isItemDisabled(item) ? 'text-slate-400' : 'text-slate-900'" x-text="isOwner ? item.name : cleanItemName(item)"></div>
                                                         <div class="text-[10px] text-slate-500 font-mono flex items-center gap-1.5 flex-wrap">
                                                             <span x-text="item.code"></span>
                                                             <span x-show="item.category_name" x-text="' • ' + item.category_name"></span>
                                                             <template x-if="parseFloat(item.current_stock || 0) <= 0">
                                                                 <span class="text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1 rounded">Stok Kosong</span>
                                                             </template>
-                                                            <template x-if="parseFloat(item.current_stock || 0) > 0 && !(parseFloat(item.sell_price_per_kg || 0) > 0)">
-                                                                <span class="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1 rounded">Harga Belum Diatur</span>
-                                                            </template>
-                                                            <template x-if="parseFloat(item.current_stock || 0) > 0 && parseFloat(item.sell_price_per_kg || 0) > 0">
-                                                                <span class="text-emerald-700 font-semibold" x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
-                                                            </template>
+                                                            @if(Auth::user()->isOwner())
+                                                                <template x-if="parseFloat(item.current_stock || 0) > 0 && !(parseFloat(item.sell_price_per_kg || 0) > 0)">
+                                                                    <span class="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1 rounded">Harga Belum Diatur</span>
+                                                                </template>
+                                                                <template x-if="parseFloat(item.current_stock || 0) > 0 && parseFloat(item.sell_price_per_kg || 0) > 0">
+                                                                    <span class="text-emerald-700 font-semibold" x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
+                                                                </template>
+                                                            @else
+                                                                <template x-if="parseFloat(item.current_stock || 0) > 0">
+                                                                    <span class="text-emerald-700 font-semibold" x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
+                                                                </template>
+                                                            @endif
                                                         </div>
                                                     </div>
-                                                    <div class="text-right shrink-0">
-                                                        <div class="text-[11px] font-mono font-bold" :class="isItemDisabled(item) ? 'text-slate-400' : 'text-blue-700'" x-text="(parseFloat(item.sell_price_per_kg || 0) > 0 ? formatRp(item.sell_price_per_kg) : 'Rp 0') + '/' + (item.unit_type || 'kg')"></div>
-                                                        <div class="text-[9px] text-slate-400 font-mono" x-text="'Modal: ' + formatRp(item.buy_price_snapshot)"></div>
-                                                    </div>
+                                                    @if(Auth::user()->isOwner())
+                                                        <div class="text-right shrink-0">
+                                                            <div class="text-[11px] font-mono font-bold" :class="isItemDisabled(item) ? 'text-slate-400' : 'text-blue-700'" x-text="(parseFloat(item.sell_price_per_kg || 0) > 0 ? formatRp(item.sell_price_per_kg) : 'Rp 0') + '/' + (item.unit_type || 'kg')"></div>
+                                                            <div class="text-[9px] text-slate-400 font-mono" x-text="'Modal: ' + formatRp(item.buy_price_snapshot)"></div>
+                                                        </div>
+                                                    @else
+                                                        <div class="text-right shrink-0">
+                                                            <template x-if="parseFloat(item.current_stock || 0) > 0">
+                                                                <div class="text-[11px] font-mono font-bold text-emerald-700" x-text="'Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></div>
+                                                            </template>
+                                                        </div>
+                                                    @endif
                                                 </button>
                                             </template>
 
@@ -451,12 +465,12 @@
                                         <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
                                             Harga Jual Pabrik (Rp)
                                         </label>
-                                        @if(Auth::user()->isKasir())
+                                        @if(!Auth::user()->isOwner())
                                             <div>
-                                                <input type="text" value="Ditentukan Owner/Admin" disabled
+                                                <input type="text" value="Ditentukan Owner" disabled
                                                        class="w-full py-2 px-2.5 text-xs text-center rounded-lg border border-slate-300 font-bold text-amber-800 bg-amber-50/70 border-dashed cursor-not-allowed">
                                                 <input type="hidden" :name="'items[' + idx + '][sell_price_per_kg]'" value="0">
-                                                <span class="text-[10px] text-amber-700 font-semibold block text-right mt-0.5">🔒 Dinonaktifkan untuk Kasir</span>
+                                                <span class="text-[10px] text-amber-700 font-semibold block text-right mt-0.5">🔒 Hanya Owner yang mengisi</span>
                                             </div>
                                         @else
                                             <div class="relative">
@@ -479,11 +493,11 @@
                                         <label class="block text-[11px] font-bold text-slate-800 uppercase tracking-wide mb-1 text-right">
                                             Subtotal (Rp)
                                         </label>
-                                        @if(Auth::user()->isKasir())
+                                        @if(!Auth::user()->isOwner())
                                             <div class="py-2 px-3 text-xs text-right font-mono font-black rounded-lg bg-slate-900 text-white shadow-2xs border border-slate-800">
                                                 Draft
                                             </div>
-                                            <span class="text-[10px] text-amber-600 font-semibold block text-right mt-0.5">Menunggu Harga</span>
+                                            <span class="text-[10px] text-amber-600 font-semibold block text-right mt-0.5">Menunggu Owner</span>
                                         @else
                                             <div class="py-2 px-3 text-xs text-right font-mono font-black rounded-lg bg-slate-900 text-white shadow-2xs border border-slate-800"
                                                  x-text="formatRp(rowSubtotal(row))">
@@ -544,17 +558,17 @@
                 <a href="{{ route('sales.index') }}" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">
                     Batal
                 </a>
-                @if(Auth::user()->isKasir())
+                @if(!Auth::user()->isOwner())
                     <button type="submit" 
                             :disabled="hasStockError() || rows.length === 0"
                             class="px-6 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition-all">
-                        Simpan Penjualan (Draft Kasir)
+                        Simpan Penjualan (Draft Kasir/Admin)
                     </button>
                 @else
                     <button type="submit" 
                             :disabled="hasStockError() || rows.length === 0"
                             class="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition-all">
-                        Simpan & Keluarkan Stok Rongsok
+                        Simpan & Selesaikan Penjualan
                     </button>
                 @endif
             </div>
@@ -568,7 +582,8 @@
 <script>
 function salesPos() {
     return {
-        isKasir: {{ Auth::user()->isKasir() ? 'true' : 'false' }},
+        isKasir: {{ !Auth::user()->isOwner() ? 'true' : 'false' }},
+        isOwner: {{ Auth::user()->isOwner() ? 'true' : 'false' }},
         masterItems: @json($scrapItems),
         paymentMethodsList: @json($paymentMethods),
         unbilledOrders: @json($unbilledDeliveryOrders ?? []),
@@ -675,7 +690,7 @@ function salesPos() {
                         scrap_item_id: it.scrap_item_id || '',
                         tier_id: found ? found.tier_id : '',
                         item_price_stock_id: found ? (found.item_price_stock_id || '') : '',
-                        search_text: found ? (found.name + ' [Stok: ' + this.formatNum(stock) + ' ' + (found.unit_type || 'kg') + ']') : (it.item_name || ''),
+                        search_text: found ? this.cleanItemName(found) : this.cleanItemName(it.item_name || ''),
                         dropdown_open: false,
                         item_type_name: it.item_type_name || '',
                         unit_type: it.unit_type || 'kg',
@@ -735,9 +750,21 @@ function salesPos() {
             });
         },
 
+        cleanItemName(item) {
+            if (!item) return '';
+            let name = (typeof item === 'string') ? item : (item.base_name || item.name || '');
+            name = name.split(/\s+-\s+Rp/i)[0];
+            name = name.split(' [Stok:')[0];
+            name = name.split(' (')[0];
+            return name.trim();
+        },
+
         isItemDisabled(item) {
             if (!item) return true;
             const stock = parseFloat(item.current_stock || 0);
+            if (!this.isOwner) {
+                return stock <= 0;
+            }
             const sellPrice = parseFloat(item.sell_price_per_kg || 0);
             return stock <= 0 || sellPrice <= 0;
         },
@@ -747,8 +774,8 @@ function salesPos() {
             row.scrap_item_id = item.scrap_item_id || item.id;
             row.item_price_stock_id = item.item_price_stock_id || '';
             row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
-            row.search_text = item.name + ' [Stok: ' + this.formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg') + ']';
-            row.sell_price_per_kg = this.isKasir ? 0 : (parseFloat(item.sell_price_per_kg) || 0);
+            row.search_text = this.cleanItemName(item);
+            row.sell_price_per_kg = this.isOwner ? (parseFloat(item.sell_price_per_kg) || 0) : 0;
             row.buy_price_snapshot = parseFloat(item.buy_price_snapshot) || parseFloat(item.price_per_kg) || 0;
             row.avg_buy_price = row.buy_price_snapshot;
             row.maxStock = parseFloat(item.current_stock) || 0;

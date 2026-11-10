@@ -153,10 +153,18 @@
                     <div class="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">4. Gudang & Inventori</div>
 
                     <a href="{{ route('stock.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('stock.index') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
-                        <i data-lucide="boxes" class="w-4 h-4 {{ request()->routeIs('stock.index') ? 'text-white' : 'text-slate-400' }}"></i>
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ (request()->routeIs('stock.index') && !request()->query('opname')) ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="boxes" class="w-4 h-4 {{ (request()->routeIs('stock.index') && !request()->query('opname')) ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Stok & Nilai Barang</span>
                     </a>
+
+                    @if(Auth::user()->isOwner())
+                    <a href="{{ route('stock.index', ['opname' => 1]) }}" 
+                       class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->query('opname') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">
+                        <i data-lucide="sliders" class="w-4 h-4 {{ request()->query('opname') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Stock Opname (Fisik)</span>
+                    </a>
+                    @endif
 
                     <a href="{{ route('stock.movements') }}" 
                        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {{ request()->routeIs('stock.movements') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-950/40 border-l-4 border-emerald-300' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white' }}">

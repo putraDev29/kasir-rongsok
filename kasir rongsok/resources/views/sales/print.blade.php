@@ -171,7 +171,6 @@
                             <td class="py-2 px-1 text-slate-500 font-mono">{{ $idx + 1 }}</td>
                             <td class="py-2 px-2 font-sans text-slate-900">
                                 <span class="font-bold">{{ $master->item_name }}</span>
-                                <span class="text-slate-400 font-mono text-[10px] font-normal">({{ $master->item_code }})</span>
                                 @if($master->has_variants)
                                     <span class="ml-1 text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                                         Total Master ({{ $master->items->count() }} Varian)

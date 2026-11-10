@@ -613,7 +613,7 @@ function deliveryOrderForm() {
             row.scrap_item_id = item.id;
             row.tier_id = item.tier_id || (item.id + '_' + item.price_per_kg);
             const cleanName = item.base_name || (item.name ? item.name.replace(/\s*-\s*Rp[\d.,\s]+.*/i, '').trim() : '');
-            row.search_text = cleanName + (item.code ? ' (' + item.code + ')' : '');
+            row.search_text = cleanName;
             row.item_name = cleanName;
             if (item.unit_type) {
                 row.unit_type = item.unit_type;

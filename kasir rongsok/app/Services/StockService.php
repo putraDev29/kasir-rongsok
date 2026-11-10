@@ -55,6 +55,8 @@ class StockService
                 'current_stock' => max(0, round($newStock - $otherTiersStock, 2)),
             ]);
 
+            $unit = $item->unit_type ?: ($item->unit ?: 'kg');
+
             StockMovement::create([
                 'scrap_item_id' => $item->id,
                 'user_id' => $user->id,
@@ -64,14 +66,14 @@ class StockService
                 'weight_qty' => $diff,
                 'unit_price' => $balance->average_buy_price,
                 'balance_after' => $newStock,
-                'notes' => "Penyesuaian stok manual: {$reason} (Sebelumnya: {$currentStock} kg)",
+                'notes' => "Penyesuaian stok manual: {$reason} (Sebelumnya: {$currentStock} {$unit})",
             ]);
 
             ActivityLog::record(
                 action: 'stock_adjusted',
                 subject: $item,
-                description: "Penyesuaian stok {$item->name} dari {$currentStock} kg menjadi {$newStock} kg oleh {$user->name}. Alasan: {$reason}",
-                payload: ['old_stock' => $currentStock, 'new_stock' => $newStock, 'diff' => $diff]
+                description: "Penyesuaian stok {$item->name} dari {$currentStock} {$unit} menjadi {$newStock} {$unit} oleh {$user->name}. Alasan: {$reason}",
+                payload: ['old_stock' => $currentStock, 'new_stock' => $newStock, 'diff' => $diff, 'unit' => $unit]
             );
 
             return $balance;

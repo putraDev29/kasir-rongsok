@@ -227,8 +227,9 @@
                                 <td class="py-3 px-3 text-center">
                                     <div class="inline-flex items-center gap-1.5">
                                         @if(($sale->isDraft() || $sale->isPendingDelivery()) && Auth::user()->isOwner())
-                                            <a href="{{ route('sales.edit', $sale) }}" class="p-1 rounded text-amber-600 hover:text-amber-800 hover:bg-amber-50" title="Edit Rincian Berat & Harga Jual">
-                                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                            <a href="{{ route('sales.edit', $sale) }}" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 text-[11px] font-bold shadow-2xs transition-colors" title="Edit Rincian Berat & Harga Jual">
+                                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                                <span>Edit</span>
                                             </a>
                                         @endif
                                         @if($sale->isPendingDelivery())

@@ -264,7 +264,6 @@
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <span class="font-bold text-slate-900">{{ $master->item_name }}</span>
-                                    <span class="text-[10px] font-mono text-slate-400 font-normal">({{ $master->item_code }})</span>
                                     @if($master->has_variants)
                                         <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
                                             Total Master ({{ $master->items->count() }} Varian)

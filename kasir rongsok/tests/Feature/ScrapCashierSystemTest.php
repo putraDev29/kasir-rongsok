@@ -2744,5 +2744,70 @@ class ScrapCashierSystemTest extends TestCase
         $adminRes->assertDontSee('Kirim Rekap WA (PDF)');
         $adminRes->assertDontSee('>Aksi<', false);
     }
+
+    public function test_sales_and_stock_enhancements(): void
+    {
+        // 1. Kasir creates sale with pickup -> status is DRAFT
+        $kasirSaleRes = $this->actingAs($this->kasir)->post(route('sales.store'), [
+            'buyer_name' => 'Pabrik Peleburan CV Maju',
+            'delivery_type' => 'pickup',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'weight' => 20,
+                    'sell_price_per_kg' => 0,
+                ],
+            ],
+        ]);
+        $kasirSaleRes->assertRedirect(route('sales.index'));
+        $sale = \App\Models\SalesTransaction::latest('id')->first();
+        $this->assertEquals('draft', $sale->status);
+        $this->assertEquals('Pabrik Peleburan CV Maju', $sale->buyer_name);
+        $this->assertEquals($this->besiItem->name, $sale->items->first()->item_name_snapshot);
+
+        // 2. Owner finalizes the draft sale -> status becomes COMPLETED
+        $finalizeRes = $this->actingAs($this->superAdmin)->put(route('sales.update', $sale), [
+            'buyer_name' => 'Pabrik Peleburan CV Maju',
+            'delivery_type' => 'pickup',
+            'items' => [
+                [
+                    'id' => $sale->items->first()->id,
+                    'scrap_item_id' => $this->besiItem->id,
+                    'weight' => 20,
+                    'sell_price_per_kg' => 7000,
+                ],
+            ],
+        ]);
+        $finalizeRes->assertRedirect(route('sales.show', $sale));
+        $sale->refresh();
+        $this->assertEquals('completed', $sale->status);
+        $this->assertEquals(140000, (float) $sale->final_amount);
+
+        // 3. Owner creates pickup sale directly with weight & price -> status is immediately COMPLETED
+        $ownerSaleRes = $this->actingAs($this->superAdmin)->post(route('sales.store'), [
+            'buyer_name' => 'Pabrik Baja Cilegon',
+            'delivery_type' => 'pickup',
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'weight' => 15,
+                    'sell_price_per_kg' => 7500,
+                ],
+            ],
+        ]);
+        $ownerSaleRes->assertRedirect();
+        $ownerSale = \App\Models\SalesTransaction::latest('id')->first();
+        $this->assertEquals('completed', $ownerSale->status);
+
+        // 4. Stock opname adjustment endpoint works
+        $opnameRes = $this->actingAs($this->superAdmin)->post(route('stock.adjust', $this->besiItem), [
+            'new_stock' => 150,
+            'reason' => 'Audit opname fisik gudang akhir bulan',
+        ]);
+        $opnameRes->assertRedirect();
+        $this->besiItem->refresh();
+        $this->assertEquals(150, (float) $this->besiItem->stockBalance->current_stock);
+    }
 }
+
 
