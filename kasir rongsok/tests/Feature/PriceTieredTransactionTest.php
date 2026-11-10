@@ -315,4 +315,98 @@ class PriceTieredTransactionTest extends TestCase
         $this->besiItem->refresh();
         $this->assertEquals(90, (float) $this->besiItem->stockBalance->current_stock);
     }
+
+    public function test_delete_zero_stock_tier_removes_tier_and_syncs_master_data(): void
+    {
+        $tier4000 = ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 4000],
+            ['current_stock' => 50, 'total_in' => 50, 'total_out' => 0]
+        );
+        $tier5000 = ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 5000],
+            ['current_stock' => 0, 'total_in' => 20, 'total_out' => 20]
+        );
+
+        // Delete tier 5000 (stok 0)
+        $response = $this->actingAs($this->cashier)->postJson(route('purchases.delete-zero-stock'), [
+            'scrap_item_id' => $this->besiItem->id,
+            'item_price_stock_id' => $tier5000->id,
+            'price_per_kg' => 5000,
+        ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+
+        // Tier 5000 terhapus
+        $this->assertDatabaseMissing('item_price_stocks', [
+            'id' => $tier5000->id,
+        ]);
+
+        // Tier 4000 tetap ada
+        $this->assertDatabaseHas('item_price_stocks', [
+            'id' => $tier4000->id,
+        ]);
+
+        // Master ScrapItem dan StockBalance tersinkronisasi
+        $this->besiItem->refresh();
+        $this->assertEquals(4000, (float) $this->besiItem->buy_price_per_kg);
+        $this->assertEquals(50, (float) $this->besiItem->stockBalance->current_stock);
+    }
+
+    public function test_cannot_delete_tier_with_positive_stock(): void
+    {
+        $tierActive = ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 4200],
+            ['current_stock' => 35, 'total_in' => 35, 'total_out' => 0]
+        );
+
+        $response = $this->actingAs($this->cashier)->postJson(route('purchases.delete-zero-stock'), [
+            'scrap_item_id' => $this->besiItem->id,
+            'item_price_stock_id' => $tierActive->id,
+            'price_per_kg' => 4200,
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJson(['success' => false]);
+
+        $this->assertDatabaseHas('item_price_stocks', [
+            'id' => $tierActive->id,
+        ]);
+    }
+
+    public function test_sync_and_clean_all_zero_stock_bulk(): void
+    {
+        ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 3800],
+            ['current_stock' => 0, 'total_in' => 10, 'total_out' => 10]
+        );
+        ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 3900],
+            ['current_stock' => 0, 'total_in' => 15, 'total_out' => 15]
+        );
+        $tierPositive = ItemPriceStock::updateOrCreate(
+            ['scrap_item_id' => $this->besiItem->id, 'price_per_kg' => 4100],
+            ['current_stock' => 25, 'total_in' => 25, 'total_out' => 0]
+        );
+
+        $response = $this->actingAs($this->cashier)->postJson(route('purchases.sync-clean-zero-stock'));
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+
+        $this->assertDatabaseMissing('item_price_stocks', [
+            'scrap_item_id' => $this->besiItem->id,
+            'price_per_kg' => 3800,
+        ]);
+        $this->assertDatabaseMissing('item_price_stocks', [
+            'scrap_item_id' => $this->besiItem->id,
+            'price_per_kg' => 3900,
+        ]);
+        $this->assertDatabaseHas('item_price_stocks', [
+            'id' => $tierPositive->id,
+        ]);
+
+        $this->besiItem->refresh();
+        $this->assertEquals(4100, (float) $this->besiItem->buy_price_per_kg);
+        $this->assertEquals(25, (float) $this->besiItem->stockBalance->current_stock);
+    }
 }

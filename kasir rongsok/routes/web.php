@@ -120,6 +120,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/kasir', [PurchaseTransactionController::class, 'create'])->name('kasir');
 
     // Core Cashier: Purchases Transactions (Accessible by Kasir, Admin, Super Admin / Owner)
+    Route::post('/purchases/delete-zero-stock', [PurchaseTransactionController::class, 'deleteZeroStock'])->name('purchases.delete-zero-stock');
+    Route::post('/purchases/sync-clean-zero-stock', [PurchaseTransactionController::class, 'syncAndCleanZeroStock'])->name('purchases.sync-clean-zero-stock');
     Route::get('/purchases/batch-print', [PurchaseTransactionController::class, 'batchPrint'])->name('purchases.batch-print');
     Route::get('/purchases/batch-pdf', [PurchaseTransactionController::class, 'batchPdf'])->name('purchases.batch-pdf');
     Route::get('/purchases/preview-wa-global', [PurchaseTransactionController::class, 'previewWaGlobal'])->name('purchases.preview-wa-global');

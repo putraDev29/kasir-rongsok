@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePurchaseRequest;
+use App\Models\ActivityLog;
 use App\Models\BusinessSetting;
 use App\Models\ItemCategory;
+use App\Models\ItemPriceStock;
 use App\Models\PaymentMethod;
 use App\Models\PurchaseTransaction;
 use App\Models\PurchaseTransactionItem;
 use App\Models\ScrapItem;
+use App\Models\StockBalance;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\FormatHelper;
@@ -19,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PurchaseTransactionController extends Controller
@@ -463,6 +467,178 @@ class PurchaseTransactionController extends Controller
         } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Delete zero-stock item / price tier from purchase reception list and sync master data.
+     */
+    public function deleteZeroStock(Request $request): JsonResponse
+    {
+        $scrapItemId = $request->input('scrap_item_id');
+        $priceStockId = $request->input('item_price_stock_id');
+        $price = $request->input('price_per_kg');
+
+        $scrapItem = ScrapItem::with(['stockBalance', 'priceStocks'])->find($scrapItemId);
+        if (!$scrapItem) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data material scrap tidak ditemukan di master.'
+            ], 404);
+        }
+
+        return DB::transaction(function () use ($scrapItem, $priceStockId, $price) {
+            $deletedLabel = '';
+            $priceStock = null;
+
+            if ($priceStockId) {
+                $priceStock = ItemPriceStock::where('id', $priceStockId)
+                    ->where('scrap_item_id', $scrapItem->id)
+                    ->first();
+            }
+
+            if (!$priceStock && $price !== null) {
+                $priceStock = ItemPriceStock::where('scrap_item_id', $scrapItem->id)
+                    ->where('price_per_kg', $price)
+                    ->first();
+            }
+
+            if ($priceStock) {
+                if ((float) $priceStock->current_stock > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Varian ini masih memiliki stok ({$priceStock->current_stock} {$scrapItem->unit_type}), tidak dapat dihapus."
+                    ], 422);
+                }
+
+                $deletedLabel = "varian harga Rp " . FormatHelper::number($priceStock->price_per_kg);
+                $priceStock->delete();
+            } else {
+                // Check if total stock is 0 and no tiers with stock > 0 exist
+                $hasActiveStock = ItemPriceStock::where('scrap_item_id', $scrapItem->id)
+                    ->where('current_stock', '>', 0)
+                    ->exists();
+                $totalStock = (float) ($scrapItem->stockBalance?->current_stock ?? 0);
+
+                if ($hasActiveStock || $totalStock > 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Barang masih memiliki stok aktif di gudang, tidak dapat dihapus."
+                    ], 422);
+                }
+
+                // If no stock, delete or deactivate
+                if ($scrapItem->purchaseItems()->exists() || $scrapItem->salesItems()->exists()) {
+                    $scrapItem->update(['is_active' => false]);
+                    $deletedLabel = "barang dinonaktifkan dari master";
+                } else {
+                    $scrapItem->priceStocks()->delete();
+                    $scrapItem->stockBalance()?->delete();
+                    $scrapItem->delete();
+                    $deletedLabel = "barang dihapus permanen dari master";
+                }
+            }
+
+            // Sinkronkan data master barang (jika barang masih ada)
+            $updatedMaster = null;
+            if ($scrapItem->exists) {
+                // 1. Sinkronkan total stok pada stock_balances
+                $remainingStock = (float) ItemPriceStock::where('scrap_item_id', $scrapItem->id)->sum('current_stock');
+                StockBalance::updateOrCreate(
+                    ['scrap_item_id' => $scrapItem->id],
+                    ['current_stock' => $remainingStock]
+                );
+
+                // 2. Sinkronkan harga beli master dari varian aktif yang tersisa
+                $remainingTiers = ItemPriceStock::where('scrap_item_id', $scrapItem->id)
+                    ->orderByDesc('current_stock')
+                    ->orderByDesc('id')
+                    ->get();
+
+                if ($remainingTiers->isNotEmpty()) {
+                    $activeTier = $remainingTiers->where('current_stock', '>', 0)->first() ?? $remainingTiers->first();
+                    $scrapItem->update([
+                        'buy_price_per_kg' => (float) $activeTier->price_per_kg
+                    ]);
+                }
+
+                $updatedMaster = [
+                    'id' => $scrapItem->id,
+                    'buy_price_per_kg' => (float) $scrapItem->buy_price_per_kg,
+                    'current_stock' => $remainingStock,
+                ];
+
+                ActivityLog::record(
+                    action: 'delete_zero_stock_tier',
+                    description: "Menghapus {$deletedLabel} untuk {$scrapItem->name} dan menyinkronkan data master."
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Data {$scrapItem->name} ({$deletedLabel}) berhasil dihapus dan data master disinkronkan.",
+                'updated_master' => $updatedMaster
+            ]);
+        });
+    }
+
+    /**
+     * Bulk clean all zero-stock tiers and synchronize master data.
+     */
+    public function syncAndCleanZeroStock(): JsonResponse
+    {
+        return DB::transaction(function () {
+            $zeroTiers = ItemPriceStock::where('current_stock', '<=', 0)->get();
+            $affectedScrapItemIds = $zeroTiers->pluck('scrap_item_id')->unique();
+
+            ItemPriceStock::where('current_stock', '<=', 0)->delete();
+
+            foreach ($affectedScrapItemIds as $itemId) {
+                $scrapItem = ScrapItem::find($itemId);
+                if (!$scrapItem) continue;
+
+                $remainingStock = (float) ItemPriceStock::where('scrap_item_id', $scrapItem->id)->sum('current_stock');
+                StockBalance::updateOrCreate(
+                    ['scrap_item_id' => $scrapItem->id],
+                    ['current_stock' => $remainingStock]
+                );
+
+                $remainingTiers = ItemPriceStock::where('scrap_item_id', $scrapItem->id)
+                    ->orderByDesc('current_stock')
+                    ->orderByDesc('id')
+                    ->get();
+
+                if ($remainingTiers->isNotEmpty()) {
+                    $activeTier = $remainingTiers->where('current_stock', '>', 0)->first() ?? $remainingTiers->first();
+                    $scrapItem->update([
+                        'buy_price_per_kg' => (float) $activeTier->price_per_kg
+                    ]);
+                }
+            }
+
+            ActivityLog::record(
+                action: 'sync_clean_zero_stock',
+                description: "Pembersihan seluruh varian harga stok 0 dan sinkronisasi master data."
+            );
+
+            // Return fresh list of scrapItems
+            $rawItems = ScrapItem::with(['category', 'stockBalance', 'priceStocks'])
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            $remainingItems = [];
+            foreach ($rawItems as $item) {
+                foreach ($item->getPriceTierOptions(onlyWithStock: false) as $opt) {
+                    $remainingItems[] = $opt;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Seluruh varian harga stok 0 berhasil dibersihkan dan master data telah disinkronkan.",
+                'remaining_items' => $remainingItems
+            ]);
+        });
     }
 }
 

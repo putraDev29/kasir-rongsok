@@ -50,12 +50,20 @@
                             <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
                             <span class="text-xs font-bold uppercase text-slate-800 tracking-wider">Pilih Cepat Material Scrap & Daur Ulang</span>
                         </div>
-                        <div class="w-full sm:w-64 relative">
-                            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                                <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                            </span>
-                            <input type="text" x-model="itemSearch" placeholder="Cari nama / kode rongsok..." 
-                                   class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click="syncAndCleanAllZeroStock()" 
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-colors shrink-0 shadow-2xs"
+                                    title="Bersihkan semua varian stok 0 dan sinkronkan master">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                <span>Bersihkan Stok 0</span>
+                            </button>
+                            <div class="w-full sm:w-64 relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                                </span>
+                                <input type="text" x-model="itemSearch" placeholder="Cari nama / kode rongsok..." 
+                                       class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                            </div>
                         </div>
                     </div>
 
@@ -79,15 +87,28 @@
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
                         <template x-for="item in filteredItems()" :key="item.unique_key || item.tier_id || item.id">
                             <button type="button" @click="addItem(item)"
-                                    class="text-left p-2 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group flex flex-col justify-between">
-                                <div>
+                                    class="text-left p-2 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group flex flex-col justify-between relative"
+                                    :class="(parseFloat(item.current_stock) || 0) <= 0 ? 'bg-slate-50/70 border-dashed' : ''">
+                                <div class="pr-6">
                                     <div class="text-[11px] font-bold text-slate-900 group-hover:text-emerald-700 truncate" x-text="item.name"></div>
                                     <div class="text-[10px] text-slate-400 font-mono" x-text="item.code"></div>
                                 </div>
                                 <div class="mt-1 flex items-center justify-between text-[11px] font-bold text-emerald-600">
                                     <span x-text="formatRp(item.price_per_kg || item.buy_price_per_kg) + '/' + (item.unit_type || 'kg')"></span>
-                                    <span class="text-[10px] text-slate-400 font-mono font-normal" x-text="'Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
+                                    <span class="text-[10px] font-mono" 
+                                          :class="(parseFloat(item.current_stock) || 0) <= 0 ? 'text-red-500 font-semibold' : 'text-slate-400 font-normal'"
+                                          x-text="'Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
                                 </div>
+
+                                <!-- Icon Hapus jika stok 0 -->
+                                <template x-if="(parseFloat(item.current_stock) || 0) <= 0">
+                                    <button type="button" 
+                                            @click.stop="deleteZeroStockItem(item)" 
+                                            class="absolute top-1.5 right-1.5 p-1 rounded-md text-red-500 hover:text-white hover:bg-red-600 bg-red-50 transition-colors z-10 shadow-2xs"
+                                            title="Hapus varian harga stok 0 ini dan sinkron master">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </template>
                             </button>
                         </template>
                     </div>
@@ -199,11 +220,20 @@
                                                         <div class="text-[10px] text-slate-500 font-mono">
                                                             <span x-text="item.code"></span>
                                                             <span x-show="item.category_name || (item.category && item.category.name)" x-text="' • ' + (item.category_name || (item.category && item.category.name))"></span>
-                                                            <span class="text-emerald-700 font-semibold" x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
+                                                            <span :class="(parseFloat(item.current_stock) || 0) <= 0 ? 'text-red-500 font-bold' : 'text-emerald-700 font-semibold'"
+                                                                  x-text="' • Stok: ' + formatNum(item.current_stock) + ' ' + (item.unit_type || 'kg')"></span>
                                                         </div>
                                                     </div>
-                                                    <div class="text-right shrink-0">
+                                                    <div class="text-right shrink-0 flex items-center gap-1.5">
                                                         <div class="text-[11px] font-mono font-bold text-emerald-700" x-text="formatRp(item.price_per_kg || item.buy_price_per_kg) + '/' + (item.unit_type || 'kg')"></div>
+                                                        <template x-if="(parseFloat(item.current_stock) || 0) <= 0">
+                                                            <button type="button" 
+                                                                    @click.stop="deleteZeroStockItem(item)" 
+                                                                    class="p-1 rounded text-red-500 hover:text-white hover:bg-red-600 bg-red-50 transition-colors"
+                                                                    title="Hapus varian harga stok 0 ini dan sinkron master">
+                                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                            </button>
+                                                        </template>
                                                     </div>
                                                 </button>
                                             </template>
@@ -1123,6 +1153,104 @@ function cashierPos() {
                 list = list.filter(item => item.name.toLowerCase().includes(s) || item.code.toLowerCase().includes(s));
             }
             return list.slice(0, 36);
+        },
+
+        async deleteZeroStockItem(item) {
+            const stock = parseFloat(item.current_stock) || 0;
+            if (stock > 0) {
+                alert('Barang ini masih memiliki stok (' + stock + ' ' + (item.unit_type || 'kg') + '), tidak dapat dihapus.');
+                return;
+            }
+
+            const itemName = item.name || item.base_name || 'Barang ini';
+            if (!confirm('Hapus varian harga/barang "' + itemName + '" (Stok: 0) dan sinkronkan data master?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch("{{ route('purchases.delete-zero-stock') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        scrap_item_id: item.scrap_item_id || item.id,
+                        item_price_stock_id: item.item_price_stock_id || null,
+                        price_per_kg: item.price_per_kg || item.buy_price_per_kg || null,
+                        tier_id: item.tier_id || null
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    this.masterItems = this.masterItems.filter(i => {
+                        if (item.tier_id && i.tier_id) {
+                            return i.tier_id !== item.tier_id;
+                        }
+                        if (item.item_price_stock_id && i.item_price_stock_id) {
+                            return i.item_price_stock_id !== item.item_price_stock_id;
+                        }
+                        return (i.unique_key || i.id) !== (item.unique_key || item.id);
+                    });
+
+                    if (data.updated_master) {
+                        this.masterItems.forEach(i => {
+                            if (i.scrap_item_id == data.updated_master.id || i.id == data.updated_master.id) {
+                                i.buy_price_per_kg = data.updated_master.buy_price_per_kg;
+                            }
+                        });
+                    }
+
+                    this.refreshIcons();
+                    alert(data.message || 'Barang stok 0 berhasil dihapus dan data master disinkronkan.');
+                } else {
+                    alert(data.message || 'Gagal menghapus barang.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Terjadi kesalahan saat menghapus barang: ' + err.message);
+            }
+        },
+
+        async syncAndCleanAllZeroStock() {
+            const zeroCount = this.masterItems.filter(i => (parseFloat(i.current_stock) || 0) <= 0).length;
+            if (zeroCount === 0) {
+                alert('Tidak ada varian barang dengan stok 0.');
+                return;
+            }
+
+            if (!confirm('Ditemukan ' + zeroCount + ' barang/varian dengan stok 0. Bersihkan seluruhnya dari daftar dan sinkronkan data master?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch("{{ route('purchases.sync-clean-zero-stock') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    if (data.remaining_items) {
+                        this.masterItems = data.remaining_items;
+                    } else {
+                        this.masterItems = this.masterItems.filter(i => (parseFloat(i.current_stock) || 0) > 0);
+                    }
+                    this.refreshIcons();
+                    alert(data.message || 'Seluruh barang stok 0 berhasil dibersihkan dan master disinkronkan.');
+                } else {
+                    alert(data.message || 'Gagal membersihkan barang stok 0.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Terjadi kesalahan: ' + err.message);
+            }
         },
 
         filteredPaymentMethods() {
