@@ -30,6 +30,27 @@ class ReportService
         $totalPurchasesWeight = (float) $purchasesQuery->sum('total_net_weight');
         $totalPurchasesCount = (int) $purchasesQuery->count();
 
+        // Breakdown purchases by unit
+        $purchasesItemsSummary = DB::table('purchase_transaction_items')
+            ->join('purchase_transactions', 'purchase_transaction_items.purchase_transaction_id', '=', 'purchase_transactions.id')
+            ->where('purchase_transactions.status', PurchaseTransaction::STATUS_COMPLETED)
+            ->whereBetween('purchase_transactions.transaction_date', [$start, $end])
+            ->where('purchase_transaction_items.is_cancelled', false)
+            ->select(
+                DB::raw("CASE WHEN LOWER(purchase_transaction_items.unit_type) IN ('pcs', 'satuan', 'unit', 'buah') THEN 'pcs' ELSE 'kg' END as unit_group"),
+                DB::raw("SUM(CASE WHEN LOWER(purchase_transaction_items.unit_type) IN ('pcs', 'satuan', 'unit', 'buah') THEN (CASE WHEN purchase_transaction_items.quantity > 0 THEN purchase_transaction_items.quantity ELSE purchase_transaction_items.net_weight END) ELSE purchase_transaction_items.net_weight END) as total_qty")
+            )
+            ->groupBy('unit_group')
+            ->pluck('total_qty', 'unit_group');
+
+        $totalPurchasesKg = (float) ($purchasesItemsSummary['kg'] ?? 0);
+        $totalPurchasesPcs = (float) ($purchasesItemsSummary['pcs'] ?? 0);
+
+        $purchasesParts = [];
+        if ($totalPurchasesKg > 0) $purchasesParts[] = FormatHelper::weight($totalPurchasesKg) . ' kg';
+        if ($totalPurchasesPcs > 0) $purchasesParts[] = FormatHelper::number($totalPurchasesPcs) . ' pcs';
+        $totalPurchasesDisplay = count($purchasesParts) > 0 ? implode(' + ', $purchasesParts) : (FormatHelper::weight($totalPurchasesWeight) . ' kg');
+
         // Sales within period
         $salesQuery = SalesTransaction::where('status', SalesTransaction::STATUS_COMPLETED)
             ->whereBetween('transaction_date', [$start, $end]);
@@ -37,6 +58,26 @@ class ReportService
         $totalSalesAmount = (float) $salesQuery->sum('final_amount');
         $totalSalesWeight = (float) $salesQuery->sum('total_weight');
         $totalSalesProfit = (float) $salesQuery->sum('estimated_profit');
+
+        // Breakdown sales by unit
+        $salesItemsSummary = DB::table('sales_transaction_items')
+            ->join('sales_transactions', 'sales_transaction_items.sales_transaction_id', '=', 'sales_transactions.id')
+            ->where('sales_transactions.status', SalesTransaction::STATUS_COMPLETED)
+            ->whereBetween('sales_transactions.transaction_date', [$start, $end])
+            ->select(
+                DB::raw("CASE WHEN LOWER(sales_transaction_items.unit_type) IN ('pcs', 'satuan', 'unit', 'buah') THEN 'pcs' ELSE 'kg' END as unit_group"),
+                DB::raw("SUM(CASE WHEN LOWER(sales_transaction_items.unit_type) IN ('pcs', 'satuan', 'unit', 'buah') THEN (CASE WHEN sales_transaction_items.quantity > 0 THEN sales_transaction_items.quantity ELSE sales_transaction_items.weight END) ELSE sales_transaction_items.weight END) as total_qty")
+            )
+            ->groupBy('unit_group')
+            ->pluck('total_qty', 'unit_group');
+
+        $totalSalesKg = (float) ($salesItemsSummary['kg'] ?? 0);
+        $totalSalesPcs = (float) ($salesItemsSummary['pcs'] ?? 0);
+
+        $salesParts = [];
+        if ($totalSalesKg > 0) $salesParts[] = FormatHelper::weight($totalSalesKg) . ' kg';
+        if ($totalSalesPcs > 0) $salesParts[] = FormatHelper::number($totalSalesPcs) . ' pcs';
+        $totalSalesDisplay = count($salesParts) > 0 ? implode(' + ', $salesParts) : (FormatHelper::weight($totalSalesWeight) . ' kg');
 
         // Expenses within period
         $totalExpensesAmount = (float) Expense::whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])->sum('amount');
@@ -46,6 +87,25 @@ class ReportService
         $estimatedStockValue = (float) DB::table('stock_balances')
             ->selectRaw('SUM(current_stock * average_buy_price) as total_val')
             ->value('total_val');
+
+        // Breakdown stock by unit
+        $stockSummary = DB::table('stock_balances')
+            ->join('scrap_items', 'stock_balances.scrap_item_id', '=', 'scrap_items.id')
+            ->whereNull('scrap_items.deleted_at')
+            ->select(
+                DB::raw("CASE WHEN LOWER(scrap_items.unit) IN ('pcs', 'satuan', 'unit', 'buah') THEN 'pcs' ELSE 'kg' END as unit_group"),
+                DB::raw("SUM(stock_balances.current_stock) as total_qty")
+            )
+            ->groupBy('unit_group')
+            ->pluck('total_qty', 'unit_group');
+
+        $totalStockKgVal = (float) ($stockSummary['kg'] ?? 0);
+        $totalStockPcsVal = (float) ($stockSummary['pcs'] ?? 0);
+
+        $stockParts = [];
+        if ($totalStockKgVal > 0) $stockParts[] = FormatHelper::weight($totalStockKgVal) . ' kg';
+        if ($totalStockPcsVal > 0) $stockParts[] = FormatHelper::number($totalStockPcsVal) . ' pcs';
+        $totalStockDisplay = count($stockParts) > 0 ? implode(' + ', $stockParts) : (FormatHelper::weight($totalStockKg) . ' kg');
 
         // Top 5 items with largest available stock
         $topStockItems = ScrapItem::with('stockBalance', 'category')
@@ -107,11 +167,20 @@ class ReportService
             'total_purchases_amount' => $totalPurchasesAmount,
             'total_purchases_weight' => $totalPurchasesWeight,
             'total_purchases_count' => $totalPurchasesCount,
+            'total_purchases_kg' => $totalPurchasesKg,
+            'total_purchases_pcs' => $totalPurchasesPcs,
+            'total_purchases_display' => $totalPurchasesDisplay,
             'total_sales_amount' => $totalSalesAmount,
             'total_sales_weight' => $totalSalesWeight,
             'total_sales_profit' => $totalSalesProfit,
+            'total_sales_kg' => $totalSalesKg,
+            'total_sales_pcs' => $totalSalesPcs,
+            'total_sales_display' => $totalSalesDisplay,
             'total_expenses_amount' => $totalExpensesAmount,
             'total_stock_kg' => $totalStockKg,
+            'total_stock_kg_val' => $totalStockKgVal,
+            'total_stock_pcs' => $totalStockPcsVal,
+            'total_stock_display' => $totalStockDisplay,
             'estimated_stock_value' => $estimatedStockValue,
             'net_profit_period' => ($totalSalesProfit - $totalExpensesAmount),
             'top_stock_items' => $topStockItems,

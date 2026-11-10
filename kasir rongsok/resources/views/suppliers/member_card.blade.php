@@ -120,7 +120,7 @@
 
                 <!-- Points & Weight Badges -->
                 <div class="text-right font-mono">
-                    <div class="text-[10px] text-white/70">Total Setor: <strong class="text-white">{{ \App\Services\FormatHelper::weight($supplier->total_weight) }} kg</strong></div>
+                    <div class="text-[10px] text-white/70">Total Setor: <strong class="text-white">{{ $supplier->total_cargo_display }}</strong></div>
                     <div class="text-xs font-black text-yellow-300 mt-0.5">
                         🎁 {{ number_format($supplier->points, 0, ',', '.') }} Poin Reward
                     </div>
@@ -150,7 +150,7 @@
                 <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
                     <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Muatan</span>
                     <span class="text-sm font-black text-slate-900 font-mono mt-0.5 block">
-                        {{ \App\Services\FormatHelper::weight($supplier->total_weight) }} kg
+                        {{ $supplier->total_cargo_display }}
                     </span>
                     <span class="text-[9px] text-slate-500">{{ $supplier->total_transactions_count }}x Penimbangan</span>
                 </div>

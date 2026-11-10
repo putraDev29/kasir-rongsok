@@ -23,9 +23,9 @@
                 <th>Kategori</th>
                 <th>Nama Barang</th>
                 <th>Satuan</th>
-                <th>Harga Beli/kg (Rp)</th>
-                <th>Harga Jual/kg (Rp)</th>
-                <th>Margin/kg (Rp)</th>
+                <th>Harga Beli (Rp)</th>
+                <th>Harga Jual (Rp)</th>
+                <th>Margin (Rp)</th>
                 <th>Stok Gudang</th>
                 <th>Status</th>
                 <th>Deskripsi / Catatan</th>

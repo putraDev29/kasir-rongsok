@@ -20,6 +20,24 @@
     </style>
 </head>
 <body>
+    @php
+        $batchKg = 0;
+        $batchPcs = 0;
+        foreach ($transactions as $t) {
+            foreach ($t->items as $i) {
+                $u = strtolower(trim($i->unit_type ?: 'kg'));
+                if (in_array($u, ['pcs', 'satuan', 'unit', 'buah'])) {
+                    $batchPcs += ($i->quantity > 0 ? $i->quantity : $i->weight);
+                } else {
+                    $batchKg += $i->weight;
+                }
+            }
+        }
+        $batchParts = [];
+        if ($batchKg > 0) $batchParts[] = \App\Services\FormatHelper::weight($batchKg) . ' kg';
+        if ($batchPcs > 0) $batchParts[] = \App\Services\FormatHelper::number($batchPcs) . ' pcs';
+        $batchCargoDisplay = count($batchParts) > 0 ? implode(' + ', $batchParts) : '0 kg';
+    @endphp
     <div class="header">
         <div class="company-name">{{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}</div>
         <div class="title">REKAPITULASI PENJUALAN RONGSOK PARTAI BESAR (PABRIK)</div>
@@ -33,7 +51,7 @@
                 <th style="width: 90px;">No. Faktur</th>
                 <th style="width: 70px;">Tanggal</th>
                 <th>Tujuan Pembeli / Pabrik</th>
-                <th class="text-right" style="width: 80px;">Muatan (kg)</th>
+                <th class="text-right" style="width: 80px;">Muatan / Satuan</th>
                 <th class="text-right" style="width: 95px;">Total Tagihan</th>
                 <th class="text-right" style="width: 90px;">Estimasi Laba</th>
                 <th class="text-center" style="width: 65px;">Status</th>
@@ -53,11 +71,11 @@
                         <div style="margin-top: 2px; font-size: 8px; color: #475569;">
                             @foreach($t->grouped_master_items as $gm)
                                 <div>
-                                    • <strong>{{ $gm->item_name }}</strong>: {{ \App\Services\FormatHelper::weight($gm->total_weight) }} kg
+                                    • <strong>{{ $gm->item_name }}</strong>: {{ $gm->total_quantity > 0 && ($gm->unit_type === 'pcs' || $gm->unit_type === 'satuan') ? \App\Services\FormatHelper::number($gm->total_quantity) . ' pcs' : \App\Services\FormatHelper::weight($gm->total_weight) . ' kg' }}
                                     @if($gm->has_variants)
                                         <div style="padding-left: 6px; color: #1e40af;">
                                             @foreach($gm->items as $vi)
-                                                ↳ Varian: {{ $vi->item_type_name ?: 'Standar' }} ({{ \App\Services\FormatHelper::weight($vi->weight) }} kg @ Rp {{ number_format($vi->sell_price_per_kg, 0, ',', '.') }})
+                                                ↳ Varian: {{ $vi->item_type_name ?: 'Standar' }} ({{ $vi->formatted_quantity }} @ Rp {{ number_format($vi->sell_price_per_kg, 0, ',', '.') }})
                                             @endforeach
                                         </div>
                                     @endif
@@ -65,7 +83,7 @@
                             @endforeach
                         </div>
                     </td>
-                    <td class="text-right font-mono">{{ \App\Services\FormatHelper::weight($t->total_weight) }} kg</td>
+                    <td class="text-right font-mono">{{ $t->total_cargo_display }}</td>
                     <td class="text-right font-mono font-bold">{{ \App\Services\FormatHelper::rupiah($t->final_amount) }}</td>
                     <td class="text-right font-mono" style="color: #047857;">{{ \App\Services\FormatHelper::rupiah($t->estimated_profit) }}</td>
                     <td class="text-center" style="font-weight: bold; font-size: 8.5px;">
@@ -81,7 +99,7 @@
         <tfoot>
             <tr class="total-row">
                 <td colspan="4" class="text-right">TOTAL KESELURUHAN:</td>
-                <td class="text-right font-mono">{{ \App\Services\FormatHelper::weight($totalWeight) }} kg</td>
+                <td class="text-right font-mono">{{ $batchCargoDisplay }}</td>
                 <td class="text-right font-mono font-bold">{{ \App\Services\FormatHelper::rupiah($totalSales) }}</td>
                 <td class="text-right font-mono" style="color: #047857;">{{ \App\Services\FormatHelper::rupiah($totalProfit) }}</td>
                 <td></td>

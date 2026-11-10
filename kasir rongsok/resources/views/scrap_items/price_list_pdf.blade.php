@@ -267,7 +267,7 @@
                         <tr>
                             <th class="text-center" style="width: 8%;">No</th>
                             <th style="width: 62%; text-align: left;">Nama {{ \App\Models\BusinessSetting::commodityTerm() }}</th>
-                            <th class="text-right" style="width: 30%;">Harga Beli per Kg</th>
+                            <th class="text-right" style="width: 30%;">Harga Beli / Satuan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -279,7 +279,7 @@
                                 </td>
                                 <td class="text-right font-mono" style="font-weight: bold; color: #047857; font-size: 9.5pt;">
                                     {{ \App\Services\FormatHelper::rupiah($item->buy_price_per_kg) }}
-                                    <span style="font-size: 7pt; font-weight: normal; color: #64748b; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">/ kg</span>
+                                    <span style="font-size: 7pt; font-weight: normal; color: #64748b; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">/ {{ $item->unit ?? 'kg' }}</span>
                                 </td>
                             </tr>
                         @endforeach

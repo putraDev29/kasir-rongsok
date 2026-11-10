@@ -409,9 +409,9 @@
                 <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</span>
             </div>
             <div style="{{ $calcGrid }}" class="font-bold text-slate-900">
-                <span class="whitespace-nowrap">BERAT BERSIH</span>
+                <span class="whitespace-nowrap">TOTAL MUATAN</span>
                 <span class="text-center">:</span>
-                <span class="text-right font-bold whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeNet) }} kg</span>
+                <span class="text-right font-bold whitespace-nowrap">{{ $purchase->total_cargo_display }}</span>
             </div>
             
             <div class="pt-1 border-t border-dotted border-slate-300" style="{{ $calcGrid }}">

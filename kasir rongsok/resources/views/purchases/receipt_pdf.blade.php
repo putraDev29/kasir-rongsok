@@ -331,8 +331,8 @@
                 <td class="total-value">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</td>
             </tr>
             <tr style="border-top: 1px dotted #cbd5e1;">
-                <td class="total-label" style="font-weight: bold;">TOTAL BERAT BERSIH:</td>
-                <td class="total-value" style="color: #047857;">{{ \App\Services\FormatHelper::weight($activeNet) }} kg</td>
+                <td class="total-label" style="font-weight: bold;">TOTAL MUATAN BERSIH:</td>
+                <td class="total-value" style="color: #047857;">{{ $purchase->total_cargo_display }}</td>
             </tr>
             <tr style="border-top: 1px solid #cbd5e1;">
                 <td class="total-label">Subtotal:</td>

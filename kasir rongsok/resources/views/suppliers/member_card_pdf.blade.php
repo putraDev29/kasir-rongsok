@@ -156,7 +156,7 @@
                     <div style="font-size: 8.5px; color: #cbd5e1;">{{ $supplier->phone ?: 'Terdaftar' }} • Bergabung: {{ $supplier->join_date ? $supplier->join_date->format('d/m/Y') : ($supplier->created_at ? $supplier->created_at->format('d/m/Y') : '-') }}</div>
                 </td>
                 <td style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 6px; text-align: right; vertical-align: bottom;">
-                    <div style="font-size: 8.5px; color: #cbd5e1;">Total Muatan: <strong>{{ \App\Services\FormatHelper::weight($supplier->total_weight) }} kg</strong></div>
+                    <div style="font-size: 8.5px; color: #cbd5e1;">Total Muatan: <strong>{{ $supplier->total_cargo_display }}</strong></div>
                     <div style="font-size: 10px; font-weight: bold; color: #fbbf24; margin-top: 2px;">
                         🎁 {{ number_format($supplier->points, 0, ',', '.') }} Poin Reward
                     </div>
@@ -181,8 +181,8 @@
         <table>
             <tr>
                 <td class="stat-item" style="border: 1px solid #e2e8f0; width: 33%;">
-                    <div class="stat-label">Total Berat Setor</div>
-                    <div class="stat-val" style="color: #047857;">{{ \App\Services\FormatHelper::weight($supplier->total_weight) }} kg</div>
+                    <div class="stat-label">Total Setor</div>
+                    <div class="stat-val" style="color: #047857;">{{ $supplier->total_cargo_display }}</div>
                     <div style="font-size: 7.5px; color: #64748b;">{{ $supplier->total_transactions_count }}x Penimbangan</div>
                 </td>
                 <td class="stat-item" style="border: 1px solid #e2e8f0; width: 34%;">

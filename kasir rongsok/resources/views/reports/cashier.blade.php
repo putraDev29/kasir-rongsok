@@ -69,8 +69,8 @@
                     </div>
 
                     <div class="flex justify-between text-slate-600">
-                        <span>Total Berat Ditimbang:</span>
-                        <strong class="text-slate-900 font-mono">{{ \App\Services\FormatHelper::weight($c->total_weight ?? 0) }} kg</strong>
+                        <span>Total Muatan / Berat Ditimbang:</span>
+                        <strong class="text-slate-900 font-mono">{{ $c->total_cargo_display ?? (\App\Services\FormatHelper::weight($c->total_weight ?? 0) . ' kg') }}</strong>
                     </div>
 
                     <div class="flex justify-between text-slate-600 pt-1 border-t border-slate-100">

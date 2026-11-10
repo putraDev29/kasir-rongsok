@@ -67,15 +67,30 @@ class ReportController extends Controller
         $scrapItems = ScrapItem::orderBy('name')->get();
         $cashiers = User::where('is_active', true)->get();
 
-        $totalWeight = (float) $query->sum('net_weight');
+        $unitTotals = (clone $query)->selectRaw("
+            CASE 
+                WHEN unit_type = 'pcs' THEN 'pcs'
+                ELSE 'kg'
+            END as unit_cat,
+            SUM(CASE WHEN unit_type = 'pcs' THEN quantity ELSE net_weight END) as total_qty
+        ")->groupBy('unit_cat')->pluck('total_qty', 'unit_cat');
+
+        $totalKg = (float) ($unitTotals['kg'] ?? 0);
+        $totalPcs = (float) ($unitTotals['pcs'] ?? 0);
+        $totalCargoParts = [];
+        if ($totalKg > 0) $totalCargoParts[] = FormatHelper::weight($totalKg) . ' kg';
+        if ($totalPcs > 0) $totalCargoParts[] = number_format($totalPcs, 0, ',', '.') . ' pcs';
+        $totalCargoDisplay = empty($totalCargoParts) ? '0 kg' : implode(' + ', $totalCargoParts);
+
+        $totalWeight = $totalKg;
         $totalAmount = (float) $query->sum('subtotal');
 
         if ($format === 'print') {
             $settings = BusinessSetting::pluck('value', 'key')->all();
-            return response()->view('reports.purchases_print', compact('items', 'startDate', 'endDate', 'totalWeight', 'totalAmount', 'settings'));
+            return response()->view('reports.purchases_print', compact('items', 'startDate', 'endDate', 'totalWeight', 'totalKg', 'totalPcs', 'totalCargoDisplay', 'totalAmount', 'settings'));
         }
 
-        return view('reports.purchases', compact('items', 'scrapItems', 'cashiers', 'startDate', 'endDate', 'scrapItemId', 'cashierId', 'totalWeight', 'totalAmount', 'selectedMonth', 'selectedYear'));
+        return view('reports.purchases', compact('items', 'scrapItems', 'cashiers', 'startDate', 'endDate', 'scrapItemId', 'cashierId', 'totalWeight', 'totalKg', 'totalPcs', 'totalCargoDisplay', 'totalAmount', 'selectedMonth', 'selectedYear'));
     }
 
     /**
@@ -107,17 +122,32 @@ class ReportController extends Controller
         $items = $query->paginate(20)->withQueryString();
         $scrapItems = ScrapItem::orderBy('name')->get();
 
-        $totalWeight = (float) $query->sum('weight');
+        $unitTotals = (clone $query)->selectRaw("
+            CASE 
+                WHEN unit_type = 'pcs' THEN 'pcs'
+                ELSE 'kg'
+            END as unit_cat,
+            SUM(CASE WHEN unit_type = 'pcs' THEN quantity ELSE weight END) as total_qty
+        ")->groupBy('unit_cat')->pluck('total_qty', 'unit_cat');
+
+        $totalKg = (float) ($unitTotals['kg'] ?? 0);
+        $totalPcs = (float) ($unitTotals['pcs'] ?? 0);
+        $totalCargoParts = [];
+        if ($totalKg > 0) $totalCargoParts[] = FormatHelper::weight($totalKg) . ' kg';
+        if ($totalPcs > 0) $totalCargoParts[] = number_format($totalPcs, 0, ',', '.') . ' pcs';
+        $totalCargoDisplay = empty($totalCargoParts) ? '0 kg' : implode(' + ', $totalCargoParts);
+
+        $totalWeight = $totalKg;
         $totalSales = (float) $query->sum('subtotal');
         $totalCogs = (float) $query->sum('cogs_subtotal');
         $totalProfit = (float) $query->sum('profit_subtotal');
 
         if ($format === 'print') {
             $settings = BusinessSetting::pluck('value', 'key')->all();
-            return response()->view('reports.sales_print', compact('items', 'startDate', 'endDate', 'totalWeight', 'totalSales', 'totalProfit', 'settings'));
+            return response()->view('reports.sales_print', compact('items', 'startDate', 'endDate', 'totalWeight', 'totalKg', 'totalPcs', 'totalCargoDisplay', 'totalSales', 'totalProfit', 'settings'));
         }
 
-        return view('reports.sales', compact('items', 'scrapItems', 'startDate', 'endDate', 'scrapItemId', 'totalWeight', 'totalSales', 'totalCogs', 'totalProfit', 'selectedMonth', 'selectedYear'));
+        return view('reports.sales', compact('items', 'scrapItems', 'startDate', 'endDate', 'scrapItemId', 'totalWeight', 'totalKg', 'totalPcs', 'totalCargoDisplay', 'totalSales', 'totalCogs', 'totalProfit', 'selectedMonth', 'selectedYear'));
     }
 
     /**
@@ -131,7 +161,26 @@ class ReportController extends Controller
             ->orderBy('name')
             ->get();
 
-        $totalStock = (float) StockBalance::sum('current_stock');
+        $stockUnitTotals = DB::table('stock_balances')
+            ->join('scrap_items', 'stock_balances.scrap_item_id', '=', 'scrap_items.id')
+            ->selectRaw("
+                CASE 
+                    WHEN scrap_items.unit_type = 'pcs' OR LOWER(scrap_items.unit) IN ('pcs', 'buah', 'unit', 'satuan', 'biji', 'set') THEN 'pcs'
+                    ELSE 'kg'
+                END as unit_cat,
+                SUM(stock_balances.current_stock) as total_stock
+            ")
+            ->groupBy('unit_cat')
+            ->pluck('total_stock', 'unit_cat');
+
+        $totalStockKg = (float) ($stockUnitTotals['kg'] ?? 0);
+        $totalStockPcs = (float) ($stockUnitTotals['pcs'] ?? 0);
+        $stockCargoParts = [];
+        if ($totalStockKg > 0) $stockCargoParts[] = FormatHelper::weight($totalStockKg) . ' kg';
+        if ($totalStockPcs > 0) $stockCargoParts[] = number_format($totalStockPcs, 0, ',', '.') . ' pcs';
+        $totalStockDisplay = empty($stockCargoParts) ? '0 kg' : implode(' + ', $stockCargoParts);
+
+        $totalStock = $totalStockKg;
         $totalValue = (float) StockBalance::selectRaw('SUM(current_stock * average_buy_price) as val')->value('val');
 
         if ($format === 'csv') {
@@ -140,10 +189,10 @@ class ReportController extends Controller
 
         if ($format === 'print') {
             $settings = BusinessSetting::pluck('value', 'key')->all();
-            return response()->view('reports.stock_print', compact('items', 'totalStock', 'totalValue', 'settings'));
+            return response()->view('reports.stock_print', compact('items', 'totalStock', 'totalStockKg', 'totalStockPcs', 'totalStockDisplay', 'totalValue', 'settings'));
         }
 
-        return view('reports.stock', compact('items', 'totalStock', 'totalValue'));
+        return view('reports.stock', compact('items', 'totalStock', 'totalStockKg', 'totalStockPcs', 'totalStockDisplay', 'totalValue'));
     }
 
     /**
@@ -232,16 +281,38 @@ class ReportController extends Controller
             ->when($endDate, fn($q) => $q->whereDate('sales_transactions.transaction_date', '<=', $endDate))
             ->select(
                 'sales_transaction_items.item_name_snapshot as item_name',
-                DB::raw('SUM(sales_transaction_items.weight) as total_weight'),
+                DB::raw("COALESCE(MAX(sales_transaction_items.unit_type), 'kg') as unit"),
+                DB::raw("SUM(CASE WHEN sales_transaction_items.unit_type = 'pcs' THEN sales_transaction_items.quantity ELSE sales_transaction_items.weight END) as total_weight"),
                 DB::raw('SUM(sales_transaction_items.subtotal) as total_amount'),
                 DB::raw('SUM(sales_transaction_items.cogs_subtotal) as total_cogs'),
                 DB::raw('SUM(sales_transaction_items.profit_subtotal) as total_profit'),
-                DB::raw('CASE WHEN SUM(sales_transaction_items.weight) > 0 THEN (SUM(sales_transaction_items.cogs_subtotal) / SUM(sales_transaction_items.weight)) ELSE AVG(sales_transaction_items.buy_price_snapshot) END as avg_buy_price'),
-                DB::raw('CASE WHEN SUM(sales_transaction_items.weight) > 0 THEN (SUM(sales_transaction_items.subtotal) / SUM(sales_transaction_items.weight)) ELSE AVG(sales_transaction_items.sell_price_per_kg) END as avg_sell_price')
+                DB::raw("CASE WHEN SUM(CASE WHEN sales_transaction_items.unit_type = 'pcs' THEN sales_transaction_items.quantity ELSE sales_transaction_items.weight END) > 0 THEN (SUM(sales_transaction_items.cogs_subtotal) / SUM(CASE WHEN sales_transaction_items.unit_type = 'pcs' THEN sales_transaction_items.quantity ELSE sales_transaction_items.weight END)) ELSE AVG(sales_transaction_items.buy_price_snapshot) END as avg_buy_price"),
+                DB::raw("CASE WHEN SUM(CASE WHEN sales_transaction_items.unit_type = 'pcs' THEN sales_transaction_items.quantity ELSE sales_transaction_items.weight END) > 0 THEN (SUM(sales_transaction_items.subtotal) / SUM(CASE WHEN sales_transaction_items.unit_type = 'pcs' THEN sales_transaction_items.quantity ELSE sales_transaction_items.weight END)) ELSE AVG(sales_transaction_items.sell_price_per_kg) END as avg_sell_price")
             )
             ->groupBy('sales_transaction_items.item_name_snapshot')
             ->orderByDesc('total_weight')
             ->get();
+
+        $salesUnitBreakdown = DB::table('sales_transaction_items')
+            ->join('sales_transactions', 'sales_transaction_items.sales_transaction_id', '=', 'sales_transactions.id')
+            ->where('sales_transactions.status', 'completed')
+            ->when($startDate, fn($q) => $q->whereDate('sales_transactions.transaction_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('sales_transactions.transaction_date', '<=', $endDate))
+            ->selectRaw("
+                CASE 
+                    WHEN sales_transaction_items.unit_type = 'pcs' THEN 'pcs'
+                    ELSE 'kg'
+                END as unit_cat,
+                SUM(CASE WHEN sales_transaction_items.unit_type = 'pcs' THEN sales_transaction_items.quantity ELSE sales_transaction_items.weight END) as total_qty
+            ")
+            ->groupBy('unit_cat')
+            ->pluck('total_qty', 'unit_cat');
+        $salKg = (float) ($salesUnitBreakdown['kg'] ?? 0);
+        $salPcs = (float) ($salesUnitBreakdown['pcs'] ?? 0);
+        $salParts = [];
+        if ($salKg > 0) $salParts[] = FormatHelper::weight($salKg) . ' kg';
+        if ($salPcs > 0) $salParts[] = number_format($salPcs, 0, ',', '.') . ' pcs';
+        $totalSalesCargoDisplay = empty($salParts) ? '0 kg' : implode(' + ', $salParts);
 
         // 2. DATA PEMBELIAN / BARANG MASUK (PENAMBAHAN ASET PERSEDIAAN GUDANG)
         $purchasesQuery = PurchaseTransaction::where('status', 'completed')
@@ -260,15 +331,37 @@ class ReportController extends Controller
             ->when($endDate, fn($q) => $q->whereDate('purchase_transactions.transaction_date', '<=', $endDate))
             ->select(
                 'purchase_transaction_items.item_name_snapshot as item_name',
-                DB::raw('SUM(purchase_transaction_items.net_weight) as total_weight'),
+                DB::raw("COALESCE(MAX(purchase_transaction_items.unit_type), MAX(scrap_items.unit), 'kg') as unit"),
+                DB::raw("SUM(CASE WHEN purchase_transaction_items.unit_type = 'pcs' THEN purchase_transaction_items.quantity ELSE purchase_transaction_items.net_weight END) as total_weight"),
                 DB::raw('SUM(purchase_transaction_items.subtotal) as total_amount'),
-                DB::raw('CASE WHEN SUM(purchase_transaction_items.net_weight) > 0 THEN (SUM(purchase_transaction_items.subtotal) / SUM(purchase_transaction_items.net_weight)) ELSE AVG(purchase_transaction_items.price_per_kg) END as avg_buy_price'),
+                DB::raw("CASE WHEN SUM(CASE WHEN purchase_transaction_items.unit_type = 'pcs' THEN purchase_transaction_items.quantity ELSE purchase_transaction_items.net_weight END) > 0 THEN (SUM(purchase_transaction_items.subtotal) / SUM(CASE WHEN purchase_transaction_items.unit_type = 'pcs' THEN purchase_transaction_items.quantity ELSE purchase_transaction_items.net_weight END)) ELSE AVG(purchase_transaction_items.price_per_kg) END as avg_buy_price"),
                 DB::raw('COALESCE(MAX(scrap_items.sell_price_per_kg), 0) as current_sell_price'),
-                DB::raw('SUM(purchase_transaction_items.net_weight * COALESCE(scrap_items.sell_price_per_kg, purchase_transaction_items.price_per_kg)) as estimated_sales_value')
+                DB::raw("SUM((CASE WHEN purchase_transaction_items.unit_type = 'pcs' THEN purchase_transaction_items.quantity ELSE purchase_transaction_items.net_weight END) * COALESCE(scrap_items.sell_price_per_kg, purchase_transaction_items.price_per_kg)) as estimated_sales_value")
             )
             ->groupBy('purchase_transaction_items.item_name_snapshot')
             ->orderByDesc('total_weight')
             ->get();
+
+        $purUnitBreakdown = DB::table('purchase_transaction_items')
+            ->join('purchase_transactions', 'purchase_transaction_items.purchase_transaction_id', '=', 'purchase_transactions.id')
+            ->where('purchase_transactions.status', 'completed')
+            ->when($startDate, fn($q) => $q->whereDate('purchase_transactions.transaction_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('purchase_transactions.transaction_date', '<=', $endDate))
+            ->selectRaw("
+                CASE 
+                    WHEN purchase_transaction_items.unit_type = 'pcs' THEN 'pcs'
+                    ELSE 'kg'
+                END as unit_cat,
+                SUM(CASE WHEN purchase_transaction_items.unit_type = 'pcs' THEN purchase_transaction_items.quantity ELSE purchase_transaction_items.net_weight END) as total_qty
+            ")
+            ->groupBy('unit_cat')
+            ->pluck('total_qty', 'unit_cat');
+        $purKg = (float) ($purUnitBreakdown['kg'] ?? 0);
+        $purPcs = (float) ($purUnitBreakdown['pcs'] ?? 0);
+        $purParts = [];
+        if ($purKg > 0) $purParts[] = FormatHelper::weight($purKg) . ' kg';
+        if ($purPcs > 0) $purParts[] = number_format($purPcs, 0, ',', '.') . ' pcs';
+        $totalPurchasesCargoDisplay = empty($purParts) ? '0 kg' : implode(' + ', $purParts);
 
         $totalEstimatedInventorySales = (float) $incomingItems->sum('estimated_sales_value');
         $totalPotentialInventoryProfit = $totalEstimatedInventorySales - $totalPurchases;
@@ -300,6 +393,24 @@ class ReportController extends Controller
                     'stock_value' => $stockValue,
                 ];
             });
+
+        $stockUnitTotals = DB::table('stock_balances')
+            ->join('scrap_items', 'stock_balances.scrap_item_id', '=', 'scrap_items.id')
+            ->selectRaw("
+                CASE 
+                    WHEN scrap_items.unit_type = 'pcs' OR LOWER(scrap_items.unit) IN ('pcs', 'buah', 'unit', 'satuan', 'biji', 'set') THEN 'pcs'
+                    ELSE 'kg'
+                END as unit_cat,
+                SUM(stock_balances.current_stock) as total_stock
+            ")
+            ->groupBy('unit_cat')
+            ->pluck('total_stock', 'unit_cat');
+        $sKg = (float) ($stockUnitTotals['kg'] ?? 0);
+        $sPcs = (float) ($stockUnitTotals['pcs'] ?? 0);
+        $sParts = [];
+        if ($sKg > 0) $sParts[] = FormatHelper::weight($sKg) . ' kg';
+        if ($sPcs > 0) $sParts[] = number_format($sPcs, 0, ',', '.') . ' pcs';
+        $totalCurrentStockDisplay = empty($sParts) ? '0 kg' : implode(' + ', $sParts);
 
         $totalCurrentStock = (float) $stockBalanceItems->sum('current_stock');
         $totalCurrentStockValue = (float) $stockBalanceItems->sum('stock_value');
@@ -337,9 +448,9 @@ class ReportController extends Controller
 
         $viewData = compact(
             'startDate', 'endDate', 'allDates', 'selectedMonth', 'selectedYear',
-            'totalSales', 'totalSalesWeight', 'totalCogs', 'totalSalesTxCount', 'grossProfit', 'outgoingItems',
-            'totalPurchases', 'totalPurchasesWeight', 'totalPurchasesTxCount', 'incomingItems',
-            'stockBalanceItems', 'totalCurrentStock', 'totalCurrentStockValue',
+            'totalSales', 'totalSalesWeight', 'totalSalesCargoDisplay', 'totalCogs', 'totalSalesTxCount', 'grossProfit', 'outgoingItems',
+            'totalPurchases', 'totalPurchasesWeight', 'totalPurchasesCargoDisplay', 'totalPurchasesTxCount', 'incomingItems',
+            'stockBalanceItems', 'totalCurrentStock', 'totalCurrentStockDisplay', 'totalCurrentStockValue',
             'totalEstimatedInventorySales', 'totalPotentialInventoryProfit',
             'salarySlips', 'totalSalaries', 'totalSalariesGross',
             'expenses', 'totalExpenses', 'expensesByCategory',
@@ -383,6 +494,31 @@ class ReportController extends Controller
         }], 'total_net_weight')
         ->get();
 
+        foreach ($cashiers as $c) {
+            $breakdown = DB::table('purchase_transaction_items')
+                ->join('purchase_transactions', 'purchase_transaction_items.purchase_transaction_id', '=', 'purchase_transactions.id')
+                ->where('purchase_transactions.user_id', $c->id)
+                ->where('purchase_transactions.status', 'completed')
+                ->whereDate('purchase_transactions.transaction_date', '>=', $startDate)
+                ->whereDate('purchase_transactions.transaction_date', '<=', $endDate)
+                ->selectRaw("
+                    CASE 
+                        WHEN purchase_transaction_items.unit_type = 'pcs' THEN 'pcs'
+                        ELSE 'kg'
+                    END as unit_cat,
+                    SUM(CASE WHEN purchase_transaction_items.unit_type = 'pcs' THEN purchase_transaction_items.quantity ELSE purchase_transaction_items.net_weight END) as total_qty
+                ")
+                ->groupBy('unit_cat')
+                ->pluck('total_qty', 'unit_cat');
+
+            $cKg = (float) ($breakdown['kg'] ?? 0);
+            $cPcs = (float) ($breakdown['pcs'] ?? 0);
+            $parts = [];
+            if ($cKg > 0) $parts[] = FormatHelper::weight($cKg) . ' kg';
+            if ($cPcs > 0) $parts[] = number_format($cPcs, 0, ',', '.') . ' pcs';
+            $c->total_cargo_display = empty($parts) ? '0 kg' : implode(' + ', $parts);
+        }
+
         return view('reports.cashier', compact('cashiers', 'startDate', 'endDate', 'selectedMonth', 'selectedYear'));
     }
 
@@ -397,7 +533,7 @@ class ReportController extends Controller
         ];
 
         $output = "\xEF\xBB\xBF"; // UTF-8 BOM
-        $output .= "No,Tanggal,No Nota,Pemasok,Kasir,Kode,Nama Barang,Berat Bersih (kg),Harga/kg,Subtotal\n";
+        $output .= "No,Tanggal,No Nota,Pemasok,Kasir,Kode,Nama Barang,Muatan / Berat,Satuan,Harga / Satuan,Subtotal\n";
 
         foreach ($items as $idx => $item) {
             $tx = $item->transaction;
@@ -409,7 +545,8 @@ class ReportController extends Controller
                 $tx->user?->name,
                 $item->item_code_snapshot,
                 str_replace(',', ' ', $item->item_name_snapshot),
-                $item->net_weight,
+                $item->quantity_or_weight,
+                $item->effective_unit,
                 $item->price_per_kg,
                 $item->subtotal,
             ];
@@ -428,7 +565,7 @@ class ReportController extends Controller
         ];
 
         $output = "\xEF\xBB\xBF";
-        $output .= "No,Tanggal,No Nota,Pembeli,Kode,Nama Barang,Berat (kg),Harga Beli/kg,Harga Jual/kg,Subtotal,Estimasi Laba\n";
+        $output .= "No,Tanggal,No Nota,Pembeli,Kode,Nama Barang,Muatan / Berat,Satuan,Harga Beli / Satuan,Harga Jual / Satuan,Subtotal,Estimasi Laba\n";
 
         foreach ($items as $idx => $item) {
             $tx = $item->transaction;
@@ -439,7 +576,8 @@ class ReportController extends Controller
                 str_replace(',', ' ', $tx->buyer_name),
                 $item->item_code_snapshot,
                 str_replace(',', ' ', $item->item_name_snapshot),
-                $item->weight,
+                $item->quantity_or_weight,
+                $item->effective_unit,
                 $item->buy_price_snapshot,
                 $item->sell_price_per_kg,
                 $item->subtotal,
@@ -460,7 +598,7 @@ class ReportController extends Controller
         ];
 
         $output = "\xEF\xBB\xBF";
-        $output .= "Kode,Nama Barang,Kategori,Stok (kg),Rata-rata Harga Beli,Estimasi Nilai Stok,Harga Beli Terkini,Harga Jual Terkini\n";
+        $output .= "Kode,Nama Barang,Kategori,Stok Fisik,Satuan,Rata-rata Harga Beli,Estimasi Nilai Stok,Harga Beli Terkini,Harga Jual Terkini\n";
 
         foreach ($items as $item) {
             $bal = $item->stockBalance;
@@ -473,6 +611,7 @@ class ReportController extends Controller
                 str_replace(',', ' ', $item->name),
                 $item->category?->name,
                 $qty,
+                $item->unit_type ?: ($item->unit ?? 'kg'),
                 $avg,
                 $val,
                 $item->buy_price_per_kg,

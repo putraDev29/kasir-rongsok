@@ -87,7 +87,7 @@
                 <span class="text-[10px] bg-blue-100 text-blue-800 font-semibold px-2 py-0.5 rounded-full">Aset Gudang</span>
             </div>
             <div class="text-xl font-black text-slate-900 mt-1 font-mono">
-                {{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg
+                {{ $totalPurchasesCargoDisplay ?? (\App\Services\FormatHelper::weight($totalPurchasesWeight) . ' kg') }}
             </div>
             <div class="text-xs font-bold text-slate-700 font-mono mt-0.5">
                 Modal Beli: Rp {{ number_format($totalPurchases, 0, ',', '.') }}
@@ -102,7 +102,7 @@
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Barang Keluar (Jual Pabrik)</span>
             <div class="text-xl font-black text-slate-900 mt-1 font-mono">
-                {{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg
+                {{ $totalSalesCargoDisplay ?? (\App\Services\FormatHelper::weight($totalSalesWeight) . ' kg') }}
             </div>
             <div class="text-xs font-bold text-emerald-600 font-mono mt-0.5">
                 Omzet: Rp {{ number_format($totalSales, 0, ',', '.') }}
@@ -154,7 +154,7 @@
             <div class="space-y-1">
                 <span class="font-bold text-blue-950 block">Prinsip Akuntansi Kasir Rongsok (Stok & Persediaan):</span>
                 <p class="text-[11px] text-blue-800 leading-relaxed">
-                    Pembelian rongsok dari masyarakat/pengepul pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg) dicatat sebagai <strong>Penambahan Aset Persediaan Fisik Gudang</strong> dan <strong>bukan beban yang mengurangi laba</strong>. Modal kas terkonversi menjadi aset persediaan fisik rongsok di gudang depo untuk siap disortir dan dijual kembali ke pabrik peleburan.
+                    Pembelian rongsok dari masyarakat/pengepul pada periode ini sebesar <strong>Rp {{ number_format($totalPurchases, 0, ',', '.') }}</strong> ({{ $totalPurchasesCargoDisplay ?? (\App\Services\FormatHelper::weight($totalPurchasesWeight) . ' kg') }}) dicatat sebagai <strong>Penambahan Aset Persediaan Fisik Gudang</strong> dan <strong>bukan beban yang mengurangi laba</strong>. Modal kas terkonversi menjadi aset persediaan fisik rongsok di gudang depo untuk siap disortir dan dijual kembali ke pabrik peleburan.
                 </p>
             </div>
         </div>
@@ -168,7 +168,7 @@
                     <span class="font-mono text-sm">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
                 </div>
                 <div class="flex justify-between text-xs text-slate-600 pl-4">
-                    <span>Penjualan Material Scrap & Daur Ulang Partai Grosir / Kirim ke Pabrik ({{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg)</span>
+                    <span>Penjualan Material Scrap & Daur Ulang Partai Grosir / Kirim ke Pabrik ({{ $totalSalesCargoDisplay ?? (\App\Services\FormatHelper::weight($totalSalesWeight) . ' kg') }})</span>
                     <span class="font-mono font-medium">Rp {{ number_format($totalSales, 0, ',', '.') }}</span>
                 </div>
                 @if($totalSales == 0)
@@ -265,7 +265,7 @@
             </div>
             <div class="flex items-center gap-2 text-xs">
                 <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-800 font-mono font-bold">
-                    Total Stok: {{ \App\Services\FormatHelper::weight($totalCurrentStock) }} kg
+                    Total Stok: {{ $totalCurrentStockDisplay ?? (\App\Services\FormatHelper::weight($totalCurrentStock) . ' kg') }}
                 </span>
                 <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 font-mono font-bold">
                     Nilai Aset: Rp {{ number_format($totalCurrentStockValue, 0, ',', '.') }}
@@ -310,7 +310,7 @@
                 <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
                     <tr>
                         <td colspan="4" class="py-2.5 px-3 text-slate-800">TOTAL SISA STOK & NILAI MODAL</td>
-                        <td class="py-2.5 px-3 text-right font-mono text-indigo-700 font-black">{{ \App\Services\FormatHelper::weight($totalCurrentStock) }} kg</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-indigo-700 font-black">{{ $totalCurrentStockDisplay ?? (\App\Services\FormatHelper::weight($totalCurrentStock) . ' kg') }}</td>
                         <td colspan="2" class="py-2.5 px-3 text-center text-slate-400 text-[11px] font-normal">-</td>
                         <td class="py-2.5 px-4 text-right font-mono text-slate-900 font-black">Rp {{ number_format($totalCurrentStockValue, 0, ',', '.') }}</td>
                     </tr>
@@ -333,7 +333,7 @@
             </div>
             <div class="flex items-center gap-2 text-xs">
                 <span class="px-2.5 py-1 rounded bg-blue-50 text-blue-800 font-mono font-bold">
-                    {{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg
+                    {{ $totalPurchasesCargoDisplay ?? (\App\Services\FormatHelper::weight($totalPurchasesWeight) . ' kg') }}
                 </span>
                 <span class="px-2.5 py-1 rounded bg-slate-100 text-slate-800 font-mono font-bold">
                     Rp {{ number_format($totalPurchases, 0, ',', '.') }}
@@ -347,8 +347,8 @@
                     <tr class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                         <th class="py-2.5 px-3 w-12 text-center">No</th>
                         <th class="py-2.5 px-3">Jenis Barang</th>
-                        <th class="py-2.5 px-3 text-right">Harga Beli (@ Rp/kg)</th>
-                        <th class="py-2.5 px-3 text-right">Berat Masuk (kg)</th>
+                        <th class="py-2.5 px-3 text-right">Harga Beli (@ Rp/kg) / Satuan</th>
+                        <th class="py-2.5 px-3 text-right">Muatan / Berat Masuk</th>
                         <th class="py-2.5 px-4 text-right">Total Modal Beli</th>
                     </tr>
                 </thead>
@@ -357,8 +357,8 @@
                         <tr class="hover:bg-slate-50/80">
                             <td class="py-2.5 px-3 text-center text-slate-400 font-mono text-[11px]">{{ $idx + 1 }}</td>
                             <td class="py-2.5 px-3 font-semibold text-slate-900">{{ $inItem->item_name }}</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-slate-700">Rp {{ number_format($inItem->avg_buy_price, 0, ',', '.') }}</td>
-                            <td class="py-2.5 px-3 text-right font-mono font-bold text-blue-700">{{ \App\Services\FormatHelper::weight($inItem->total_weight) }} kg</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-slate-700">Rp {{ number_format($inItem->avg_buy_price, 0, ',', '.') }}/{{ $inItem->unit ?? 'kg' }}</td>
+                            <td class="py-2.5 px-3 text-right font-mono font-bold text-blue-700">{{ \App\Services\FormatHelper::weight($inItem->total_weight) }} {{ $inItem->unit ?? 'kg' }}</td>
                             <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900">Rp {{ number_format($inItem->total_amount, 0, ',', '.') }}</td>
                         </tr>
                     @empty
@@ -370,7 +370,7 @@
                 <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
                     <tr>
                         <td colspan="3" class="py-2.5 px-3 text-slate-800">TOTAL STOK MASUK</td>
-                        <td class="py-2.5 px-3 text-right font-mono text-blue-700 font-black">{{ \App\Services\FormatHelper::weight($totalPurchasesWeight) }} kg</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-blue-700 font-black">{{ $totalPurchasesCargoDisplay ?? (\App\Services\FormatHelper::weight($totalPurchasesWeight) . ' kg') }}</td>
                         <td class="py-2.5 px-4 text-right font-mono text-slate-900 font-black">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</td>
                     </tr>
                 </tfoot>
@@ -392,7 +392,7 @@
             </div>
             <div class="flex items-center gap-2 text-xs">
                 <span class="px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 font-mono font-bold">
-                    {{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg
+                    {{ $totalSalesCargoDisplay ?? (\App\Services\FormatHelper::weight($totalSalesWeight) . ' kg') }}
                 </span>
                 <span class="px-2.5 py-1 rounded bg-slate-100 text-slate-800 font-mono font-bold">
                     Omzet: Rp {{ number_format($totalSales, 0, ',', '.') }}
@@ -406,9 +406,9 @@
                     <tr class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                         <th class="py-2.5 px-3 w-12 text-center">No</th>
                         <th class="py-2.5 px-3">Jenis Barang</th>
-                        <th class="py-2.5 px-3 text-right">Berat Keluar (kg)</th>
-                        <th class="py-2.5 px-3 text-right">Harga Beli (@ Rp/kg)</th>
-                        <th class="py-2.5 px-3 text-right">Harga Jual (@ Rp/kg)</th>
+                        <th class="py-2.5 px-3 text-right">Muatan / Berat Keluar</th>
+                        <th class="py-2.5 px-3 text-right">Harga Beli (@ Rp/kg) / Satuan</th>
+                        <th class="py-2.5 px-3 text-right">Harga Jual (@ Rp/kg) / Satuan</th>
                         <th class="py-2.5 px-3 text-right">Total Modal HPP</th>
                         <th class="py-2.5 px-3 text-right">Total Omzet Jual</th>
                         <th class="py-2.5 px-4 text-right">Laba Kotor Penjualan</th>
@@ -419,9 +419,9 @@
                         <tr class="hover:bg-slate-50/80">
                             <td class="py-2.5 px-3 text-center text-slate-400 font-mono text-[11px]">{{ $idx + 1 }}</td>
                             <td class="py-2.5 px-3 font-semibold text-slate-900">{{ $outItem->item_name }}</td>
-                            <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">{{ \App\Services\FormatHelper::weight($outItem->total_weight) }} kg</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-slate-600">Rp {{ number_format($outItem->avg_buy_price, 0, ',', '.') }}</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-emerald-700 font-semibold">Rp {{ number_format($outItem->avg_sell_price, 0, ',', '.') }}</td>
+                            <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-800">{{ \App\Services\FormatHelper::weight($outItem->total_weight) }} {{ $outItem->unit ?? 'kg' }}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-slate-600">Rp {{ number_format($outItem->avg_buy_price, 0, ',', '.') }}/{{ $outItem->unit ?? 'kg' }}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-emerald-700 font-semibold">Rp {{ number_format($outItem->avg_sell_price, 0, ',', '.') }}/{{ $outItem->unit ?? 'kg' }}</td>
                             <td class="py-2.5 px-3 text-right font-mono text-red-700">Rp {{ number_format($outItem->total_cogs, 0, ',', '.') }}</td>
                             <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">Rp {{ number_format($outItem->total_amount, 0, ',', '.') }}</td>
                             <td class="py-2.5 px-4 text-right font-mono font-black text-emerald-600">Rp {{ number_format($outItem->total_profit, 0, ',', '.') }}</td>
@@ -435,7 +435,7 @@
                 <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
                     <tr>
                         <td colspan="2" class="py-2.5 px-3 text-slate-800">TOTAL PENJUALAN</td>
-                        <td class="py-2.5 px-3 text-right font-mono text-emerald-700 font-black">{{ \App\Services\FormatHelper::weight($totalSalesWeight) }} kg</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-emerald-700 font-black">{{ $totalSalesCargoDisplay ?? (\App\Services\FormatHelper::weight($totalSalesWeight) . ' kg') }}</td>
                         <td colspan="2" class="py-2.5 px-3 text-center text-slate-400 text-[11px] font-normal">-</td>
                         <td class="py-2.5 px-3 text-right font-mono text-red-700 font-black">Rp {{ number_format($totalCogs, 0, ',', '.') }}</td>
                         <td class="py-2.5 px-3 text-right font-mono text-slate-900 font-black">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>

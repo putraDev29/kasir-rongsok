@@ -24,7 +24,7 @@
                 <th>Pemasok</th>
                 <th>HP Pemasok</th>
                 <th>Rincian Barang</th>
-                <th>Total Berat Bersih (kg)</th>
+                <th>Total Muatan / Berat</th>
                 <th>Subtotal (Rp)</th>
                 <th>Potongan Diskon (Rp)</th>
                 <th>Potongan Bon/Hutang (Rp)</th>
@@ -53,7 +53,7 @@
                     <td>{{ $p->supplier_name }}</td>
                     <td class="str">{{ $p->supplier_phone }}</td>
                     <td>{{ $itemNames }}</td>
-                    <td class="weight">{{ $p->total_net_weight }}</td>
+                    <td class="str" align="right">{{ $p->total_cargo_display }}</td>
                     <td class="num">{{ $p->subtotal_amount }}</td>
                     <td class="num">{{ $p->discount_amount }}</td>
                     <td class="num">{{ $p->debt_deduction_amount }}</td>

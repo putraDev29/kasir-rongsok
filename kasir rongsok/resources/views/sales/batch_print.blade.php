@@ -42,6 +42,25 @@
 </head>
 <body class="bg-slate-100 min-h-screen p-4 flex flex-col items-center font-sans text-slate-900" x-data="{ sidebarOpen: false }">
 
+    @php
+        $batchKg = 0;
+        $batchPcs = 0;
+        foreach ($transactions as $t) {
+            foreach ($t->items as $i) {
+                $u = strtolower(trim($i->unit_type ?: 'kg'));
+                if (in_array($u, ['pcs', 'satuan', 'unit', 'buah'])) {
+                    $batchPcs += ($i->quantity > 0 ? $i->quantity : $i->weight);
+                } else {
+                    $batchKg += $i->weight;
+                }
+            }
+        }
+        $batchParts = [];
+        if ($batchKg > 0) $batchParts[] = \App\Services\FormatHelper::weight($batchKg) . ' kg';
+        if ($batchPcs > 0) $batchParts[] = \App\Services\FormatHelper::number($batchPcs) . ' pcs';
+        $batchCargoDisplay = count($batchParts) > 0 ? implode(' + ', $batchParts) : '0 kg';
+    @endphp
+
     <!-- Top Toolbar (Screen Only) -->
     <div class="no-print w-full max-w-5xl mb-4 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 sticky top-4 z-40">
         <div>
@@ -53,7 +72,7 @@
             </div>
             <div class="text-xs text-slate-500 mt-0.5">
                 Total: <strong class="text-slate-800">{{ $transactions->count() }} Faktur</strong> | 
-                Muatan: <strong class="text-slate-800">{{ \App\Services\FormatHelper::weight($totalWeight) }} kg</strong> | 
+                Muatan: <strong class="text-slate-800">{{ $batchCargoDisplay }}</strong> | 
                 Total Penjualan: <strong class="text-emerald-700">{{ \App\Services\FormatHelper::rupiah($totalSales) }}</strong> | 
                 Estimasi Laba: <strong class="text-emerald-700">{{ \App\Services\FormatHelper::rupiah($totalProfit) }}</strong>
             </div>
@@ -104,7 +123,7 @@
                         <th class="border border-slate-300 py-2 px-2.5 text-left w-28">No. Faktur</th>
                         <th class="border border-slate-300 py-2 px-2 text-center w-24">Tanggal</th>
                         <th class="border border-slate-300 py-2 px-3 text-left">Tujuan Pembeli / Pabrik</th>
-                        <th class="border border-slate-300 py-2 px-2.5 text-right w-24">Muatan (kg)</th>
+                        <th class="border border-slate-300 py-2 px-2.5 text-right w-24">Muatan / Satuan</th>
                         <th class="border border-slate-300 py-2 px-3 text-right w-28">Total Tagihan</th>
                         <th class="border border-slate-300 py-2 px-2.5 text-right w-28">Estimasi Laba</th>
                         <th class="border border-slate-300 py-2 px-2 text-center w-20">Status</th>
@@ -126,11 +145,11 @@
                                 <div class="mt-1 space-y-0.5 text-[10px] text-slate-600">
                                     @foreach($t->grouped_master_items as $gm)
                                         <div>
-                                            • <strong>{{ $gm->item_name }}</strong>: {{ \App\Services\FormatHelper::weight($gm->total_weight) }} kg
+                                            • <strong>{{ $gm->item_name }}</strong>: {{ $gm->total_quantity > 0 && ($gm->unit_type === 'pcs' || $gm->unit_type === 'satuan') ? \App\Services\FormatHelper::number($gm->total_quantity) . ' pcs' : \App\Services\FormatHelper::weight($gm->total_weight) . ' kg' }}
                                             @if($gm->has_variants)
                                                 <div class="pl-3 text-blue-700">
                                                     @foreach($gm->items as $vi)
-                                                        ↳ Varian: {{ $vi->item_type_name ?: 'Standar' }} ({{ \App\Services\FormatHelper::weight($vi->weight) }} kg @ Rp {{ number_format($vi->sell_price_per_kg, 0, ',', '.') }})
+                                                        ↳ Varian: {{ $vi->item_type_name ?: 'Standar' }} ({{ $vi->formatted_quantity }} @ Rp {{ number_format($vi->sell_price_per_kg, 0, ',', '.') }})
                                                     @endforeach
                                                 </div>
                                             @endif
@@ -138,7 +157,7 @@
                                     @endforeach
                                 </div>
                             </td>
-                            <td class="border border-slate-300 py-2 px-2.5 text-right font-mono font-semibold">{{ \App\Services\FormatHelper::weight($t->total_weight) }} kg</td>
+                            <td class="border border-slate-300 py-2 px-2.5 text-right font-mono font-semibold">{{ $t->total_cargo_display }}</td>
                             <td class="border border-slate-300 py-2 px-3 text-right font-mono font-bold text-slate-900">{{ \App\Services\FormatHelper::rupiah($t->final_amount) }}</td>
                             <td class="border border-slate-300 py-2 px-2.5 text-right font-mono text-emerald-700 font-semibold">{{ \App\Services\FormatHelper::rupiah($t->estimated_profit) }}</td>
                             <td class="border border-slate-300 py-2 px-2 text-center text-[10px] font-bold">
@@ -158,7 +177,7 @@
                 <tfoot>
                     <tr class="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-400">
                         <td colspan="4" class="border border-slate-300 py-2.5 px-3 text-right">TOTAL KESELURUHAN:</td>
-                        <td class="border border-slate-300 py-2.5 px-2.5 text-right font-mono text-xs">{{ \App\Services\FormatHelper::weight($totalWeight) }} kg</td>
+                        <td class="border border-slate-300 py-2.5 px-2.5 text-right font-mono text-xs">{{ $batchCargoDisplay }}</td>
                         <td class="border border-slate-300 py-2.5 px-3 text-right font-mono text-xs font-bold">{{ \App\Services\FormatHelper::rupiah($totalSales) }}</td>
                         <td class="border border-slate-300 py-2.5 px-2.5 text-right font-mono text-xs text-emerald-700 font-bold">{{ \App\Services\FormatHelper::rupiah($totalProfit) }}</td>
                         <td class="border border-slate-300"></td>

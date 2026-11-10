@@ -240,9 +240,9 @@
                             <th class="py-2.5 px-3">Kode</th>
                             <th class="py-2.5 px-3">Nama Barang</th>
                             <th class="py-2.5 px-3 text-right">Berat / Satuan</th>
-                            <th class="py-2.5 px-3 text-right">Harga Beli/kg</th>
+                            <th class="py-2.5 px-3 text-right">Harga Beli / Satuan</th>
                             <th class="py-2.5 px-3 text-right">Subtotal Beli</th>
-                            <th class="py-2.5 px-3 text-right">Harga Jual/kg</th>
+                            <th class="py-2.5 px-3 text-right">Harga Jual / Satuan</th>
                             <th class="py-2.5 px-3 text-right font-bold text-slate-900">Subtotal Harga Jual</th>
                             <th class="py-2.5 px-3 text-right font-bold text-emerald-700">Estimasi Laba</th>
                         </tr>
@@ -367,8 +367,8 @@
 
             <div class="w-full sm:w-80 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
                 <div class="flex justify-between text-slate-600">
-                    <span>Total Berat:</span>
-                    <span class="font-mono font-bold text-slate-900">{{ \App\Services\FormatHelper::weightOrDash($sale->total_weight) }}</span>
+                    <span>Total Muatan / Berat:</span>
+                    <span class="font-mono font-bold text-slate-900">{{ $sale->total_cargo_display }}</span>
                 </div>
                 <div class="flex justify-between text-slate-600">
                     <span>Total Subtotal Beli:</span>

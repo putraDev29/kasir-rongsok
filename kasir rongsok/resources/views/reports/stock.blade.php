@@ -8,9 +8,9 @@
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Akumulasi Stok Gudang</span>
             <div class="text-xl font-bold text-slate-900 mt-1">
-                {{ \App\Services\FormatHelper::weight($totalStock) }} <span class="text-xs font-semibold text-slate-500">kg</span>
+                {{ $totalStockDisplay ?? (\App\Services\FormatHelper::weight($totalStock) . ' kg') }}
             </div>
-            <div class="text-[11px] text-slate-400">Total berat fisik tersedia di depo</div>
+            <div class="text-[11px] text-slate-400">Total fisik tersedia di depo</div>
         </div>
 
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -49,11 +49,11 @@
                         <th class="py-2.5 px-3">Kode</th>
                         <th class="py-2.5 px-3">Nama Barang</th>
                         <th class="py-2.5 px-3">Kategori</th>
-                        <th class="py-2.5 px-3 text-right">Stok Fisik (kg)</th>
-                        <th class="py-2.5 px-3 text-right">Rata-Rata Beli/kg</th>
+                        <th class="py-2.5 px-3 text-right">Stok Fisik</th>
+                        <th class="py-2.5 px-3 text-right">Rata-Rata Beli / Satuan</th>
                         <th class="py-2.5 px-3 text-right font-bold text-purple-700">Estimasi Nilai</th>
-                        <th class="py-2.5 px-3 text-right">Harga Beli Master</th>
-                        <th class="py-2.5 px-3 text-right">Harga Jual Master</th>
+                        <th class="py-2.5 px-3 text-right">Harga Beli / Satuan</th>
+                        <th class="py-2.5 px-3 text-right">Harga Jual / Satuan</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-mono">
@@ -79,11 +79,11 @@
                                 @endif
                             </td>
                             <td class="py-3 px-3 text-slate-600">{{ $item->category?->name ?? '-' }}</td>
-                            <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($cur) }} {{ $item->unit_type ?: 'kg' }}</td>
-                            <td class="py-3 px-3 text-right font-mono text-slate-600">Rp {{ number_format($avg, 0, ',', '.') }}</td>
+                            <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($cur) }} {{ $item->unit_type ?: ($item->unit ?? 'kg') }}</td>
+                            <td class="py-3 px-3 text-right font-mono text-slate-600">Rp {{ number_format($avg, 0, ',', '.') }}/{{ $item->unit_type ?: ($item->unit ?? 'kg') }}</td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-purple-700">Rp {{ number_format($val, 0, ',', '.') }}</td>
-                            <td class="py-3 px-3 text-right font-mono text-emerald-700">Rp {{ number_format($item->buy_price_per_kg, 0, ',', '.') }}</td>
-                            <td class="py-3 px-3 text-right font-mono text-slate-700">Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }}</td>
+                            <td class="py-3 px-3 text-right font-mono text-emerald-700">Rp {{ number_format($item->buy_price_per_kg, 0, ',', '.') }}/{{ $item->unit_type ?: ($item->unit ?? 'kg') }}</td>
+                            <td class="py-3 px-3 text-right font-mono text-slate-700">Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }}/{{ $item->unit_type ?: ($item->unit ?? 'kg') }}</td>
                         </tr>
                     @endforeach
                 </tbody>

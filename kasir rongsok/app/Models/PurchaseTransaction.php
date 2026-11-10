@@ -105,6 +105,61 @@ class PurchaseTransaction extends Model
         return $this->status === self::STATUS_CANCELLED;
     }
 
+    /**
+     * Header label for the weight/quantity column based on item units in this purchase transaction.
+     */
+    public function getWeightColumnHeaderAttribute(): string
+    {
+        $units = $this->activeItems->map(fn($it) => $it->effective_unit)
+            ->filter()
+            ->unique();
+
+        if ($units->count() === 1 && $units->first() === 'pcs') {
+            return 'Jumlah (pcs)';
+        }
+        if ($units->count() === 1 && $units->first() === 'kg') {
+            return 'Berat Bersih (kg)';
+        }
+        return 'Berat / Satuan';
+    }
+
+    /**
+     * Formatted total cargo summary with units (e.g. "1.200 kg", "50 pcs", or "1.200 kg + 50 pcs").
+     */
+    public function getTotalCargoDisplayAttribute(): string
+    {
+        $kgTotal = 0;
+        $pcsTotal = 0;
+        $otherTotals = [];
+
+        foreach ($this->activeItems as $it) {
+            $u = $it->effective_unit;
+            $val = $it->quantity_or_weight;
+            if ($u === 'pcs') {
+                $pcsTotal += $val;
+            } elseif ($u === 'kg') {
+                $kgTotal += $val;
+            } else {
+                $otherTotals[$u] = ($otherTotals[$u] ?? 0) + $val;
+            }
+        }
+
+        $parts = [];
+        if ($kgTotal > 0) {
+            $parts[] = \App\Services\FormatHelper::weight($kgTotal) . ' kg';
+        }
+        if ($pcsTotal > 0) {
+            $parts[] = \App\Services\FormatHelper::number($pcsTotal) . ' pcs';
+        }
+        foreach ($otherTotals as $unit => $val) {
+            if ($val > 0) {
+                $parts[] = \App\Services\FormatHelper::number($val) . ' ' . $unit;
+            }
+        }
+
+        return count($parts) > 0 ? implode(' + ', $parts) : ($this->total_net_weight > 0 ? \App\Services\FormatHelper::weight($this->total_net_weight) . ' kg' : '0 kg');
+    }
+
     public function isBankPayment(): bool
     {
         $pm = $this->paymentMethod;

@@ -330,9 +330,9 @@
                 <th style="width: 14px; text-align: left;">#</th>
                 <th style="text-align: left;">NAMA MATERIAL SCRAP &amp; DAUR ULANG</th>
                 <th style="width: 48px; text-align: right;">BERAT / SATUAN</th>
-                <th style="width: 58px; text-align: right;">HARGA BELI/KG</th>
+                <th style="width: 58px; text-align: right;">HARGA BELI / SATUAN</th>
                 <th style="width: 62px; text-align: right;">SUBTOTAL BELI</th>
-                <th style="width: 58px; text-align: right;">HARGA JUAL/KG</th>
+                <th style="width: 58px; text-align: right;">HARGA JUAL / SATUAN</th>
                 <th style="width: 68px; text-align: right;">SUBTOTAL HARGA JUAL</th>
             </tr>
         </thead>
@@ -430,9 +430,9 @@
             <td style="width: 230px; padding-top: 4px;">
                 <table class="summary-table">
                     <tr>
-                        <td style="color: #475569;">Total Berat:</td>
+                        <td style="color: #475569;">Total Muatan:</td>
                         <td class="mono" style="text-align: right; font-weight: bold; color: #0f172a;">
-                            {{ \App\Services\FormatHelper::weightOrDash($sale->total_weight) }}
+                            {{ $sale->total_cargo_display }}
                         </td>
                     </tr>
                     <tr>

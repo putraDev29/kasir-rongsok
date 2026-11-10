@@ -73,12 +73,27 @@
                 </span>
             </div>
             @php
-                $batchTotalNet = $purchases->sum(fn($p) => $p->items->where('is_cancelled', false)->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight));
+                $batchKg = 0;
+                $batchPcs = 0;
+                foreach ($purchases as $p) {
+                    foreach ($p->items->where('is_cancelled', false) as $i) {
+                        $u = strtolower(trim($i->unit_type ?: 'kg'));
+                        if (in_array($u, ['pcs', 'satuan', 'unit', 'buah'])) {
+                            $batchPcs += ($i->quantity > 0 ? $i->quantity : $i->net_weight);
+                        } else {
+                            $batchKg += $i->net_weight;
+                        }
+                    }
+                }
+                $batchParts = [];
+                if ($batchKg > 0) $batchParts[] = \App\Services\FormatHelper::weight($batchKg) . ' kg';
+                if ($batchPcs > 0) $batchParts[] = \App\Services\FormatHelper::number($batchPcs) . ' pcs';
+                $batchCargoDisplay = count($batchParts) > 0 ? implode(' + ', $batchParts) : '0 kg';
                 $batchTotalAmount = $purchases->sum(fn($p) => max(0, $p->items->where('is_cancelled', false)->sum('subtotal') - min((float)($p->discount_amount ?? 0), $p->items->where('is_cancelled', false)->sum('subtotal')) + (float)($p->rounding_amount ?? 0)));
             @endphp
             <div class="text-xs text-slate-500 mt-0.5">
                 Total: <strong class="text-slate-800">{{ $purchases->count() }} Nota</strong> | 
-                Berat Bersih: <strong class="text-slate-800">{{ \App\Services\FormatHelper::weight($batchTotalNet) }} kg</strong> | 
+                Total Muatan: <strong class="text-slate-800">{{ $batchCargoDisplay }}</strong> | 
                 Total Nilai: <strong class="text-emerald-700">{{ \App\Services\FormatHelper::rupiah($batchTotalAmount) }}</strong>
             </div>
         </div>
@@ -113,7 +128,7 @@
             </div>
             <div class="text-right text-xs">
                 <div class="text-slate-600">Total Transaksi: <strong class="text-slate-900 text-sm font-black">{{ $purchases->count() }} Nota</strong></div>
-                <div class="text-slate-600">Total Berat: <strong class="text-slate-900 font-bold">{{ \App\Services\FormatHelper::weight($batchTotalNet) }} kg</strong></div>
+                <div class="text-slate-600">Total Muatan: <strong class="text-slate-900 font-bold">{{ $batchCargoDisplay }}</strong></div>
                 <div class="text-emerald-700 font-bold text-sm">{{ \App\Services\FormatHelper::rupiah($batchTotalAmount) }}</div>
             </div>
         </div>
@@ -282,9 +297,9 @@
                                         <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</span>
                                     </div>
                                     <div class="font-bold text-slate-900" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">
-                                        <span class="whitespace-nowrap">BERAT BERSIH</span>
+                                        <span class="whitespace-nowrap">TOTAL MUATAN</span>
                                         <span class="text-center">:</span>
-                                        <span class="text-right font-bold whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeNet) }} kg</span>
+                                        <span class="text-right font-bold whitespace-nowrap">{{ $purchase->total_cargo_display }}</span>
                                     </div>
                                     
                                     <div class="pt-1 border-t border-dotted border-slate-300" style="display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;">

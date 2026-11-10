@@ -60,14 +60,16 @@
         <!-- Total Berat Barang Diterima -->
         <div class="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between">
             <div>
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Timbangan Bersih</p>
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Timbangan Bersih / Satuan</p>
                 <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
-                    {{ \App\Services\FormatHelper::weight($metrics['total_purchases_weight']) }} <span class="text-base font-semibold text-slate-500">kg</span>
+                    {{ $metrics['total_purchases_display'] }}
                 </h3>
                 <div class="flex items-center gap-1.5 mt-2 text-xs text-slate-600 font-medium">
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-blue-100 text-blue-800 font-semibold">
-                        {{ \App\Services\FormatHelper::number($metrics['total_purchases_weight'] / 1000) }} Ton
-                    </span>
+                    @if(($metrics['total_purchases_kg'] ?? $metrics['total_purchases_weight']) > 0)
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-blue-100 text-blue-800 font-semibold">
+                            {{ \App\Services\FormatHelper::number(($metrics['total_purchases_kg'] ?? $metrics['total_purchases_weight']) / 1000) }} Ton
+                        </span>
+                    @endif
                     <span>Barang masuk gudang</span>
                 </div>
             </div>
@@ -81,7 +83,7 @@
             <div>
                 <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Stok Tersedia</p>
                 <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
-                    {{ \App\Services\FormatHelper::weight($metrics['total_stock_kg']) }} <span class="text-base font-semibold text-slate-500">kg</span>
+                    {{ $metrics['total_stock_display'] }}
                 </h3>
                 <div class="flex items-center gap-1.5 mt-2 text-xs text-slate-600 font-medium">
                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] bg-amber-100 text-amber-800 font-semibold">
@@ -126,7 +128,7 @@
                 <div class="text-lg font-bold text-slate-900">
                     Rp {{ number_format($metrics['total_sales_amount'], 0, ',', '.') }}
                 </div>
-                <div class="text-[11px] text-slate-500">{{ number_format($metrics['total_sales_weight'], 1) }} kg {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} terjual</div>
+                <div class="text-[11px] text-slate-500">{{ $metrics['total_sales_display'] }} {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} terjual</div>
             </div>
         </div>
 
@@ -297,10 +299,10 @@
                             </div>
                             <div class="text-right">
                                 <div class="text-xs font-bold text-slate-900">
-                                    {{ number_format($stockItem->current_stock_qty, 1, ',', '.') }} kg
+                                    {{ number_format($stockItem->current_stock_qty, ($stockItem->unit === 'pcs' || $stockItem->unit === 'satuan') ? 0 : 1, ',', '.') }} {{ $stockItem->unit ?? 'kg' }}
                                 </div>
                                 <div class="text-[10px] text-slate-500">
-                                    @ Rp {{ number_format($stockItem->average_buy_price, 0, ',', '.') }}
+                                    @ Rp {{ number_format($stockItem->average_buy_price, 0, ',', '.') }}/{{ $stockItem->unit ?? 'kg' }}
                                 </div>
                             </div>
                         </div>
@@ -343,7 +345,7 @@
                         <tr>
                             <th class="py-2.5 px-3">No. Nota</th>
                             <th class="py-2.5 px-3">Pemasok</th>
-                            <th class="py-2.5 px-3 text-right">Berat Bersih</th>
+                            <th class="py-2.5 px-3 text-right">Berat / Satuan</th>
                             <th class="py-2.5 px-3 text-right">Total Bayar</th>
                             <th class="py-2.5 px-3">Kasir</th>
                             <th class="py-2.5 px-3 text-center">Aksi</th>
@@ -362,7 +364,7 @@
                                     {{ $tx->supplier_name }}
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-medium text-slate-800">
-                                    {{ \App\Services\FormatHelper::weight($tx->total_net_weight) }} kg
+                                    {{ $tx->total_cargo_display }}
                                 </td>
                                 <td class="py-2.5 px-3 text-right font-bold text-slate-900">
                                     Rp {{ number_format($tx->final_amount, 0, ',', '.') }}

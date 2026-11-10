@@ -46,15 +46,20 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Satuan Timbangan *</label>
-                    <input type="text" name="unit" value="{{ old('unit', 'kg') }}" required
-                           class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-medium">
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Satuan Barang *</label>
+                    <select name="unit" required
+                           class="w-full py-2 px-3 text-xs rounded-lg border border-slate-300 focus:ring-emerald-500 font-bold bg-white text-slate-800">
+                        <option value="kg" {{ old('unit', 'kg') === 'kg' ? 'selected' : '' }}>⚖️ KG (Kilogram / Berat)</option>
+                        <option value="pcs" {{ old('unit') === 'pcs' ? 'selected' : '' }}>📦 PCS (Pieces / Biji / Satuan)</option>
+                        <option value="unit" {{ old('unit') === 'unit' ? 'selected' : '' }}>🔢 UNIT (Barang Satuan)</option>
+                        <option value="set" {{ old('unit') === 'set' ? 'selected' : '' }}>🧩 SET</option>
+                    </select>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Beli Standar / kg (Rp) *</label>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Beli Standar / Satuan (Rp) *</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
                         <input type="text" inputmode="numeric" name="buy_price_per_kg" x-rupiah="buyPrice" value="{{ old('buy_price_per_kg', 0) }}" required
@@ -64,7 +69,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Jual / kg (Rp)</label>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Jual Standar / Satuan (Rp)</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
                         <input type="text" inputmode="numeric" name="sell_price_per_kg" x-rupiah="sellPrice" value="{{ old('sell_price_per_kg', 0) }}"

@@ -127,7 +127,7 @@
                                 <tr class="bg-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-600 border-b border-slate-200">
                                     <th class="py-2 px-3 w-12 text-center">No</th>
                                     <th class="py-2 px-4">Nama {{ \App\Models\BusinessSetting::commodityTerm() }}</th>
-                                    <th class="py-2 px-4 w-48 text-right">Harga Beli per Kg</th>
+                                    <th class="py-2 px-4 w-48 text-right">Harga Beli per Kg / Satuan</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -139,7 +139,7 @@
                                         </td>
                                         <td class="py-2 px-4 text-right font-mono font-black text-emerald-700 text-base">
                                             Rp {{ number_format($item->buy_price_per_kg, 0, ',', '.') }}
-                                            <span class="text-[11px] text-slate-500 font-sans font-normal">/ kg</span>
+                                            <span class="text-[11px] text-slate-500 font-sans font-normal">/ {{ $item->unit ?? 'kg' }}</span>
                                         </td>
                                     </tr>
                                 @endforeach

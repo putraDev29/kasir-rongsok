@@ -147,7 +147,7 @@
                             <!-- Total Setoran (kg & Frekuensi) -->
                             <td class="py-3 px-3 text-right">
                                 <div class="font-mono font-bold text-slate-900 text-xs">
-                                    {{ \App\Services\FormatHelper::weight($sup->total_weight) }} kg
+                                    {{ $sup->total_cargo_display }}
                                 </div>
                                 <div class="text-[10px] text-emerald-700 font-medium">
                                     {{ $sup->total_transactions_count }}x Penimbangan

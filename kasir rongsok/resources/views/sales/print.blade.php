@@ -153,9 +153,9 @@
                         <th class="py-2 px-1">#</th>
                         <th class="py-2 px-2">Nama Material Scrap & Daur Ulang</th>
                         <th class="py-2 px-2 text-right">Berat / Satuan</th>
-                        <th class="py-2 px-2 text-right">Harga Beli/kg</th>
+                        <th class="py-2 px-2 text-right">Harga Beli / Satuan</th>
                         <th class="py-2 px-2 text-right">Subtotal Beli</th>
-                        <th class="py-2 px-2 text-right">Harga Jual/kg</th>
+                        <th class="py-2 px-2 text-right">Harga Jual / Satuan</th>
                         <th class="py-2 px-2 text-right font-bold text-slate-900">Subtotal Harga Jual</th>
                     </tr>
                 </thead>
@@ -253,8 +253,8 @@
         <div class="pt-2 border-t border-slate-300 flex justify-end font-mono">
             <div class="w-72 space-y-1">
                 <div class="flex justify-between text-slate-600">
-                    <span>Total Berat:</span>
-                    <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weightOrDash($sale->total_weight) }}</span>
+                    <span>Total Muatan / Berat:</span>
+                    <span class="font-bold text-slate-900">{{ $sale->total_cargo_display }}</span>
                 </div>
                 <div class="flex justify-between text-slate-600">
                     <span>Total Subtotal Beli:</span>

@@ -24,7 +24,7 @@
                 <th>Nama Pembeli / Pabrik</th>
                 <th>HP Pembeli</th>
                 <th>Rincian Muatan Barang</th>
-                <th>Total Berat (kg)</th>
+                <th>Total Muatan / Berat</th>
                 <th>Total Modal HPP (Rp)</th>
                 <th>Total Penjualan (Rp)</th>
                 <th>Estimasi Laba Kotor (Rp)</th>
@@ -35,18 +35,26 @@
         </thead>
         <tbody>
             @php 
-                $sumWeight = 0;
+                $sumWeightKg = 0;
+                $sumQtyPcs = 0;
                 $sumCogs = 0;
                 $sumSales = 0;
                 $sumProfit = 0;
             @endphp
             @foreach($sales as $idx => $s)
                 @php 
-                    $sumWeight += $s->total_weight;
                     $sumCogs += $s->cogs_amount;
                     $sumSales += $s->final_amount;
                     $sumProfit += $s->estimated_profit;
-                    $itemDetails = $s->items->map(fn($it) => $it->item_name_snapshot . ($it->item_type_name ? ' ('.$it->item_type_name.')' : '') . ': ' . ($it->unit_type == 'pcs' ? $it->quantity.' pcs' : $it->weight.' kg'))->implode('; ');
+                    foreach($s->items as $it) {
+                        $u = strtolower($it->effective_unit ?? $it->unit_type ?? 'kg');
+                        if (in_array($u, ['pcs', 'buah', 'unit', 'satuan', 'biji', 'set'])) {
+                            $sumQtyPcs += ($it->quantity ?: $it->weight);
+                        } else {
+                            $sumWeightKg += ($it->weight ?: $it->quantity);
+                        }
+                    }
+                    $itemDetails = $s->items->map(fn($it) => $it->item_name_snapshot . ($it->item_type_name ? ' ('.$it->item_type_name.')' : '') . ': ' . $it->formatted_quantity)->implode('; ');
                 @endphp
                 <tr>
                     <td align="center">{{ $idx + 1 }}</td>
@@ -55,7 +63,7 @@
                     <td><strong>{{ $s->buyer_name }}</strong></td>
                     <td class="str">{{ $s->buyer_phone ?: '-' }}</td>
                     <td>{{ $itemDetails }}</td>
-                    <td class="weight">{{ $s->total_weight }}</td>
+                    <td class="str" align="right">{{ $s->total_cargo_display }}</td>
                     <td class="num">{{ $s->cogs_amount }}</td>
                     <td class="num">{{ $s->final_amount }}</td>
                     <td class="num">{{ $s->estimated_profit }}</td>
@@ -66,9 +74,15 @@
             @endforeach
         </tbody>
         <tfoot>
+            @php
+                $totCargo = [];
+                if ($sumWeightKg > 0) $totCargo[] = number_format($sumWeightKg, 2, ',', '.') . ' kg';
+                if ($sumQtyPcs > 0) $totCargo[] = number_format($sumQtyPcs, 0, ',', '.') . ' pcs';
+                $grandCargo = empty($totCargo) ? '0 kg' : implode(' + ', $totCargo);
+            @endphp
             <tr style="font-weight: bold; background-color: #f8fafc;">
                 <td colspan="6" align="right">TOTAL KESELURUHAN</td>
-                <td class="weight">{{ $sumWeight }}</td>
+                <td class="str" align="right">{{ $grandCargo }}</td>
                 <td class="num">{{ $sumCogs }}</td>
                 <td class="num">{{ $sumSales }}</td>
                 <td class="num">{{ $sumProfit }}</td>

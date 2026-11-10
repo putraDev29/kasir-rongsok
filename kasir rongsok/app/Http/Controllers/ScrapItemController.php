@@ -217,7 +217,8 @@ class ScrapItemController extends Controller
             $msg .= "\n📂 *" . strtoupper($cat->name) . "*\n";
             foreach ($cat->scrapItems as $item) {
                 $priceStr = \App\Services\FormatHelper::rupiah($item->buy_price_per_kg);
-                $msg .= "• {$item->name}: *{$priceStr}/kg*\n";
+                $unit = $item->unit ?? 'kg';
+                $msg .= "• {$item->name}: *{$priceStr}/{$unit}*\n";
             }
         }
 
@@ -264,7 +265,8 @@ class ScrapItemController extends Controller
             $msg .= "\n📂 *" . strtoupper($cat->name) . "*\n";
             foreach ($cat->scrapItems as $item) {
                 $priceStr = \App\Services\FormatHelper::rupiah($item->buy_price_per_kg);
-                $msg .= "• {$item->name}: *{$priceStr}/kg*\n";
+                $unit = $item->unit ?? 'kg';
+                $msg .= "• {$item->name}: *{$priceStr}/{$unit}*\n";
             }
         }
 

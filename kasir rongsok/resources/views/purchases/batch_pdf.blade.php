@@ -232,14 +232,29 @@
                 </td>
                 <td style="text-align: right; vertical-align: top; width: 220px;">
                     @php
-                        $batchPdfTotalNet = $purchases->sum(fn($p) => $p->items->where('is_cancelled', false)->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight));
+                        $batchKg = 0;
+                        $batchPcs = 0;
+                        foreach ($purchases as $p) {
+                            foreach ($p->items->where('is_cancelled', false) as $i) {
+                                $u = strtolower(trim($i->unit_type ?: 'kg'));
+                                if (in_array($u, ['pcs', 'satuan', 'unit', 'buah'])) {
+                                    $batchPcs += ($i->quantity > 0 ? $i->quantity : $i->net_weight);
+                                } else {
+                                    $batchKg += $i->net_weight;
+                                }
+                            }
+                        }
+                        $batchParts = [];
+                        if ($batchKg > 0) $batchParts[] = \App\Services\FormatHelper::weight($batchKg) . ' kg';
+                        if ($batchPcs > 0) $batchParts[] = \App\Services\FormatHelper::number($batchPcs) . ' pcs';
+                        $batchCargoDisplay = count($batchParts) > 0 ? implode(' + ', $batchParts) : '0 kg';
                         $batchPdfTotalAmount = $purchases->sum(fn($p) => max(0, $p->items->where('is_cancelled', false)->sum('subtotal') - min((float)($p->discount_amount ?? 0), $p->items->where('is_cancelled', false)->sum('subtotal')) + (float)($p->rounding_amount ?? 0)));
                     @endphp
                     <div style="font-size: 8px; color: #475569;">
                         Total Nota: <strong style="color: #0f172a; font-size: 9px;">{{ $purchases->count() }} Nota</strong>
                     </div>
                     <div style="font-size: 8px; color: #475569;">
-                        Total Bersih: <strong style="color: #0f172a; font-size: 9px;">{{ \App\Services\FormatHelper::weight($batchPdfTotalNet) }} kg</strong>
+                        Total Muatan: <strong style="color: #0f172a; font-size: 9px;">{{ $batchCargoDisplay }}</strong>
                     </div>
                     <div style="font-size: 8.5px; color: #047857; font-weight: bold; margin-top: 1px;">
                         Total Nilai: {{ \App\Services\FormatHelper::rupiah($batchPdfTotalAmount) }}
@@ -399,9 +414,9 @@
                                     <td class="calc-value">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</td>
                                 </tr>
                                 <tr style="font-weight: bold;">
-                                    <td class="calc-label">BERAT BERSIH</td>
+                                    <td class="calc-label">TOTAL MUATAN</td>
                                     <td class="calc-colon">:</td>
-                                    <td class="calc-value">{{ \App\Services\FormatHelper::weight($activeNet) }} kg</td>
+                                    <td class="calc-value">{{ $purchase->total_cargo_display }}</td>
                                 </tr>
                                 
                                 <tr>

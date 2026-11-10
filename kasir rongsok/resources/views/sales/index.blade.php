@@ -158,7 +158,7 @@
                         <th class="py-2.5 px-3">No. Nota</th>
                         <th class="py-2.5 px-3">Tanggal</th>
                         <th class="py-2.5 px-3">Nama Pembeli / Pabrik</th>
-                        <th class="py-2.5 px-3 text-right">Berat Terjual</th>
+                        <th class="py-2.5 px-3 text-right">Muatan / Berat Terjual</th>
                         <th class="py-2.5 px-3 text-right">Total Nilai Jual</th>
                         <th class="py-2.5 px-3 text-right">Estimasi Laba</th>
                         <th class="py-2.5 px-3">Operator</th>
@@ -197,7 +197,7 @@
                                 </div>
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-medium text-slate-800">
-                                {{ \App\Services\FormatHelper::weightOrDash($sale->total_weight) }}
+                                {{ $sale->total_cargo_display }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">
                                 {{ \App\Services\FormatHelper::rupiahOrDash($sale->final_amount) }}
@@ -280,11 +280,29 @@
                     @endforelse
                 </tbody>
                 @if($transactions->count() > 0)
+                    @php
+                        $pageKg = 0;
+                        $pagePcs = 0;
+                        foreach($transactions as $pt) {
+                            foreach($pt->items as $pti) {
+                                $u = strtolower($pti->effective_unit ?? $pti->unit_type ?? 'kg');
+                                if (in_array($u, ['pcs', 'buah', 'unit', 'satuan', 'biji', 'set'])) {
+                                    $pagePcs += ($pti->quantity ?: $pti->weight);
+                                } else {
+                                    $pageKg += ($pti->weight ?: $pti->quantity);
+                                }
+                            }
+                        }
+                        $pageCargo = [];
+                        if ($pageKg > 0) $pageCargo[] = \App\Services\FormatHelper::weight($pageKg) . ' kg';
+                        if ($pagePcs > 0) $pageCargo[] = number_format($pagePcs, 0, ',', '.') . ' pcs';
+                        $pageCargoDisplay = empty($pageCargo) ? '0 kg' : implode(' + ', $pageCargo);
+                    @endphp
                     <tfoot class="bg-slate-50 font-bold border-t-2 border-slate-300">
                         <tr>
                             <td colspan="3" class="py-3 px-3 uppercase text-slate-800 text-right">TOTAL HALAMAN INI:</td>
                             <td class="py-3 px-3 text-right font-mono font-black text-slate-900">
-                                {{ \App\Services\FormatHelper::weight($transactions->sum('total_weight')) }} kg
+                                {{ $pageCargoDisplay }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-black text-slate-900">
                                 Rp {{ \App\Services\FormatHelper::number($transactions->sum('final_amount')) }}

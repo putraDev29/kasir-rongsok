@@ -101,8 +101,8 @@
                         <th class="py-2.5 px-3">Kode</th>
                         <th class="py-2.5 px-3">Nama Barang</th>
                         <th class="py-2.5 px-3">Kategori</th>
-                        <th class="py-2.5 px-3 text-right">Harga Beli/kg</th>
-                        <th class="py-2.5 px-3 text-right">Harga Jual/kg</th>
+                        <th class="py-2.5 px-3 text-right">Harga Beli</th>
+                        <th class="py-2.5 px-3 text-right">Harga Jual</th>
                         <th class="py-2.5 px-3 text-right">Stok Gudang</th>
                         <th class="py-2.5 px-3 text-center">Status</th>
                         <th class="py-2.5 px-3 text-center">Aksi</th>
@@ -122,13 +122,15 @@
                             <td class="py-3 px-3 text-slate-600">{{ $item->category?->name ?? '-' }}</td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">
                                 Rp {{ number_format($item->buy_price_per_kg, 0, ',', '.') }}
+                                <span class="text-[10px] text-slate-500 font-sans font-normal">/{{ $item->unit ?? 'kg' }}</span>
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-semibold text-slate-700">
                                 Rp {{ number_format($item->sell_price_per_kg, 0, ',', '.') }}
+                                <span class="text-[10px] text-slate-500 font-sans font-normal">/{{ $item->unit ?? 'kg' }}</span>
                             </td>
                             <td class="py-3 px-3 text-right font-mono">
                                 <span class="font-bold {{ $item->isLowStock() ? 'text-amber-600' : 'text-slate-800' }}">
-                                    {{ \App\Services\FormatHelper::weight($item->current_stock) }} kg
+                                    {{ \App\Services\FormatHelper::weight($item->current_stock) }} {{ $item->unit ?? 'kg' }}
                                 </span>
                             </td>
                             <td class="py-3 px-3 text-center">
@@ -150,7 +152,7 @@
                                             class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50">
                                         <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i>
                                     </button>
-                                    <a href="https://wa.me/?text={{ urlencode('*INFORMASI HARGA RONGSOK*' . "\n" . 'Barang: ' . $item->name . "\n" . 'Harga Beli: ' . \App\Services\FormatHelper::rupiah($item->buy_price_per_kg) . '/kg' . "\n" . 'Hubungi depo untuk informasi timbangan.') }}" 
+                                    <a href="https://wa.me/?text={{ urlencode('*INFORMASI HARGA RONGSOK*' . "\n" . 'Barang: ' . $item->name . "\n" . 'Harga Beli: ' . \App\Services\FormatHelper::rupiah($item->buy_price_per_kg) . '/' . ($item->unit ?? 'kg') . "\n" . 'Hubungi depo untuk informasi timbangan.') }}" 
                                        target="_blank"
                                        title="Bagikan Harga Barang via WhatsApp"
                                        class="p-1 rounded text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50">
@@ -205,7 +207,7 @@
             <form :action="'{{ url('scrap-items') }}/' + activeItem.id + '/quick-price'" method="POST" class="space-y-3">
                 @csrf
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Beli Baru per kg (Rp)</label>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Beli Baru per Satuan (Rp)</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
                         <input type="number" name="buy_price_per_kg" x-model.number="activeItem.buy" required step="50" min="0"
@@ -215,7 +217,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Jual Baru per kg (Rp)</label>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Harga Jual Baru per Satuan (Rp)</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">Rp</span>
                         <input type="number" name="sell_price_per_kg" x-model.number="activeItem.sell" step="50" min="0"

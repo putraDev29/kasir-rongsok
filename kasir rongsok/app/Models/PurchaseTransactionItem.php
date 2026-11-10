@@ -62,5 +62,27 @@ class PurchaseTransactionItem extends Model
     {
         return (bool) $this->is_cancelled;
     }
+
+    public function getEffectiveUnitAttribute(): string
+    {
+        $u = strtolower(trim($this->unit_type ?: ($this->scrapItem?->unit ?: 'kg')));
+        return in_array($u, ['pcs', 'satuan', 'unit', 'buah']) ? 'pcs' : 'kg';
+    }
+
+    public function getQuantityOrWeightAttribute(): float
+    {
+        return $this->effective_unit === 'pcs'
+            ? (float) ($this->quantity > 0 ? $this->quantity : $this->net_weight)
+            : (float) $this->net_weight;
+    }
+
+    public function getFormattedQuantityAttribute(): string
+    {
+        $val = $this->quantity_or_weight;
+        $unit = $this->effective_unit;
+        return $unit === 'pcs'
+            ? \App\Services\FormatHelper::number($val) . ' pcs'
+            : \App\Services\FormatHelper::weight($val) . ' kg';
+    }
 }
 

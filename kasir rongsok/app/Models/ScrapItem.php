@@ -18,12 +18,19 @@ class ScrapItem extends Model
         'code',
         'name',
         'unit',
+        'unit_type',
         'buy_price_per_kg',
         'sell_price_per_kg',
         'min_stock_alert',
         'description',
         'is_active',
     ];
+
+    public function setUnitAttribute($value)
+    {
+        $this->attributes['unit'] = $value;
+        $this->attributes['unit_type'] = $value;
+    }
 
     protected function casts(): array
     {

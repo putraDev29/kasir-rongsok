@@ -122,7 +122,7 @@
                         <th class="py-2.5 px-3">Waktu</th>
                         <th class="py-2.5 px-3">Pemasok</th>
                         <th class="py-2.5 px-3 text-right">Jml Item</th>
-                        <th class="py-2.5 px-3 text-right">Berat Bersih</th>
+                        <th class="py-2.5 px-3 text-right">Berat / Satuan</th>
                         <th class="py-2.5 px-3 text-right">Total Bayar</th>
                         <th class="py-2.5 px-3">Kasir</th>
                         <th class="py-2.5 px-3 text-center">Status</th>
@@ -147,7 +147,7 @@
                                 {{ $tx->items->count() }} item
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-medium text-slate-800">
-                                {{ \App\Services\FormatHelper::weight($tx->total_net_weight) }} kg
+                                {{ $tx->total_cargo_display }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">
                                 {{ \App\Services\FormatHelper::rupiah($tx->final_amount) }}

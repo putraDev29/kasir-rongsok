@@ -141,17 +141,17 @@
                                         @endforeach
                                     </div>
                                 @endif
-                                <div class="text-[10px] text-slate-400 font-normal mt-0.5">Min. Alert: {{ \App\Services\FormatHelper::weight($item->min_stock_alert) }} kg</div>
+                                <div class="text-[10px] text-slate-400 font-normal mt-0.5">Min. Alert: {{ \App\Services\FormatHelper::weight($item->min_stock_alert) }} {{ $item->unit ?? 'kg' }}</div>
                             </td>
                             <td class="py-3 px-3 text-slate-600">{{ $item->category?->name ?? '-' }}</td>
                             <td class="py-3 px-3 text-right font-mono text-emerald-700">
-                                +{{ \App\Services\FormatHelper::weight($bal?->total_in ?? 0) }} kg
+                                +{{ \App\Services\FormatHelper::weight($bal?->total_in ?? 0) }} {{ $item->unit ?? 'kg' }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono text-red-600">
-                                -{{ \App\Services\FormatHelper::weight($bal?->total_out ?? 0) }} kg
+                                -{{ \App\Services\FormatHelper::weight($bal?->total_out ?? 0) }} {{ $item->unit ?? 'kg' }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono font-black text-sm {{ $item->isLowStock() ? 'text-amber-600' : 'text-slate-900' }}">
-                                {{ \App\Services\FormatHelper::weight($curStock) }} kg
+                                {{ \App\Services\FormatHelper::weight($curStock) }} {{ $item->unit ?? 'kg' }}
                             </td>
                             <td class="py-3 px-3 text-right font-mono text-slate-700">
                                 Rp {{ \App\Services\FormatHelper::number($avgBuy) }}
@@ -221,11 +221,11 @@
                 @csrf
                 <div>
                     <span class="text-xs text-slate-500 block mb-1">Stok Tercatat di Sistem:</span>
-                    <div class="text-sm font-mono font-bold text-slate-800" x-text="(activeItem.stock || 0) + ' kg'"></div>
+                    <div class="text-sm font-mono font-bold text-slate-800" x-text="(activeItem.stock || 0) + ' ' + (activeItem.unit || 'kg')"></div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Hasil Timbangan Fisik Sebenarnya (kg) *</label>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Hasil Fisik Sebenarnya (<span x-text="activeItem.unit || 'kg'"></span>) *</label>
                     <input type="number" step="0.01" min="0" name="new_stock" x-model.number="activeItem.stock" required
                            class="w-full text-sm font-mono font-bold p-2.5 rounded-lg border border-slate-300 focus:ring-emerald-500">
                 </div>

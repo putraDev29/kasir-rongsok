@@ -97,8 +97,8 @@
                         <th class="py-2.5 px-3">Waktu</th>
                         <th class="py-2.5 px-3">Material Scrap & Daur Ulang</th>
                         <th class="py-2.5 px-3 text-center">Tipe</th>
-                        <th class="py-2.5 px-3 text-right">Perubahan (kg)</th>
-                        <th class="py-2.5 px-3 text-right">Saldo Akhir (kg)</th>
+                        <th class="py-2.5 px-3 text-right">Perubahan</th>
+                        <th class="py-2.5 px-3 text-right">Saldo Akhir</th>
                         <th class="py-2.5 px-3">Keterangan / Referensi</th>
                         <th class="py-2.5 px-3 font-sans">Operator</th>
                     </tr>
@@ -133,10 +133,10 @@
                                 @endif
                             </td>
                             <td class="py-3 px-3 text-right font-black text-sm {{ $mov->weight_qty > 0 ? 'text-emerald-700' : 'text-red-600' }}">
-                                {{ $mov->weight_qty > 0 ? '+' : '' }}{{ \App\Services\FormatHelper::weight($mov->weight_qty) }} kg
+                                {{ $mov->weight_qty > 0 ? '+' : '' }}{{ \App\Services\FormatHelper::weight($mov->weight_qty) }} {{ $mov->scrapItem?->unit ?? 'kg' }}
                             </td>
                             <td class="py-3 px-3 text-right font-bold text-slate-900">
-                                {{ \App\Services\FormatHelper::weight($mov->balance_after) }} kg
+                                {{ \App\Services\FormatHelper::weight($mov->balance_after) }} {{ $mov->scrapItem?->unit ?? 'kg' }}
                             </td>
                             <td class="py-3 px-3 font-sans text-xs text-slate-600 max-w-xs truncate">
                                 {{ $mov->notes }}

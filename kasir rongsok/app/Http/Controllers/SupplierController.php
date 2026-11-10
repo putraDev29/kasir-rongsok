@@ -180,7 +180,7 @@ class SupplierController extends Controller
         $msg .= "⭐ Rating     : {$tierStars} ({$supplier->rating_stars} Bintang)\n";
         $msg .= "----------------------------------------\n";
         $msg .= "📊 *REKAP PENJUALAN RONGSOK:*\n";
-        $msg .= "⚖️ Total Setor : *" . FormatHelper::weight($supplier->total_weight) . " kg*\n";
+        $msg .= "⚖️ Total Setor : *{$supplier->total_cargo_display}*\n";
         $msg .= "💰 Total Omzet : *" . FormatHelper::rupiah($supplier->total_amount) . "*\n";
         $msg .= "📦 Frekuensi   : {$supplier->total_transactions_count} kali setor\n";
         $msg .= "🎁 Poin Reward : *{$supplier->points} Poin*\n";

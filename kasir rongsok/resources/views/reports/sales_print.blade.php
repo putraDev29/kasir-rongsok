@@ -28,8 +28,8 @@
 
     <div class="grid grid-cols-3 gap-4 my-4 p-3 bg-slate-50 border border-slate-200 rounded font-sans">
         <div>
-            <span class="text-slate-500 font-semibold block">Total Berat Terjual:</span>
-            <span class="text-sm font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($totalWeight) }} kg ({{ \App\Services\FormatHelper::weight($totalWeight / 1000) }} Ton)</span>
+            <span class="text-slate-500 font-semibold block">Total Muatan / Berat Terjual:</span>
+            <span class="text-sm font-bold text-slate-900">{{ $totalCargoDisplay ?? (\App\Services\FormatHelper::weight($totalWeight) . ' kg') }} @if(($totalKg ?? $totalWeight) > 0) ({{ \App\Services\FormatHelper::weight(($totalKg ?? $totalWeight) / 1000) }} Ton) @endif</span>
         </div>
         <div>
             <span class="text-slate-500 font-semibold block">Total Omzet Penjualan:</span>
@@ -48,9 +48,9 @@
                 <th class="p-1.5 border-r border-slate-300">No. Nota</th>
                 <th class="p-1.5 border-r border-slate-300">Pembeli</th>
                 <th class="p-1.5 border-r border-slate-300">Nama Barang</th>
-                <th class="p-1.5 border-r border-slate-300 text-right">Berat (kg)</th>
-                <th class="p-1.5 border-r border-slate-300 text-right">Harga Beli/kg</th>
-                <th class="p-1.5 border-r border-slate-300 text-right">Harga Jual/kg</th>
+                <th class="p-1.5 border-r border-slate-300 text-right">Muatan / Satuan</th>
+                <th class="p-1.5 border-r border-slate-300 text-right">Harga Beli / Satuan</th>
+                <th class="p-1.5 border-r border-slate-300 text-right">Harga Jual / Satuan</th>
                 <th class="p-1.5 border-r border-slate-300 text-right">Subtotal</th>
                 <th class="p-1.5 text-right font-sans">Est. Laba</th>
             </tr>
@@ -66,13 +66,13 @@
                         <div class="font-bold text-slate-900">{{ $item->item_name_snapshot }}</div>
                         @if($item->item_type_name)
                             <div class="text-[9px] text-blue-900 font-semibold mt-0.5">
-                                ↳ Varian: {{ $item->item_type_name }} ({{ \App\Services\FormatHelper::weight($item->weight) }} kg @ Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }})
+                                ↳ Varian: {{ $item->item_type_name }} ({{ $item->formatted_quantity }} @ Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }}/{{ $item->effective_unit }})
                             </div>
                         @endif
                     </td>
-                    <td class="p-1.5 border-r border-slate-300 text-right font-bold">{{ \App\Services\FormatHelper::weight($item->weight) }} kg</td>
-                    <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ \App\Services\FormatHelper::number($item->buy_price_snapshot) }}</td>
-                    <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-right font-bold">{{ $item->formatted_quantity }}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ \App\Services\FormatHelper::number($item->buy_price_snapshot) }}/{{ $item->effective_unit }}</td>
+                    <td class="p-1.5 border-r border-slate-300 text-right">Rp {{ \App\Services\FormatHelper::number($item->sell_price_per_kg) }}/{{ $item->effective_unit }}</td>
                     <td class="p-1.5 border-r border-slate-300 text-right font-bold">Rp {{ \App\Services\FormatHelper::number($item->subtotal) }}</td>
                     <td class="p-1.5 text-right font-bold text-emerald-800">Rp {{ \App\Services\FormatHelper::number($item->profit_subtotal) }}</td>
                 </tr>
@@ -81,7 +81,7 @@
         <tfoot class="bg-slate-50 font-bold border-t-2 border-slate-400">
             <tr>
                 <td colspan="4" class="p-2 border-r border-slate-300 text-right font-sans">TOTAL KESELURUHAN:</td>
-                <td class="p-2 border-r border-slate-300 text-right">{{ \App\Services\FormatHelper::weight($totalWeight) }} kg</td>
+                <td class="p-2 border-r border-slate-300 text-right">{{ $totalCargoDisplay ?? (\App\Services\FormatHelper::weight($totalWeight) . ' kg') }}</td>
                 <td class="p-2 border-r border-slate-300"></td>
                 <td class="p-2 border-r border-slate-300"></td>
                 <td class="p-2 border-r border-slate-300 text-right">Rp {{ \App\Services\FormatHelper::number($totalSales) }}</td>

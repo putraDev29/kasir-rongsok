@@ -124,10 +124,10 @@
                             <th class="py-2.5 px-3">#</th>
                             <th class="py-2.5 px-3">Kode</th>
                             <th class="py-2.5 px-3">Nama Material Scrap & Daur Ulang</th>
-                            <th class="py-2.5 px-3 text-right">Berat Kotor</th>
+                            <th class="py-2.5 px-3 text-right">Berat / Qty Kotor</th>
                             <th class="py-2.5 px-3 text-right">Pot./Tara</th>
-                            <th class="py-2.5 px-3 text-right font-bold text-slate-900 bg-emerald-50/50">Berat Bersih</th>
-                            <th class="py-2.5 px-3 text-right">Harga Beli/kg</th>
+                            <th class="py-2.5 px-3 text-right font-bold text-slate-900 bg-emerald-50/50">{{ $purchase->weight_column_header }}</th>
+                            <th class="py-2.5 px-3 text-right">Harga Beli / Satuan</th>
                             <th class="py-2.5 px-3 text-right font-bold">Subtotal</th>
                             <th class="py-2.5 px-3 text-center">Status / Aksi</th>
                         </tr>
@@ -174,7 +174,7 @@
                                         {{ \App\Services\FormatHelper::weight($item->net_weight) }} kg
                                     @endif
                                 </td>
-                                <td class="py-2.5 px-3 text-right font-mono {{ $item->is_cancelled ? 'line-through text-slate-400' : 'text-slate-700' }}">{{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</td>
+                                <td class="py-2.5 px-3 text-right font-mono {{ $item->is_cancelled ? 'line-through text-slate-400' : 'text-slate-700' }}">{{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }} <span class="text-[10px] text-slate-400 font-sans">/{{ $item->unit_type ?: 'kg' }}</span></td>
                                 <td class="py-2.5 px-3 text-right font-mono font-bold {{ $item->is_cancelled ? 'line-through text-slate-400' : 'text-slate-900' }}">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</td>
                                 <td class="py-2.5 px-3 text-center">
                                     @if($item->is_cancelled)
@@ -281,8 +281,8 @@
                     <span class="font-mono">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</span>
                 </div>
                 <div class="flex justify-between font-bold text-slate-800 pb-1 border-b border-slate-200">
-                    <span>Total Berat Bersih:</span>
-                    <span class="font-mono text-emerald-700">{{ \App\Services\FormatHelper::weight($activeNet) }} kg</span>
+                    <span>Total Muatan Bersih:</span>
+                    <span class="font-mono text-emerald-700">{{ $purchase->total_cargo_display }}</span>
                 </div>
 
                 <div class="flex justify-between text-slate-600 pt-1">
