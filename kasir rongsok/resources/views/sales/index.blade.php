@@ -97,12 +97,20 @@
 
             <!-- Action Buttons on Table Card Header -->
             <div class="flex flex-wrap items-center gap-2">
+
+                <a href="{{ route('sales.batch-print', request()->all()) }}" target="_blank"
+                   class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                   title="Cetak Rekapitulasi Penjualan Partai (Format Kertas HVS A4)">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                    <span>Print Rekap (HVS)</span>
+                </a>
+
                 <button type="button"
                    @click="openPdfPreview('{{ route('sales.batch-pdf', request()->all()) }}', 'Rekapitulasi Penjualan Partai', 'Rekap_Penjualan_Partai_' + ('{{ $startDate && $endDate ? "{$startDate}_sd_{$endDate}" : date("Ymd") }}') + '.pdf', 'Pratinjau Dokumen Rekapitulasi PDF')"
                    class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
-                   title="Pratinjau Berkas PDF Rekap Penjualan Partai">
+                   title="Pratinjau Dokumen PDF Rekap Penjualan Partai">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    <span>Preview Rekap PDF</span>
+                    <span>Preview PDF</span>
                 </button>
 
                 <a href="{{ route('sales.excel', request()->all()) }}" 
@@ -118,6 +126,7 @@
                             subtitle: 'Kirim berkas dokumen PDF laporan & rekap penjualan grosir ke nomor WhatsApp',
                             filename: 'Rekap_Penjualan_Partai_' + ('{{ $startDate && $endDate ? "{$startDate}_sd_{$endDate}" : date("Ymd") }}') + '.pdf',
                             fileDescription: 'Dokumen PDF Rekap Penjualan Partai (Omzet, Muatan & Laba)',
+                            printUrl: '{{ route('sales.batch-print', request()->all()) }}',
                             pdfUrl: '{{ route('sales.batch-pdf', request()->all()) }}',
                             previewUrl: '{{ route('sales.wa-global.preview', request()->all()) }}',
                             sendUrl: '{{ route('sales.send-wa-global') }}',

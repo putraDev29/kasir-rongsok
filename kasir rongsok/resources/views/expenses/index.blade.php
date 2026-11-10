@@ -112,12 +112,20 @@
                     <span>Kelola Kategori</span>
                 </button>
 
-                <!-- Export PDF (Task 13 & 5) -->
+                <!-- Print & Preview Laporan -->
+                <a href="{{ route('expenses.print', request()->query()) }}" target="_blank"
+                   class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                   title="Cetak Laporan Biaya Operasional (Kertas HVS A4)">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                    <span>Print (HVS)</span>
+                </a>
+
                 <button type="button"
-                   @click="openPdfPreview('{{ route('expenses.pdf', request()->query()) }}', 'Laporan Biaya Operasional', 'Laporan_Biaya_Operasional_' + ('{{ $startDate && $endDate ? "{$startDate}_sd_{$endDate}" : date("Ymd") }}') + '.pdf', 'Rekap Beban Pengeluaran Operasional Usaha Depo')"
-                   class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm cursor-pointer">
+                   onclick="openPdfPreview('{{ route('expenses.pdf', request()->query()) }}', 'Laporan Biaya Operasional', 'Laporan_Biaya_Operasional_{{ ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd') }}.pdf', 'Pratinjau Dokumen Rekap Biaya')"
+                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
+                   title="Pratinjau Dokumen PDF Rekap Biaya">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    <span>PDF Biaya</span>
+                    <span>Preview PDF</span>
                 </button>
 
                 <!-- Send WA (Task 13) -->
@@ -127,6 +135,7 @@
                             subtitle: 'Kirim berkas dokumen PDF rincian beban pengeluaran ke nomor WhatsApp',
                             filename: 'Laporan_Biaya_Operasional_' + ('{{ $startDate && $endDate ? "{$startDate}_sd_{$endDate}" : date("Ymd") }}') + '.pdf',
                             fileDescription: 'Dokumen PDF Resmi Laporan Biaya Operasional Depo',
+                            printUrl: '{{ route('expenses.print', request()->query()) }}',
                             pdfUrl: '{{ route('expenses.pdf', request()->query()) }}',
                             previewUrl: '{{ route('expenses.wa-preview', request()->query()) }}',
                             sendUrl: '{{ route('expenses.send-wa') }}',

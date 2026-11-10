@@ -459,6 +459,39 @@ class DebtController extends Controller
     }
 
     /**
+     * Print Preview for Batch Debts Recap (In-app HTML preview matching PDF).
+     */
+    public function batchPrint(Request $request): View
+    {
+        $status = $request->query('status');
+        $type = $request->query('borrower_type');
+        $search = $request->query('search');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
+
+        $debts = Debt::with(['supplier', 'user', 'payments'])
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->when($type, fn($q) => $q->where('borrower_type', $type))
+            ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('borrower_name', 'LIKE', "%{$search}%")
+                        ->orWhere('debt_number', 'LIKE', "%{$search}%")
+                        ->orWhere('agreement_number', 'LIKE', "%{$search}%");
+                });
+            })
+            ->latest('date')
+            ->get();
+
+        $totalAmount = (float) $debts->sum('amount');
+        $totalPaid = (float) $debts->sum(fn($d) => $d->amount - $d->remaining_amount);
+        $totalRemaining = (float) $debts->sum('remaining_amount');
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+
+        return view('debts.batch_print', compact('debts', 'settings', 'status', 'type', 'totalAmount', 'totalPaid', 'totalRemaining', 'startDate', 'endDate'));
+    }
+
+    /**
      * Export Batch Debts Recap as PDF (A4 Portrait).
      */
     public function batchPdf(Request $request)
@@ -559,6 +592,7 @@ class DebtController extends Controller
 
         $pdfFilename = "Rekap_Hutang_Modal_" . date('Ymd_His') . ".pdf";
         $pdfUrl = route('debts.batch-pdf', $request->query());
+        $printUrl = route('debts.batch-print', $request->query());
 
         return response()->json([
             'success' => true,
@@ -567,6 +601,7 @@ class DebtController extends Controller
             'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
+            'print_url' => $printUrl,
             'file_description' => "Dokumen PDF Rekapitulasi Kasbon & Pinjaman ({$count} Data)",
         ]);
     }

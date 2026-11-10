@@ -42,13 +42,13 @@
                 <span>Kirim WA (PDF)</span>
             </button>
 
-            <button type="button"
+            <!-- <button type="button"
                     onclick="openPdfPreview('{{ route('salary-slips.pdf', $salarySlip) }}', 'Slip Gaji #{{ $salarySlip->slip_number }}', '{{ $salarySlip->employeeUser?->phone ?? $salarySlip->employee_phone }}', '{{ $salarySlip->employee_name }}', 'Berikut slip gaji karyawan Anda: {{ $salarySlip->slip_number }}')"
                     class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                     title="Pratinjau PDF Slip Gaji">
                 <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
                 <span>Preview PDF</span>
-            </button>
+            </button> -->
 
             <a href="{{ route('salary-slips.print', $salarySlip) }}" target="_blank"
                class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-1.5 border border-slate-300">
@@ -168,13 +168,13 @@
                 @endif
             </div>
 
-            <button type="button"
+            <!-- <button type="button"
                     onclick="openPdfPreview('{{ route('salary-slips.pdf', $salarySlip) }}', 'Slip Gaji #{{ $salarySlip->slip_number }}', '{{ $salarySlip->employeeUser?->phone ?? $salarySlip->employee_phone }}', '{{ $salarySlip->employee_name }}', 'Berikut slip gaji karyawan Anda: {{ $salarySlip->slip_number }}')"
                     class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                     title="Pratinjau PDF Slip Gaji">
                 <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
                 <span>Preview PDF</span>
-            </button>
+            </button> -->
 
             <a href="{{ route('salary-slips.print', $salarySlip) }}" target="_blank"
                class="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2">

@@ -90,13 +90,13 @@
                 <span>Cetak Biasa</span>
             </button>
 
-            <button type="button"
+            <!-- <button type="button"
                     onclick="openPdfPreview('{{ route('delivery-orders.pdf', [$deliveryOrder, 'copy' => $copy]) }}', 'Surat Jalan #{{ $deliveryOrder->delivery_number }}', '{{ $deliveryOrder->recipient_phone ?: $deliveryOrder->driver_phone }}', '{{ $deliveryOrder->customer_name ?? ($deliveryOrder->recipient_name ?? 'Pelanggan') }}', 'Halo, berikut dokumen PDF surat jalan pengiriman: {{ $deliveryOrder->delivery_number }}')"
                     class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
                     title="Pratinjau Dokumen PDF Surat Jalan">
                 <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                 <span>Preview PDF</span>
-            </button>
+            </button> -->
             <a href="{{ route('delivery-orders.show', $deliveryOrder) }}" class="px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold">
                 Kembali
             </a>

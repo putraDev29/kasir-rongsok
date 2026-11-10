@@ -174,12 +174,20 @@
 
             <!-- Action Buttons on Table Card Header -->
             <div class="flex flex-wrap items-center gap-2">
+
+                <a href="{{ route('debts.batch-print', request()->all()) }}" target="_blank"
+                   class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                   title="Cetak Rekapitulasi Hutang Piutang & Kasbon Modal (Kertas HVS A4)">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                    <span>Print Rekap (HVS)</span>
+                </a>
+
                 <button type="button"
-                   onclick="openPdfPreview('{{ route('debts.batch-pdf', request()->all()) }}', 'Rekap Hutang Piutang Modal', '', '', 'Berikut rekapitulasi buku hutang piutang modal')"
+                   onclick="openPdfPreview('{{ route('debts.batch-pdf', request()->all()) }}', 'Rekap Hutang Piutang Modal', 'Rekap_Hutang_Modal_{{ date('Ymd') }}.pdf', 'Pratinjau Dokumen Rekap Kasbon')"
                    class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
-                   title="Pratinjau PDF Rekap Hutang Modal">
+                   title="Pratinjau Dokumen PDF Rekap Kasbon">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    <span>Rekap PDF</span>
+                    <span>Preview PDF</span>
                 </button>
 
                 <a href="{{ route('debts.export-excel', request()->all()) }}" 
@@ -195,6 +203,7 @@
                             subtitle: 'Kirim berkas dokumen PDF rekapitulasi buku hutang piutang modal ke nomor WhatsApp',
                             filename: 'Rekap_Hutang_Modal_' + ('{{ date("Ymd") }}') + '.pdf',
                             fileDescription: 'Dokumen PDF Rekap Buku Hutang Piutang & Pinjaman Modal',
+                            printUrl: '{{ route('debts.batch-print', request()->all()) }}',
                             pdfUrl: '{{ route('debts.batch-pdf', request()->all()) }}',
                             previewUrl: '{{ route('debts.wa-global.preview', request()->all()) }}',
                             sendUrl: '{{ route('debts.send-wa-global') }}',

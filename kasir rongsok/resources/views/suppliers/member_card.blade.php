@@ -31,13 +31,13 @@
                 </button>
             </form>
 
-            <button type="button"
+            <!-- <button type="button"
                onclick="openPdfPreview('{{ route('suppliers.member-card-pdf', $supplier) }}', 'Kartu Member #{{ $supplier->member_number }}', '{{ $supplier->phone }}', '{{ $supplier->name }}', 'Berikut kartu member Anda')"
                class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
                title="Pratinjau PDF Kartu Member">
                 <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-400"></i>
                 <span>Preview PDF</span>
-            </button>
+            </button> -->
 
             <button onclick="window.print()" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>

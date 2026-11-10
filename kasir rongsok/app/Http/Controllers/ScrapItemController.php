@@ -233,6 +233,7 @@ class ScrapItemController extends Controller
         return response()->json([
             'message' => \App\Services\FormatHelper::cleanCaption($msg),
             'pdf_url' => route('scrap-items.pdf-price-list'),
+            'print_url' => route('scrap-items.print-price-list'),
             'pdf_filename' => $filename,
         ]);
     }

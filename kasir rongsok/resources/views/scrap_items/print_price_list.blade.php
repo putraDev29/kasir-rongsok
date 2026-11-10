@@ -44,9 +44,14 @@
         <div class="flex items-center gap-2">
             <button onclick="window.print()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
                 <i data-lucide="printer" class="w-4 h-4"></i>
-                <span>Cetak / Simpan PDF</span>
+                <span>Cetak ke Kertas HVS</span>
             </button>
-            <button onclick="window.history.back()" class="px-3.5 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold">
+            <a href="{{ route('scrap-items.pdf-price-list') }}" target="_blank"
+               class="px-3.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Preview PDF HVS</span>
+            </a>
+            <button onclick="window.close(); if(!window.closed){ window.history.back(); }" class="px-3.5 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold">
                 Kembali
             </button>
         </div>

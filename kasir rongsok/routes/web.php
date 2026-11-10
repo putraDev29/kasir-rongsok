@@ -185,6 +185,7 @@ Route::middleware('auth')->group(function () {
     // Hutang Piutang / Pinjaman Modal (Debts & Loans) - Hanya Owner
     Route::get('/debts/excel', [DebtController::class, 'exportExcel'])->name('debts.excel')->middleware('role:super_admin');
     Route::get('/debts/export-excel', [DebtController::class, 'exportExcel'])->name('debts.export-excel')->middleware('role:super_admin');
+    Route::get('/debts/batch-print', [DebtController::class, 'batchPrint'])->name('debts.batch-print')->middleware('role:super_admin');
     Route::get('/debts/batch-pdf', [DebtController::class, 'batchPdf'])->name('debts.batch-pdf')->middleware('role:super_admin');
     Route::get('/debts/wa-global/preview', [DebtController::class, 'previewWaGlobal'])->name('debts.wa-global.preview')->middleware('role:super_admin');
     Route::post('/debts/send-wa-global', [DebtController::class, 'sendWaGlobal'])->name('debts.send-wa-global')->middleware('role:super_admin');
@@ -219,6 +220,9 @@ Route::middleware('auth')->group(function () {
     // Bulk Sales of Scrap (Penjualan Partai Besar) - Owner, Admin, Kasir
     Route::get('/sales/excel', [SalesTransactionController::class, 'exportExcel'])
         ->name('sales.excel')
+        ->middleware('role:super_admin,admin');
+    Route::get('/sales/batch-print', [SalesTransactionController::class, 'batchPrint'])
+        ->name('sales.batch-print')
         ->middleware('role:super_admin,admin');
     Route::get('/sales/batch-pdf', [SalesTransactionController::class, 'batchPdf'])
         ->name('sales.batch-pdf')
@@ -271,6 +275,7 @@ Route::middleware('auth')->group(function () {
     // Expenses (Pengeluaran Operasional) - Hanya Owner
     Route::post('/expenses/categories', [ExpenseController::class, 'storeCategory'])->name('expenses.categories.store')->middleware('role:super_admin');
     Route::delete('/expenses/categories/{category}', [ExpenseController::class, 'destroyCategory'])->name('expenses.categories.destroy')->middleware('role:super_admin');
+    Route::get('/expenses/print', [ExpenseController::class, 'print'])->name('expenses.print')->middleware('role:super_admin');
     Route::get('/expenses/pdf', [ExpenseController::class, 'exportPdf'])->name('expenses.pdf')->middleware('role:super_admin');
     Route::get('/expenses/wa-preview', [ExpenseController::class, 'previewWa'])->name('expenses.wa-preview')->middleware('role:super_admin');
     Route::post('/expenses/send-wa', [ExpenseController::class, 'sendWa'])->name('expenses.send-wa')->middleware('role:super_admin');
@@ -281,6 +286,7 @@ Route::middleware('auth')->group(function () {
 
     // Slip Gaji Karyawan (Salary Slips) - Hanya Owner
     Route::get('/salary-slips/excel', [SalarySlipController::class, 'exportExcel'])->name('salary-slips.excel')->middleware('role:super_admin');
+    Route::get('/salary-slips/batch-print', [SalarySlipController::class, 'batchPrint'])->name('salary-slips.batch-print')->middleware('role:super_admin');
     Route::get('/salary-slips/batch-pdf', [SalarySlipController::class, 'batchPdf'])->name('salary-slips.batch-pdf')->middleware('role:super_admin');
     Route::get('/salary-slips/wa-global/preview', [SalarySlipController::class, 'previewWaGlobal'])->name('salary-slips.wa-global.preview')->middleware('role:super_admin');
     Route::post('/salary-slips/send-wa-global', [SalarySlipController::class, 'sendWaGlobal'])->name('salary-slips.send-wa-global')->middleware('role:super_admin');

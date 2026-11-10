@@ -427,6 +427,36 @@ class SalesTransactionController extends Controller
     }
 
     /**
+     * Print Preview for Batch Sales Recap (In-app HTML preview matching PDF).
+     */
+    public function batchPrint(Request $request): View
+    {
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
+        $search = $request->query('search');
+        $status = $request->query('status', 'completed');
+
+        $transactions = SalesTransaction::with(['items.scrapItem'])
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('invoice_number', 'LIKE', "%{$search}%")
+                        ->orWhere('buyer_name', 'LIKE', "%{$search}%");
+                });
+            })
+            ->when($startDate, fn($q) => $q->whereDate('transaction_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->latest('transaction_date')
+            ->get();
+
+        $totalWeight = (float) $transactions->sum('total_weight');
+        $totalSales = (float) $transactions->sum('final_amount');
+        $totalProfit = (float) $transactions->sum('estimated_profit');
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+
+        return view('sales.batch_print', compact('transactions', 'settings', 'startDate', 'endDate', 'totalWeight', 'totalSales', 'totalProfit', 'search', 'status'));
+    }
+
+    /**
      * Export Batch Sales Recap as PDF (A4 Portrait).
      */
     public function batchPdf(Request $request)
@@ -524,6 +554,7 @@ class SalesTransactionController extends Controller
         $dateSuffix = ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd_His');
         $pdfFilename = "Rekap_Penjualan_Partai_{$dateSuffix}.pdf";
         $pdfUrl = route('sales.batch-pdf', $request->query());
+        $printUrl = route('sales.batch-print', $request->query());
 
         return response()->json([
             'success' => true,
@@ -533,6 +564,7 @@ class SalesTransactionController extends Controller
             'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
+            'print_url' => $printUrl,
             'file_description' => "Dokumen PDF Rekap Penjualan Partai ({$count} Faktur)",
         ]);
     }

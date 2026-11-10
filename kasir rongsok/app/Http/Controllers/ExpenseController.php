@@ -154,6 +154,35 @@ class ExpenseController extends Controller
     }
 
     /**
+     * Print Preview for Operational Expenses (In-app HTML preview matching PDF).
+     */
+    public function print(Request $request): View
+    {
+        $categoryId = $request->query('category_id');
+        $search = $request->query('search');
+        [$startDate, $endDate] = FormatHelper::resolveDateFilter($request);
+
+        $expenses = Expense::with(['category', 'user', 'paymentMethod'])
+            ->when($categoryId, fn($q) => $q->where('expense_category_id', $categoryId))
+            ->when($startDate, fn($q) => $q->whereDate('expense_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('expense_date', '<=', $endDate))
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('description', 'LIKE', "%{$search}%")
+                        ->orWhere('recipient', 'LIKE', "%{$search}%")
+                        ->orWhere('expense_number', 'LIKE', "%{$search}%");
+                });
+            })
+            ->orderBy('expense_date', 'asc')
+            ->get();
+
+        $totalAmount = (float) $expenses->sum('amount');
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+
+        return view('expenses.print', compact('expenses', 'totalAmount', 'startDate', 'endDate', 'settings', 'categoryId', 'search'));
+    }
+
+    /**
      * Export Operational Expenses PDF (Task 13).
      */
     public function exportPdf(Request $request)
@@ -239,6 +268,7 @@ class ExpenseController extends Controller
         $dateSuffix = ($startDate && $endDate) ? "{$startDate}_sd_{$endDate}" : date('Ymd_His');
         $pdfFilename = "Laporan_Biaya_Operasional_{$dateSuffix}.pdf";
         $pdfUrl = route('expenses.pdf', $request->query());
+        $printUrl = route('expenses.print', $request->query());
 
         return response()->json([
             'success' => true,
@@ -247,6 +277,7 @@ class ExpenseController extends Controller
             'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
+            'print_url' => $printUrl,
             'file_description' => "Dokumen PDF Resmi Biaya Operasional ({$count} Transaksi)",
         ]);
     }

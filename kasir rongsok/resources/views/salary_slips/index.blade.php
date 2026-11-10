@@ -103,12 +103,20 @@
 
             <!-- Action Buttons on Table Card Header -->
             <div class="flex flex-wrap items-center gap-2">
+
+                <a href="{{ route('salary-slips.batch-print', request()->query()) }}" target="_blank"
+                   class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                   title="Cetak Rekapitulasi Penggajian Karyawan (Kertas HVS A4)">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                    <span>Print Rekap (HVS)</span>
+                </a>
+
                 <button type="button"
-                   onclick="openPdfPreview('{{ route('salary-slips.batch-pdf', request()->query()) }}', 'Rekap Penggajian Karyawan', '', '', 'Berikut rekapitulasi penggajian karyawan')"
+                   onclick="openPdfPreview('{{ route('salary-slips.batch-pdf', request()->query()) }}', 'Rekap Penggajian Karyawan', 'Rekap_Penggajian_Karyawan_{{ $period ?: date('Ymd') }}.pdf', 'Pratinjau Dokumen Rekap Gaji')"
                    class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
-                   title="Pratinjau PDF Rekap Penggajian">
+                   title="Pratinjau Berkas PDF Rekap Penggajian">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    <span>PDF Rekap</span>
+                    <span>Preview PDF</span>
                 </button>
 
                 <a href="{{ route('salary-slips.excel', request()->query()) }}" 
@@ -124,6 +132,7 @@
                             subtitle: 'Kirim berkas dokumen PDF ringkasan penggajian karyawan ke WhatsApp',
                             filename: 'Rekap_Penggajian_Karyawan_' + ('{{ $period ?: date("Ymd") }}') + '.pdf',
                             fileDescription: 'Dokumen PDF Rekap Penggajian, Tunjangan & Kasbon Karyawan',
+                            printUrl: '{{ route('salary-slips.batch-print', request()->query()) }}',
                             pdfUrl: '{{ route('salary-slips.batch-pdf', request()->query()) }}',
                             previewUrl: '{{ route('salary-slips.wa-global.preview', request()->query()) }}',
                             sendUrl: '{{ route('salary-slips.send-wa-global') }}',

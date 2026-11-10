@@ -371,6 +371,35 @@ class SalarySlipController extends Controller
     }
 
     /**
+     * Print Preview for Batch Salary Slips (In-app HTML preview matching PDF).
+     */
+    public function batchPrint(Request $request): View
+    {
+        $search = $request->query('search');
+        [$startDate, $endDate, $selectedMonth, $selectedYear] = FormatHelper::resolveDateFilter($request);
+        $period = $request->query('period_month');
+
+        $slips = SalarySlip::with(['employeeUser', 'creator', 'paymentMethod'])
+            ->when($startDate, fn($q) => $q->whereDate('payment_date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('payment_date', '<=', $endDate))
+            ->when($period, fn($q) => $q->where('period_month', $period))
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('employee_name', 'LIKE', "%{$search}%")
+                        ->orWhere('slip_number', 'LIKE', "%{$search}%");
+                });
+            })
+            ->orderBy('payment_date', 'desc')
+            ->get();
+
+        $totalNetSalary = (float) $slips->sum('net_salary');
+        $settings = BusinessSetting::pluck('value', 'key')->all();
+        $displayPeriod = $period ?: ($startDate && $endDate ? "{$startDate} s/d {$endDate}" : date('F Y'));
+
+        return view('salary_slips.batch_print', compact('slips', 'settings', 'period', 'displayPeriod', 'totalNetSalary', 'startDate', 'endDate'));
+    }
+
+    /**
      * Export Batch Salary Slips as PDF (A4 Portrait).
      */
     public function batchPdf(Request $request)
@@ -460,6 +489,7 @@ class SalarySlipController extends Controller
 
         $pdfFilename = "Rekap_Gaji_Karyawan_" . ($period ? Str::slug($period) : date('Ymd')) . ".pdf";
         $pdfUrl = route('salary-slips.batch-pdf', $request->query());
+        $printUrl = route('salary-slips.batch-print', $request->query());
 
         return response()->json([
             'success' => true,
@@ -468,6 +498,7 @@ class SalarySlipController extends Controller
             'message' => FormatHelper::cleanCaption($msg),
             'pdf_filename' => $pdfFilename,
             'pdf_url' => $pdfUrl,
+            'print_url' => $printUrl,
             'file_description' => "Dokumen PDF Rekapitulasi Gaji Karyawan ({$count} Slip)",
         ]);
     }

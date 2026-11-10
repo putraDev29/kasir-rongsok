@@ -61,6 +61,7 @@
                             subtitle: 'Kirim berkas dokumen PDF daftar harga beli {{ strtolower(\App\Models\BusinessSetting::commodityTerm()) }} ke nomor WhatsApp',
                             filename: 'Daftar_Harga_Beli_' + ('{{ date("Ymd") }}') + '.pdf',
                             fileDescription: 'Dokumen PDF Resmi Daftar Standar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }} Depo',
+                            printUrl: '{{ route('scrap-items.print-price-list') }}',
                             pdfUrl: '{{ route('scrap-items.pdf-price-list') }}',
                             previewUrl: '{{ route('scrap-items.preview-wa') }}',
                             sendUrl: '{{ route('scrap-items.send-wa') }}',
@@ -72,13 +73,13 @@
                     <span>Kirim Daftar Harga (PDF)</span>
                 </button>
 
-                <button type="button"
+                <!-- <button type="button"
                    @click="openPdfPreview('{{ route('scrap-items.pdf-price-list') }}', 'Daftar Standar Harga Beli Depo', 'Daftar_Harga_Beli_' + ('{{ date('Ymd') }}') + '.pdf', 'Standar Harga Beli {{ \App\Models\BusinessSetting::commodityTerm() }}')"
                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer"
                    title="Preview & Unduh Berkas PDF Daftar Standar Harga Beli (Format A4)">
                     <i data-lucide="file-text" class="w-4 h-4"></i>
                     <span>Preview PDF Harga</span>
-                </button>
+                </button> -->
 
                 <a href="{{ route('scrap-items.print-price-list') }}" target="_blank"
                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition-colors"
