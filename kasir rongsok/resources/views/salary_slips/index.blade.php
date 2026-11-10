@@ -111,14 +111,6 @@
                     <span>Print Rekap (HVS)</span>
                 </a>
 
-                <button type="button"
-                   onclick="openPdfPreview('{{ route('salary-slips.batch-pdf', request()->query()) }}', 'Rekap Penggajian Karyawan', 'Rekap_Penggajian_Karyawan_{{ $period ?: date('Ymd') }}.pdf', 'Pratinjau Dokumen Rekap Gaji')"
-                   class="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
-                   title="Pratinjau Berkas PDF Rekap Penggajian">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    <span>Preview PDF</span>
-                </button>
-
                 <a href="{{ route('salary-slips.excel', request()->query()) }}" 
                    class="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-colors"
                    title="Export Data ke Excel">
