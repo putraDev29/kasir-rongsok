@@ -329,7 +329,11 @@
             const btn = document.getElementById('btnBluetoothPrint');
             const txt = document.getElementById('btnBluetoothText');
             if (!window.ThermalBluetooth || !window.ThermalBluetooth.isSupported()) {
-                showStatus('Browser ini belum mendukung Web Bluetooth. Untuk cetak langsung tanpa RawBT, gunakan Google Chrome di Android atau PC.', 'error');
+                if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                    showStatus('Web Bluetooth dibatasi browser Chrome pada HTTP lokal. Silakan gunakan tombol "Quick Printer" di sebelah, atau aktifkan flag di Chrome Tablet (chrome://flags/#unsafely-treat-insecure-origin-as-secure).', 'error');
+                } else {
+                    showStatus('Browser ini belum mendukung Web Bluetooth. Untuk cetak langsung tanpa RawBT, gunakan Google Chrome di Android atau PC.', 'error');
+                }
                 return;
             }
 
