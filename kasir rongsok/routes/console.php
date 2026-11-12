@@ -24,9 +24,10 @@ Artisan::command('app:reset-transactions {--force : Paksa reset tanpa konfirmasi
     DB::table('sales_transaction_items')->truncate();
     DB::table('sales_transactions')->truncate();
 
-    // 2. Surat Jalan Pengiriman
+    // 2. Surat Jalan Pengiriman & Sopir Armada
     DB::table('delivery_order_items')->truncate();
     DB::table('delivery_orders')->truncate();
+    DB::table('drivers')->truncate();
 
     // 3. Hutang Piutang, Biaya Operasional, & Slip Gaji
     DB::table('debt_payments')->truncate();
@@ -38,8 +39,10 @@ Artisan::command('app:reset-transactions {--force : Paksa reset tanpa konfirmasi
     DB::table('supplier_rewards')->truncate();
     DB::table('suppliers')->truncate();
 
-    // 5. Mutasi Stok Ledger, Log Aktivitas, & Sesi
+    // 5. Mutasi Stok Ledger, Log Aktivitas, Sesi & Riwayat Harga
     DB::table('stock_movements')->truncate();
+    DB::table('item_price_stocks')->truncate();
+    DB::table('scrap_item_price_histories')->truncate();
     DB::table('activity_logs')->truncate();
     DB::table('sessions')->truncate();
 
