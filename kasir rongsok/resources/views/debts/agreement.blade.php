@@ -29,14 +29,6 @@
             </span>
 
             <button type="button"
-               onclick="openPdfPreview('{{ route('debts.agreement-pdf', $debt) }}', 'Surat Perjanjian #{{ $debt->agreement_number ?: $debt->debt_number }}', '{{ $debt->borrower_phone }}', '{{ $debt->borrower_name }}', 'Berikut Surat Perjanjian Hutang Modal')"
-               class="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
-               title="Pratinjau Dokumen PDF Surat Perjanjian">
-                <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-400"></i>
-                <span>Preview PDF SPH</span>
-            </button>
-
-            <button type="button"
                     @click="openWaPdfModal({
                         title: 'Kirim Surat Perjanjian PDF',
                         subtitle: 'Kirim berkas dokumen PDF Surat Perjanjian ke WhatsApp peminjam (2 Lembar: Asli & Salinan)',

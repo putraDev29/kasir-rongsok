@@ -641,14 +641,7 @@
             <!-- Tombol Aksi: Cetak PDF & Kirim via WhatsApp -->
             <div class="space-y-2">
                 <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Aksi Surat Perjanjian Hutang Modal:</div>
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button"
-                       onclick="openPdfPreview('{{ route('debts.agreement-pdf', $justCreatedDebt) }}', 'Surat Perjanjian #{{ $justCreatedDebt->agreement_number ?: $justCreatedDebt->debt_number }}', '{{ $justCreatedDebt->borrower_phone }}', '{{ $justCreatedDebt->borrower_name }}', 'Berikut Surat Perjanjian Hutang Modal')"
-                       class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-colors text-center cursor-pointer"
-                       title="Pratinjau Dokumen PDF Surat Perjanjian">
-                        <i data-lucide="file-text" class="w-4 h-4 text-emerald-400"></i>
-                        <span>Preview PDF SPH</span>
-                    </button>
+                <div class="grid grid-cols-1 gap-2">
 
                     <a href="{{ route('debts.agreement', $justCreatedDebt) }}" target="_blank"
                        class="px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors text-center"

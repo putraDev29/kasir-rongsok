@@ -78,28 +78,6 @@
             <i data-lucide="log-in" class="w-4 h-4"></i>
             <span>Masuk ke Aplikasi</span>
         </button>
-
-        <!-- Fast Role Fill Helper for testing -->
-        <div class="pt-4 border-t border-slate-100 text-center">
-            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-2">Akun Demo Cepat</div>
-            <div class="grid grid-cols-3 gap-1.5 text-xs">
-                <button type="button" 
-                        onclick="document.getElementById('email').value='owner@kasirrongsok.com'; document.getElementById('password').value='password123';"
-                        class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-medium text-[11px] transition-colors">
-                    Super Admin
-                </button>
-                <button type="button" 
-                        onclick="document.getElementById('email').value='admin@kasirrongsok.com'; document.getElementById('password').value='password123';"
-                        class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-medium text-[11px] transition-colors">
-                    Admin
-                </button>
-                <button type="button" 
-                        onclick="document.getElementById('email').value='kasir1@kasirrongsok.com'; document.getElementById('password').value='password123';"
-                        class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-medium text-[11px] transition-colors">
-                    Kasir Timbang
-                </button>
-            </div>
-        </div>
     </form>
 </div>
 @endsection
