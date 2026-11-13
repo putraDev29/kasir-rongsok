@@ -6,28 +6,72 @@
     <title>Kwitansi_{{ $payment->payment_number }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        @page {
+            size: auto;
+            margin: 0mm;
+        }
         @media screen {
             .receipt-58mm {
-                width: 58mm !important;
-                max-width: 58mm !important;
+                width: 45mm !important;
+                max-width: 45mm !important;
+                font-family: 'Consolas', 'Courier New', monospace !important;
             }
         }
         @media print {
             .no-print { display: none !important; }
-            body { margin: 0; padding: 0; background: #fff; }
+            * {
+                color: #000000 !important;
+                -webkit-text-fill-color: #000000 !important;
+                border-color: #000000 !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+            }
+            body { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                background: #fff !important; 
+                color: #000000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                width: 100% !important; 
+                display: block !important;
+            }
+            .receipt-container {
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                box-sizing: border-box !important;
+                display: block !important;
+            }
             .receipt-58mm {
-                width: 48mm !important;
-                max-width: 48mm !important;
-                font-size: 8.5px !important;
+                width: 45mm !important;
+                max-width: 45mm !important;
+                min-width: 45mm !important;
+                margin: 0 0 0 1.5mm !important;
+                padding: 0 !important;
+                font-size: 8px !important;
                 line-height: 1.25 !important;
+                font-weight: 600 !important;
+                font-family: 'Consolas', 'Courier New', monospace !important;
+                box-sizing: border-box !important;
             }
             .receipt-58mm h1 {
-                font-size: 11px !important;
+                font-size: 10px !important;
+                font-weight: 800 !important;
             }
             .receipt-80mm {
                 width: 72mm !important;
                 max-width: 72mm !important;
-                font-size: 11px !important;
+                padding: 0 2mm !important;
+                font-size: 10.5px !important;
+                line-height: 1.35 !important;
+            }
+            .receipt-a4 {
+                width: 100% !important;
+                max-width: 210mm !important;
+                padding: 10mm !important;
             }
         }
     </style>
@@ -92,21 +136,21 @@
     <div id="printStatusAlert" class="hidden no-print w-full max-w-xl mb-3 px-3.5 py-2.5 rounded-xl text-xs font-medium border flex items-center justify-between gap-2"></div>
 
     <!-- RECEIPT CONTAINER -->
-    <div class="bg-white text-slate-900 shadow-md border border-slate-200 
-         {{ $format === 'thermal_58' ? 'receipt-58mm w-[58mm] text-[9px] p-2' : ($format === 'thermal_80' ? 'receipt-80mm w-[80mm] text-xs p-3' : 'receipt-a4 max-w-xl w-full p-8 rounded-xl') }}">
+    <div class="receipt-container bg-white text-black shadow-md border border-slate-200 
+         {{ $format === 'thermal_58' ? 'receipt-58mm w-[45mm] max-w-[45mm] text-[8px] p-1' : ($format === 'thermal_80' ? 'receipt-80mm w-[80mm] max-w-[80mm] text-xs p-3' : 'receipt-a4 max-w-xl w-full p-8 rounded-xl') }}">
         
         <!-- Header -->
-        <div class="text-center pb-2 border-b border-dashed border-slate-400">
-            <h1 class="{{ $format === 'a4' ? 'text-lg' : ($format === 'thermal_58' ? 'text-[11px]' : 'text-sm') }} font-bold tracking-tight uppercase">
+        <div class="text-center pb-2 border-b border-dashed border-slate-600">
+            <h1 class="{{ $format === 'a4' ? 'text-lg' : ($format === 'thermal_58' ? 'text-[10px] thermal-shrink-title' : 'text-sm') }} font-extrabold tracking-tight uppercase text-black">
                 {{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}
             </h1>
-            <p class="text-[9px] text-slate-600 mt-0.5 leading-tight">
+            <p class="text-[8.5px] text-slate-800 font-medium mt-0.5 leading-tight">
                 {{ $settings['company_address'] ?? 'Jl. Industri Daur Ulang No. 88, Sentra Rongsok' }}
             </p>
-            <p class="text-[9px] text-slate-600 font-mono">
+            <p class="text-[8.5px] text-slate-800 font-semibold font-mono">
                 Telp: {{ $settings['company_phone'] ?? '0812-3456-7890' }}
             </p>
-            <div class="mt-2 inline-block px-2 py-0.5 border border-slate-800 {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} font-bold uppercase tracking-wider">
+            <div class="mt-1.5 inline-block px-2 py-0.5 border border-black {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[10px]' }} font-black uppercase tracking-wider">
                 BUKTI PEMBAYARAN HUTANG / BON
             </div>
         </div>
@@ -120,83 +164,83 @@
         @endphp
 
         <!-- Meta Info (Colons vertically aligned, dynamic width never overlapping text) -->
-        <div class="py-1.5 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-[10px]' }} border-b border-dashed border-slate-400 font-mono"
-             style="display: grid; grid-template-columns: max-content {{ $format === 'thermal_58' ? '6px' : '8px' }} 1fr; column-gap: {{ $format === 'thermal_58' ? '3px' : '4px' }}; row-gap: 2px; align-items: baseline;">
-            <span class="whitespace-nowrap text-slate-700">No. Bukti</span>
-            <span class="text-center">:</span>
+        <div class="py-1.5 {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[10px]' }} border-b border-dashed border-slate-600 font-mono"
+             style="display: grid; grid-template-columns: max-content {{ $format === 'thermal_58' ? '5px' : '8px' }} 1fr; column-gap: {{ $format === 'thermal_58' ? '2px' : '4px' }}; row-gap: 1.5px; align-items: baseline;">
+            <span class="whitespace-nowrap text-slate-800 font-medium">No. Bukti</span>
+            <span class="text-center font-bold">:</span>
             <span class="text-left font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->payment_number }}</span>
 
-            <span class="whitespace-nowrap text-slate-700">Tanggal</span>
-            <span class="text-center">:</span>
-            <span class="text-left whitespace-nowrap">{{ $payment->payment_date->format('d/m/Y H:i') }}</span>
+            <span class="whitespace-nowrap text-slate-800 font-medium">Tanggal</span>
+            <span class="text-center font-bold">:</span>
+            <span class="text-left font-semibold whitespace-nowrap">{{ $payment->payment_date->format('d/m/Y H:i') }}</span>
 
-            <span class="whitespace-nowrap text-slate-700">Peminjam</span>
-            <span class="text-center">:</span>
-            <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->debt->borrower_name }}</span>
+            <span class="whitespace-nowrap text-slate-800 font-medium">Peminjam</span>
+            <span class="text-center font-bold">:</span>
+            <span class="text-left font-bold whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->debt->borrower_name }}</span>
 
-            <span class="whitespace-nowrap text-slate-700">Ref. Pinjam</span>
-            <span class="text-center">:</span>
+            <span class="whitespace-nowrap text-slate-800 font-medium">Ref. Pinjam</span>
+            <span class="text-center font-bold">:</span>
             <span class="text-left whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->debt->debt_number }}</span>
 
-            <span class="whitespace-nowrap text-slate-700">Metode Bayar</span>
-            <span class="text-center">:</span>
-            <span class="text-left whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->paymentMethod?->name ?? 'Tunai' }}</span>
+            <span class="whitespace-nowrap text-slate-800 font-medium">Metode</span>
+            <span class="text-center font-bold">:</span>
+            <span class="text-left font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->paymentMethod?->name ?? 'Tunai' }}</span>
 
-            <span class="whitespace-nowrap text-slate-700">Kasir</span>
-            <span class="text-center">:</span>
+            <span class="whitespace-nowrap text-slate-800 font-medium">Kasir</span>
+            <span class="text-center font-bold">:</span>
             <span class="text-left whitespace-nowrap overflow-hidden text-ellipsis">{{ $payment->user?->name ?? 'Kasir' }}</span>
         </div>
 
         <!-- Financial Breakdown -->
-        <div class="py-2 font-mono {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} space-y-0.5">
+        <div class="py-2 font-mono {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[10px]' }} space-y-0.5">
             @php
                 $beforeAmount = $payment->remaining_balance + $payment->amount;
             @endphp
-            <div class="flex justify-between text-slate-600">
-                <span>Sisa Hutang Sebelum:</span>
-                <span>Rp {{ number_format($beforeAmount, 0, ',', '.') }}</span>
+            <div class="flex justify-between text-slate-800 font-medium">
+                <span>Hutang Awal:</span>
+                <span class="font-bold text-black">Rp {{ number_format($beforeAmount, 0, ',', '.') }}</span>
             </div>
 
-            <div class="pt-1 border-t border-slate-900 flex justify-between {{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }} font-bold">
-                <span>JUMLAH DIBAYARKAN:</span>
-                <span class="{{ $format === 'thermal_58' ? 'text-[10px]' : 'text-sm' }} font-bold text-slate-900">Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
+            <div class="pt-1 border-t border-black flex justify-between {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-xs' }} font-bold text-black">
+                <span>DIBAYARKAN:</span>
+                <span class="{{ $format === 'thermal_58' ? 'text-[9px]' : 'text-sm' }} font-black text-black">Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
             </div>
 
-            <div class="pt-1 border-t border-dashed border-slate-400 flex justify-between font-bold text-amber-800 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-[10px]' }}">
-                <span>SISA SALDO HUTANG:</span>
-                <span class="{{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }}">Rp {{ number_format($payment->remaining_balance, 0, ',', '.') }}</span>
+            <div class="pt-1 border-t border-dashed border-slate-600 flex justify-between font-bold {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} text-black">
+                <span>SISA HUTANG:</span>
+                <span class="{{ $format === 'thermal_58' ? 'text-[9px]' : 'text-xs' }} font-extrabold text-black">Rp {{ number_format($payment->remaining_balance, 0, ',', '.') }}</span>
             </div>
 
             @if($payment->remaining_balance <= 0)
-                <div class="mt-2 text-center py-1 bg-emerald-50 text-emerald-800 font-black text-xs border border-emerald-300 rounded">
-                    *** PINJAMAN INI TELAH LUNAS ***
+                <div class="mt-2 text-center py-0.5 bg-black text-white font-black {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-xs' }} rounded">
+                    *** PINJAMAN INI LUNAS ***
                 </div>
             @endif
 
             @if($payment->notes)
-                <div class="text-[9px] text-slate-500 pt-1 italic">
-                    Keterangan: {{ $payment->notes }}
+                <div class="text-[7.5px] text-slate-800 pt-1 italic break-words leading-tight">
+                    Ket: {{ $payment->notes }}
                 </div>
             @endif
         </div>
 
         <!-- Signatures -->
-        <div class="mt-5 pt-2 border-t border-slate-300 text-center font-sans">
-            <div class="grid grid-cols-2 gap-4 text-[10px] text-slate-600">
+        <div class="mt-3 pt-2 border-t border-dashed border-slate-600 text-center font-sans">
+            <div class="grid grid-cols-2 gap-2 {{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[10px]' }} text-black">
                 <div>
-                    <p>Yang Menyerahkan</p>
-                    <div class="h-10"></div>
-                    <p class="font-bold">{{ $payment->debt->borrower_name }}</p>
+                    <p class="leading-tight font-medium">Penyetor</p>
+                    <div class="h-8"></div>
+                    <p class="font-bold underline leading-tight break-words">{{ $payment->debt->borrower_name }}</p>
                 </div>
                 <div>
-                    <p>Penerima / Kasir</p>
-                    <div class="h-10"></div>
-                    <p class="font-bold">{{ $payment->user?->name ?? 'Kasir' }}</p>
+                    <p class="leading-tight font-medium">Kasir</p>
+                    <div class="h-8"></div>
+                    <p class="font-bold underline leading-tight break-words">{{ $payment->user?->name ?? 'Kasir' }}</p>
                 </div>
             </div>
 
-            <p class="mt-4 text-[8px] text-slate-400 italic leading-tight">
-                Simpan bukti pembayaran ini sebagai bukti pembayaran hutang / bon yang sah.
+            <p class="mt-2 text-[7.5px] text-slate-800 italic leading-tight mb-0 pb-0">
+                Simpan bukti ini sebagai bukti pembayaran hutang / bon yang sah.
             </p>
         </div>
 
@@ -205,6 +249,8 @@
     <script>
         window.receiptData = {
             type: 'debt_payment',
+            logoBase64: @json(\App\Models\BusinessSetting::logoBase64()),
+            logoUrl: @json(\App\Models\BusinessSetting::logoUrl()),
             companyName: @json($settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR'),
             companyAddress: @json($settings['company_address'] ?? ''),
             companyPhone: @json($settings['company_phone'] ?? ''),

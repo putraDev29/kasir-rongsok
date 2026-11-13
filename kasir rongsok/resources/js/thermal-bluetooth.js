@@ -84,7 +84,75 @@ export class ThermalBluetooth {
         return prefix + ' '.repeat(spaces) + value + '\n';
     }
 
-    static buildPurchaseEscPos(data, charWidth = 32) {
+    static async imageToEscPos(dataUrl, maxDots = 144) {
+        if (!dataUrl) return null;
+        try {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.src = dataUrl;
+            await new Promise((resolve, reject) => {
+                if (img.complete && img.naturalWidth) return resolve();
+                img.onload = () => resolve();
+                img.onerror = () => reject(new Error('Gagal memuat logo'));
+                setTimeout(() => reject(new Error('Timeout memuat logo')), 3000);
+            });
+
+            if (!img.naturalWidth || !img.naturalHeight) return null;
+
+            // Target width in dots, must be multiple of 8 (144 dots ≈ 18mm pada 203 DPI)
+            let targetWidth = Math.min(maxDots, img.naturalWidth || maxDots);
+            targetWidth = Math.max(32, Math.round(targetWidth / 8) * 8);
+            const scale = targetWidth / img.naturalWidth;
+            const targetHeight = Math.max(8, Math.round(img.naturalHeight * scale));
+
+            const canvas = document.createElement('canvas');
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, targetWidth, targetHeight);
+            ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+            const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight).data;
+            const widthBytes = targetWidth / 8;
+
+            const bytes = [
+                0x1B, 0x61, 0x01, // Center align
+                0x1D, 0x76, 0x30, 0x00, // GS v 0 0 (Raster bit image normal mode)
+                widthBytes & 0xFF,
+                (widthBytes >> 8) & 0xFF,
+                targetHeight & 0xFF,
+                (targetHeight >> 8) & 0xFF
+            ];
+
+            for (let y = 0; y < targetHeight; y++) {
+                for (let x = 0; x < targetWidth; x += 8) {
+                    let byte = 0;
+                    for (let b = 0; b < 8; b++) {
+                        const px = x + b;
+                        const idx = (y * targetWidth + px) * 4;
+                        const r = imgData[idx];
+                        const g = imgData[idx + 1];
+                        const b_col = imgData[idx + 2];
+                        const a = imgData[idx + 3];
+                        // High-contrast monochrome: pixel hitam jika tidak transparan dan gelap
+                        const isBlack = (a > 50 && (r * 0.299 + g * 0.587 + b_col * 0.114) < 180);
+                        if (isBlack) {
+                            byte |= (1 << (7 - b));
+                        }
+                    }
+                    bytes.push(byte);
+                }
+            }
+            bytes.push(0x0A); // Line feed setelah logo
+            return bytes;
+        } catch (e) {
+            console.warn('Gagal memproses logo ke ESC/POS:', e);
+            return null;
+        }
+    }
+
+    static async buildPurchaseEscPos(data, charWidth = 32) {
         const encoder = new TextEncoder();
         let bytes = [];
 
@@ -96,7 +164,15 @@ export class ThermalBluetooth {
         // 1. Initialize
         bytes.push(0x1B, 0x40); // ESC @ (Reset)
 
-        // 2. Header (Center align)
+        // 2. Logo (Center align)
+        if (data.logoBase64 || data.logoUrl) {
+            const logoBytes = await this.imageToEscPos(data.logoBase64 || data.logoUrl, 144);
+            if (logoBytes && logoBytes.length > 0) {
+                for (let i = 0; i < logoBytes.length; i++) bytes.push(logoBytes[i]);
+            }
+        }
+
+        // 3. Header (Center align)
         bytes.push(0x1B, 0x61, 0x01); // Center
         bytes.push(0x1B, 0x45, 0x01); // Bold on
         append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR').toUpperCase() + '\n');
@@ -248,7 +324,7 @@ export class ThermalBluetooth {
         return new Uint8Array(bytes);
     }
 
-    static buildSaleEscPos(data, charWidth = 32) {
+    static async buildSaleEscPos(data, charWidth = 32) {
         const encoder = new TextEncoder();
         let bytes = [];
 
@@ -260,7 +336,15 @@ export class ThermalBluetooth {
         // 1. Initialize
         bytes.push(0x1B, 0x40);
 
-        // 2. Header
+        // 2. Logo (Center align)
+        if (data.logoBase64 || data.logoUrl) {
+            const logoBytes = await this.imageToEscPos(data.logoBase64 || data.logoUrl, 144);
+            if (logoBytes && logoBytes.length > 0) {
+                for (let i = 0; i < logoBytes.length; i++) bytes.push(logoBytes[i]);
+            }
+        }
+
+        // 3. Header
         bytes.push(0x1B, 0x61, 0x01); // Center
         bytes.push(0x1B, 0x45, 0x01); // Bold on
         append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR').toUpperCase() + '\n');
@@ -345,7 +429,7 @@ export class ThermalBluetooth {
         return new Uint8Array(bytes);
     }
 
-    static buildDebtPaymentEscPos(data, charWidth = 32) {
+    static async buildDebtPaymentEscPos(data, charWidth = 32) {
         const encoder = new TextEncoder();
         let bytes = [];
 
@@ -357,7 +441,15 @@ export class ThermalBluetooth {
         // 1. Initialize
         bytes.push(0x1B, 0x40);
 
-        // 2. Header
+        // 2. Logo (Center align)
+        if (data.logoBase64 || data.logoUrl) {
+            const logoBytes = await this.imageToEscPos(data.logoBase64 || data.logoUrl, 144);
+            if (logoBytes && logoBytes.length > 0) {
+                for (let i = 0; i < logoBytes.length; i++) bytes.push(logoBytes[i]);
+            }
+        }
+
+        // 3. Header
         bytes.push(0x1B, 0x61, 0x01);
         bytes.push(0x1B, 0x45, 0x01);
         append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR').toUpperCase() + '\n');
@@ -415,7 +507,7 @@ export class ThermalBluetooth {
         return new Uint8Array(bytes);
     }
 
-    static buildDeliveryOrderEscPos(data, charWidth = 32) {
+    static async buildDeliveryOrderEscPos(data, charWidth = 32) {
         const encoder = new TextEncoder();
         let bytes = [];
 
@@ -427,7 +519,15 @@ export class ThermalBluetooth {
         // 1. Initialize
         bytes.push(0x1B, 0x40);
 
-        // 2. Header
+        // 2. Logo (Center align)
+        if (data.logoBase64 || data.logoUrl) {
+            const logoBytes = await this.imageToEscPos(data.logoBase64 || data.logoUrl, 144);
+            if (logoBytes && logoBytes.length > 0) {
+                for (let i = 0; i < logoBytes.length; i++) bytes.push(logoBytes[i]);
+            }
+        }
+
+        // 3. Header
         bytes.push(0x1B, 0x61, 0x01);
         bytes.push(0x1B, 0x45, 0x01);
         append((data.companyName || 'UD. BERKAH RONGSOK MAKMUR').toUpperCase() + '\n');
@@ -491,16 +591,16 @@ export class ThermalBluetooth {
         return new Uint8Array(bytes);
     }
 
-    static getBytes(data, charWidth = 32, type = 'purchase') {
+    static async getBytes(data, charWidth = 32, type = 'purchase') {
         const docType = type || data.type || 'purchase';
         if (docType === 'sale') {
-            return this.buildSaleEscPos(data, charWidth);
+            return await this.buildSaleEscPos(data, charWidth);
         } else if (docType === 'debt_payment') {
-            return this.buildDebtPaymentEscPos(data, charWidth);
+            return await this.buildDebtPaymentEscPos(data, charWidth);
         } else if (docType === 'delivery_order') {
-            return this.buildDeliveryOrderEscPos(data, charWidth);
+            return await this.buildDeliveryOrderEscPos(data, charWidth);
         }
-        return this.buildPurchaseEscPos(data, charWidth);
+        return await this.buildPurchaseEscPos(data, charWidth);
     }
 
     static async printBluetooth(data, charWidth = 32, onProgress = null, type = 'purchase') {
@@ -551,7 +651,7 @@ export class ThermalBluetooth {
 
         if (onProgress) onProgress('Mengirim data cetak...');
 
-        const rawBytes = this.getBytes(data, charWidth, type);
+        const rawBytes = await this.getBytes(data, charWidth, type);
 
         // Chunking in 100-byte packets to prevent GATT buffer overflow
         const chunkSize = 100;
@@ -568,8 +668,8 @@ export class ThermalBluetooth {
         if (onProgress) onProgress('Selesai dicetak!');
     }
 
-    static printQuickPrinter(data, charWidth = 32, type = 'purchase') {
-        const rawBytes = this.getBytes(data, charWidth, type);
+    static async printQuickPrinter(data, charWidth = 32, type = 'purchase') {
+        const rawBytes = await this.getBytes(data, charWidth, type);
         let binary = '';
         const len = rawBytes.byteLength;
         for (let i = 0; i < len; i++) {

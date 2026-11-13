@@ -11,54 +11,74 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @page {
-            size: {{ $format === 'thermal_58' ? '58mm auto' : ($format === 'thermal_80' ? '80mm auto' : 'auto') }};
+            size: auto;
             margin: 0mm;
         }
         @media print {
             .no-print {
                 display: none !important;
             }
+            * {
+                color: #000000 !important;
+                -webkit-text-fill-color: #000000 !important;
+                border-color: #000000 !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+            }
             html, body {
                 margin: 0 !important;
                 padding: 0 !important;
-                background: #fff !important;
-                color: #0f172a !important;
+                background: #ffffff !important;
+                color: #000000 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                width: 100% !important;
+                display: block !important;
             }
             .receipt-container {
                 box-shadow: none !important;
                 border: none !important;
-                margin: 0 auto !important;
-                background: #fff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
                 box-sizing: border-box !important;
+                display: block !important;
             }
             .receipt-58mm {
-                width: 58mm !important;
-                max-width: 58mm !important;
-                padding: 6px 8px !important;
-                font-size: 9px !important;
+                width: 45mm !important;
+                max-width: 45mm !important;
+                min-width: 45mm !important;
+                margin: 0 0 0 1.5mm !important;
+                padding: 0 !important;
+                font-size: 8px !important;
                 line-height: 1.25 !important;
+                font-weight: 600 !important;
+                font-family: 'Consolas', 'Courier New', monospace !important;
+                box-sizing: border-box !important;
             }
             .receipt-58mm h1,
             .receipt-58mm .thermal-shrink-title {
-                font-size: 11px !important;
+                font-size: 10px !important;
+                font-weight: 800 !important;
             }
             .receipt-58mm .thermal-total-label,
             .receipt-58mm .thermal-total-val {
-                font-size: 9.5px !important;
+                font-size: 8.5px !important;
+                font-weight: 800 !important;
             }
             .receipt-58mm .thermal-cash-label {
-                font-size: 10px !important;
+                font-size: 9px !important;
+                font-weight: 800 !important;
             }
             .receipt-58mm .thermal-cash-val {
-                font-size: 10.5px !important;
+                font-size: 9.5px !important;
+                font-weight: 900 !important;
             }
             .receipt-80mm {
-                width: 80mm !important;
-                max-width: 80mm !important;
-                padding: 10px 12px !important;
-                font-size: 11px !important;
+                width: 72mm !important;
+                max-width: 72mm !important;
+                padding: 0 2mm !important;
+                font-size: 10.5px !important;
                 line-height: 1.35 !important;
             }
             .receipt-a4 {
@@ -66,38 +86,29 @@
                 max-width: 210mm !important;
                 padding: 10mm !important;
             }
-            /* Badge Disclaimer: latar belakang gelap dan teks putih pekat sama persis seperti di preview */
-            .receipt-disclaimer-badge {
-                background-color: #0f172a !important;
-                color: #ffffff !important;
-                border: 1px solid #0f172a !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                display: inline-block !important;
-                border-radius: 4px !important;
-                padding: 2px 8px !important;
-            }
-            .receipt-disclaimer-badge * {
-                color: #ffffff !important;
+            .receipt-container * {
+                page-break-inside: avoid;
+                break-inside: avoid;
             }
         }
         @media screen {
             .receipt-58mm {
-                width: 58mm !important;
-                max-width: 58mm !important;
+                width: 45mm !important;
+                max-width: 45mm !important;
+                font-family: 'Consolas', 'Courier New', monospace !important;
             }
             .receipt-58mm .thermal-shrink-title {
-                font-size: 11px !important;
+                font-size: 10px !important;
             }
             .receipt-58mm .thermal-total-label,
             .receipt-58mm .thermal-total-val {
-                font-size: 9.5px !important;
+                font-size: 8.5px !important;
             }
             .receipt-58mm .thermal-cash-label {
-                font-size: 10px !important;
+                font-size: 9px !important;
             }
             .receipt-58mm .thermal-cash-val {
-                font-size: 10.5px !important;
+                font-size: 9.5px !important;
             }
         }
     </style>
@@ -162,85 +173,85 @@
     <div id="printStatusAlert" class="hidden no-print w-full max-w-xl mb-3 px-3.5 py-2.5 rounded-xl text-xs font-medium border flex items-center justify-between gap-2"></div>
 
     <!-- RECEIPT CONTAINER -->
-    <div class="receipt-container bg-white text-slate-900 shadow-md border border-slate-200 
-         {{ $format === 'thermal_58' ? 'receipt-58mm w-[58mm] max-w-[58mm] text-[9px] p-2' : ($format === 'thermal_80' ? 'receipt-80mm w-[80mm] max-w-[80mm] text-xs p-3' : 'receipt-a4 max-w-3xl w-full p-8 rounded-xl') }}">
+    <div class="receipt-container bg-white text-black shadow-md border border-slate-200 
+         {{ $format === 'thermal_58' ? 'receipt-58mm w-[45mm] max-w-[45mm] text-[8px] p-1' : ($format === 'thermal_80' ? 'receipt-80mm w-[80mm] max-w-[80mm] text-xs p-3' : 'receipt-a4 max-w-3xl w-full p-8 rounded-xl') }}">
         
         <!-- Header -->
-        <div class="text-center pb-2 border-b border-dashed border-slate-400">
+        <div class="text-center pb-2 border-b border-dashed border-slate-600">
             @if(\App\Models\BusinessSetting::hasLogo())
                 <div class="flex justify-center mb-1.5">
                     <img src="{{ \App\Models\BusinessSetting::logoUrl() }}" alt="Logo" class="{{ $format === 'a4' ? 'h-14' : 'h-8' }} max-w-[140px] object-contain">
                 </div>
             @endif
-            <h1 class="{{ $format === 'a4' ? 'text-xl' : ($format === 'thermal_58' ? 'text-[11px] thermal-shrink-title' : 'text-sm') }} font-bold tracking-tight uppercase">
+            <h1 class="{{ $format === 'a4' ? 'text-xl' : ($format === 'thermal_58' ? 'text-[10px] thermal-shrink-title' : 'text-sm') }} font-extrabold tracking-tight uppercase text-black">
                 {{ $settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR' }}
             </h1>
-            <p class="text-[9px] text-slate-600 mt-0.5 leading-tight">
+            <p class="text-[8.5px] text-slate-800 font-medium mt-0.5 leading-tight">
                 {{ $settings['company_address'] ?? 'Jl. Industri Daur Ulang No. 88, Sentra Rongsok' }}
             </p>
-            <p class="text-[9px] text-slate-600 font-mono">
+            <p class="text-[8.5px] text-slate-800 font-semibold font-mono">
                 Telp: {{ $settings['company_phone'] ?? '0812-3456-7890' }}
             </p>
         </div>
 
         @php
             $metaGrid = ($format === 'thermal_58') 
-                ? 'display: grid; grid-template-columns: 66px 6px 1fr; align-items: center;' 
+                ? 'display: grid; grid-template-columns: max-content 5px 1fr; align-items: baseline; column-gap: 2px; row-gap: 1.5px;' 
                 : (($format === 'thermal_80') 
                     ? 'display: grid; grid-template-columns: 95px 8px 1fr; align-items: center;' 
                     : 'display: grid; grid-template-columns: 130px 12px 1fr; align-items: center;');
 
             $calcGrid = ($format === 'thermal_58') 
-                ? 'display: grid; grid-template-columns: 70px 6px 1fr; align-items: center;' 
+                ? 'display: grid; grid-template-columns: max-content 5px 1fr; align-items: center; column-gap: 2px;' 
                 : (($format === 'thermal_80') 
                     ? 'display: grid; grid-template-columns: 105px 8px 1fr; align-items: center;' 
                     : 'display: grid; grid-template-columns: 140px 12px 1fr; align-items: center;');
         @endphp
 
         <!-- Meta Info (Colons vertically aligned right after longest label, dynamic width never overlapping text) -->
-        <div class="py-1.5 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-[10px]' }} border-b border-dashed border-slate-400 font-mono"
-             style="display: grid; grid-template-columns: max-content {{ $format === 'thermal_58' ? '6px' : '8px' }} 1fr; column-gap: {{ $format === 'thermal_58' ? '3px' : '4px' }}; row-gap: 2px; align-items: baseline;">
-            <span class="whitespace-nowrap text-slate-700">No. Nota</span>
-            <span class="text-center">:</span>
+        <div class="py-1.5 {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[10px]' }} border-b border-dashed border-slate-600 font-mono"
+             style="{{ $metaGrid }}">
+            <span class="whitespace-nowrap text-slate-800 font-medium">No. Nota</span>
+            <span class="text-center font-bold">:</span>
             <span class="text-left font-bold whitespace-nowrap">{{ $purchase->invoice_number }}</span>
 
-            <span class="whitespace-nowrap text-slate-700">Tanggal</span>
-            <span class="text-center">:</span>
-            <span class="text-left whitespace-nowrap">{{ $purchase->transaction_date->format('d/m/Y H:i') }}</span>
+            <span class="whitespace-nowrap text-slate-800 font-medium">Tanggal</span>
+            <span class="text-center font-bold">:</span>
+            <span class="text-left font-semibold whitespace-nowrap">{{ $purchase->transaction_date->format('d/m/Y H:i') }}</span>
 
-            <span class="whitespace-nowrap text-slate-700">Pemasok</span>
-            <span class="text-center">:</span>
-            <span class="text-left font-semibold break-words leading-tight">{{ $purchase->supplier_name ?: '-' }}</span>
+            <span class="whitespace-nowrap text-slate-800 font-medium">Pemasok</span>
+            <span class="text-center font-bold">:</span>
+            <span class="text-left font-bold break-words leading-tight">{{ $purchase->supplier_name ?: '-' }}</span>
 
             @if($purchase->supplier_phone)
-                <span class="whitespace-nowrap text-slate-700">HP Pemasok</span>
-                <span class="text-center">:</span>
-                <span class="text-left font-mono whitespace-nowrap">{{ $purchase->supplier_phone }}</span>
+                <span class="whitespace-nowrap text-slate-800 font-medium">HP Pemasok</span>
+                <span class="text-center font-bold">:</span>
+                <span class="text-left font-mono font-semibold whitespace-nowrap">{{ $purchase->supplier_phone }}</span>
             @endif
 
-            <span class="whitespace-nowrap text-slate-700">Kasir</span>
-            <span class="text-center">:</span>
-            <span class="text-left break-words leading-tight">{{ $purchase->user?->name }}</span>
+            <span class="whitespace-nowrap text-slate-800 font-medium">Kasir</span>
+            <span class="text-center font-bold">:</span>
+            <span class="text-left font-semibold break-words leading-tight">{{ $purchase->user?->name }}</span>
 
-            <span class="whitespace-nowrap text-slate-700">Metode Bayar</span>
-            <span class="text-center">:</span>
-            <span class="text-left font-semibold break-words leading-tight">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
+            <span class="whitespace-nowrap text-slate-800 font-medium">Metode Bayar</span>
+            <span class="text-center font-bold">:</span>
+            <span class="text-left font-bold break-words leading-tight">{{ $purchase->paymentMethod?->name ?? 'Tunai' }}</span>
 
             @if($purchase->isBankPayment())
                 @if($purchase->getBankAccountNumber())
-                    <span class="whitespace-nowrap text-slate-700">No. Rekening</span>
-                    <span class="text-center">:</span>
+                    <span class="whitespace-nowrap text-slate-800 font-medium">No. Rekening</span>
+                    <span class="text-center font-bold">:</span>
                     <span class="text-left font-mono font-bold break-all">{{ $purchase->getBankAccountNumber() }}</span>
                 @endif
                 @if($purchase->getBankAccountName())
-                    <span class="whitespace-nowrap text-slate-700">Nama Rekening</span>
-                    <span class="text-center">:</span>
-                    <span class="text-left font-semibold break-words leading-tight">{{ $purchase->getBankAccountName() }}</span>
+                    <span class="whitespace-nowrap text-slate-800 font-medium">Nama Rekening</span>
+                    <span class="text-center font-bold">:</span>
+                    <span class="text-left font-bold break-words leading-tight">{{ $purchase->getBankAccountName() }}</span>
                 @endif
                 @if(!$purchase->getBankAccountNumber() && !$purchase->getBankAccountName() && !empty($purchase->bank_info))
-                    <span class="whitespace-nowrap text-slate-700">Data Rekening</span>
-                    <span class="text-center">:</span>
-                    <span class="text-left font-mono text-[8.5px] font-bold break-words leading-tight" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
+                    <span class="whitespace-nowrap text-slate-800 font-medium">Data Rekening</span>
+                    <span class="text-center font-bold">:</span>
+                    <span class="text-left font-mono text-[8px] font-bold break-words leading-tight" title="{{ $purchase->bank_info }}">{{ $purchase->bank_info }}</span>
                 @endif
             @endif
         </div>
@@ -261,22 +272,22 @@
         <!-- Items Breakdown -->
         @if($format === 'thermal_58')
             <!-- Layout Khusus Kertas 58mm (Pas 32 karakter, rapi tanpa terpotong untuk Eppos/Iware) -->
-            <div class="py-1 border-b border-dashed border-slate-400 font-mono text-[9px]">
+            <div class="py-1 border-b border-dashed border-slate-600 font-mono text-[8px]">
                 @if($activeItems->isEmpty())
-                    <div class="py-2 text-center text-[9px] text-red-600 font-bold uppercase tracking-wider">
+                    <div class="py-2 text-center text-[8px] text-red-600 font-bold uppercase tracking-wider">
                         (Semua Barang Dibatalkan)
                     </div>
                 @else
                     @foreach($activeItems as $item)
-                        <div class="py-1 {{ !$loop->last ? 'border-b border-dotted border-slate-300' : '' }}">
-                            <div class="font-bold text-[10px] uppercase text-slate-900 leading-tight">
+                        <div class="py-1 {{ !$loop->last ? 'border-b border-dotted border-slate-400' : '' }}">
+                            <div class="font-bold text-[9px] uppercase text-black leading-tight">
                                 {{ $item->item_name_snapshot }}
                                 @if($item->item_type_name)
-                                    <span class="font-normal text-[9px] text-slate-700">({{ $item->item_type_name }})</span>
+                                    <span class="font-medium text-[8px] text-slate-800">({{ $item->item_type_name }})</span>
                                 @endif
                             </div>
                             @if($item->unit_type === 'pcs' || $item->unit_type === 'satuan')
-                                <div class="flex justify-between text-[9px] text-slate-600">
+                                <div class="flex justify-between text-[8px] text-slate-800 font-medium">
                                     <span>
                                         @if($item->tare_weight > 0)
                                             {{ \App\Services\FormatHelper::number($item->gross_weight > 0 ? $item->gross_weight : ($item->quantity + $item->tare_weight)) }} - {{ \App\Services\FormatHelper::number($item->tare_weight) }} pcs
@@ -287,22 +298,22 @@
                                             Jumlah Satuan
                                         @endif
                                     </span>
-                                    <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}</span>
+                                    <span class="font-bold text-black">{{ \App\Services\FormatHelper::number($item->quantity ?? 1) }} {{ $item->unit_type ?: 'pcs' }}</span>
                                 </div>
                             @else
-                                <div class="flex justify-between text-[9px] text-slate-600">
+                                <div class="flex justify-between text-[8px] text-slate-800 font-medium">
                                     <span>
                                         {{ \App\Services\FormatHelper::weight($item->gross_weight) }} - {{ \App\Services\FormatHelper::weight($item->tare_weight) }} kg
                                         @if($pct = \App\Services\FormatHelper::tarePercent($item->gross_weight, $item->tare_weight))
                                             ({{ $pct }})
                                         @endif
                                     </span>
-                                    <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</span>
+                                    <span class="font-bold text-black">{{ \App\Services\FormatHelper::weight($item->net_weight) }} kg</span>
                                 </div>
                             @endif
-                            <div class="flex justify-between text-[9px] pt-0.5">
-                                <span class="text-slate-600">@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</span>
-                                <span class="font-black text-slate-900">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</span>
+                            <div class="flex justify-between text-[8px] pt-0.5 font-medium">
+                                <span class="text-slate-800">@ {{ \App\Services\FormatHelper::rupiah($item->price_per_kg) }}</span>
+                                <span class="font-extrabold text-black">{{ \App\Services\FormatHelper::rupiah($item->subtotal) }}</span>
                             </div>
                         </div>
                     @endforeach
@@ -380,64 +391,64 @@
         @endphp
 
         @if($hasPrintMultiPrice)
-            <div class="py-1.5 border-t border-dotted border-slate-300 font-mono text-[9px]">
-                <div class="font-bold text-[9px] uppercase mb-0.5 text-slate-800">Akumulasi Komoditas Barang:</div>
+            <div class="py-1.5 border-t border-dotted border-slate-400 font-mono text-[9px]">
+                <div class="font-bold text-[9px] uppercase mb-0.5 text-black">Akumulasi Komoditas Barang:</div>
                 @foreach($groupedPrintCommodities as $name => $grp)
                     @php
                         $totW = $grp->sum(fn($i) => ($i->unit_type === 'pcs' || $i->unit_type === 'satuan') ? $i->quantity : $i->net_weight);
                         $u = $grp->first()->unit_type ?: 'kg';
                         $totS = $grp->sum('subtotal');
                     @endphp
-                    <div class="flex justify-between text-slate-700">
+                    <div class="flex justify-between text-slate-800 font-medium">
                         <span>• {{ $name }}:</span>
-                        <span class="font-bold text-slate-900">{{ \App\Services\FormatHelper::weight($totW) }} {{ $u }} ({{ \App\Services\FormatHelper::rupiah($totS) }})</span>
+                        <span class="font-bold text-black">{{ \App\Services\FormatHelper::weight($totW) }} {{ $u }} ({{ \App\Services\FormatHelper::rupiah($totS) }})</span>
                     </div>
                 @endforeach
             </div>
         @endif
 
         <!-- Total Calculation (Colons aligned right after longest label, values right-aligned strictly 1 line) -->
-        <div class="pt-1.5 border-t border-dashed border-slate-400 font-mono {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} space-y-0.5">
+        <div class="pt-1.5 border-t border-dashed border-slate-600 font-mono {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[10px]' }} space-y-0.5">
             <div style="{{ $calcGrid }}">
-                <span class="whitespace-nowrap">Berat Kotor</span>
-                <span class="text-center">:</span>
-                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeGross) }} kg</span>
+                <span class="whitespace-nowrap font-medium text-slate-800">Berat Kotor</span>
+                <span class="text-center font-bold">:</span>
+                <span class="text-right whitespace-nowrap font-bold text-black">{{ \App\Services\FormatHelper::weight($activeGross) }} kg</span>
             </div>
             <div style="{{ $calcGrid }}">
-                <span class="whitespace-nowrap">Pot./Tara</span>
-                <span class="text-center">:</span>
-                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</span>
+                <span class="whitespace-nowrap font-medium text-slate-800">Pot./Tara</span>
+                <span class="text-center font-bold">:</span>
+                <span class="text-right whitespace-nowrap font-semibold text-slate-900">{{ \App\Services\FormatHelper::weight($activeTare) }} kg</span>
             </div>
-            <div style="{{ $calcGrid }}" class="font-bold text-slate-900">
-                <span class="whitespace-nowrap">TOTAL MUATAN</span>
-                <span class="text-center">:</span>
-                <span class="text-right font-bold whitespace-nowrap">{{ $purchase->total_cargo_display }}</span>
+            <div style="{{ $calcGrid }}" class="font-bold text-black">
+                <span class="whitespace-nowrap">{{ $purchase->has_pcs_items ? 'TOTAL MUATAN' : 'BERAT BERSIH' }}</span>
+                <span class="text-center font-bold">:</span>
+                <span class="text-right font-extrabold whitespace-nowrap">{{ $purchase->total_cargo_display }}</span>
             </div>
             
-            <div class="pt-1 border-t border-dotted border-slate-300" style="{{ $calcGrid }}">
-                <span class="whitespace-nowrap">Subtotal</span>
-                <span class="text-center">:</span>
-                <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($activeSubtotal) }}</span>
+            <div style="{{ $calcGrid }}">
+                <span class="whitespace-nowrap font-medium text-slate-800">Subtotal</span>
+                <span class="text-center font-bold">:</span>
+                <span class="text-right whitespace-nowrap font-bold text-black">{{ \App\Services\FormatHelper::rupiah($activeSubtotal) }}</span>
             </div>
             @if($discount > 0)
-                <div class="text-slate-600" style="{{ $calcGrid }}">
+                <div class="text-slate-800 font-medium" style="{{ $calcGrid }}">
                     <span class="whitespace-nowrap">Potongan</span>
-                    <span class="text-center">:</span>
-                    <span class="text-right whitespace-nowrap">- {{ \App\Services\FormatHelper::rupiah($discount) }}</span>
+                    <span class="text-center font-bold">:</span>
+                    <span class="text-right whitespace-nowrap font-bold text-black">- {{ \App\Services\FormatHelper::rupiah($discount) }}</span>
                 </div>
             @endif
             @if($rounding != 0)
-                <div class="text-slate-600" style="{{ $calcGrid }}">
+                <div class="text-slate-800 font-medium" style="{{ $calcGrid }}">
                     <span class="whitespace-nowrap">Pembulatan</span>
-                    <span class="text-center">:</span>
-                    <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($rounding) }}</span>
+                    <span class="text-center font-bold">:</span>
+                    <span class="text-right whitespace-nowrap font-bold text-black">{{ \App\Services\FormatHelper::rupiah($rounding) }}</span>
                 </div>
             @endif
 
-            <div class="pt-1 border-t border-slate-900 {{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }} font-bold" style="{{ $calcGrid }}">
-                <span class="whitespace-nowrap thermal-total-label">TOTAL HARGA</span>
-                <span class="text-center">:</span>
-                <span class="text-right {{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-xs' }} font-bold whitespace-nowrap thermal-total-val">{{ \App\Services\FormatHelper::rupiah($activeFinal) }}</span>
+            <div class="pt-1 border-t border-dashed border-slate-600 {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-xs' }} font-bold text-black" style="{{ $calcGrid }}">
+                <span class="whitespace-nowrap thermal-total-label font-bold">TOTAL HARGA</span>
+                <span class="text-center font-bold">:</span>
+                <span class="text-right {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-xs' }} font-black whitespace-nowrap thermal-total-val">{{ \App\Services\FormatHelper::rupiah($activeFinal) }}</span>
             </div>
 
             @php
@@ -447,52 +458,52 @@
             @endphp
 
             @if($hasDebtInfo)
-                <div class="mt-1.5 pt-1.5 border-t border-dashed border-slate-400 font-mono {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[9px] sm:text-[10px]' }} space-y-0.5 bg-slate-50 p-1 rounded">
-                    <div class="font-bold text-center {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[10px]' }} uppercase tracking-wider text-slate-800 pb-0.5 border-b border-dotted border-slate-300">
+                <div class="mt-1.5 pt-1.5 border-t border-dashed border-slate-600 font-mono {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[9px] sm:text-[10px]' }} space-y-0.5 bg-slate-50 p-1 rounded">
+                    <div class="font-bold text-center {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[10px]' }} uppercase tracking-wider text-black pb-0.5 border-b border-dotted border-slate-400">
                         -- RINCIAN HUTANG / BON MODAL --
                     </div>
                     <div style="{{ $calcGrid }}">
-                        <span class="whitespace-nowrap">Hutang Awal</span>
-                        <span class="text-center">:</span>
-                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($debtBefore) }}</span>
+                        <span class="whitespace-nowrap font-medium text-slate-800">Hutang Awal</span>
+                        <span class="text-center font-bold">:</span>
+                        <span class="text-right whitespace-nowrap font-bold text-black">{{ \App\Services\FormatHelper::rupiah($debtBefore) }}</span>
                     </div>
-                    <div class="text-slate-800 font-semibold" style="{{ $calcGrid }}">
+                    <div class="text-black font-semibold" style="{{ $calcGrid }}">
                         <span class="whitespace-nowrap">Potong Hutang</span>
-                        <span class="text-center">:</span>
-                        <span class="text-right {{ $debtDeduction > 0 ? 'text-emerald-700' : 'text-slate-600' }} whitespace-nowrap">{{ $debtDeduction > 0 ? '- ' . \App\Services\FormatHelper::rupiah($debtDeduction) : 'Rp 0' }}</span>
+                        <span class="text-center font-bold">:</span>
+                        <span class="text-right font-bold text-black whitespace-nowrap">{{ $debtDeduction > 0 ? '- ' . \App\Services\FormatHelper::rupiah($debtDeduction) : 'Rp 0' }}</span>
                     </div>
-                    <div class="font-bold text-amber-800 pt-0.5 border-t border-dotted border-slate-300" style="{{ $calcGrid }}">
+                    <div class="font-bold text-black pt-0.5 border-t border-dotted border-slate-400" style="{{ $calcGrid }}">
                         <span class="whitespace-nowrap">SISA HUTANG</span>
-                        <span class="text-center">:</span>
-                        <span class="text-right whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($debtAfter) }}</span>
+                        <span class="text-center font-bold">:</span>
+                        <span class="text-right font-extrabold whitespace-nowrap">{{ \App\Services\FormatHelper::rupiah($debtAfter) }}</span>
                     </div>
                 </div>
             @endif
 
-            <div class="pt-1.5 border-t border-slate-900 {{ $format === 'thermal_58' ? 'text-[10px]' : 'text-xs' }} font-bold" style="{{ $calcGrid }}">
-                <span class="whitespace-nowrap thermal-cash-label">UANG DITERIMA</span>
-                <span class="text-center">:</span>
-                <span class="text-right {{ $format === 'thermal_58' ? 'text-[10.5px]' : 'text-sm' }} font-bold whitespace-nowrap thermal-cash-val">{{ \App\Services\FormatHelper::rupiah($activeNetCash) }}</span>
+            <div class="pt-1 border-t border-dashed border-slate-600 {{ $format === 'thermal_58' ? 'text-[9px]' : 'text-xs' }} font-bold text-black" style="{{ $calcGrid }}">
+                <span class="whitespace-nowrap thermal-cash-label font-black">UANG DITERIMA</span>
+                <span class="text-center font-bold">:</span>
+                <span class="text-right {{ $format === 'thermal_58' ? 'text-[9.5px]' : 'text-sm' }} font-black whitespace-nowrap thermal-cash-val">{{ \App\Services\FormatHelper::rupiah($activeNetCash) }}</span>
             </div>
         </div>
 
         <!-- Peringatan Disclaimer Hukum: Tidak Menerima Barang Bukan Milik Pribadi -->
-        <div class="mt-4 pt-2 border-t border-dashed border-slate-400 text-center font-sans space-y-0.5">
-            <div class="receipt-disclaimer-badge inline-block px-2 py-0.5 bg-slate-900 text-white font-bold {{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[8px] sm:text-[9px]' }} uppercase tracking-wider rounded">
-                PERHATIAN / DISCLAIMER
+        <div class="mt-2 pt-1.5 border-t border-dashed border-slate-600 text-center font-mono space-y-1 mb-0 pb-0">
+            <div class="font-bold uppercase {{ $format === 'thermal_58' ? 'text-[8.5px]' : 'text-[9px]' }} text-black">
+                [ PERHATIAN / DISCLAIMER ]
             </div>
-            <div class="font-bold uppercase {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[9px] sm:text-[10px]' }} text-slate-900 tracking-tight leading-tight pt-0.5">
+            <div class="font-bold uppercase {{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[9px]' }} text-black leading-tight break-words">
                 *** {{ $settings['receipt_disclaimer'] ?? 'TIDAK MENERIMA BARANG BUKAN MILIK PRIBADI' }} ***
             </div>
-            <p class="{{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[8.5px]' }} text-slate-700 leading-tight">
+            <p class="{{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[8.5px]' }} text-black font-medium leading-tight break-words">
                 Barang yang dijual wajib milik sah pribadi penjual. Depo tidak melayani barang curian / ilegal.
             </p>
             @if(!empty($settings['receipt_terms']))
-                <p class="{{ $format === 'thermal_58' ? 'text-[7.5px]' : 'text-[8.5px]' }} text-slate-600 leading-tight">
+                <p class="{{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[8.5px]' }} text-black font-medium leading-tight break-words">
                     {{ $settings['receipt_terms'] }}
                 </p>
             @endif
-            <p class="{{ $format === 'thermal_58' ? 'text-[7px]' : 'text-[8px]' }} text-slate-400 italic leading-tight pt-0.5">
+            <p class="{{ $format === 'thermal_58' ? 'text-[8px]' : 'text-[8.5px]' }} text-black leading-tight font-medium break-words mb-0 pb-0">
                 {{ $settings['receipt_footer'] ?? 'Barang yang telah ditimbang dan dibayar tidak dapat ditarik kembali. Terima kasih atas kerja samanya.' }}
             </p>
         </div>
@@ -501,6 +512,8 @@
 
     <script>
         window.receiptData = {
+            logoBase64: @json(\App\Models\BusinessSetting::logoBase64()),
+            logoUrl: @json(\App\Models\BusinessSetting::logoUrl()),
             companyName: @json($settings['company_name'] ?? 'UD. BERKAH RONGSOK MAKMUR'),
             companyAddress: @json($settings['company_address'] ?? 'Jl. Industri Daur Ulang No. 88, Sentra Rongsok'),
             companyPhone: @json($settings['company_phone'] ?? '0812-3456-7890'),
