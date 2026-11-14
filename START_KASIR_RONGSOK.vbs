@@ -1,7 +1,7 @@
 ' ================================================================
-'  KASIR RONGSOK - SILENT LAUNCHER
-'  Safe Startup: Menunggu MySQL & Server siap sebelum membuka browser
-'  Zero Permission Denied: Menggunakan WMI & WinHttp native Windows
+'  KASIR RONGSOK - SILENT LAUNCHER & AUTO STARTUP
+'  Safe Startup: Menjalankan Laravel & WA Gateway Sekali Klik
+'  Zero Permission Denied: Native WMI & WinHttp Windows
 ' ================================================================
 
 Option Explicit
@@ -43,6 +43,26 @@ Function CheckHttp(url)
         http.Send
         If Err.Number = 0 Then
             CheckHttp = True
+        End If
+    End If
+    Set http = Nothing
+    Err.Clear
+End Function
+
+' Fungsi memeriksa apakah URL HTTP mengembalikan teks tertentu (misal: "connected":true)
+Function CheckHttpContent(url, textToFind)
+    On Error Resume Next
+    Dim http
+    CheckHttpContent = False
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
+    If Not http Is Nothing Then
+        http.SetTimeouts 1000, 1000, 1000, 1000
+        http.Open "GET", url, False
+        http.Send
+        If Err.Number = 0 Then
+            If InStr(http.ResponseText, textToFind) > 0 Then
+                CheckHttpContent = True
+            End If
         End If
     End If
     Set http = Nothing
@@ -97,9 +117,8 @@ End Function
 WshShell.Run "cmd /c netsh advfirewall firewall add rule name=""Kasir Rongsok Port 8000"" dir=in action=allow protocol=TCP localport=8000 profile=any >nul 2>&1", 0, False
 WshShell.Run "cmd /c netsh advfirewall firewall add rule name=""Kasir Rongsok WA Gateway"" dir=in action=allow protocol=TCP localport=21465 profile=any >nul 2>&1", 0, False
 
-' Pastikan shortcut di Desktop dibuat jika belum ada (tanpa menimpa shortcut yang sudah aktif agar icon tidak flicker/revert)
-Dim desktopLnkPath, autoDeskLnk, activeIconPath
-desktopLnkPath = WshShell.SpecialFolders("Desktop") & "\Kasir Rongsok.lnk"
+' 0.1. Cari icon aktif terbaik
+Dim activeIconPath
 activeIconPath = ""
 If fso.FileExists(currentDir & "\app_logo_active.ico") Then
     If fso.GetFile(currentDir & "\app_logo_active.ico").Size > 500 Then
@@ -117,56 +136,158 @@ If activeIconPath = "" And fso.FileExists(currentDir & "\kasir rongsok\public\fa
     End If
 End If
 
-If Not fso.FileExists(desktopLnkPath) Then
-    Set autoDeskLnk = WshShell.CreateShortcut(desktopLnkPath)
-    autoDeskLnk.TargetPath = "wscript.exe"
-    autoDeskLnk.Arguments = """" & currentDir & "\START_KASIR_RONGSOK.vbs"""
-    autoDeskLnk.WorkingDirectory = currentDir
-    autoDeskLnk.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
+' 0.2. Buat atau sinkronkan shortcut Desktop di semua lokasi profil (OneDrive/Local/Public)
+Dim candidates, dPath, regDesk, userProf, pubDesk, lnk, sObj
+Set candidates = CreateObject("Scripting.Dictionary")
+
+' SpecialFolders
+dPath = WshShell.SpecialFolders("Desktop")
+If dPath <> "" And fso.FolderExists(dPath) Then candidates(dPath) = True
+
+' Registry HKCU User Shell Folders Desktop
+regDesk = ""
+On Error Resume Next
+regDesk = WshShell.RegRead("HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\Desktop")
+If regDesk <> "" Then
+    regDesk = WshShell.ExpandEnvironmentStrings(regDesk)
+    If fso.FolderExists(regDesk) Then candidates(regDesk) = True
+End If
+Err.Clear
+
+' USERPROFILE & OneDrive Desktop
+userProf = WshShell.ExpandEnvironmentStrings("%USERPROFILE%")
+If userProf <> "" Then
+    If fso.FolderExists(userProf & "\Desktop") Then candidates(userProf & "\Desktop") = True
+    If fso.FolderExists(userProf & "\OneDrive\Desktop") Then candidates(userProf & "\OneDrive\Desktop") = True
+End If
+
+' PUBLIC Desktop
+pubDesk = WshShell.ExpandEnvironmentStrings("%PUBLIC%")
+If pubDesk <> "" Then
+    If fso.FolderExists(pubDesk & "\Desktop") Then candidates(pubDesk & "\Desktop") = True
+End If
+
+For Each dPath In candidates.Keys
+    ' 1. Kasir Rongsok.lnk di Desktop
+    lnk = dPath & "\Kasir Rongsok.lnk"
+    Set sObj = WshShell.CreateShortcut(lnk)
+    sObj.TargetPath = "wscript.exe"
+    sObj.Arguments = """" & currentDir & "\START_KASIR_RONGSOK.vbs"""
+    sObj.WorkingDirectory = currentDir
+    sObj.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
     If activeIconPath <> "" Then
-        autoDeskLnk.IconLocation = activeIconPath & ",0"
+        sObj.IconLocation = activeIconPath & ",0"
     End If
-    autoDeskLnk.Save
-    Set autoDeskLnk = Nothing
-ElseIf activeIconPath <> "" Then
-    Set autoDeskLnk = WshShell.CreateShortcut(desktopLnkPath)
-    If autoDeskLnk.IconLocation <> (activeIconPath & ",0") Then
-        autoDeskLnk.IconLocation = activeIconPath & ",0"
-        autoDeskLnk.Save
+    sObj.Save
+    Set sObj = Nothing
+
+    ' 2. START_KASIR_RONGSOK.lnk di Desktop
+    lnk = dPath & "\START_KASIR_RONGSOK.lnk"
+    Set sObj = WshShell.CreateShortcut(lnk)
+    sObj.TargetPath = "wscript.exe"
+    sObj.Arguments = """" & currentDir & "\START_KASIR_RONGSOK.vbs"""
+    sObj.WorkingDirectory = currentDir
+    sObj.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
+    If activeIconPath <> "" Then
+        sObj.IconLocation = activeIconPath & ",0"
     End If
-    Set autoDeskLnk = Nothing
-End If
+    sObj.Save
+    Set sObj = Nothing
 
-' 1. Pastikan MySQL XAMPP berjalan sebelum membuka aplikasi
-If Not IsProcessRunning("mysqld.exe") Then
-    If fso.FileExists("C:\xampp\mysql_start.bat") Then
-        WshShell.Run """C:\xampp\mysql_start.bat""", 0, False
-    ElseIf fso.FileExists("D:\xampp\mysql_start.bat") Then
-        WshShell.Run """D:\xampp\mysql_start.bat""", 0, False
-    ElseIf fso.FileExists("E:\xampp\mysql_start.bat") Then
-        WshShell.Run """E:\xampp\mysql_start.bat""", 0, False
-    ElseIf fso.FileExists("F:\xampp\mysql_start.bat") Then
-        WshShell.Run """F:\xampp\mysql_start.bat""", 0, False
+    ' 3. WhatsApp Gateway.lnk di Desktop (Sebagai pintasan mandiri tambahan jika diperlukan)
+    lnk = dPath & "\WhatsApp Gateway.lnk"
+    Set sObj = WshShell.CreateShortcut(lnk)
+    sObj.TargetPath = "cmd.exe"
+    sObj.Arguments = "/c start ""Kasir Rongsok WhatsApp Gateway"" """ & currentDir & "\wa_gateway\run_wa_gateway.bat"""
+    sObj.WorkingDirectory = currentDir & "\wa_gateway"
+    sObj.Description = "WhatsApp Gateway Kasir Rongsok (Port 21465)"
+    If activeIconPath <> "" Then
+        sObj.IconLocation = activeIconPath & ",0"
     End If
-    Call WaitForMySql(20)
-    WScript.Sleep 2000
-End If
+    sObj.Save
+    Set sObj = Nothing
+Next
 
-' 2. Jalankan Backend Laravel (Port 8000 - Mode Senyap) jika belum aktif
-If Not CheckHttp("http://127.0.0.1:8000") Then
-    WshShell.Run """" & currentDir & "\kasir rongsok\run_backend.bat""", 0, False
+' Pastikan shortcut di folder proyek selalu sinkron ke folder saat ini
+Dim pLnk
+pLnk = currentDir & "\START_KASIR_RONGSOK.lnk"
+Set sObj = WshShell.CreateShortcut(pLnk)
+sObj.TargetPath = "wscript.exe"
+sObj.Arguments = """" & currentDir & "\START_KASIR_RONGSOK.vbs"""
+sObj.WorkingDirectory = currentDir
+sObj.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
+If activeIconPath <> "" Then
+    sObj.IconLocation = activeIconPath & ",0"
 End If
+sObj.Save
+Set sObj = Nothing
 
-' 3. Jalankan WhatsApp Gateway (Port 21465 - Mode Minimized) jika belum aktif
+' ================================================================
+' LANGKAH 1: MULAI WHATSAPP GATEWAY SEGERA (Parallel Startup)
+' Jendela Command Prompt terlihat agar pengguna langsung melihat
+' status koneksi WhatsApp Gateway berjalan secara real-time.
+' ================================================================
 If Not CheckHttp("http://127.0.0.1:21465/api/status") Then
-    WshShell.Run """" & currentDir & "\wa_gateway\run_wa_gateway.bat""", 7, False
+    WshShell.CurrentDirectory = currentDir & "\wa_gateway"
+    WshShell.Run "cmd.exe /c start ""Kasir Rongsok WhatsApp Gateway"" run_wa_gateway.bat", 1, False
 End If
 
-' 4. Tunggu Server Siap (Max 30 detik untuk penyiapan otomatis awal)
-Call WaitForHttpUrl("http://127.0.0.1:8000", 30)
-WScript.Sleep 1000
+' ================================================================
+' LANGKAH 2: PASTIKAN DATABASE MYSQL BERJALAN
+' ================================================================
+If Not IsProcessRunning("mysqld.exe") Then
+    WshShell.Run "cmd /c net start mysql >nul 2>&1", 0, True
+    If Not IsProcessRunning("mysqld.exe") Then
+        WshShell.Run "cmd /c net start mariadb >nul 2>&1", 0, True
+    End If
 
-' 5. Buka Browser (Chrome jika ada, atau default browser)
+    If Not IsProcessRunning("mysqld.exe") Then
+        Dim drives, drv, batP, binP
+        drives = Array("C", "D", "E")
+        For Each drv In drives
+            batP = drv & ":\xampp\mysql_start.bat"
+            binP = drv & ":\xampp\mysql\bin\mysqld.exe"
+            If fso.FileExists(batP) Then
+                WshShell.Run """" & batP & """", 0, False
+                Exit For
+            ElseIf fso.FileExists(binP) Then
+                WshShell.Run """" & binP & """ --defaults-file=""" & drv & ":\xampp\mysql\bin\my.ini"" --standalone", 0, False
+                Exit For
+            End If
+        Next
+    End If
+    Call WaitForMySql(15)
+    WScript.Sleep 1000
+End If
+
+' ================================================================
+' LANGKAH 3: JALANKAN BACKEND LARAVEL (Port 8000 - Mode Senyap)
+' ================================================================
+If Not CheckHttp("http://127.0.0.1:8000") Then
+    WshShell.CurrentDirectory = currentDir & "\kasir rongsok"
+    WshShell.Run "cmd.exe /c run_backend.bat", 0, False
+End If
+
+WshShell.CurrentDirectory = currentDir
+
+' ================================================================
+' LANGKAH 4: TUNGGU SERVER SIAP & TERHUBUNG
+' ================================================================
+Call WaitForHttpUrl("http://127.0.0.1:8000", 25)
+
+' Tunggu sampai WhatsApp Gateway siap (baik CONNECTED maupun QR_READY, maks 12 detik)
+Dim w
+For w = 1 To 12
+    If CheckHttpContent("http://127.0.0.1:21465/api/status", """connected"":true") Or CheckHttpContent("http://127.0.0.1:21465/api/status", """status"":""QR_READY""") Then
+        Exit For
+    End If
+    WScript.Sleep 1000
+Next
+WScript.Sleep 500
+
+' ================================================================
+' LANGKAH 5: BUKA BROWSER OTOMATIS
+' ================================================================
 chromeExe = GetChromePath()
 If chromeExe <> "" Then
     WshShell.Run """" & chromeExe & """ http://localhost:8000", 1, False
@@ -176,4 +297,4 @@ End If
 
 Set WshShell = Nothing
 Set fso = Nothing
-
+WScript.Quit 0

@@ -2,14 +2,14 @@
 title Memulai Kasir Rongsok System...
 cd /d "%~dp0"
 
-:: 0. Pastikan file konfigurasi .env ada jika folder di-copy tanpa .env
+:: 0. Deteksi apakah laptop baru (belum setup .env atau vendor)
 if not exist "kasir rongsok\.env" (
-    if exist "kasir rongsok\.env.example" (
-        copy "kasir rongsok\.env.example" "kasir rongsok\.env" >nul
-    )
+    echo ====================================================================
+    echo   [SETUP PERDANA] Menyiapkan Kasir Rongsok pertama kali di laptop ini...
+    echo ====================================================================
+    call "%~dp0SETUP_PC_BARU.bat"
+    exit /b
 )
-
-:: Jika folder vendor belum ada sama sekali, jalankan setup perdana
 if not exist "kasir rongsok\vendor\autoload.php" (
     echo ====================================================================
     echo   [SETUP PERDANA] Menyiapkan dependensi Kasir Rongsok...

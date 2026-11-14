@@ -1,6 +1,7 @@
 # Archives & Zip
 *.zip
 kasir rongsok.zip
+wa_gateway.zip
 *.tar.gz
 *.rar
 
@@ -13,7 +14,14 @@ yarn-error.log*
 
 # WhatsApp Gateway Tokens & Sessions
 wa_gateway/tokens/
+wa_gateway/tokens/**
 **/tokens/
+**/tokens/**
+
+# Temporary scripts
+package_cpanel.js
+update_service.js
+verify_out_zip.js
 
 # Environment files
 .env

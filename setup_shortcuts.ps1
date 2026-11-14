@@ -31,9 +31,6 @@ if (-not $foundIcon) {
     if (Test-Path "C:\xampp\php\php.exe") { $phpCmd = "C:\xampp\php\php.exe" }
     elseif (Test-Path "D:\xampp\php\php.exe") { $phpCmd = "D:\xampp\php\php.exe" }
     elseif (Test-Path "E:\xampp\php\php.exe") { $phpCmd = "E:\xampp\php\php.exe" }
-    elseif (Test-Path "F:\xampp\php\php.exe") { $phpCmd = "F:\xampp\php\php.exe" }
-    elseif (Test-Path "C:\php\php.exe") { $phpCmd = "C:\php\php.exe" }
-    elseif (Test-Path "D:\php\php.exe") { $phpCmd = "D:\php\php.exe" }
 
     $artisan = Join-Path $workingDir "kasir rongsok\artisan"
     if (Test-Path $artisan) {
@@ -101,6 +98,7 @@ $uniqueDesks = $candidates | Select-Object -Unique
 
 foreach ($desk in $uniqueDesks) {
     try {
+        # 1. Pintasan 'Kasir Rongsok'
         $deskLnkPath = Join-Path $desk "Kasir Rongsok.lnk"
         if (Test-Path $deskLnkPath) {
             Remove-Item $deskLnkPath -Force -ErrorAction SilentlyContinue
@@ -114,7 +112,39 @@ foreach ($desk in $uniqueDesks) {
             $deskLnk.IconLocation = "$icoPath,0"
         }
         $deskLnk.Save()
-        Write-Host "Pintasan Desktop 'Kasir Rongsok' berhasil dibuat di: $deskLnkPath" -ForegroundColor Green
+
+        # 2. Pintasan 'START_KASIR_RONGSOK'
+        $startLnkPath = Join-Path $desk "START_KASIR_RONGSOK.lnk"
+        if (Test-Path $startLnkPath) {
+            Remove-Item $startLnkPath -Force -ErrorAction SilentlyContinue
+        }
+        $startLnk = $wsh.CreateShortcut($startLnkPath)
+        $startLnk.TargetPath = "wscript.exe"
+        $startLnk.Arguments = "`"$vbsPath`""
+        $startLnk.WorkingDirectory = $workingDir
+        $startLnk.Description = "Mulai Aplikasi Kasir Rongsok & WA Gateway"
+        if (Test-Path $icoPath) {
+            $startLnk.IconLocation = "$icoPath,0"
+        }
+        $startLnk.Save()
+
+        # 3. Pintasan 'WhatsApp Gateway'
+        $waBatPath = Join-Path $workingDir "wa_gateway\run_wa_gateway.bat"
+        $waLnkPath = Join-Path $desk "WhatsApp Gateway.lnk"
+        if (Test-Path $waLnkPath) {
+            Remove-Item $waLnkPath -Force -ErrorAction SilentlyContinue
+        }
+        $waLnk = $wsh.CreateShortcut($waLnkPath)
+        $waLnk.TargetPath = "cmd.exe"
+        $waLnk.Arguments = "/c start `"Kasir Rongsok WhatsApp Gateway`" `"$waBatPath`""
+        $waLnk.WorkingDirectory = Join-Path $workingDir "wa_gateway"
+        $waLnk.Description = "WhatsApp Gateway Kasir Rongsok (Port 21465)"
+        if (Test-Path $icoPath) {
+            $waLnk.IconLocation = "$icoPath,0"
+        }
+        $waLnk.Save()
+
+        Write-Host "Pintasan Desktop berhasil dibuat di: $desk" -ForegroundColor Green
     } catch {}
 }
 

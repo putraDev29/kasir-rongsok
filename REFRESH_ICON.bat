@@ -17,12 +17,6 @@ if %errorLevel% neq 0 (
         set "PHP_CMD=D:\xampp\php\php.exe"
     ) else if exist "E:\xampp\php\php.exe" (
         set "PHP_CMD=E:\xampp\php\php.exe"
-    ) else if exist "F:\xampp\php\php.exe" (
-        set "PHP_CMD=F:\xampp\php\php.exe"
-    ) else if exist "C:\php\php.exe" (
-        set "PHP_CMD=C:\php\php.exe"
-    ) else if exist "D:\php\php.exe" (
-        set "PHP_CMD=D:\php\php.exe"
     )
 )
 

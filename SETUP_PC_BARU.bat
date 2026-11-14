@@ -90,14 +90,14 @@ if %errorLevel% neq 0 (
 )
 echo [OK] MySQL aktif.
 
-:: 3. Buat Database MySQL
+:: 3. Buat Database MySQL kasir_rongsok
 echo.
-echo [2/7] Menyiapkan Database MySQL...
-mysql -u root -e "CREATE DATABASE IF NOT EXISTS kasir_rongsok CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS kasir_rongsok_2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" >nul 2>&1
+echo [2/7] Menyiapkan Database "kasir_rongsok"...
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS kasir_rongsok CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" >nul 2>&1
 if %errorLevel% equ 0 (
-    echo [OK] Database siap.
+    echo [OK] Database kasir_rongsok siap.
 ) else (
-    echo [!] Melewati pembuatan manual database. Pastikan MySQL aktif.
+    echo [!] Melewati pembuatan otomatis database. Pastikan database kasir_rongsok sudah dibuat di phpMyAdmin.
 )
 
 :: 4. Setup File .env Laravel
@@ -124,8 +124,8 @@ if not exist "vendor\autoload.php" (
 echo Menghasilkan Application Key...
 call php artisan key:generate --force >nul 2>&1
 
-echo Menjalankan Penyiapan Database, Migrasi, Seeder, dan Icon...
-call php artisan app:ensure-system-ready
+echo Menjalankan Migrasi & Seeder Database...
+call php artisan migrate --seed --force
 cd ..
 
 :: 6. Build Aset Frontend (NPM)
@@ -174,8 +174,9 @@ echo.
 echo   AKUN LOGIN BAWAAN (DEFAULT):
 echo   --------------------------------------------------------------
 echo   1. Super Admin (Owner) : owner@kasirrongsok.com  / password123
-echo   2. Admin Kantor        : admin@kasirrongsok.com  / password123
-echo   3. Kasir Timbang       : kasir1@kasirrongsok.com / password123
+echo   2. Admin GAS (LPG dsb) : admingas@kasirrongsok.com / password123
+echo   3. Admin Kantor        : admin@kasirrongsok.com  / password123
+echo   4. Kasir Timbang       : kasir1@kasirrongsok.com / password123
 echo.
 echo   Untuk mulai menggunakan:
 echo   Klik pintasan "Kasir Rongsok" di Desktop atau START_KASIR_RONGSOK.bat
