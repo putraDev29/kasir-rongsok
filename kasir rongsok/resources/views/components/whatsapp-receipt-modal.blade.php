@@ -58,6 +58,13 @@
                         </div>
                     </template>
 
+                    <template x-if="$store.waGateway.receipt.downloadNotice">
+                        <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                            <span>Chat WhatsApp dibuka & berkas PDF resmi berhasil diunduh ke perangkat Anda untuk dilampirkan.</span>
+                        </div>
+                    </template>
+
                     <template x-if="$store.waGateway.receipt.sendError">
                         <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold flex items-center gap-2">
                             <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600 shrink-0"></i>
@@ -142,22 +149,40 @@
                     </div>
 
                     <!-- Gateway Status Indicator -->
-                    @if(config('services.whatsapp_gateway.enabled', false))
-                        <div class="flex items-center justify-between text-[11px] px-3 py-2 bg-slate-50 rounded-lg border border-slate-200">
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-2 h-2 rounded-full" :class="$store.waGateway.connected ? 'bg-emerald-500' : ($store.waGateway.status === 'QR_READY' ? 'bg-amber-500 animate-ping' : 'bg-rose-500')"></span>
-                                <span class="text-slate-600" x-text="$store.waGateway.connected ? 'Gateway Terhubung: ' + ($store.waGateway.phone || 'Online') : ($store.waGateway.status === 'QR_READY' ? 'Gateway Perlu Scan QR' : 'Gateway Offline')"></span>
+                    <div class="rounded-xl border p-3 text-[11px] transition-colors"
+                         :class="$store.waGateway.connected ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <template x-if="$store.waGateway.connected">
+                                    <span class="flex h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                </template>
+                                <template x-if="!$store.waGateway.connected">
+                                    <x-whatsapp-icon class="w-4 h-4 text-emerald-600 shrink-0" />
+                                </template>
+                                <div class="truncate">
+                                    <template x-if="$store.waGateway.connected">
+                                        <span class="font-semibold text-emerald-950" x-text="'Gateway Online: ' + ($store.waGateway.phone || 'Terhubung')"></span>
+                                    </template>
+                                    <template x-if="!$store.waGateway.connected">
+                                        <span>Mode Web / Hosting: Kirim pesan & berkas PDF langsung via <strong>WhatsApp Web / App (wa.me)</strong>.</span>
+                                    </template>
+                                </div>
                             </div>
-                            <button type="button" @click="$store.waGateway.isOpen = true" class="text-emerald-700 hover:text-emerald-800 font-bold hover:underline">
-                                Kelola Gateway &raquo;
-                            </button>
+
+                            <template x-if="$store.waGateway.connected">
+                                <button type="button" @click="$store.waGateway.isOpen = true" class="text-emerald-700 hover:text-emerald-800 font-bold hover:underline shrink-0 text-[11px] cursor-pointer">
+                                    Kelola Gateway &raquo;
+                                </button>
+                            </template>
+                            @if(config('services.whatsapp_gateway.enabled', false))
+                                <template x-if="!$store.waGateway.connected && $store.waGateway.status === 'QR_READY'">
+                                    <button type="button" @click="$store.waGateway.isOpen = true" class="text-amber-700 hover:text-amber-800 font-bold hover:underline shrink-0 text-[11px] cursor-pointer">
+                                        Scan QR &raquo;
+                                    </button>
+                                </template>
+                            @endif
                         </div>
-                    @else
-                        <div class="flex items-center gap-2 text-[11px] px-3 py-2 bg-emerald-50 text-emerald-900 rounded-lg border border-emerald-200">
-                            <x-whatsapp-icon class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            <span>Kirim pesan langsung ke WhatsApp penerima dengan menekan tombol <strong>Buka Chat (wa.me)</strong> di bawah.</span>
-                        </div>
-                    @endif
+                    </div>
 
                 </div>
 
@@ -167,32 +192,32 @@
             <div class="flex flex-col sm:flex-row justify-between items-center gap-2 bg-slate-50 border-t border-slate-200 px-6 py-3">
                 <button type="button" 
                         @click="$store.waGateway.receiptModalOpen = false" 
-                        class="w-full sm:w-auto px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition-colors">
+                        class="w-full sm:w-auto px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer">
                     Tutup
                 </button>
 
                 <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <!-- Manual WhatsApp Web / wa.me Button -->
+                    <!-- WhatsApp Web / wa.me Button (ALWAYS AVAILABLE & PRIMARY) -->
                     <button type="button" 
-                            @click="$store.waGateway.openWaMe()"
+                            @click="$store.waGateway.openWaMe(true)"
                             :disabled="!$store.waGateway.receipt.phone"
-                            class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
-                            title="Buka chat WhatsApp di tab baru dengan pesan nota">
+                            class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                            title="Buka chat WhatsApp penerima dan otomatis unduh berkas PDF untuk dilampirkan">
                         <x-whatsapp-icon class="w-3.5 h-3.5 text-white" />
-                        <span>Buka Chat (wa.me)</span>
+                        <span x-text="$store.waGateway.receipt.sendAsPdf ? 'Kirim ke WhatsApp (wa.me)' : 'Buka Chat WhatsApp'"></span>
                     </button>
 
-                    @if(config('services.whatsapp_gateway.enabled', false))
-                        <!-- Direct Send via Background Gateway Button -->
+                    <!-- Direct Send via Background Gateway (Only when Gateway is actively connected) -->
+                    <template x-if="$store.waGateway.connected">
                         <button type="button" 
                                 @click="$store.waGateway.sendReceipt()"
                                 :disabled="$store.waGateway.receipt.isSending || !$store.waGateway.receipt.phone"
-                                class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
-                                title="Kirim berkas PDF nota otomatis melalui nomor WhatsApp resmi depo">
+                                class="flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                                title="Kirim otomatis di latar belakang melalui nomor WhatsApp resmi depo">
                             <i data-lucide="send" class="w-3.5 h-3.5" :class="{ 'animate-spin': $store.waGateway.receipt.isSending }"></i>
                             <span x-text="$store.waGateway.receipt.isSending ? 'Mengirim PDF...' : ($store.waGateway.receipt.sendAsPdf ? ($store.waGateway.receipt.submitButtonText || 'Kirim Nota PDF via WA') : 'Kirim Pesan via WA')"></span>
                         </button>
-                    @endif
+                    </template>
                 </div>
             </div>
 

@@ -7,6 +7,7 @@ use App\Models\DebtPayment;
 use App\Models\PurchaseTransaction;
 use App\Models\SalesTransaction;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -40,22 +41,32 @@ class WhatsAppGatewayService
             ];
         }
 
+        // Cache offline status for 20s to prevent hammering unreachable local port on shared hosting
+        if (Cache::has('wa_gateway_offline_status')) {
+            return Cache::get('wa_gateway_offline_status');
+        }
+
         try {
-            $response = Http::timeout(3)->get("{$this->baseUrl}/api/status");
+            $response = Http::timeout(1.5)->get("{$this->baseUrl}/api/status");
             if ($response->successful()) {
+                Cache::forget('wa_gateway_offline_status');
                 return $response->json();
             }
-            return [
+            $errorData = [
                 'status' => 'ERROR',
                 'connected' => false,
                 'message' => 'Gateway server merespon dengan status: ' . $response->status(),
             ];
+            Cache::put('wa_gateway_offline_status', $errorData, 20);
+            return $errorData;
         } catch (\Exception $e) {
-            return [
+            $offlineData = [
                 'status' => 'OFFLINE',
                 'connected' => false,
                 'message' => 'WhatsApp Gateway offline atau belum dijalankan di port 21465.',
             ];
+            Cache::put('wa_gateway_offline_status', $offlineData, 20);
+            return $offlineData;
         }
     }
 
@@ -97,6 +108,7 @@ class WhatsAppGatewayService
      */
     public function logout(): array
     {
+        Cache::forget('wa_gateway_offline_status');
         if (!$this->enabled) {
             return [
                 'success' => false,
@@ -127,6 +139,7 @@ class WhatsAppGatewayService
      */
     public function reconnect(): array
     {
+        Cache::forget('wa_gateway_offline_status');
         if (!$this->enabled) {
             return [
                 'success' => false,

@@ -217,6 +217,7 @@ Alpine.store('waGateway', {
         isLoading: false,
         isSending: false,
         sendSuccess: false,
+        downloadNotice: false,
         sendError: null
     },
 
@@ -225,13 +226,26 @@ Alpine.store('waGateway', {
         return text.replace(/(\d+),00(?!\d)/g, '$1').replace(/(\d+)\.00(?!\d)/g, '$1');
     },
 
+    waPollTimer: null,
+
     init() {
         const isEnabled = document.querySelector('meta[name="wa-gateway-enabled"]')?.getAttribute('content') === '1';
         if (isEnabled) {
             this.fetchStatus();
-            setInterval(() => {
-                this.fetchStatus();
+            
+            // Smart adaptive polling: poll every 5s if gateway panel is open or QR ready; heartbeat every 30s when idle
+            if (this.waPollTimer) clearInterval(this.waPollTimer);
+            this.waPollTimer = setInterval(() => {
+                if (this.isOpen || this.status === 'QR_READY') {
+                    this.fetchStatus();
+                }
             }, 5000);
+
+            setInterval(() => {
+                if (!this.isOpen && this.status !== 'QR_READY') {
+                    this.fetchStatus();
+                }
+            }, 30000);
         }
     },
 
@@ -512,8 +526,16 @@ Alpine.store('waGateway', {
             alert('Nomor WhatsApp tujuan belum diisi!');
             return;
         }
+
+        // Seamless fallback to WhatsApp Web / wa.me if Gateway is not connected
+        if (!this.connected) {
+            this.openWaMe(true);
+            return;
+        }
+
         this.receipt.isSending = true;
         this.receipt.sendSuccess = false;
+        this.receipt.downloadNotice = false;
         this.receipt.sendError = null;
 
         // Custom sendUrl (used by Global Recaps, Expenses, Agreements, Slips, etc.)
@@ -665,10 +687,18 @@ Alpine.store('waGateway', {
 
     downloadPdf(downloadDirectly = false) {
         if (downloadDirectly) {
-            // Direct download/save PDF
+            // Direct download/save PDF via invisible anchor to prevent window navigation aborts
             if (this.receipt.pdfUrl) {
                 const dlUrl = this.receipt.pdfUrl + (this.receipt.pdfUrl.includes('?') ? '&' : '?') + 'download=1';
-                window.location.href = dlUrl;
+                const link = document.createElement('a');
+                link.href = dlUrl;
+                link.setAttribute('download', this.receipt.filename || 'Nota.pdf');
+                link.setAttribute('target', '_blank');
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    if (document.body.contains(link)) document.body.removeChild(link);
+                }, 200);
                 return;
             }
         } else {
@@ -684,7 +714,15 @@ Alpine.store('waGateway', {
             if (this.receipt.pdfUrl) {
                 if (downloadDirectly) {
                     const dlUrl = this.receipt.pdfUrl + (this.receipt.pdfUrl.includes('?') ? '&' : '?') + 'download=1';
-                    window.location.href = dlUrl;
+                    const link = document.createElement('a');
+                    link.href = dlUrl;
+                    link.setAttribute('download', this.receipt.filename || 'Nota.pdf');
+                    link.setAttribute('target', '_blank');
+                    document.body.appendChild(link);
+                    link.click();
+                    setTimeout(() => {
+                        if (document.body.contains(link)) document.body.removeChild(link);
+                    }, 200);
                 } else {
                     window.open(this.receipt.pdfUrl, '_blank');
                 }
@@ -731,13 +769,23 @@ Alpine.store('waGateway', {
         }
     },
 
-    openWaMe() {
+    openWaMe(autoDownload = true) {
         const phone = (this.receipt.phone || '').replace(/\D/g, '');
         let formatted = phone;
         if (formatted.startsWith('0')) formatted = '62' + formatted.slice(1);
         else if (!formatted.startsWith('62') && formatted.length > 0) formatted = '62' + formatted;
-        
-        const url = `https://wa.me/${formatted}?text=${encodeURIComponent(this.cleanCaption(this.receipt.message))}`;
+
+        // Auto-download PDF document if requested and sendAsPdf is checked
+        if (autoDownload && this.receipt.sendAsPdf) {
+            this.downloadPdf(true);
+            this.receipt.downloadNotice = true;
+            setTimeout(() => {
+                this.receipt.downloadNotice = false;
+            }, 6000);
+        }
+
+        const text = encodeURIComponent(this.cleanCaption(this.receipt.message || ''));
+        const url = formatted ? `https://wa.me/${formatted}?text=${text}` : `https://wa.me/?text=${text}`;
         window.open(url, '_blank');
     }
 });

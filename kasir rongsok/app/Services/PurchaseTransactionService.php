@@ -32,7 +32,7 @@ class PurchaseTransactionService
             $date = isset($data['transaction_date']) ? Carbon::parse($data['transaction_date']) : Carbon::now();
             $invoiceNumber = FormatHelper::generatePurchaseInvoiceNumber($date);
 
-            // Supplier resolution (Task 22: auto-save if not existing)
+            // Supplier resolution (Task 22: auto-save if save_as_supplier is checked)
             $supplierId = $data['supplier_id'] ?? null;
             if ($supplierId === '__new__' || $supplierId === '__cash__' || empty($supplierId)) {
                 $supplierId = null;
@@ -41,6 +41,7 @@ class PurchaseTransactionService
             $supplierName = $data['supplier_name'] ?? null;
             $supplierPhone = $data['supplier_phone'] ?? null;
             $supplierAddress = $data['supplier_address'] ?? null;
+            $saveAsSupplier = filter_var($data['save_as_supplier'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
             // Bank details extracted early for supplier / user bank account synchronization (Task 10)
             $customBank = trim($data['custom_bank'] ?? '');
@@ -56,21 +57,27 @@ class PurchaseTransactionService
                 }
             } elseif (!empty($supplierName) && !in_array(trim(strtolower($supplierName)), ['umum', 'umum / tunai', 'tunai', ''])) {
                 $trimmedName = trim($supplierName);
-                $supplier = Supplier::where('name', $trimmedName)->first();
-                if (!$supplier) {
-                    $supplier = Supplier::create([
-                        'code' => 'SUP-' . strtoupper(substr(uniqid(), -5)),
-                        'name' => $trimmedName,
-                        'phone' => $supplierPhone,
-                        'address' => $supplierAddress,
-                        'bank_name' => $customBank ?: null,
-                        'bank_account_number' => $customAccountNo ?: null,
-                        'bank_account_name' => $customAccountName ?: null,
-                    ]);
+                if ($saveAsSupplier) {
+                    $supplier = Supplier::where('name', $trimmedName)->first();
+                    if (!$supplier) {
+                        $supplier = Supplier::create([
+                            'code' => 'SUP-' . strtoupper(substr(uniqid(), -5)),
+                            'name' => $trimmedName,
+                            'phone' => $supplierPhone,
+                            'address' => $supplierAddress,
+                            'bank_name' => $customBank ?: null,
+                            'bank_account_number' => $customAccountNo ?: null,
+                            'bank_account_name' => $customAccountName ?: null,
+                        ]);
+                    }
+                    $supplierId = $supplier->id;
+                    $supplierName = $supplier->name;
+                } else {
+                    $supplierId = null;
+                    $supplierName = $trimmedName;
                 }
-                $supplierId = $supplier->id;
-                $supplierName = $supplier->name;
             } else {
+                $supplierId = null;
                 $supplierName = !empty($supplierName) ? trim($supplierName) : null;
             }
 

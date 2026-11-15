@@ -603,7 +603,7 @@
                         <!-- Mode 1: Searchable Dropdown Pemasok Tersimpan -->
                         <div x-show="!isManualSupplier" class="relative" @click.outside="supplierDropdownOpen = false">
                             <input type="hidden" name="supplier_id" :value="selectedSupplierId" :disabled="isManualSupplier">
-                            <input type="hidden" name="supplier_name" :value="supplierName" :disabled="isManualSupplier">
+                            <input type="hidden" name="supplier_name" :value="selectedSupplierId ? supplierName : (supplierName || supplierSearchQuery)" :disabled="isManualSupplier">
 
                             <!-- Search Input Box -->
                             <div class="relative">
@@ -702,13 +702,39 @@
                         </div>
 
                         <!-- Mode 2: Input Manual Pemasok Baru (sama seperti di Pengeluaran) -->
-                        <div x-show="isManualSupplier" style="display: none;" class="space-y-1">
+                        <div x-show="isManualSupplier" style="display: none;" class="space-y-1.5">
                             <input type="text" name="supplier_name" x-model="supplierName" 
                                    placeholder="Ketik nama pemasok baru..."
                                    :required="isManualSupplier"
                                    class="w-full py-2 px-3 text-xs rounded-lg border border-emerald-500 focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-900 bg-emerald-50/30">
-                            <p class="text-[10px] text-emerald-600 font-medium">✨ Pemasok baru otomatis tersimpan ke database saat transaksi disimpan.</p>
                             <input type="hidden" name="supplier_id" value="" :disabled="!isManualSupplier">
+                        </div>
+
+                        <!-- Checkbox Simpan ke Master Data Pemasok -->
+                        <div x-show="isManualSupplier || (!selectedSupplierId && supplierSearchQuery.trim().length > 0)"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 -translate-y-1"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             class="pt-1.5 pb-0.5" style="display: none;">
+                            <div class="p-2 rounded-lg border transition-all"
+                                 :class="saveAsSupplier ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-200 bg-slate-50/70'">
+                                <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="checkbox" name="save_as_supplier" value="1" x-model="saveAsSupplier"
+                                           class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                    <span class="text-xs font-semibold text-slate-800">Simpan nama pemasok ke master data database</span>
+                                </label>
+                                <p class="text-[10.5px] mt-1 ml-6 transition-colors"
+                                   :class="saveAsSupplier ? 'text-emerald-700 font-medium' : 'text-slate-500'">
+                                    <span x-show="saveAsSupplier" class="inline-flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-emerald-600 inline shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        <span>Pemasok ini akan otomatis disimpan permanen ke database master pemasok.</span>
+                                    </span>
+                                    <span x-show="!saveAsSupplier" class="inline-flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-slate-400 inline shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <span>Hanya dicatat pada nota transaksi ini (tidak disimpan ke master pemasok).</span>
+                                    </span>
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -1112,6 +1138,7 @@ function cashierPos() {
 
         selectedSupplierId: '',
         isManualSupplier: false,
+        saveAsSupplier: false,
         supplierName: '',
         supplierSearchQuery: '',
         supplierDropdownOpen: false,
@@ -1375,6 +1402,7 @@ function cashierPos() {
                 this.customBank = '';
                 this.customAccountNo = '';
                 this.customAccountName = '';
+                this.saveAsSupplier = false;
             } else {
                 this.selectedSupplierId = sup.id;
                 this.supplierName = sup.name;
@@ -1383,6 +1411,7 @@ function cashierPos() {
                 this.supplierAddress = sup.address || '';
                 this.supplierDebt = parseFloat(sup.total_debt || sup.remaining_debt) || 0;
                 this.debtDeductionAmount = 0;
+                this.saveAsSupplier = false;
                 // Tampilkan sesuai data supplier yang dipilih jika ada, jika kosong tetap kosongkan
                 this.customBank = (sup && sup.bank_name) ? sup.bank_name : '';
                 this.customAccountNo = (sup && sup.bank_account_number) ? sup.bank_account_number : '';
@@ -1408,6 +1437,7 @@ function cashierPos() {
             this.customAccountNo = '';
             this.customAccountName = '';
             this.supplierDropdownOpen = false;
+            this.saveAsSupplier = false;
         },
 
         toggleSupplierMode() {
@@ -1419,6 +1449,7 @@ function cashierPos() {
                 this.supplierAddress = '';
                 this.supplierDebt = 0;
                 this.debtDeductionAmount = 0;
+                this.saveAsSupplier = false;
             } else {
                 this.selectedSupplierId = '';
                 this.supplierName = '';
@@ -1427,6 +1458,7 @@ function cashierPos() {
                 this.supplierAddress = '';
                 this.supplierDebt = 0;
                 this.debtDeductionAmount = 0;
+                this.saveAsSupplier = false;
             }
             this.supplierDropdownOpen = false;
         },

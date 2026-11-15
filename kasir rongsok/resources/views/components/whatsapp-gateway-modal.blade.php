@@ -82,7 +82,7 @@
                                     <span>Silakan scan QR code menggunakan WhatsApp di ponsel kasir/depo.</span>
                                 </template>
                                 <template x-if="!$store.waGateway.connected && $store.waGateway.status !== 'QR_READY'">
-                                    <span>Layanan gateway lokal belum berjalan di port 21465.</span>
+                                    <span>Layanan gateway lokal belum aktif di port 21465. (Di server hosting, pengiriman pesan & berkas PDF tetap berjalan normal via WhatsApp Web / wa.me).</span>
                                 </template>
                             </p>
                         </div>
