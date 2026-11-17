@@ -391,7 +391,7 @@
 
             // Register PWA Service Worker
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
+                navigator.serviceWorker.register('{{ asset('sw.js') }}').catch(() => {});
             }
         });
     </script>

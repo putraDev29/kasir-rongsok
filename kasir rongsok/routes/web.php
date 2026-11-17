@@ -33,27 +33,27 @@ Route::get('/manifest.json', function () {
 
     if ($hasPwa192 && $hasPwa512) {
         $icons[] = [
-            'src' => '/uploads/logo/pwa_icon_192.png',
+            'src' => asset('uploads/logo/pwa_icon_192.png'),
             'sizes' => '192x192',
             'type' => 'image/png',
             'purpose' => 'any',
         ];
         $icons[] = [
-            'src' => '/uploads/logo/pwa_icon_512.png',
+            'src' => asset('uploads/logo/pwa_icon_512.png'),
             'sizes' => '512x512',
             'type' => 'image/png',
             'purpose' => 'any',
         ];
         if ($hasPwaMaskable) {
             $icons[] = [
-                'src' => '/uploads/logo/pwa_icon_maskable.png',
+                'src' => asset('uploads/logo/pwa_icon_maskable.png'),
                 'sizes' => '512x512',
                 'type' => 'image/png',
                 'purpose' => 'maskable',
             ];
         }
     } else {
-        $mainLogo = ($logo && file_exists(public_path($logo))) ? '/' . ltrim($logo, '/') : '/icon-default.svg';
+        $mainLogo = ($logo && file_exists(public_path($logo))) ? asset($logo) : asset('icon-default.svg');
         $isSvg = str_ends_with(strtolower($mainLogo), '.svg');
         $icons = [
             [
@@ -76,10 +76,10 @@ Route::get('/manifest.json', function () {
         'name' => $companyName ? "{$appName} - {$companyName}" : $appName,
         'short_name' => $appName,
         'description' => $subtitle,
-        'start_url' => '/',
-        'scope' => '/',
+        'start_url' => url('/'),
+        'scope' => url('/'),
         'display' => 'standalone',
-        'background_color' => '#0f172a',
+        'background_color' => '#ffffff',
         'theme_color' => '#059669',
         'orientation' => 'any',
         'icons' => $icons,
