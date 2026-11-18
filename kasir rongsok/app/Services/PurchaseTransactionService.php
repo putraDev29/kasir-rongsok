@@ -114,7 +114,7 @@ class PurchaseTransactionService
             $totalNetWeight = 0;
             $subtotalAmount = 0;
 
-            $consolidatedItems = [];
+            $processedItems = [];
 
             foreach ($itemsData as $row) {
                 $scrapItemId = $row['scrap_item_id'] ?? null;
@@ -263,38 +263,20 @@ class PurchaseTransactionService
                 $totalNetWeight += ($unitType === 'kg' ? $net : 0);
                 $subtotalAmount += $itemSubtotal;
 
-                // Group items by item ID and price tier (Task: simpan berdasarkan harga)
-                $groupKey = $scrapItem->id . '_' . number_format($pricePerKg, 2, '.', '') . '_' . $unitType . '_' . trim($itemTypeName ?? '');
-
-                if (isset($consolidatedItems[$groupKey])) {
-                    // Harga sama: akumulasi ke baris tier harga tersebut
-                    $consolidatedItems[$groupKey]['gross_weight'] += $gross;
-                    $consolidatedItems[$groupKey]['tare_weight'] += $tare;
-                    $consolidatedItems[$groupKey]['net_weight'] += $net;
-                    $consolidatedItems[$groupKey]['quantity'] += $quantity;
-                    $consolidatedItems[$groupKey]['subtotal'] += $itemSubtotal;
-                    if (!empty($row['notes'])) {
-                        $existingNotes = $consolidatedItems[$groupKey]['notes'];
-                        $consolidatedItems[$groupKey]['notes'] = $existingNotes ? ($existingNotes . '; ' . $row['notes']) : $row['notes'];
-                    }
-                } else {
-                    // Harga beda: buat entri daftar harga yang berbeda untuk barang ini
-                    $consolidatedItems[$groupKey] = [
-                        'scrap_item' => $scrapItem,
-                        'unit_type' => $unitType,
-                        'item_type_name' => $itemTypeName,
-                        'quantity' => $quantity,
-                        'gross_weight' => $gross,
-                        'tare_weight' => $tare,
-                        'net_weight' => $net,
-                        'price_per_kg' => $pricePerKg,
-                        'subtotal' => $itemSubtotal,
-                        'notes' => $row['notes'] ?? null,
-                    ];
-                }
+                // Simpan setiap penimbangan sebagai baris barang tersendiri di nota (tidak digabung)
+                $processedItems[] = [
+                    'scrap_item' => $scrapItem,
+                    'unit_type' => $unitType,
+                    'item_type_name' => $itemTypeName,
+                    'quantity' => $quantity,
+                    'gross_weight' => $gross,
+                    'tare_weight' => $tare,
+                    'net_weight' => $net,
+                    'price_per_kg' => $pricePerKg,
+                    'subtotal' => $itemSubtotal,
+                    'notes' => $row['notes'] ?? null,
+                ];
             }
-
-            $processedItems = array_values($consolidatedItems);
 
             $discountAmount = max(0, (float) ($data['discount_amount'] ?? 0));
             $roundingAmount = (float) ($data['rounding_amount'] ?? 0);

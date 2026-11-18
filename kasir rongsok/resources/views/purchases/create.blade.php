@@ -1983,38 +1983,7 @@ function cashierPos() {
             return res;
         },
 
-        consolidateRowsByPrice() {
-            const map = {};
-            const consolidated = [];
-            for (const row of this.rows) {
-                const id = row.is_new ? ('new_' + (row.new_item_name || row.search_text)) : (row.scrap_item_id || 'empty');
-                const price = parseFloat(row.price_per_kg) || 0;
-                const unit = row.unit_type || 'kg';
-                const typeName = (row.item_type_name || '').trim();
-                const key = id + '_' + price + '_' + unit + '_' + typeName;
-
-                if (id !== 'empty' && map[key] !== undefined) {
-                    // Harga sama: otomatis akumulasi berat / kuantitas ke baris tersebut
-                    const existing = consolidated[map[key]];
-                    if (this.isPcsUnit(row)) {
-                        existing.quantity = (parseFloat(existing.quantity) || 1) + (parseFloat(row.quantity) || 1);
-                    } else {
-                        existing.gross_weight = (parseFloat(existing.gross_weight) || 0) + (parseFloat(row.gross_weight) || 0);
-                        existing.tare_weight = (parseFloat(existing.tare_weight) || 0) + (parseFloat(row.tare_weight) || 0);
-                    }
-                } else {
-                    map[key] = consolidated.length;
-                    consolidated.push(row);
-                }
-            }
-            if (consolidated.length < this.rows.length) {
-                this.rows = consolidated;
-            }
-        },
-
         handleSubmit(e) {
-            this.consolidateRowsByPrice();
-
             if (this.subtotalAmount() <= 0) {
                 e.preventDefault();
                 alert('Silakan masukkan timbangan atau jumlah barang yang valid (subtotal > Rp 0).');

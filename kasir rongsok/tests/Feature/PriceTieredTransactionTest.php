@@ -76,10 +76,10 @@ class PriceTieredTransactionTest extends TestCase
     {
         $service = app(PurchaseTransactionService::class);
 
-        // Kasir memasukkan 3 timbangan:
+        // Kasir memasukkan 3 timbangan barang yang sama:
         // 1. Besi @ Rp 4.000 (net 50 kg)
-        // 2. Besi @ Rp 4.000 (net 30 kg) -> harga sama, harus masuk ke tier harga 4.000 (akumulasi jadi 80 kg)
-        // 3. Besi @ Rp 3.500 (net 20 kg) -> harga beda, harus ada entri harga beda (20 kg @ Rp 3.500)
+        // 2. Besi @ Rp 4.000 (net 30 kg) -> timbangan kedua dengan barang & harga yang sama
+        // 3. Besi @ Rp 3.500 (net 20 kg) -> timbangan ketiga dengan barang yang sama harga beda
         $purchaseData = [
             'supplier_name' => 'Pemasok Budi',
             'payment_method_id' => $this->cashMethod->id,
@@ -110,26 +110,24 @@ class PriceTieredTransactionTest extends TestCase
 
         $transaction = $service->createPurchase($purchaseData, $this->admin);
 
-        // Item harus terkonsolidasi menjadi 2 baris (bukan 3 baris):
-        // 1 baris @ 4.000 dengan net 80 kg
-        // 1 baris @ 3.500 dengan net 20 kg
-        $this->assertCount(2, $transaction->items);
+        // Setiap penimbangan harus dicatat tersendiri pada detail nota (3 baris barang):
+        $this->assertCount(3, $transaction->items);
 
-        $tier4000 = $transaction->items->firstWhere('price_per_kg', 4000);
-        $this->assertNotNull($tier4000);
-        $this->assertEquals(80, (float) $tier4000->net_weight);
-        $this->assertEquals(320000, (float) $tier4000->subtotal);
+        $items4000 = $transaction->items->where('price_per_kg', 4000);
+        $this->assertCount(2, $items4000);
+        $this->assertEquals(80, (float) $items4000->sum('net_weight'));
+        $this->assertEquals(320000, (float) $items4000->sum('subtotal'));
 
-        $tier3500 = $transaction->items->firstWhere('price_per_kg', 3500);
-        $this->assertNotNull($tier3500);
-        $this->assertEquals(20, (float) $tier3500->net_weight);
-        $this->assertEquals(70000, (float) $tier3500->subtotal);
+        $item3500 = $transaction->items->firstWhere('price_per_kg', 3500);
+        $this->assertNotNull($item3500);
+        $this->assertEquals(20, (float) $item3500->net_weight);
+        $this->assertEquals(70000, (float) $item3500->subtotal);
 
-        // Total akumulasi berat transaksi adalah 100 kg (80 + 20)
+        // Total akumulasi berat transaksi adalah 100 kg (50 + 30 + 20)
         $this->assertEquals(100, (float) $transaction->total_net_weight);
         $this->assertEquals(390000, (float) $transaction->final_amount);
 
-        // Cek ItemPriceStock tercatat untuk masing-masing harga
+        // Cek ItemPriceStock tercatat untuk masing-masing harga (akumulasi per harga di stok)
         $priceStock4000 = ItemPriceStock::where('scrap_item_id', $this->besiItem->id)
             ->where('price_per_kg', 4000)
             ->first();
@@ -408,5 +406,68 @@ class PriceTieredTransactionTest extends TestCase
         $this->besiItem->refresh();
         $this->assertEquals(4100, (float) $this->besiItem->buy_price_per_kg);
         $this->assertEquals(25, (float) $this->besiItem->stockBalance->current_stock);
+    }
+
+    /**
+     * Test: Satu nota dengan nama barang yang sama, diinput 3 kali penimbangan,
+     * maka pada detail nota juga ada 3 barang (tidak digabung menjadi 1 baris).
+     */
+    public function test_purchase_with_three_weighings_of_same_item_creates_three_distinct_detail_items(): void
+    {
+        $service = app(PurchaseTransactionService::class);
+
+        $purchaseData = [
+            'supplier_name' => 'Pemasok Kardus Multi-Timbang',
+            'payment_method_id' => $this->cashMethod->id,
+            'items' => [
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'unit_type' => 'kg',
+                    'gross_weight' => 55,
+                    'tare_weight' => 5,
+                    'price_per_kg' => 4000,
+                ],
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'unit_type' => 'kg',
+                    'gross_weight' => 50,
+                    'tare_weight' => 5,
+                    'price_per_kg' => 4000,
+                ],
+                [
+                    'scrap_item_id' => $this->besiItem->id,
+                    'unit_type' => 'kg',
+                    'gross_weight' => 65,
+                    'tare_weight' => 5,
+                    'price_per_kg' => 4000,
+                ],
+            ],
+        ];
+
+        $transaction = $service->createPurchase($purchaseData, $this->admin);
+
+        // Pastikan detail nota memiliki tepat 3 baris barang tersendiri
+        $this->assertCount(3, $transaction->items);
+
+        $items = $transaction->items->values();
+        $this->assertEquals(50, (float) $items[0]->net_weight);
+        $this->assertEquals(200000, (float) $items[0]->subtotal);
+
+        $this->assertEquals(45, (float) $items[1]->net_weight);
+        $this->assertEquals(180000, (float) $items[1]->subtotal);
+
+        $this->assertEquals(60, (float) $items[2]->net_weight);
+        $this->assertEquals(240000, (float) $items[2]->subtotal);
+
+        // Total akumulasi nota
+        $this->assertEquals(155, (float) $transaction->total_net_weight);
+        $this->assertEquals(620000, (float) $transaction->final_amount);
+
+        // Halaman detail nota dan cetak harus menampilkan ketiga baris penimbangan tersebut
+        $response = $this->actingAs($this->cashier)->get(route('purchases.show', $transaction));
+        $response->assertOk();
+        $response->assertSee('50 kg');
+        $response->assertSee('45 kg');
+        $response->assertSee('60 kg');
     }
 }
